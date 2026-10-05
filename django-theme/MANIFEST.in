@@ -1,0 +1,14 @@
+recursive-include src/nova_admin/templates *.html
+recursive-include src/nova_admin/static *.css *.js
+recursive-include src/nova_admin/locale *.po *.mo
+recursive-include demo *.py *.html *.css *.webp *.svg *.json *.po *.mo *.txt
+recursive-include tests *.py
+recursive-include scripts *.py *.sh *.mjs *.json
+include README.md TEST_REPORT.md INTEGRATION_GUIDE.md REVIEW_RESPONSE.md CHANGELOG.md LICENSE requirements-test.txt
+
+include PROJECT_CUSTOMIZATION.md DENSITY_PRESETS.md
+
+include CAPTCHA_INTEGRATION.md PAGINATION_INTEGRATION.md
+include COMPATIBILITY.md
+
+include BRANDING.md NAVIGATION_EXTENSIONS.md UPSTREAM_DRIFT.md

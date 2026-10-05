@@ -1,0 +1,49 @@
+{% extends "admin/change_list.html" %}
+{% load static i18n %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'catalog/pagination.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% if cl.nova_page_sizes and not cl.nova_showing_all %}
+    {# These GET forms stay OUTSIDE Django's POST action/formset form. #}
+    <form id="nova-page-size-form" method="get">
+      {% for name, value in cl.nova_preserved_params %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
+    </form>
+    <form id="nova-page-jump-form" method="get">
+      {% for name, value in cl.nova_preserved_params %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
+      <input type="hidden" name="{{ cl.nova_page_size_param }}" value="{{ cl.list_per_page }}">
+    </form>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
+
+{% block pagination %}
+  {{ block.super }}
+  {% if cl.nova_page_sizes %}
+    <div class="nova-pagination-controls" aria-label="{% translate 'Pagination controls' context 'Nova pagination' %}">
+      {% if cl.nova_showing_all %}
+        <a href="{{ cl.nova_paginated_url }}">{% translate 'Show pages' context 'Nova pagination' %}</a>
+      {% else %}
+        <div class="nova-pagination-size">
+          <label for="nova-page-size">{% translate 'Rows per page' context 'Nova pagination' %}</label>
+          <select id="nova-page-size" name="{{ cl.nova_page_size_param }}" form="nova-page-size-form">
+            {% for size in cl.nova_page_sizes %}<option value="{{ size }}"{% if size == cl.list_per_page %} selected{% endif %}>{{ size }}</option>{% endfor %}
+          </select>
+          <span>{% translate 'rows' context 'Nova pagination' %}</span>
+          <button type="submit" form="nova-page-size-form">{% translate 'Apply' context 'Nova pagination' %}</button>
+        </div>
+        {% if cl.multi_page %}
+          <div class="nova-pagination-jump">
+            <label for="nova-page-number">{% translate 'Go to page' context 'Nova pagination' %}</label>
+            <input id="nova-page-number" type="number" inputmode="numeric" name="{{ cl.nova_page_param }}" value="{{ cl.page_num }}" min="1" max="{{ cl.paginator.num_pages }}" required form="nova-page-jump-form" aria-describedby="nova-page-total">
+            <span id="nova-page-total">/ {{ cl.paginator.num_pages }} {% translate 'pages' context 'Nova pagination' %}</span>
+            <button type="submit" form="nova-page-jump-form">{% translate 'Go' context 'Nova pagination' %}</button>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  {% endif %}
+{% endblock %}

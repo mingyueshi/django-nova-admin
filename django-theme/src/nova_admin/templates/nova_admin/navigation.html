@@ -1,0 +1,36 @@
+{% load i18n nova_tags %}
+{% url 'admin:index' as nova_site_index %}
+{% nova_navigation_scope nova_site_index as navigation_scope %}
+{% nova_navigation_extensions as navigation %}
+{# Groups only reshape AdminSite's already permission-filtered available_apps. #}
+<button class="nova-mobile-nav-toggle" id="nova-mobile-nav-toggle" type="button" aria-controls="nav-sidebar" aria-expanded="false" hidden>{% translate 'Navigation' context 'Nova Admin' %}</button>
+<button class="sticky toggle-nav-sidebar" id="toggle-nav-sidebar" type="button" aria-label="{% translate 'Toggle navigation' %}"></button>
+<nav class="sticky nova-navigation" id="nav-sidebar" data-nova-nav-scope="{{ navigation_scope }}"{% if navigation.favorites_enabled %} data-nova-favorites-enabled="true"{% endif %} aria-label="{% translate 'Sidebar' %}">
+  <div class="nova-nav-heading">{% translate 'Workspace' context 'Nova Admin' %}</div>
+  <a class="nova-nav-home" href="{{ nova_site_index }}">{% translate 'Site overview' context 'Nova Admin' %} <span aria-hidden="true">↗</span></a>
+  <label class="visually-hidden" for="nav-filter">{% translate 'Filter navigation items' %}</label>
+  <input type="search" id="nav-filter" maxlength="200" placeholder="{% translate 'Start typing to filter…' %}" aria-label="{% translate 'Filter navigation items' %}">
+  {% if navigation.common %}
+  <section class="nova-nav-shortcuts" data-nova-common-models aria-labelledby="nova-nav-common-title">
+    <h2 class="nova-nav-shortcut-title" id="nova-nav-common-title">{% translate 'Common models' context 'Nova Admin' %}</h2>
+    <ul class="nova-nav-shortcut-list">{% for model in navigation.common %}{% include "nova_admin/navigation_shortcut.html" %}{% endfor %}</ul>
+  </section>
+  {% endif %}
+  {% if navigation.favorites_enabled and navigation.favorites %}
+  <section class="nova-nav-shortcuts" data-nova-favorites aria-labelledby="nova-nav-favorites-title" hidden>
+    <h2 class="nova-nav-shortcut-title" id="nova-nav-favorites-title">{% translate 'Favorites' context 'Nova Admin' %}</h2>
+    <ul class="nova-nav-shortcut-list">{% for model in navigation.favorites %}{% include "nova_admin/navigation_shortcut.html" with favorite=True %}{% endfor %}</ul>
+  </section>
+  {% endif %}
+  {% for group in navigation.groups %}
+    {% if group.label %}
+      <details open class="nova-nav-section">
+        <summary class="nova-nav-section-title"><span>{{ group.label }}</span></summary>
+        <div class="nova-nav-section-apps">
+    {% endif %}
+    {% for app in group.apps %}{% include "nova_admin/navigation_app.html" %}{% endfor %}
+    {% if group.label %}</div></details>{% endif %}
+  {% empty %}
+    <p class="nova-nav-empty">{% translate 'You don’t have permission to view or edit anything.' %}</p>
+  {% endfor %}
+</nav>

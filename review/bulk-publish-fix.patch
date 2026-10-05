@@ -1,0 +1,268 @@
+From dfcdade4826c1ebdc8b7bf6828309731067a8cc7 Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Fri, 2 Oct 2026 21:47:03 -0700
+Subject: [PATCH] fix(preview): restore the existing bulk publish option
+
+---
+ dist/js/catalog.js             |   2 +-
+ tests/catalog-bulk-publish.cjs | 100 +++++++++++++++++++++++++++++++++
+ tests/refactor-boundaries.cjs  |  95 +++++++++++++++++++++++++++++++
+ 3 files changed, 196 insertions(+), 1 deletion(-)
+ create mode 100644 tests/catalog-bulk-publish.cjs
+
+diff --git a/dist/js/catalog.js b/dist/js/catalog.js
+index 2aa48b3..30dd396 100644
+--- a/dist/js/catalog.js
++++ b/dist/js/catalog.js
+@@ -215,7 +215,7 @@ export function renderCatalog(route) {
+ function results() {
+   const { all, pages, rows, selectedVisible } = collection.pageItems();
+   syncListUrl();
+-  return `${list.selected.size && mode === '管理员' ? `<div class="bulk-bar"><strong>已选 ${list.selected.size} 条</strong><span>本页 ${selectedVisible} 条 · 其他页 ${list.selected.size - selectedVisible} 条</span><select id="catalog-bulk" aria-label="商品批量动作"><option value="">选择操作…</option value="已发布">发布所选</option><option value="归档">归档所选</option></select><button class="btn" data-catalog="apply-batch">执行</button><button class="btn subtle" data-catalog="clear-selected">取消选择</button></div>` : ''}${rows.length ? `${mobileCards(rows, selectedVisible)}<div class="table-scroll catalog-table-wrap"><table class="catalog-table"><thead><tr>${mode === '管理员' ? `<th class="check-cell"><input type="checkbox" class="checkbox" id="catalog-all" ${selectedVisible === rows.length ? 'checked' : ''} aria-label="选择本页全部商品"></th>` : ''}<th>商品 / SKU</th><th>分类与供应商</th><th>状态</th><th>精选展示</th><th>售价</th><th>库存</th><th>操作</th></tr></thead><tbody>${rows.map((r) => `<tr>${mode === '管理员' ? `<td class="check-cell"><input class="checkbox catalog-check" type="checkbox" value="${r.id}" ${list.selected.has(r.id) ? 'checked' : ''} aria-label="选择${esc(r.title)}"></td>` : ''}<td><div class="media-title-cell">${thumbnail(imageSpec('product', r.id, r.title))}<div><a class="object-link" href="#catalog/edit/${r.id}">${esc(r.title)}</a><span class="cell-subline">${esc(r.sku)}</span></div></div></td><td>${esc(r.category)}<span class="cell-subline">${esc(r.supplier)}</span></td><td>${productStatus(r.status)}</td><td>${featureSwitch(r)}</td><td class="numeric">¥ ${Number(r.price).toFixed(2)}</td><td class="numeric">${r.variants.filter((v) => !v.deleted).reduce((s, v) => s + Number(v.stock), 0)}</td><td><a class="row-link" href="#catalog/edit/${r.id}">${mode === '只读成员' ? '查看' : '编辑'} ${ico('chevron')}</a></td></tr>`).join('')}</tbody></table></div>` : `<div class="empty-state">${ico('search')}<h3>没有匹配的商品</h3><p>试试其他名称、SKU 或分类</p><button class="btn subtle" data-catalog="reset-filters">清除筛选</button></div>`}<div class="table-footer"><span>共 ${all.length} 条${all.length ? ` · ${(list.page - 1) * pageSize + 1}–${Math.min(list.page * pageSize, all.length)}` : ''} · 每页 ${pageSize} 条</span><div class="pagination"><button data-catalog-page="${list.page - 1}" ${list.page === 1 ? 'disabled' : ''} aria-label="商品上一页">‹</button>${Array.from({ length: pages }, (_, i) => `<button class="${list.page === i + 1 ? 'active' : ''}" data-catalog-page="${i + 1}" aria-label="商品第 ${i + 1} 页" ${list.page === i + 1 ? 'aria-current="page"' : ''}>${i + 1}</button>`).join('')}<button data-catalog-page="${list.page + 1}" ${list.page === pages ? 'disabled' : ''} aria-label="商品下一页">›</button></div></div>`;
++  return `${list.selected.size && mode === '管理员' ? `<div class="bulk-bar"><strong>已选 ${list.selected.size} 条</strong><span>本页 ${selectedVisible} 条 · 其他页 ${list.selected.size - selectedVisible} 条</span><select id="catalog-bulk" aria-label="商品批量动作"><option value="">选择操作…<option value="已发布">发布所选</option><option value="归档">归档所选</option></select><button class="btn" data-catalog="apply-batch">执行</button><button class="btn subtle" data-catalog="clear-selected">取消选择</button></div>` : ''}${rows.length ? `${mobileCards(rows, selectedVisible)}<div class="table-scroll catalog-table-wrap"><table class="catalog-table"><thead><tr>${mode === '管理员' ? `<th class="check-cell"><input type="checkbox" class="checkbox" id="catalog-all" ${selectedVisible === rows.length ? 'checked' : ''} aria-label="选择本页全部商品"></th>` : ''}<th>商品 / SKU</th><th>分类与供应商</th><th>状态</th><th>精选展示</th><th>售价</th><th>库存</th><th>操作</th></tr></thead><tbody>${rows.map((r) => `<tr>${mode === '管理员' ? `<td class="check-cell"><input class="checkbox catalog-check" type="checkbox" value="${r.id}" ${list.selected.has(r.id) ? 'checked' : ''} aria-label="选择${esc(r.title)}"></td>` : ''}<td><div class="media-title-cell">${thumbnail(imageSpec('product', r.id, r.title))}<div><a class="object-link" href="#catalog/edit/${r.id}">${esc(r.title)}</a><span class="cell-subline">${esc(r.sku)}</span></div></div></td><td>${esc(r.category)}<span class="cell-subline">${esc(r.supplier)}</span></td><td>${productStatus(r.status)}</td><td>${featureSwitch(r)}</td><td class="numeric">¥ ${Number(r.price).toFixed(2)}</td><td class="numeric">${r.variants.filter((v) => !v.deleted).reduce((s, v) => s + Number(v.stock), 0)}</td><td><a class="row-link" href="#catalog/edit/${r.id}">${mode === '只读成员' ? '查看' : '编辑'} ${ico('chevron')}</a></td></tr>`).join('')}</tbody></table></div>` : `<div class="empty-state">${ico('search')}<h3>没有匹配的商品</h3><p>试试其他名称、SKU 或分类</p><button class="btn subtle" data-catalog="reset-filters">清除筛选</button></div>`}<div class="table-footer"><span>共 ${all.length} 条${all.length ? ` · ${(list.page - 1) * pageSize + 1}–${Math.min(list.page * pageSize, all.length)}` : ''} · 每页 ${pageSize} 条</span><div class="pagination"><button data-catalog-page="${list.page - 1}" ${list.page === 1 ? 'disabled' : ''} aria-label="商品上一页">‹</button>${Array.from({ length: pages }, (_, i) => `<button class="${list.page === i + 1 ? 'active' : ''}" data-catalog-page="${i + 1}" aria-label="商品第 ${i + 1} 页" ${list.page === i + 1 ? 'aria-current="page"' : ''}>${i + 1}</button>`).join('')}<button data-catalog-page="${list.page + 1}" ${list.page === pages ? 'disabled' : ''} aria-label="商品下一页">›</button></div></div>`;
+ }
+ 
+ function mobileCards(rows, visible) {
+diff --git a/tests/catalog-bulk-publish.cjs b/tests/catalog-bulk-publish.cjs
+new file mode 100644
+index 0000000..2b83374
+--- /dev/null
++++ b/tests/catalog-bulk-publish.cjs
+@@ -0,0 +1,100 @@
++// Targeted regression for the formerly malformed catalog publish <option>.
++// This test intentionally fails the old baseline; collection refactor coverage
++// remains independently baseline-compatible in refactor-boundaries.cjs.
++const assert = require('node:assert/strict');
++const path = require('node:path');
++const project = process.env.NOVA_TEST_PROJECT || path.resolve(__dirname, '..');
++const { createApp } = require(path.join(project, 'tests/dom-runtime.cjs'));
++let passed = 0;
++const rejections = [];
++const captureRejection = (reason) => rejections.push(reason);
++process.on('unhandledRejection', captureRejection);
++const wait = () => new Promise((resolve) => setTimeout(resolve, 25));
++const check = (description, test) => {
++  test();
++  passed += 1;
++  console.log('PASS', description);
++};
++
++async function main() {
++  const { w, d, close } = await createApp();
++  const errors = [];
++  w.addEventListener('error', (event) => errors.push(event.error || event.message));
++  w.addEventListener('unhandledrejection', (event) => errors.push(event.reason));
++  const q = (selector) => d.querySelector(selector);
++  const change = (selector, value) => {
++    const element = q(selector);
++    assert.ok(element, `Missing UI element: ${selector}`);
++    if (typeof value === 'boolean') element.checked = value;
++    else element.value = value;
++    element.dispatchEvent(new w.Event('change', { bubbles: true }));
++  };
++  try {
++    w.location.hash = 'catalog';
++    await wait();
++    const firstTitle = q('.catalog-table .catalog-check[value="102"]').closest('tr').querySelector('.object-link').textContent;
++    change('.catalog-table .catalog-check[value="102"]', true);
++    q('[data-catalog-page="2"]').click();
++    const secondTitle = q('.catalog-table .catalog-check[value="107"]').closest('tr').querySelector('.object-link').textContent;
++    change('.catalog-table .catalog-check[value="107"]', true);
++
++    check('Catalog bulk publish is a real selectable option with the correct label', () => {
++      const publish = q('#catalog-bulk option[value="已发布"]');
++      assert.ok(publish, 'The catalog bulk select must contain an option with value 已发布');
++      assert.equal(publish.textContent, '发布所选');
++    });
++    change('#catalog-bulk', '已发布');
++    check('Selecting publish retains its value before execution', () => {
++      assert.equal(q('#catalog-bulk').value, '已发布');
++      assert.equal(q('#catalog-bulk').selectedOptions[0].textContent, '发布所选');
++    });
++    q('[data-catalog="apply-batch"]').click();
++    check('Publish confirmation identifies exactly the two selected cross-page records', () => {
++      assert.ok(q('[data-catalog="confirm-batch"]'));
++      assert.match(q('#batch-title').textContent, /发布 2 条/);
++      assert.equal(d.querySelectorAll('.batch-preview li').length, 2);
++      assert.ok(q('.batch-preview').textContent.includes(firstTitle));
++      assert.ok(q('.batch-preview').textContent.includes(secondTitle));
++    });
++    check('Opening publish confirmation does not mutate persisted records', () => {
++      assert.equal(w.localStorage.getItem('nova-catalog'), null);
++      assert.match(q('.catalog-table .catalog-check[value="107"]').closest('tr').textContent, /草稿/);
++    });
++    q('[data-catalog="confirm-batch"]').click();
++    check('Confirming publish persists only the selected status changes', () => {
++      const records = JSON.parse(w.localStorage.getItem('nova-catalog'));
++      assert.equal(records.length, 7);
++      assert.equal(records.find((record) => record.id === 102).status, '已发布');
++      assert.equal(records.find((record) => record.id === 107).status, '已发布');
++      assert.equal(records.find((record) => record.id === 105).status, '草稿');
++      assert.equal(records.find((record) => record.id === 104).status, '归档');
++      assert.equal(records.find((record) => record.id === 101).status, '已发布');
++      assert.equal(records.find((record) => record.id === 103).status, '已发布');
++      assert.equal(records.find((record) => record.id === 106).status, '已发布');
++    });
++    check('Publish success updates the visible row and clears selection and confirmation', () => {
++      const row = q('.catalog-table .catalog-check[value="107"]');
++      assert.match(row.closest('tr').textContent, /已发布/);
++      assert.equal(row.checked, false);
++      assert.equal(q('.bulk-bar'), null);
++      assert.equal(q('[data-catalog="confirm-batch"]'), null);
++      assert.equal(q('#catalog-all').checked, false);
++      assert.equal(q('#catalog-all').indeterminate, false);
++    });
++    await wait();
++    check('Catalog bulk publish has no uncaught errors or unhandled rejections', () => {
++      assert.deepEqual(errors, []);
++      assert.deepEqual(rejections, []);
++    });
++    console.log('TOTAL', passed, 'catalog bulk publish checks passed (Node/jsdom)');
++  } finally {
++    close();
++  }
++}
++
++main().catch((error) => {
++  console.error(error);
++  process.exitCode = 1;
++}).finally(() => {
++  process.removeListener('unhandledRejection', captureRejection);
++});
+diff --git a/tests/refactor-boundaries.cjs b/tests/refactor-boundaries.cjs
+index 01ed367..6b99455 100644
+--- a/tests/refactor-boundaries.cjs
++++ b/tests/refactor-boundaries.cjs
+@@ -71,6 +71,8 @@ const lists = [
+     pageSize: 6,
+     count: 24,
+     storage: 'nova-users',
++    statusFilter: '#status-filter',
++    activeStatus: '正常',
+     targetStatus: '已停用',
+     originalStatus: '正常',
+     confirm: '[data-action="confirm-disable"]',
+@@ -88,6 +90,8 @@ const lists = [
+     pageSize: 5,
+     count: 7,
+     storage: 'nova-catalog',
++    statusFilter: '#catalog-status',
++    activeStatus: '已发布',
+     targetStatus: '归档',
+     originalStatus: '已发布',
+     confirm: '[data-catalog="confirm-batch"]',
+@@ -108,6 +112,8 @@ const lists = [
+     pageSize: 5,
+     count: 8,
+     storage: 'nova-news',
++    statusFilter: '#news-status',
++    activeStatus: '已发布',
+     targetStatus: '归档',
+     originalStatus: '已发布',
+     confirm: '[data-news="confirm"]',
+@@ -213,6 +219,94 @@ async function testBulkFailure(spec) {
+   });
+ }
+ 
++async function testFilteredBulkPageClamp(spec) {
++  await session(`${spec.name} filtered bulk page clamp`, async (ui) => {
++    const { w, q, all, click, change, route } = ui;
++    await route(spec.name);
++    if (spec.name === 'catalog') {
++      // Baseline catalog markup lacks a valid publish option in the bulk select.
++      // Prepare its records through real editor saves so this remains a passing
++      // behavior-preservation test without changing either implementation.
++      const unpublishedIds = [];
++      for (const page of [1, 2]) {
++        click(`[${spec.pageAttribute}="${page}"]`);
++        unpublishedIds.push(...all(`${spec.table} tbody tr`)
++          .filter((row) => row.children[3].textContent !== '已发布')
++          .map((row) => Number(row.querySelector(spec.checkbox).value)));
++      }
++      for (const id of unpublishedIds) {
++        await route(`catalog/edit/${id}`);
++        change('#product-status', '已发布');
++        q('#catalog-form').dispatchEvent(new w.SubmitEvent('submit', {
++          bubbles: true,
++          cancelable: true,
++          submitter: q('[data-save-mode="list"]'),
++        }));
++        await wait();
++      }
++      check('Catalog editor saves prepare all records for the published filter', () => {
++        const records = JSON.parse(w.localStorage.getItem(spec.storage));
++        assert.equal(records.length, spec.count);
++        assert.equal(records.every((record) => record.status === '已发布'), true);
++      });
++    } else if (spec.name === 'news') {
++      change(spec.selectAll, true);
++      click(`[${spec.pageAttribute}="2"]`);
++      change(spec.selectAll, true);
++      click('[data-news="publish"]');
++      click(spec.confirm);
++      check(`${spec.name}: cross-page publish prepares all records through the UI`, () => {
++        const records = JSON.parse(w.localStorage.getItem(spec.storage));
++        assert.equal(records.length, spec.count);
++        assert.equal(records.every((record) => record.status === '已发布'), true);
++        assert.equal(q('.bulk-bar'), null);
++      });
++    }
++
++    change(spec.statusFilter, spec.activeStatus);
++    const originalCount = Number(q('.table-footer').textContent.match(/共 (\d+)/)[1]);
++    const lastPage = Math.ceil(originalCount / spec.pageSize);
++    assert.ok(lastPage > 1, `${spec.name} fixture must span multiple filtered pages`);
++    click(`[${spec.pageAttribute}="${lastPage}"]`);
++    const chosenIds = all(`${spec.table} ${spec.checkbox}`).map((box) => Number(box.value));
++    change(spec.selectAll, true);
++    const remainingCount = originalCount - chosenIds.length;
++    const expectedPage = Math.max(1, Math.ceil(remainingCount / spec.pageSize));
++    check(`${spec.name}: the active filter's last page is selected before bulk mutation`, () => {
++      assert.equal(q('.pagination [aria-current]').textContent.trim(), String(lastPage));
++      assert.equal(all(`${spec.table} ${spec.checkbox}:checked`).length, chosenIds.length);
++      assert.equal(new URLSearchParams(w.location.hash.split('?')[1]).get('status'), spec.activeStatus);
++    });
++    spec.beginBulk(ui);
++    click(spec.confirm);
++
++    check(`${spec.name}: bulk status removes matching rows and clamps page and URL together`, () => {
++      const params = new URLSearchParams(w.location.hash.split('?')[1]);
++      assert.equal(q(spec.statusFilter).value, spec.activeStatus);
++      assert.equal(params.get('status'), spec.activeStatus);
++      assert.equal(params.get('page'), expectedPage > 1 ? String(expectedPage) : null);
++      assert.equal(q('.pagination [aria-current]').textContent.trim(), String(expectedPage));
++      assert.equal(Number(q('.table-footer').textContent.match(/共 (\d+)/)[1]), remainingCount);
++      assert.equal(all(`${spec.table} tbody tr`).length, spec.pageSize);
++      assert.equal(q('.bulk-bar'), null);
++      assert.equal(all(`${spec.table} ${spec.checkbox}:checked`).length, 0);
++      assert.equal(q(spec.selectAll).checked, false);
++      assert.equal(q(spec.selectAll).indeterminate, false);
++      assert.equal(q(spec.confirm), null);
++    });
++    check(`${spec.name}: filtered bulk save updates only selected targets and retains other matches`, () => {
++      const records = JSON.parse(w.localStorage.getItem(spec.storage));
++      assert.equal(records.length, spec.count);
++      for (const id of chosenIds) {
++        assert.equal(records.find((record) => record.id === id).status, spec.targetStatus);
++        assert.equal(q(`${spec.table} ${spec.checkbox}[value="${id}"]`), null);
++      }
++      assert.equal(records.filter((record) => record.status === spec.activeStatus).length, remainingCount);
++      assert.equal(records.find((record) => record.id === (spec.name === 'users' ? 1 : spec.name === 'catalog' ? 101 : 201)).status, spec.activeStatus);
++    });
++  });
++}
++
+ async function main() {
+   await session('List sort and search', async ({ w, q, all, click, input, route }) => {
+     await route('users?page=2');
+@@ -335,6 +429,7 @@ async function main() {
+ 
+   for (const spec of lists) await testCrossPageSelection(spec);
+   for (const spec of lists) await testBulkFailure(spec);
++  for (const spec of lists) await testFilteredBulkPageClamp(spec);
+ 
+   await session('Catalog reset race', async ({ w, q, click, route }) => {
+     await route('catalog');
+-- 
+2.52.0
+

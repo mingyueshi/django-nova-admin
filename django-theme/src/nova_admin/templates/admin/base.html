@@ -1,0 +1,42 @@
+{% extends "admin/base.html" %}
+{% load static i18n nova_tags %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  {% if nova_admin_active %}
+    {% block nova_styles %}
+    <link rel="stylesheet" href="{% static 'nova_admin/theme.css' %}" {% nova_nonce %}>
+    <link rel="stylesheet" href="{% static 'nova_admin/tokens.css' %}" {% nova_nonce %}>
+    {% endblock %}
+  {% endif %}
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {% if nova_admin_active %}
+    {% block nova_favicon %}{% if nova_admin_branding.favicon_url %}<link rel="icon" href="{{ nova_admin_branding.favicon_url|force_escape }}">{% endif %}{% endblock %}
+    <script src="{% static 'nova_admin/enhancements.js' %}" defer {% nova_nonce %} data-nova-search-placeholder="{% translate 'Search records…' context 'Nova Admin' %}"></script>
+  {% endif %}
+  {% if nova_admin_active and nova_admin_navigation %}
+    <script src="{% static 'nova_admin/navigation.js' %}" defer {% nova_nonce %}></script>
+  {% endif %}
+{% endblock %}
+
+{% block footer %}{{ block.super }}{% if nova_admin_active %}{% block nova_footer %}{% include "nova_admin/brand_footer.html" %}{% endblock %}{% endif %}{% endblock %}
+
+{% block bodyclass %}{{ block.super }}{% if nova_admin_active %} nova-admin nova-mode-{{ nova_admin_mode }}{% endif %}{% endblock %}
+
+{% block usertools %}
+  {{ block.super }}
+  {% if nova_admin_enabled and nova_admin_preference_url and has_permission and not is_popup %}
+    {% include "nova_admin/theme_switcher.html" %}
+  {% endif %}
+{% endblock %}
+
+{% block nav-sidebar %}
+  {% if nova_admin_active and nova_admin_navigation and has_permission %}
+    {% include "nova_admin/navigation.html" %}
+  {% else %}
+    {{ block.super }}
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "admin/login.html" %}
+{% load static nova_tags %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  {% if nova_admin_active %}<link rel="stylesheet" href="{% static 'nova_admin/login.css' %}" {% nova_nonce %}>{% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if nova_admin_active %}
+    {% block nova_login_content %}
+    {% include "nova_admin/login_content.html" %}
+    {% endblock %}
+  {% else %}
+    {{ block.super }}
+  {% endif %}
+{% endblock %}

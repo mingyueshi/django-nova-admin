@@ -1,0 +1,5 @@
+{% extends "admin/actions.html" %}
+{% load project_admin %}
+{% block actions-form %}
+  {% for field in action_form %}{% if field.label %}<label>{{ field.label|project_label }} {{ field }}</label>{% else %}{{ field }}{% endif %}{% endfor %}
+{% endblock %}

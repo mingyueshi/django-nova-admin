@@ -1,0 +1,11 @@
+{% extends "admin/base_site.html" %}
+{% load static project_admin %}
+{% block extrastyle %}
+  {{ block.super }}
+  {% if nova_admin_active and project_nova_installed %}
+    <link rel="stylesheet" href="{% static 'catalog/enterprise.css' %}" {% project_nonce %}>
+    {% if project_admin_compact %}
+      <link rel="stylesheet" href="{% static 'catalog/enterprise-compact.css' %}" {% project_nonce %}>
+    {% endif %}
+  {% endif %}
+{% endblock %}

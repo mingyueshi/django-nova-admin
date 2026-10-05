@@ -1,0 +1,193 @@
+# Nova Admin translations. Only contextual Nova-owned messages belong here.
+# English source strings are the fallback; Django core messages are not overridden.
+msgid ""
+msgstr ""
+"Project-Id-Version: nova-django-admin-theme 0.6.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-01 00:00+0000\n"
+"PO-Revision-Date: 2026-10-01 00:00+0000\n"
+"Last-Translator: Nova contributors\n"
+"Language-Team: Simplified Chinese\n"
+"Language: zh_Hans\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: templates/nova_admin/navigation.html
+msgctxt "Nova Admin"
+msgid "Workspace"
+msgstr "工作空间"
+
+#: templates/nova_admin/navigation.html
+msgctxt "Nova Admin"
+msgid "Navigation"
+msgstr "导航菜单"
+
+#: templates/admin/index.html templates/nova_admin/navigation.html
+msgctxt "Nova Admin"
+msgid "Site overview"
+msgstr "站点总览"
+
+#: templates/admin/index.html
+msgctxt "Nova Admin"
+msgid ""
+"Manage models and everyday work. Available content depends on your site "
+"permissions."
+msgstr "管理模型、处理日常工作。可用内容由你的站点权限决定。"
+
+#: templates/nova_admin/theme_switcher.html
+msgctxt "Nova Admin"
+msgid "Admin appearance"
+msgstr "后台外观"
+
+#: templates/nova_admin/theme_switcher.html
+msgctxt "Nova Admin"
+msgid "Appearance"
+msgstr "外观"
+
+#: templates/nova_admin/theme_switcher.html
+msgctxt "Nova Admin"
+msgid "Nova dark"
+msgstr "Nova 深色"
+
+#: templates/nova_admin/theme_switcher.html
+msgctxt "Nova Admin"
+msgid "Nova light"
+msgstr "Nova 浅色"
+
+#: templates/nova_admin/theme_switcher.html
+msgctxt "Nova Admin"
+msgid "Django native"
+msgstr "Django 原生"
+
+#: templates/nova_admin/theme_switcher.html
+msgctxt "Nova Admin"
+msgid "Apply"
+msgstr "应用"
+
+#: templatetags/nova_tags.py
+msgctxt "Nova Admin"
+msgid "Other apps"
+msgstr "其他应用"
+
+#: urls.py
+msgctxt "Nova Admin"
+msgid "Unknown theme mode"
+msgstr "未知外观模式"
+
+#: templates/admin/base.html
+msgctxt "Nova Admin"
+msgid "Search records…"
+msgstr "搜索记录…"
+
+#: templates/nova_admin/theme_switcher.html
+msgctxt "Nova Admin"
+msgid "Nova auto"
+msgstr "Nova 自动（跟随系统）"
+
+msgctxt "Nova Admin"
+msgid "Welcome back"
+msgstr "欢迎回来"
+
+msgctxt "Nova Admin"
+msgid "Sign in to your management workspace."
+msgstr "登录你的管理工作空间。"
+
+msgctxt "Nova Admin"
+msgid "Use the account assigned by your site administrator."
+msgstr "请使用站点管理员分配的账号。"
+
+msgctxt "Nova Admin"
+msgid "Your workspace."
+msgstr "回到你的工作空间"
+
+msgctxt "Nova Admin"
+msgid "Everything in order."
+msgstr "让管理井然有序"
+
+msgctxt "Nova Admin"
+msgid "A clear place for content, people and everyday work."
+msgstr "内容、成员与日常事务，在这里有序展开。"
+
+msgctxt "Nova Admin"
+msgid "A focused start to your day."
+msgstr "从容开始，新一天的工作。"
+
+msgctxt "Nova Admin"
+msgid ""
+"The verification code is incorrect or expired. Please try the new image."
+msgstr "验证码不正确或已过期，请输入新图片中的字符。"
+
+msgctxt "Nova Admin"
+msgid ""
+"If you cannot use this challenge, contact your administrator for an "
+"alternative sign-in method."
+msgstr "如果无法完成此验证，请联系管理员使用其他登录方式。"
+
+msgctxt "Nova Admin"
+msgid "Verification code"
+msgstr "验证码"
+
+msgctxt "Nova Admin"
+msgid ""
+"Enter the characters shown in the image. Letters are not case-sensitive."
+msgstr "请输入图片中的字符，不区分大小写。"
+
+msgctxt "Nova Admin"
+msgid "Loading a new verification image…"
+msgstr "正在加载新验证码…"
+
+msgctxt "Nova Admin"
+msgid "New verification image ready."
+msgstr "新验证码已准备好。"
+
+msgctxt "Nova Admin"
+msgid "Could not load a new image. Reload this page before signing in."
+msgstr "无法加载新验证码，请刷新本页面后再登录。"
+
+msgctxt "Nova Admin"
+msgid ""
+"The verification image did not load. Try a new image or contact your "
+"administrator."
+msgstr "验证码图片加载失败，请换一张或联系管理员。"
+
+msgctxt "Nova Admin"
+msgid ""
+"Verification challenge. Enter the characters shown, or use the available "
+"alternative."
+msgstr "图形验证码，请输入图中字符，或使用可用的其他验证方式。"
+
+msgctxt "Nova Admin"
+msgid "Listen to verification audio"
+msgstr "收听验证码"
+
+msgctxt "Nova Admin"
+msgid "New image"
+msgstr "换一张"
+
+msgctxt "Nova Admin"
+msgid "Alternative sign-in help"
+msgstr "其他登录方式帮助"
+
+msgctxt "Nova Admin"
+msgid ""
+"Reload this page for a new image. Your sign-in still works without "
+"JavaScript."
+msgstr "刷新本页面可获取新验证码。不启用JavaScript也可通过服务端验证登录。"
+
+msgctxt "Nova Admin"
+msgid "Common models"
+msgstr "常用模型"
+
+msgctxt "Nova Admin"
+msgid "Favorites"
+msgstr "我的收藏"
+
+msgctxt "Nova Admin"
+msgid "Favorite %(model_name)s"
+msgstr "收藏%(model_name)s"
+
+msgctxt "Nova Admin"
+msgid "Count"
+msgstr "数量"

@@ -1,0 +1,85 @@
+## 0.6.0 / preview 1.8.0 · 2026-10-03
+
+- 新增有文档的语义令牌、四个品牌色和密度/间距/圆角覆盖；CSS 仍手写、无构建依赖，CI 显式审查体积预算
+- 声明式同源 static 品牌资源与纯文本页脚；原生恢复不加载品牌覆盖，手机保持无外层面板登录
+- 可选收藏、常用模型、受控图标及一次性批量徽标 hook；只消费权限过滤的真实菜单，示例计数遵守当前 AdminSite / ModelAdmin queryset
+- Django check 提示遗漏上下文、显式 URL 命名空间和无效导航配置
+- 稳定版上游模板差异脚本、独立 Django main 定时预警配置；不扩大未来版本支持承诺，GitHub 尚未启用
+- 本地 Compose 启动器、PostgreSQL/验证码/多 AdminSite 示例；Docker 缺失，明确区分 SQLite 集成与未运行的容器
+- 可选 Axes 8.3.1 桥接验证码提前失败计数，保留固定冷却/原生权限/CSRF；明确账号枚举、代理、音频和旧 honeypot 的边界
+
+## 0.5.1 · 2026-10-03
+
+- 扩充为四个当前安全补丁Python、七个明确Django组合；核心/验证码分别验证源码与wheel
+- 保留Python>=3.10的历史安装门槛，明确3.10已EOL；当前维护矩阵从3.11开始，不加入Django4.2或未确认的未来版本
+- 新增串行多解释器runner、固定依赖清单、预检和按环境分离的证据；初始化失败与中断也准确终结报告
+- 没有更改主题运行行为、模型字段、权限、CSRF、登录或分页逻辑；运行资源仅更新版本标识
+- 新增兼容范围与复现说明，沿用企业浅色、中文词典、密度、多级导航和原生恢复
+
+# 0.5.0 / preview 1.7.0 · 2026-10-03
+
+- Remove decorative eyebrows and render the translated index heading directly; retain native fallback
+- Align Chinese font fallbacks, platform shortcut hints, Chinese unit/currency presentation and accessible light error text
+- Add shared mock collection page-size and jump controls with bounded URL parsing, selection preservation and browser history
+- Add an explicit host-project bounded-pagination example; no global ModelAdmin defaults or production endpoints are changed
+
+## 0.4.2 · 2026-10-03
+
+- 桌面改为宽幅开放构图，以纯视觉品牌图形平衡400px以内的表单，取消小浮卡
+- 900px及以下使用独立单列布局，移除登录外层边框、圆角、面板背景与阴影；保留输入框边界、字号及触控空间
+- 真实Django与mock同步，保留简短文案、按需帮助、原生回退及既有验证码/CSRF/认证行为
+
+## 0.4.1 · 2026-10-03
+
+- 将登录页收为单一聚焦卡片，移除双栏品牌文案、大标题、英文标签和重复说明，改用留白、轻量环线与背景光影
+- 保留可访问的登录标题、原生字段、错误、CSRF、next、额外认证字段及原生恢复；验证码输入与图片并排，替代登录帮助按需展开，错误状态常驻可见
+- 只修改呈现与文案，不改变可选验证码服务端验证、令牌消费或认证后端
+
+## 0.4.0 · 2026-10-03
+
+- 登录页增加独立、可项目覆盖的品牌区和几何背景，中文/英文、企业明暗/自动、手机布局
+- 核心login覆盖继承原生login模板以保留版本相关CSP与form.media；原生模式回到原生内容
+- 可选本地验证码extra，服务端验证先于密码认证；一次性消费检查、CSRF刷新、刷新失败及迟到响应保护
+- 验证码与外观解耦，原生/关闭主题也继续执行已配置的校验
+- 图形与可选音频保持同源；音频系统依赖未在本次环境安装或运行，提供明确接入/无障碍边界
+- 演示导出支持可选合成验证码PNG；静态产物不含密钥、可提交表单或动态端点
+
+# Changelog
+
+## 0.3.0 · 2026-10-03
+
+- 宿主Demo提供LOCALE_PATHS中文词典与编译MO，覆盖实际消息ID及带context的工作台/管理内容数据
+- 项目renderer和版本对应Admin模板输出真实全角冒号，保留英文、checkbox、readonly/Inline、转义与可访问标签
+- Demo首次访问默认浅色企业蓝；已保存选择继续优先，项目配色独立于可复用主题默认
+- 新增auto外观，通过prefers-color-scheme跟随系统，不写入或重置Django自身偏好
+- 提取真实列表/Inline/表单/控件密度变量，提供可直接加载的项目紧凑覆盖；中文标题不使用负字距
+- 修复主表单未增强多选框的纵向flex-basis，保持24rem阅读宽度而不保留384px空高度
+- 展示标准/紧凑、明暗/自动和原生对照，补全项目安装、编译、品牌与恢复示例
+
+
+## 0.2.2 · 2026-10-02
+
+- 修复手机宽度下无导航入口：可选 Nova 菜单增加渐进式原位展开，同一权限菜单，无额外权限推断
+- 支持按钮键盘操作、Escape 清空后关闭、焦点返回、跨断点恢复；桌面偏好不被手机开关改写
+- 未启用 JavaScript 时直接显示菜单，原生模式与导航 opt-out 保持上游行为
+- 添加中英文 Navigation 文案和移动状态回归；安全导航交互样例使用同一份运行代码
+- 只读快照导出保留展示用 hidden 属性，避免把脚本控制的隐藏按钮显示出来；hidden 类型输入及敏感值仍移除
+- 本轮未改变模型字段、ModelAdmin、权限、CSRF、业务表单或迁移
+
+
+## 0.2.1 · 2026-10-01 · 报告首批整改
+
+- Nova 自有文案采用 `Nova Admin` context 的 gettext；英文源消息、zh_Hans 的 PO/MO 随包分发，不覆盖 Django 全局词典
+- 移除首页/导航重复中英文装饰标题；非法外观参数的提示可翻译
+- 普通前台页面与未挂载可选端点不再反复抛 NoReverseMatch；保留显式 current_app、嵌套站点、请求 URLconf 与语言前缀
+- 分组、应用、模型均可搜索；导航状态按站点/用户隔离，折叠状态本地持久，关键词为当前浏览器会话持久；存储不可用时继续正常工作
+- 新增小型搜索提示增强；保留原生 GET、表单值、标签与帮助文字，也尊重已有 placeholder
+- Demo 的 ProductVariant 增加可读 __str__；增加模型明确的 search_help_text
+- 扩充本地中文字体候选、表格数字等宽/末端对齐；浅色辅助字提高对比度并增加声明背景的计算回归
+- 新增接入指南、报告核验说明、针对性回归；原生权限、CSRF、ModelAdmin、恢复机制和 Demo 数据结构保持不变
+
+升级：重新安装主题并执行宿主原有 collectstatic/静态缓存更新流程；**没有新模型迁移**。已有 0.2.0 Demo 的本地 SQLite 无需重建。请先保存自己的本地改动，再比较本版 diff，不要覆盖研究中的文件。
+
+## 0.2.0 · 最新图文列表基线
+
+三种 list_display 图片列、可逆三级导航、原生 Select2/数字/开关样式及跨版本适配。此前精确版本 5.2.17 / 6.0.8 / 6.1.1 的源码与 wheel 各 150 项通过。私人源码包另附 seed_demo，本版继续保留。

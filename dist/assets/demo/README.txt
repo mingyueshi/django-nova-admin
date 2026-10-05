@@ -1,0 +1,1 @@
+NOVA demo imagery: AI-generated fictional adults, products and editorial scenes. No private photographs or remote hotlinks. Three original sheets; WebP transcode retains dimensions. Not documentation of real people, products or places.

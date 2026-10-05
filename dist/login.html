@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="light">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; form-action 'none'; object-src 'none'; base-uri 'none'; style-src 'self'; img-src 'self' data:; script-src 'self'">
+<title>登录页预览 · NOVA Admin</title>
+<link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./login.css"><link rel="stylesheet" href="./login-preview.css">
+<script type="module" src="./js/login.js"></script>
+</head>
+<body class="nova-admin login nova-login-demo">
+<a class="login-skip" href="#demo-login-title">跳转到登录表单</a>
+<div class="login-preview-toolbar"><a href="./#native-samples">‹ 返回</a><label><span class="login-visually-hidden">外观</span><select id="login-appearance"><option value="light">企业浅色</option><option value="dark">深色</option><option value="auto">跟随系统</option></select></label></div>
+<main id="container">
+<header id="header"><a class="login-brand" href="./"><span class="login-brand-mark">N</span><span>NOVA</span></a></header>
+<div id="content"><div class="nova-login-layout">
+<div class="nova-login-art" aria-hidden="true"><i></i><i></i><span class="nova-login-glyph">N</span></div>
+<section class="nova-login-panel" aria-labelledby="demo-login-title"><h1 class="login-visually-hidden" id="demo-login-title" tabindex="-1">登录</h1>
+<p class="login-demo-notice">虚构账号演示，不要输入真实密码</p>
+<form id="demo-login-form" novalidate autocomplete="off">
+<div id="login-feedback" class="login-feedback" role="alert" tabindex="-1" hidden></div>
+<div class="form-row"><label for="demo-username">用户名</label><input type="text" id="demo-username" name="demo_username" value="demo_admin" autocomplete="off" spellcheck="false" required aria-describedby="username-error"><span class="login-field-error" id="username-error"></span></div>
+<div class="form-row"><label for="demo-password">密码</label><div class="login-password"><input id="demo-password" name="demo_password" type="password" value="NovaPreview123" autocomplete="off" required aria-describedby="password-error"><button type="button" id="password-visible" aria-label="显示演示密码" aria-pressed="false">显示</button></div><span class="login-field-error" id="password-error"></span></div>
+<div class="form-row"><div class="captcha-label-row"><label for="demo-captcha">验证码</label><span id="captcha-expiry" class="login-visually-hidden">2 分钟内有效</span></div><div class="login-captcha-row"><input type="text" id="demo-captcha" name="demo_captcha" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="captcha-help captcha-error" required placeholder="4 位字符"><div class="login-captcha-image" id="captcha-graphic" role="img" aria-label="4位图形验证码，可刷新或改用文字验证"></div></div><div id="captcha-text" class="captcha-text" hidden></div><div class="captcha-actions"><button type="button" id="refresh-captcha">↻ 换一张</button><button type="button" id="captcha-alternative" aria-expanded="false" aria-controls="captcha-text">文字验证</button></div><p id="captcha-help" class="login-visually-hidden">不区分大小写。文字替代仅用于本地演示。</p><span class="login-field-error" id="captcha-error"></span><span id="captcha-announcement" class="login-visually-hidden" role="status" aria-live="polite"></span></div>
+<div class="submit-row"><button type="submit" id="login-submit">登录</button></div>
+</form>
+<section id="login-success" class="login-success" hidden aria-labelledby="login-success-title"><div aria-hidden="true" class="login-success-mark">✓</div><h2 id="login-success-title" tabindex="-1">演示验证通过</h2><p>这是本地交互结果，没有建立真实登录会话。</p><a class="login-primary-link" href="./#overview">进入演示工作台</a><button type="button" id="login-again">再次体验</button></section>
+<details class="login-demo-tools"><summary>帮助与演示</summary><p>用户名：demo_admin<br>密码：NovaPreview123</p><div><button type="button" id="expire-captcha">使当前验证码过期</button><label><input type="checkbox" id="fail-login">模拟下一次提交失败</label></div><p>图形与文字验证码都在浏览器中生成，不提供防机器人保护。真实Django可选集成在服务端校验，需独立配置。</p><a href="./#native-samples">真实 Django 模板样本</a><span class="login-demo-version"> · 预览 1.7.0</span></details>
+
+</section></div></div></main>
+
+<noscript><p class="login-noscript">此交互预览需要JavaScript。真实Django登录与验证码接入支持服务端提交及无脚本刷新。</p></noscript>
+</body></html>

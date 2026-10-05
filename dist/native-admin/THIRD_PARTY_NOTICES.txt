@@ -1,0 +1,32 @@
+THIRD-PARTY NOTICES — SYNTHETIC DJANGO ADMIN SAMPLES
+
+Django 6.1.1
+Copyright (c) Django Software Foundation and individual contributors.
+License: BSD 3-Clause; full unchanged license in DJANGO-LICENSE.txt.
+Project: https://www.djangoproject.com/
+Source repository: https://github.com/django/django
+Exact source release: installed Django 6.1.1 distribution.
+Assets copied from django/contrib/admin/static/admin in that distribution.
+The Django license was located through importlib.metadata.distribution('Django').files:
+django-6.1.1.dist-info/licenses/LICENSE
+Rendered template source hashes and copied-asset hashes are in manifest.json.
+
+Nova Django Admin Theme
+Copyright (c) 2026 Nova Theme contributors.
+License: MIT; full unchanged license in NOVA-LICENSE.txt.
+Source: the accompanying Nova repository; exact project version and source hashes
+are in manifest.json. Nova CSS is in static/nova_admin/.
+
+Select2 stylesheet assets bundled with Django 6.1.1
+Copyright (c) 2012-2017 Kevin Brown, Igor Vaynberg, and Select2 contributors.
+License: MIT; full unchanged license in
+static/admin/css/vendor/select2/LICENSE-SELECT2.md.
+No Select2, jQuery or other third-party JavaScript is redistributed by this export.
+
+SVG ICON ATTRIBUTION
+The following upstream copyright/license notices are retained in the original SVG
+files in static/admin/img/. Asset contents have not been modified by the exporter.
+Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.
+
+DEMO MEDIA
+Three AI-generated sheets: fictional adult avatars, unbranded products and fictional editorial scenes. No private photographs or hotlinked stock. Bundled WebP images are same-dimension encodings of the synthetic source assets. These public demo assets are not private-media examples.

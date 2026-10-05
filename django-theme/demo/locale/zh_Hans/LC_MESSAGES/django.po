@@ -1,0 +1,106 @@
+# Explicit host-project language policy. Not part of the reusable Nova catalog.
+msgid ""
+msgstr ""
+"Project-Id-Version: nova-enterprise-demo\n"
+"Language: zh_Hans\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+# Django 6.1 models.fields.BLANK_CHOICE_LABEL; the project form renderer also
+# uses this ID for 5.2/6.0's literal dashed blank caption.
+msgid "- Select an option -"
+msgstr "请选择"
+
+# Actual ChangeList msgids in all three tested Django versions are positional.
+# They produce the requested <verbose_name>列表 without changing placeholders.
+#, python-format
+msgid "Select %s to change"
+msgstr "%s列表"
+
+#, python-format
+msgid "Select %s to view"
+msgstr "%s列表"
+
+# app_list.html (including the real app index)
+msgid "Add"
+msgstr "新增"
+
+# ModelAdmin add page title
+#, python-format
+msgid "Add %s"
+msgstr "新增%s"
+
+# change_list_object_tools.html and change_form.html breadcrumbs
+#, python-format
+msgid "Add %(name)s"
+msgstr "新增%(name)s"
+
+# Inline add link and related-object add link titles
+#, python-format
+msgid "Add another %(verbose_name)s"
+msgstr "新增%(verbose_name)s"
+
+#, python-format
+msgid "Add another %(model)s"
+msgstr "新增%(model)s"
+
+msgid "Log out"
+msgstr "退出登录"
+
+# Auth Group uses two independent gettext IDs, not one ngettext pair.
+msgid "group"
+msgstr "用户组"
+
+msgid "groups"
+msgstr "用户组"
+
+msgid "Show counts"
+msgstr "显示数量"
+
+msgid "Start typing to filter…"
+msgstr "搜索菜单…"
+
+msgctxt "Nova Admin"
+msgid "Site overview"
+msgstr "工作台"
+
+msgctxt "Nova Admin"
+msgid "Manage models and everyday work. Available content depends on your site permissions."
+msgstr "管理内容数据"
+
+# Demo project translations for the optional pagination example.
+
+msgctxt "Nova pagination"
+msgid "Pagination controls"
+msgstr "分页设置"
+
+msgctxt "Nova pagination"
+msgid "Show pages"
+msgstr "返回分页"
+
+msgctxt "Nova pagination"
+msgid "Rows per page"
+msgstr "每页"
+
+msgctxt "Nova pagination"
+msgid "rows"
+msgstr "条"
+
+msgctxt "Nova pagination"
+msgid "Apply"
+msgstr "应用"
+
+msgctxt "Nova pagination"
+msgid "Go to page"
+msgstr "跳至"
+
+msgctxt "Nova pagination"
+msgid "pages"
+msgstr "页"
+
+msgctxt "Nova pagination"
+msgid "Go"
+msgstr "跳转"
+

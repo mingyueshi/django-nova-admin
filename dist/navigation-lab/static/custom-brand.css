@@ -1,0 +1,10 @@
+/* Project example: seven token overrides, no component rewrite. */
+body.nova-admin {
+  --nova-brand-light: #0f766e;
+  --nova-brand-light-hover: #115e59;
+  --nova-brand-dark: #5eead4;
+  --nova-brand-dark-hover: #99f6e4;
+  --nova-density: .9;
+  --nova-spacing: .95;
+  --nova-radius: 10px;
+}

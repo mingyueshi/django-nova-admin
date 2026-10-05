@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nova-django-admin-theme"
+version = "0.6.0"
+description = "A reversible native Django Admin theme with permission-aware navigation"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["Django>=5.2.17,<6.2"]
+license = "MIT"
+classifiers = ["Framework :: Django :: 5.2", "Framework :: Django :: 6.0", "Framework :: Django :: 6.1", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Programming Language :: Python :: 3.14", "Development Status :: 3 - Alpha"]
+
+[project.optional-dependencies]
+captcha = ["django-simple-captcha==0.7.0", "Pillow==12.2.0"]
+security = ["django-simple-captcha==0.7.0", "Pillow==12.2.0", "django-axes==8.3.1"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+nova_admin = ["LICENSE-DJANGO.txt", "templates/admin/*.html", "templates/nova_admin/*.html", "static/nova_admin/*.css", "static/nova_admin/*.js", "locale/*/LC_MESSAGES/*.po", "locale/*/LC_MESSAGES/*.mo"]

@@ -1,0 +1,52 @@
+services:
+  db:
+    image: ${NOVA_POSTGRES_IMAGE:-postgres:17.11-bookworm}
+    environment:
+      POSTGRES_DB: nova_local
+      POSTGRES_USER: nova_local
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nova_local -d nova_local"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+  web:
+    build:
+      context: ../..
+      dockerfile: examples/compose/Dockerfile
+      args:
+        PYTHON_IMAGE: ${NOVA_PYTHON_IMAGE:-python:3.12.15-slim-bookworm}
+        WITH_CAPTCHA: ${NOVA_EXAMPLE_CAPTCHA:-0}
+    user: "${NOVA_LOCAL_UID:-1000}:${NOVA_LOCAL_GID:-1000}"
+    environment:
+      DJANGO_SETTINGS_MODULE: config.compose_settings
+      NOVA_EXAMPLE_CAPTCHA: ${NOVA_EXAMPLE_CAPTCHA:-0}
+      NOVA_DJANGO_SECRET_KEY_FILE: /run/secrets/django_secret_key
+      NOVA_POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - django_secret_key
+      - postgres_password
+    ports:
+      - "127.0.0.1:${NOVA_LOCAL_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/_health/', timeout=3).read()"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+secrets:
+  postgres_password:
+    file: ./.local/postgres_password
+  django_secret_key:
+    file: ./.local/django_secret_key
+volumes:
+  postgres_data:
+

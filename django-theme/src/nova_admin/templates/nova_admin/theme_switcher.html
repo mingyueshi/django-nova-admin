@@ -1,0 +1,13 @@
+{% load i18n %}
+<form class="nova-theme-switcher" method="post" action="{{ nova_admin_preference_url }}" aria-label="{% translate 'Admin appearance' context 'Nova Admin' %}">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <label for="nova-admin-mode">{% translate 'Appearance' context 'Nova Admin' %}</label>
+  <select id="nova-admin-mode" name="mode">
+    <option value="dark"{% if nova_admin_mode == 'dark' %} selected{% endif %}>{% translate 'Nova dark' context 'Nova Admin' %}</option>
+    <option value="light"{% if nova_admin_mode == 'light' %} selected{% endif %}>{% translate 'Nova light' context 'Nova Admin' %}</option>
+    <option value="auto"{% if nova_admin_mode == 'auto' %} selected{% endif %}>{% translate 'Nova auto' context 'Nova Admin' %}</option>
+    <option value="native"{% if nova_admin_mode == 'native' %} selected{% endif %}>{% translate 'Django native' context 'Nova Admin' %}</option>
+  </select>
+  <button type="submit">{% translate 'Apply' context 'Nova Admin' %}</button>
+</form>

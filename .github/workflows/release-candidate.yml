@@ -1,0 +1,90 @@
+name: Nova release candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: nova-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  request:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12.15'
+      - name: Require deliberate opt-in and the actual version tag
+        env:
+          ENABLED: ${{ vars.NOVA_ENABLE_RELEASE_CANDIDATE }}
+        run: |
+          python - <<'PY'
+          import os, tomllib
+          from pathlib import Path
+          if os.environ.get('ENABLED') != 'true':
+              raise SystemExit('Candidate workflow is disabled; first configure the protected nova-candidate environment, then opt in. See CI_CD.md.')
+          version = tomllib.loads(Path('django-theme/pyproject.toml').read_text())['project']['version']
+          if os.environ['GITHUB_REF'] != 'refs/tags/theme-v' + version:
+              raise SystemExit('Dispatch on the actual theme-v<VERSION> tag; an input cannot substitute for the protected ref.')
+          PY
+
+  validate:
+    needs: request
+    uses: ./.github/workflows/ci.yml
+    with:
+      full: true
+    # No secrets inheritance, publishing credentials, or OIDC permission.
+
+  candidate:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: nova-candidate
+      deployment: false
+    # Required reviewers/allowed tag rules must be configured by the repository
+    # owner before opt-in. Naming an environment does not configure protection.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12.15'
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.validate.outputs.build_artifact }}
+          path: ${{ runner.temp }}/candidate
+          digest-mismatch: error
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: nova-report-*
+          path: ${{ runner.temp }}/reports
+          digest-mismatch: error
+      - name: Verify the exact tested artifacts after approval
+        run: |
+          python scripts/ci_artifacts.py verify --directory "$RUNNER_TEMP/candidate" --commit "$GITHUB_SHA"
+          wheel=("$RUNNER_TEMP/candidate/"*.whl)
+          python scripts/ci_support.py verify-reports --reports "$RUNNER_TEMP/reports" --scope full --commit "$GITHUB_SHA" --wheel "${wheel[0]}" > "$RUNNER_TEMP/validation.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nova-approved-candidate-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/candidate/
+            ${{ runner.temp }}/validation.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Summarize the handoff boundary
+        run: |
+          printf 'Candidate artifacts verified for commit %s. No package registry or production deployment was performed.\n' "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"

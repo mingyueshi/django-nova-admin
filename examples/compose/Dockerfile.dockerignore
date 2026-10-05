@@ -1,0 +1,20 @@
+# This Dockerfile uses the repository root as context. Allow only its inputs.
+**
+!django-theme/
+!django-theme/**
+!examples/
+!examples/compose/
+!examples/compose/**
+**/.git
+**/.env
+**/.env.*
+**/.local
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/*.sqlite3
+**/*.egg-info
+django-theme/build
+django-theme/dist
+django-theme/demo/staticfiles
+

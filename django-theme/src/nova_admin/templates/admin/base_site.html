@@ -1,0 +1,13 @@
+{% extends "admin/base_site.html" %}
+
+{% block branding %}
+  {% if nova_admin_active %}
+    {% with nova_native_branding=block.super %}
+      {% block nova_branding %}
+        {% if nova_admin_branding.logo_url %}{% include "nova_admin/brand_header.html" %}{% else %}{{ nova_native_branding }}{% endif %}
+      {% endblock %}
+    {% endwith %}
+  {% else %}
+    {{ block.super }}
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,11 @@
+/* Optional project density preset; shared by light, dark and automatic mode.
+   Loaded last only with PROJECT_ADMIN_COMPACT=True and Nova active. */
+body.nova-admin {
+  --nova-cell-padding: calc(7px * var(--nova-density, 1)) calc(12px * var(--nova-spacing, 1));
+  --nova-form-row-padding: calc(10px * var(--nova-density, 1)) calc(12px * var(--nova-spacing, 1));
+  --nova-control-padding-block: calc(5px * var(--nova-density, 1));
+  --nova-control-padding-inline: calc(8px * var(--nova-spacing, 1));
+  --nova-control-min-height: calc(32px * var(--nova-density, 1));
+  --nova-action-padding: calc(8px * var(--nova-density, 1)) calc(12px * var(--nova-spacing, 1));
+  --nova-section-padding: calc(16px * var(--nova-density, 1)) calc(20px * var(--nova-spacing, 1));
+}

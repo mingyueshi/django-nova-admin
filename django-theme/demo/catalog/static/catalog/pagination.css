@@ -1,0 +1,48 @@
+/* Host-project opt-in controls, including Django's native presentation. */
+.nova-pagination-controls,
+.nova-pagination-size,
+.nova-pagination-jump {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.nova-pagination-controls {
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-top: 1px solid var(--hairline-color, #ddd);
+  color: var(--body-quiet-color, #555);
+  font-size: 12px;
+}
+.nova-pagination-controls select,
+.nova-pagination-controls input,
+.nova-pagination-controls button {
+  box-sizing: border-box;
+  min-height: 30px;
+  margin: 0;
+  border: 1px solid var(--border-color, #ccc);
+  border-radius: 6px;
+  background: var(--body-bg, #fff);
+  color: var(--body-fg, #333);
+  font: inherit;
+}
+.nova-pagination-controls select,
+.nova-pagination-controls input { padding: 4px 8px; }
+.nova-pagination-controls input { width: 70px; }
+.nova-pagination-controls button { padding: 4px 10px; cursor: pointer; }
+.nova-pagination-controls :is(select, input, button, a):focus-visible {
+  outline: 2px solid var(--link-fg, #417690);
+  outline-offset: 2px;
+}
+@media (max-width: 767px) {
+  .nova-pagination-controls { gap: 12px; }
+  .nova-pagination-controls :is(select, input, button) {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .nova-pagination-controls > a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}

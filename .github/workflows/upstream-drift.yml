@@ -1,0 +1,79 @@
+name: Nova upstream warning
+
+on:
+  schedule:
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: nova-upstream-warning
+  cancel-in-progress: false
+
+jobs:
+  django-main:
+    name: Django main experimental warning
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Fetch official Django main for this observation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: django/django
+          ref: main
+          path: .upstream-django
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14.8'
+      - name: Record exact upstream revision
+        run: |
+          mkdir "$RUNNER_TEMP/upstream-observation"
+          git -C .upstream-django rev-parse HEAD > "$RUNNER_TEMP/upstream-observation/revision.txt"
+      - name: Compare reviewed templates and inherited block contracts
+        id: drift
+        continue-on-error: true
+        run: |
+          revision="$(cat "$RUNNER_TEMP/upstream-observation/revision.txt")"
+          python scripts/template_drift.py --django-root .upstream-django/django --label "main@$revision" --output "$RUNNER_TEMP/upstream-observation/templates"
+      - name: Install fixed core test helpers
+        run: |
+          python -m pip install --index-url https://pypi.org/simple --only-binary=:all: --no-deps asgiref==3.12.1 sqlparse==0.6.0 beautifulsoup4==4.15.0 soupsieve==2.10 typing_extensions==4.16.0
+      - name: Run experimental source regressions against main
+        id: smoke
+        continue-on-error: true
+        working-directory: django-theme
+        env:
+          PYTHONPATH: ${{ github.workspace }}/django-theme:${{ github.workspace }}/django-theme/src:${{ github.workspace }}/django-theme/demo:${{ github.workspace }}/.upstream-django
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python demo/manage.py test tests --noinput > "$RUNNER_TEMP/upstream-observation/tests.log" 2>&1
+          grep -Eq '^Ran [1-9][0-9]* tests? in' "$RUNNER_TEMP/upstream-observation/tests.log"
+          cat "$RUNNER_TEMP/upstream-observation/tests.log"
+      - name: Preserve warning evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nova-upstream-warning-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/upstream-observation/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Surface a warning without changing release support claims
+        if: always()
+        env:
+          DRIFT: ${{ steps.drift.outcome }}
+          SMOKE: ${{ steps.smoke.outcome }}
+        run: |
+          if [ "$DRIFT" != success ] || [ "$SMOKE" != success ]; then
+            echo '::error::Upstream main needs review. Inspect the attached revision, diffs, and regression log; this is not the supported release matrix.'
+            exit 1
+          fi

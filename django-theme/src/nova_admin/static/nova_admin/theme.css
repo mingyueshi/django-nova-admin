@@ -1,0 +1,984 @@
+/* Nova 0.4 — opt-in native Django Admin theme. ModelAdmin workflows remain native. */
+body.nova-admin {
+  --nova-radius: 12px;
+  /* Project density overrides belong on body.nova-admin after this sheet. */
+  --nova-cell-padding: 13px 16px;
+  --nova-row-line-height: 1.5;
+  --nova-form-row-padding: 18px 16px;
+  --nova-control-padding-block: 9px;
+  --nova-control-padding-inline: 11px;
+  --nova-control-min-height: 40px;
+  --nova-action-padding: 11px 17px;
+  --nova-section-padding: 14px 16px;
+  --nova-touch-min: 0px;
+  --nova-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Source Han Sans SC", "HarmonyOS Sans SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--nova-font);
+  font-size: 14px;
+  line-height: 1.6;
+  background: var(--body-bg);
+  color: var(--body-fg);
+}
+body.nova-admin.nova-mode-dark {
+  color-scheme: dark;
+  --body-bg: #0b1020;
+  --body-fg: #e8edf7;
+  --body-quiet-color: #9ba8c2;
+  --body-medium-color: #c0cade;
+  --primary-fg: #0b1020;
+  --message-debug-bg: #232e43;
+  --message-info-bg: #153b50;
+  --body-loud-color: #f5f7ff;
+  --primary: #a998ff;
+  --secondary: #131a2a;
+  --accent: #a998ff;
+  --header-bg: #131a2a;
+  --header-color: #e8edf7;
+  --header-branding-color: #f5f7ff;
+  --header-link-color: #d1c7ff;
+  --breadcrumbs-bg: #0b1020;
+  --breadcrumbs-fg: #9ba8c2;
+  --breadcrumbs-link-fg: #d1c7ff;
+  --link-fg: #b9aaff;
+  --link-hover-color: #dfd7ff;
+  --link-selected-fg: #d1c7ff;
+  --hairline-color: #26324a;
+  --border-color: #34415b;
+  --darkened-bg: #101729;
+  --selected-bg: #24304a;
+  --selected-row: #25213d;
+  --button-fg: #0b1020;
+  --button-bg: #a998ff;
+  --button-hover-bg: #bdb0ff;
+  --default-button-bg: #55d7a7;
+  --default-button-hover-bg: #7ee7bd;
+  --close-button-bg: #34415b;
+  --close-button-hover-bg: #465671;
+  --delete-button-bg: #ad304c;
+  --delete-button-hover-bg: #c13a56;
+  --error-fg: #ff91a6;
+  --message-success-bg: #123b30;
+  --message-warning-bg: #493816;
+  --message-error-bg: #48202d;
+  --object-tools-fg: #e8edf7;
+  --object-tools-bg: #34415b;
+  --object-tools-hover-bg: #465671;
+  --nova-panel: #131a2a;
+  --nova-hover: #192339;
+  --nova-success-fg: #79dfb3;
+  --nova-success-bg: #143d32;
+  --nova-neutral-bg: #232e43;
+  --nova-switch-track: #53647e;
+  --nova-switch-knob: #ffffff;
+}
+/* Auto follows only the OS preference. The server's explicit/session choice
+   owns the body class; Django's independent html[data-theme] and localStorage
+   remain untouched, including when the user returns to native appearance. */
+body.nova-admin.nova-mode-auto,
+body.nova-admin.nova-mode-light {
+  color-scheme: light;
+  --body-bg: #f4f6fa;
+  --body-fg: #253249;
+  --body-quiet-color: #5a667c;
+  --body-medium-color: #44516a;
+  --primary-fg: #ffffff;
+  --message-debug-bg: #eef1f7;
+  --message-info-bg: #e0f0fa;
+  --body-loud-color: #172137;
+  --primary: #6e59ce;
+  --secondary: #ffffff;
+  --accent: #6e59ce;
+  --header-bg: #ffffff;
+  --header-color: #253249;
+  --header-branding-color: #172137;
+  --header-link-color: #604bbd;
+  --breadcrumbs-bg: #f4f6fa;
+  --breadcrumbs-fg: #5a667c;
+  --breadcrumbs-link-fg: #604bbd;
+  --link-fg: #604bbd;
+  --link-hover-color: #493594;
+  --link-selected-fg: #493594;
+  --hairline-color: #e4e8f1;
+  --border-color: #ccd3e1;
+  --darkened-bg: #eef1f7;
+  --selected-bg: #e9e4fc;
+  --selected-row: #eee9ff;
+  --button-fg: #ffffff;
+  --button-bg: #6e59ce;
+  --button-hover-bg: #5943b5;
+  --default-button-bg: #237858;
+  --default-button-hover-bg: #1b6248;
+  --close-button-bg: #68758c;
+  --close-button-hover-bg: #546176;
+  --delete-button-bg: #b32d45;
+  --delete-button-hover-bg: #97263b;
+  --error-fg: #b1223c;
+  --message-success-bg: #e1f4ec;
+  --message-warning-bg: #fff1cc;
+  --message-error-bg: #fce6eb;
+  --object-tools-fg: #ffffff;
+  --object-tools-bg: #68758c;
+  --object-tools-hover-bg: #546176;
+  --nova-panel: #ffffff;
+  --nova-hover: #f6f4fd;
+  --nova-success-fg: #196547;
+  --nova-success-bg: #e0f3e9;
+  --nova-neutral-bg: #edf0f6;
+  --nova-switch-track: #7b879d;
+  --nova-switch-knob: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  body.nova-admin.nova-mode-auto {
+    color-scheme: dark;
+    --body-bg: #0b1020;
+    --body-fg: #e8edf7;
+    --body-quiet-color: #9ba8c2;
+    --body-medium-color: #c0cade;
+    --primary-fg: #0b1020;
+    --message-debug-bg: #232e43;
+    --message-info-bg: #153b50;
+    --body-loud-color: #f5f7ff;
+    --primary: #a998ff;
+    --secondary: #131a2a;
+    --accent: #a998ff;
+    --header-bg: #131a2a;
+    --header-color: #e8edf7;
+    --header-branding-color: #f5f7ff;
+    --header-link-color: #d1c7ff;
+    --breadcrumbs-bg: #0b1020;
+    --breadcrumbs-fg: #9ba8c2;
+    --breadcrumbs-link-fg: #d1c7ff;
+    --link-fg: #b9aaff;
+    --link-hover-color: #dfd7ff;
+    --link-selected-fg: #d1c7ff;
+    --hairline-color: #26324a;
+    --border-color: #34415b;
+    --darkened-bg: #101729;
+    --selected-bg: #24304a;
+    --selected-row: #25213d;
+    --button-fg: #0b1020;
+    --button-bg: #a998ff;
+    --button-hover-bg: #bdb0ff;
+    --default-button-bg: #55d7a7;
+    --default-button-hover-bg: #7ee7bd;
+    --close-button-bg: #34415b;
+    --close-button-hover-bg: #465671;
+    --delete-button-bg: #ad304c;
+    --delete-button-hover-bg: #c13a56;
+    --error-fg: #ff91a6;
+    --message-success-bg: #123b30;
+    --message-warning-bg: #493816;
+    --message-error-bg: #48202d;
+    --object-tools-fg: #e8edf7;
+    --object-tools-bg: #34415b;
+    --object-tools-hover-bg: #465671;
+    --nova-panel: #131a2a;
+    --nova-hover: #192339;
+    --nova-success-fg: #79dfb3;
+    --nova-success-bg: #143d32;
+    --nova-neutral-bg: #232e43;
+    --nova-switch-track: #53647e;
+    --nova-switch-knob: #ffffff;
+  }
+}
+body.nova-admin #header {
+  padding: calc(20px * var(--nova-spacing, 1)) calc(32px * var(--nova-spacing, 1));
+  border-bottom: 1px solid var(--hairline-color);
+  gap: 16px 24px;
+  flex-wrap: wrap;
+}
+body.nova-admin #site-name { font: 700 21px/1.4 var(--nova-font); letter-spacing: -.02em; }
+body.nova-admin #user-tools { font-size: 12px; text-transform: none; letter-spacing: 0; }
+body.nova-admin #user-tools a { border-bottom: 0; }
+body.nova-admin .theme-toggle { display: none; } /* Server-side choices replace the native toggle only while Nova is active. */
+body.nova-admin .nova-theme-switcher { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 12px; }
+body.nova-admin .nova-theme-switcher select,
+body.nova-admin .nova-theme-switcher button { min-height: 32px; padding: 4px 9px; margin: 0; font: inherit; border: 1px solid var(--border-color); border-radius: var(--nova-control-radius, 7px); background: var(--body-bg); color: var(--body-fg); }
+body.nova-admin .nova-theme-switcher button { cursor: pointer; color: var(--link-fg); }
+body.nova-admin .breadcrumbs { padding: calc(16px * var(--nova-spacing, 1)) calc(32px * var(--nova-spacing, 1)); font-size: 12px; border-bottom: 1px solid var(--hairline-color); }
+body.nova-admin #content { padding: calc(30px * var(--nova-spacing, 1)) calc(32px * var(--nova-spacing, 1)); }
+body.nova-admin #content h1 { color: var(--body-loud-color); font-size: 25px; font-weight: 650; letter-spacing: -.03em; margin-bottom: 24px; }
+body.nova-admin .module,
+body.nova-admin #changelist-filter,
+body.nova-admin #content-related {
+  background: var(--nova-panel);
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--nova-radius);
+  /* Do not clip popup widgets, calendar overlays, or keyboard focus rings. */
+}
+body.nova-admin .module h2,
+body.nova-admin .module caption,
+body.nova-admin .inline-group h2 {
+  background: var(--nova-panel);
+  color: var(--body-loud-color);
+  border-bottom: 1px solid var(--hairline-color);
+  border-radius: var(--nova-radius) var(--nova-radius) 0 0;
+  padding: var(--nova-section-padding);
+  font-size: 13px;
+  font-weight: 650;
+}
+body.nova-admin .module caption a { color: var(--body-loud-color); }
+body.nova-admin th, body.nova-admin td { padding: var(--nova-cell-padding); line-height: var(--nova-row-line-height); font-size: 13px; border-bottom-color: var(--hairline-color); }
+body.nova-admin thead th { background: var(--darkened-bg); color: var(--body-quiet-color); }
+body.nova-admin tbody tr { background: var(--nova-panel); }
+body.nova-admin tbody tr:hover { background: var(--nova-hover); }
+body.nova-admin tbody tr.selected { background: var(--selected-row); }
+body.nova-admin #changelist .actions,
+body.nova-admin #changelist #toolbar,
+body.nova-admin #changelist .paginator { background: var(--nova-panel); color: var(--body-fg); padding: var(--nova-section-padding); border-color: var(--hairline-color); }
+body.nova-admin #changelist-filter h2 { background: var(--nova-panel); color: var(--body-loud-color); border-bottom: 1px solid var(--hairline-color); border-radius: var(--nova-radius) var(--nova-radius) 0 0; }
+body.nova-admin #nav-sidebar { background: var(--body-bg); border-color: var(--hairline-color); }
+body.nova-admin #nav-sidebar .module { border: 0; border-radius: 0; }
+body.nova-admin #nav-sidebar th, body.nova-admin #nav-sidebar td { padding: 11px 14px; }
+body.nova-admin #nav-sidebar .current-app .section { color: var(--link-fg); }
+body.nova-admin #toggle-nav-sidebar { background: var(--nova-panel); border-color: var(--hairline-color); }
+body.nova-admin input, body.nova-admin textarea, body.nova-admin select { font-family: var(--nova-font); }
+body.nova-admin input[type=text], body.nova-admin input[type=password], body.nova-admin input[type=email],
+body.nova-admin input[type=number], body.nova-admin input[type=url], body.nova-admin input[type=search],
+body.nova-admin textarea, body.nova-admin select { background: var(--body-bg); border: 1px solid var(--border-color); border-radius: var(--nova-control-radius, 7px); color: var(--body-fg); padding: var(--nova-control-padding-block) var(--nova-control-padding-inline); }
+body.nova-admin :is(input, select, textarea, button, a):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+body.nova-admin .button, body.nova-admin input[type=submit], body.nova-admin input[type=button], body.nova-admin .submit-row input { border-radius: var(--nova-action-radius, 8px); padding: var(--nova-action-padding); font-weight: 600; }
+body.nova-admin .submit-row { background: var(--nova-panel); border-color: var(--hairline-color); border-radius: var(--nova-radius); padding: 18px; }
+body.nova-admin .form-row { padding: var(--nova-form-row-padding); border-color: var(--hairline-color); }
+body.nova-admin .object-tools a { border-radius: var(--nova-action-radius, 8px); padding: 10px 14px; font-size: 12px; }
+body.nova-admin ul.messagelist li { margin-bottom: 12px; border-radius: var(--nova-action-radius, 8px); }
+body.nova-admin.login #container { border: 1px solid var(--hairline-color); border-radius: 16px; background: var(--nova-panel); }
+body.nova-admin.login #header { justify-content: center; }
+body.nova-admin.login #content { padding: 28px; }
+@media (max-width: 767px) {
+  body.nova-admin #header { padding: 18px 20px; }
+  body.nova-admin #content { padding: 20px 16px; }
+  body.nova-admin .breadcrumbs { padding: 12px 20px; }
+  body.nova-admin .nova-theme-switcher { flex-wrap: wrap; justify-content: center; width: 100%; }
+  /* Cell density stays project-configurable on small screens too. */
+}
+@media (prefers-reduced-motion: reduce) {
+  body.nova-admin *, body.nova-admin *::before, body.nova-admin *::after { scroll-behavior: auto; transition: none; }
+}
+
+/* Hierarchy and native dashboard. All rules remain scoped to the opt-in body. */
+body.nova-admin { --nova-shadow: 0 8px 28px #0508160a; }
+body.nova-admin #header { min-height: 64px; box-sizing: border-box; }
+body.nova-admin #branding { margin-inline-end: auto; }
+body.nova-admin #site-name a { display: inline-flex; align-items: center; gap: 10px; }
+body.nova-admin #site-name a::before { content: 'N'; display: grid; place-items: center; width: 31px; height: 31px; border-radius: var(--nova-login-radius, 9px); background: var(--button-bg); color: var(--button-fg); font-size: 17px; }
+body.nova-admin .breadcrumbs { margin: 0; font-size: 12px; line-height: 1.6; }
+body.nova-admin ol.breadcrumbs { list-style: none; }
+body.nova-admin #content { max-width: none; box-sizing: border-box; }
+body.nova-admin #content h1 { font-size: clamp(23px, 2.3vw, 30px); line-height: 1.35; margin-block: 0 22px; }
+body.nova-admin #content h2:not(.fieldset-heading):not(.inline-heading) { font-weight: 600; }
+body.nova-admin .nova-page-description { color: var(--body-quiet-color); margin: -8px 0 28px; font-size: 13px; }
+body.nova-admin .module { margin-bottom: 24px; box-shadow: var(--nova-shadow); }
+body.nova-admin.dashboard #content-main { width: calc(100% - 285px); }
+body.nova-admin.dashboard .module table { width: 100%; }
+body.nova-admin.dashboard .module th { width: auto; }
+body.nova-admin.dashboard .module td { white-space: nowrap; }
+body.nova-admin #content-related { width: 260px; margin-right: -285px; }
+body.nova-admin #content-related .module { border: 0; box-shadow: none; margin: 0; }
+body.nova-admin #content-related h3 { margin: 18px 16px 8px; color: var(--body-quiet-color); font-size: 12px; }
+body.nova-admin #content-related p { padding: 0 16px 10px; }
+body.nova-admin .actionlist { padding: 0 16px 12px; }
+body.nova-admin .actionlist li { padding-block: 10px; border-bottom: 1px solid var(--hairline-color); }
+body.nova-admin .actionlist li:last-child { border: 0; }
+
+/* Two-level application → model navigation. Existing Django navigation JS owns
+   the toggle and search. <details> remains keyboard-usable without custom JS. */
+body.nova-admin #nav-sidebar.nova-navigation { background: var(--nova-panel); padding: 22px 12px; box-sizing: border-box; }
+body.nova-admin .nova-nav-heading { display: flex; align-items: center; justify-content: space-between; padding: 2px 10px 14px; color: var(--body-quiet-color); font-size: 12px; }
+body.nova-admin .nova-nav-heading span { font-size: 8px; letter-spacing: .1em; }
+body.nova-admin .nova-nav-home { display: flex; justify-content: space-between; margin-bottom: 16px; padding: 10px 12px; border-radius: var(--nova-action-radius, 8px); background: var(--darkened-bg); font-weight: 600; color: var(--body-fg); }
+body.nova-admin #nav-filter { width: 100%; min-width: 0; margin: 0 0 18px; padding: var(--nova-control-padding-block) var(--nova-control-padding-inline); font-size: 12px; }
+body.nova-admin .nova-nav-group { margin: 0 0 12px; }
+body.nova-admin .nova-nav-group > summary { display: flex; align-items: center; gap: 8px; padding: 9px 10px; cursor: pointer; font-size: 12px; font-weight: 650; color: var(--body-quiet-color); list-style: none; border-radius: var(--nova-control-radius, 7px); }
+body.nova-admin .nova-nav-group > summary::-webkit-details-marker { display: none; }
+body.nova-admin .nova-nav-group > summary::before { content: '›'; font-size: 16px; line-height: 1; transform: rotate(0); }
+body.nova-admin .nova-nav-group[open] > summary::before { transform: rotate(90deg); }
+body.nova-admin .nova-nav-group > summary:hover { color: var(--body-fg); background: var(--nova-hover); }
+body.nova-admin .nova-nav-count { margin-inline-start: auto; font-size: 10px; font-weight: 400; }
+body.nova-admin .nova-nav-group table { border-collapse: separate; border-spacing: 0 3px; }
+body.nova-admin #nav-sidebar .nova-nav-group th,
+body.nova-admin #nav-sidebar .nova-nav-group td { border: 0; padding: 0; font-size: 13px; }
+body.nova-admin #nav-sidebar .nova-nav-group th { padding-inline-start: 26px; border-radius: var(--nova-small-radius, 6px) 0 0 var(--nova-small-radius, 6px); font-weight: 400; }
+body.nova-admin #nav-sidebar .nova-nav-group td { padding-inline-end: 8px; border-radius: 0 var(--nova-small-radius, 6px) var(--nova-small-radius, 6px) 0; }
+body.nova-admin .nova-nav-group th a,
+body.nova-admin .nova-nav-group th span { display: block; padding: 9px 0; color: var(--body-fg); }
+body.nova-admin .nova-nav-group .current-model th a { color: var(--link-selected-fg); font-weight: 650; }
+body.nova-admin .nova-nav-add { display: inline-grid; place-items: center; width: 23px; height: 23px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 16px; color: var(--body-quiet-color); }
+body.nova-admin .nova-nav-empty { padding: 12px; color: var(--body-quiet-color); }
+/* One permission-filtered menu serves both layouts. Without JS the mobile menu
+   stays visible; the disclosure button is enabled only after its handler exists. */
+body.nova-admin .nova-mobile-nav-toggle { display: none; }
+@media (max-width: 767px) {
+  body.nova-admin .main:has(> #nav-sidebar.nova-navigation) { flex-direction: column; }
+  body.nova-admin .nova-mobile-nav-toggle:not([hidden]) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 0 0 auto;
+    min-height: 44px;
+    width: 100%;
+    padding: 12px 20px;
+    border: 0;
+    border-bottom: 1px solid var(--hairline-color);
+    background: var(--nova-panel);
+    color: var(--body-fg);
+    font: 600 14px/1.4 var(--nova-font);
+    text-align: start;
+    cursor: pointer;
+  }
+  body.nova-admin .nova-mobile-nav-toggle::after { content: '⌄'; }
+  body.nova-admin .nova-mobile-nav-toggle[aria-expanded=true]::after { transform: rotate(180deg); }
+  body.nova-admin .main > #nav-sidebar.nova-navigation {
+    display: block;
+    position: static;
+    visibility: visible;
+    flex: 0 0 auto;
+    width: 100%;
+    max-height: none;
+    margin: 0;
+    inset: auto;
+    border: 0;
+    border-bottom: 1px solid var(--hairline-color);
+    overflow: visible;
+  }
+  body.nova-admin .main > #nav-sidebar.nova-navigation[hidden] { display: none; }
+}
+
+/* Opt-in numeric content, plus the demo's conventional field names.
+   Never infer currency or modify underlying values / ordering. */
+body.nova-admin #result_list :is(.field-price, .field-stock, .field-sku, .nova-number) {
+  font-variant-numeric: tabular-nums;
+}
+body.nova-admin #result_list :is(td.field-price, td.field-stock, td.nova-number) {
+  text-align: end;
+}
+body.nova-admin #toggle-nav-sidebar { flex-basis: 22px; font-size: 18px; }
+
+/* Changelist: preserve sortable headers, checkboxes, filters, actions, pagination. */
+body.nova-admin #changelist { gap: 24px; background: transparent; border: 0; box-shadow: none; }
+body.nova-admin #changelist .changelist-form-container { min-width: 0; }
+body.nova-admin #changelist-form { border: 1px solid var(--hairline-color); border-radius: var(--nova-radius); background: var(--nova-panel); }
+body.nova-admin #changelist .results { width: 100%; border-radius: 10px 10px 0 0; }
+body.nova-admin #changelist #toolbar { padding: 0 0 18px; background: transparent; border: 0; }
+body.nova-admin #toolbar form { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+body.nova-admin #toolbar form input[type=submit] { min-height: max(var(--nova-control-min-height), var(--nova-touch-min)); padding: var(--nova-action-padding); background: var(--button-bg); border: 1px solid var(--button-bg); color: var(--button-fg); }
+body.nova-admin #toolbar #searchbar { min-height: max(var(--nova-control-min-height), var(--nova-touch-min)); padding: var(--nova-control-padding-block) var(--nova-control-padding-inline); min-width: 240px; box-sizing: border-box; }
+body.nova-admin #changelist .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; border-radius: var(--nova-radius) var(--nova-radius) 0 0; font-size: 12px; }
+body.nova-admin #changelist .actions select { min-height: max(var(--nova-control-min-height), var(--nova-touch-min)); padding-block: var(--nova-control-padding-block); padding-inline: var(--nova-control-padding-inline) 38px; }
+body.nova-admin #changelist .actions .button { padding: var(--nova-action-padding); min-height: max(var(--nova-control-min-height), var(--nova-touch-min)); border-radius: var(--nova-control-radius, 7px); background: var(--darkened-bg); border: 1px solid var(--border-color); color: var(--body-fg); }
+body.nova-admin #changelist .actions .action-counter { margin-inline-start: auto; color: var(--body-quiet-color); }
+body.nova-admin #result_list { width: 100%; }
+body.nova-admin #result_list thead th { padding: 0; font-size: 11px; font-weight: 600; }
+body.nova-admin #result_list thead th .text a,
+body.nova-admin #result_list thead th .text span { padding: var(--nova-cell-padding); }
+body.nova-admin #result_list tbody th { font-weight: 550; }
+body.nova-admin #result_list tbody th a { color: var(--body-loud-color); }
+body.nova-admin #result_list tbody td { color: var(--body-quiet-color); }
+body.nova-admin #result_list input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
+body.nova-admin #changelist-filter { flex: 0 0 220px; margin: 0; }
+body.nova-admin #changelist-filter h2 { padding: var(--nova-section-padding); font-size: 13px; }
+body.nova-admin #changelist-filter h3,
+body.nova-admin #changelist-filter details > summary { padding: 14px 18px 8px; font-size: 12px; color: var(--body-quiet-color); }
+body.nova-admin #changelist-filter ul { padding: 0 14px 16px; margin: 0; }
+body.nova-admin #changelist-filter li { margin: 3px 0; padding: 6px 10px; border-radius: var(--nova-small-radius, 6px); list-style: none; }
+body.nova-admin #changelist-filter li.selected { border: 0; background: var(--selected-bg); font-weight: 600; }
+body.nova-admin #changelist .paginator { border-radius: 0 0 var(--nova-radius) var(--nova-radius); font-size: 12px; margin: 0; border-top: 1px solid var(--hairline-color); }
+body.nova-admin .paginator a, body.nova-admin .paginator .this-page { display: inline-block; padding: 6px 10px; border-radius: var(--nova-small-radius, 6px); margin-inline-end: 3px; }
+body.nova-admin .paginator a:link, body.nova-admin .paginator a:visited { color: var(--body-fg); background: var(--darkened-bg); }
+body.nova-admin .paginator .this-page { background: var(--selected-bg); color: var(--link-selected-fg); font-weight: 650; }
+
+/* Native form wrappers differ in 6.1. Only visual properties below; no layout
+   overrides of flex-container, label ordering, fieldsets, or native ARIA. */
+body.nova-admin .change-form .module { margin-bottom: 22px; }
+body.nova-admin .form-row { overflow: visible; }
+body.nova-admin .aligned label,
+body.nova-admin .aligned legend { color: var(--body-fg); font-size: 13px; }
+body.nova-admin .aligned label.required,
+body.nova-admin .aligned legend.required { font-weight: 650; }
+body.nova-admin .aligned .readonly { color: var(--body-quiet-color); padding-block: 8px; }
+body.nova-admin .help, body.nova-admin p.help, body.nova-admin .help a { color: var(--body-quiet-color); font-size: 12px; }
+body.nova-admin :is(input,textarea,select):disabled { opacity: .65; cursor: not-allowed; }
+body.nova-admin .vTextField, body.nova-admin .vURLField { max-width: 100%; box-sizing: border-box; }
+body.nova-admin .vLargeTextField { max-width: 100%; box-sizing: border-box; }
+body.nova-admin fieldset .fieldset-heading,
+body.nova-admin fieldset .inline-heading,
+body.nova-admin :not(.inline-related) .collapse summary { background: var(--nova-panel); color: var(--body-loud-color); border: 0; border-bottom: 1px solid var(--hairline-color); border-radius: var(--nova-radius) var(--nova-radius) 0 0; padding: var(--nova-section-padding); font-size: 14px; font-weight: 650; }
+body.nova-admin :not(.inline-related) .collapse summary .fieldset-heading { display: inline; padding: 0; border: 0; }
+body.nova-admin .related-widget-wrapper { max-width: 100%; }
+body.nova-admin .related-widget-wrapper-link { display: inline-flex; align-items: center; justify-content: center; padding: 6px; margin-inline-start: 4px; background: var(--darkened-bg); border: 1px solid var(--hairline-color); border-radius: var(--nova-small-radius, 6px); }
+body.nova-admin .related-widget-wrapper-link img { vertical-align: middle; }
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--single,
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--multiple { min-height: 39px; border: 1px solid var(--border-color); border-radius: var(--nova-control-radius, 7px); background: var(--body-bg); }
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--single .select2-selection__rendered { color: var(--body-fg); line-height: 37px; }
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--single .select2-selection__arrow { height: 37px; }
+body.nova-admin .select2-container--admin-autocomplete .select2-dropdown { border-color: var(--border-color); background: var(--nova-panel); color: var(--body-fg); border-radius: var(--nova-control-radius, 7px); box-shadow: var(--nova-shadow); }
+body.nova-admin .select2-container--admin-autocomplete .select2-results__option--highlighted[aria-selected] { background: var(--selected-bg); color: var(--link-selected-fg); }
+body.nova-admin .select2-container--admin-autocomplete .select2-search--dropdown .select2-search__field { border-color: var(--border-color); }
+body.nova-admin .selector { max-width: 100%; }
+body.nova-admin .selector :is(.selector-available,.selector-chosen) { max-width: 100%; }
+body.nova-admin .selector :is(.selector-available,.selector-chosen) h2 { background: var(--darkened-bg); border: 1px solid var(--border-color); font-size: 12px; border-radius: var(--nova-action-radius, 8px) var(--nova-action-radius, 8px) 0 0; }
+body.nova-admin .selector .selector-filter { background: var(--nova-panel); border-color: var(--border-color); padding: 9px; }
+body.nova-admin .selector .selector-filter input { max-width: 100%; box-sizing: border-box; }
+body.nova-admin .selector select { border-radius: 0 0 var(--nova-action-radius, 8px) var(--nova-action-radius, 8px); }
+body.nova-admin .selector ul.selector-chooser { background: var(--darkened-bg); border: 1px solid var(--hairline-color); }
+body.nova-admin .inline-group { border: 0; background: transparent; }
+body.nova-admin .inline-group .tabular td.original p { color: var(--body-quiet-color); }
+body.nova-admin .inline-group .tabular tr.add-row td { background: var(--darkened-bg); padding: var(--nova-section-padding); }
+body.nova-admin .inline-group .tabular .wrapper { overflow-x: auto; }
+body.nova-admin .inline-group .tabular input:not([type=hidden]):not([type=checkbox]) { min-width: 100px; max-width: 100%; }
+body.nova-admin .inline-related h3 { background: var(--darkened-bg); color: var(--body-fg); padding: var(--nova-section-padding); border-color: var(--hairline-color); }
+body.nova-admin .submit-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: var(--nova-shadow); }
+body.nova-admin .submit-row input { margin: 0; }
+body.nova-admin .submit-row a.deletelink { padding: var(--nova-action-padding); border-radius: var(--nova-action-radius, 8px); height: auto; }
+body.nova-admin .submit-row p.deletelink-box { margin: 0; margin-inline-start: auto; }
+body.nova-admin .titles-and-tools { gap: 18px; margin-bottom: 24px; }
+body.nova-admin .titles-and-tools h1 { margin-bottom: 0; }
+body.nova-admin .titles-and-tools .object-tools { margin: 0; }
+body.nova-admin .titles-and-tools .nova-page-description { margin: 10px 0 0; }
+body.nova-admin .object-tools a { text-transform: none; letter-spacing: 0; }
+
+/* Errors, delete confirmations, messages and auth remain native forms. */
+body.nova-admin .errornote { background: var(--message-error-bg); color: var(--error-fg); border: 1px solid var(--error-fg); border-radius: var(--nova-login-radius, 9px); padding: var(--nova-section-padding); font-size: 13px; }
+body.nova-admin ul.errorlist { color: var(--error-fg); background: transparent; margin-block: 7px; }
+body.nova-admin .errors :is(input,textarea,select),
+body.nova-admin td ul.errorlist + input { border-color: var(--error-fg); }
+body.nova-admin .row-form-errors, body.nova-admin .row-form-errors td { background: var(--message-error-bg); }
+body.nova-admin .delete-confirmation #content > :is(p,ul),
+body.nova-admin.delete-confirmation #content > :is(p,ul),
+body.nova-admin.delete-selected-confirmation #content > :is(p,ul) { max-width: 900px; }
+body.nova-admin.delete-confirmation #content > ul,
+body.nova-admin.delete-selected-confirmation #content > ul { border: 1px solid var(--hairline-color); border-radius: 10px; padding: 18px 18px 18px 38px; background: var(--nova-panel); }
+body.nova-admin.delete-confirmation input[type=submit],
+body.nova-admin.delete-selected-confirmation input[type=submit] { background: var(--delete-button-bg); color: #fff; }
+body.nova-admin .cancel-link { border-radius: var(--nova-action-radius, 8px); padding: var(--nova-action-padding); }
+body.nova-admin ul.messagelist { margin: 18px 32px 0; padding: 0; }
+body.nova-admin ul.messagelist li { padding-block: 14px; border: 1px solid var(--hairline-color); }
+body.nova-admin.login { min-height: 100vh; background: radial-gradient(ellipse at 50% 0, var(--selected-bg), transparent 60%), var(--body-bg); }
+body.nova-admin.login #container { margin-top: 8vh; width: 420px; max-width: calc(100% - 32px); box-shadow: 0 24px 80px #0002; }
+body.nova-admin.login #branding { margin: 0; }
+body.nova-admin.login .form-row { padding: 10px 0; }
+body.nova-admin.login .form-row :is(input[type=text],input[type=password]) { width: 100%; min-height: 44px; box-sizing: border-box; }
+body.nova-admin.login .submit-row { border: 0; background: transparent; padding: 12px 0 0; justify-content: stretch; box-shadow: none; }
+body.nova-admin.login .submit-row input { width: 100%; min-height: 44px; }
+body.nova-admin :is(a,button,input,select,textarea,summary):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 1100px) {
+  body.nova-admin #changelist { gap: 16px; }
+  body.nova-admin #changelist-filter { flex-basis: 190px; }
+  body.nova-admin.dashboard #content-main { width: 100%; }
+  body.nova-admin.dashboard #content-related { width: 100%; margin: 0; float: none; clear: both; }
+}
+@media (max-width: 767px) {
+  body.nova-admin #content { padding: calc(22px * var(--nova-spacing, 1)) calc(16px * var(--nova-spacing, 1)); }
+  body.nova-admin #branding { margin: 0; }
+  body.nova-admin #header { gap: 12px; justify-content: center; }
+  body.nova-admin #user-tools { line-height: 1.8; }
+  body.nova-admin #changelist-filter { flex-basis: auto; width: 100%; }
+  body.nova-admin #toolbar #searchbar { min-width: 140px; flex: 1; }
+  body.nova-admin #toolbar form { align-items: center; }
+  body.nova-admin #changelist .actions .action-counter { margin-inline-start: 0; width: 100%; }
+  body.nova-admin .selector { width: 100%; }
+  body.nova-admin .selector :is(.selector-available,.selector-chosen) { width: 100%; }
+  body.nova-admin .selector select { width: 100%; }
+  body.nova-admin ul.messagelist { margin: 16px; }
+  body.nova-admin .submit-row { flex-direction: column; align-items: stretch; }
+  body.nova-admin .submit-row p.deletelink-box { margin: 0; }
+  body.nova-admin .submit-row a { text-align: center; }
+}
+
+/* Native dashboard uses a fixed 600px canvas and negative sidebar margin.
+   Replace only that outer desktop arrangement, retaining the native modules. */
+body.nova-admin.dashboard #content { width: auto; margin-inline-end: 0; }
+body.nova-admin.dashboard #content-related { margin-right: 0; }
+/* In 6.1 the list filter moved inside the form container; 5.2/6.0 keep it
+   alongside. Match that structure, without rewriting either template. */
+body.nova-admin #changelist .changelist-form-container:has(> #changelist-filter) { gap: 24px; }
+body.nova-admin #changelist .changelist-form-container:has(> #changelist-filter) > div { max-width: calc(100% - 244px); }
+body.nova-admin #changelist .changelist-footer { border: 0; padding: 0; background: var(--nova-panel); border-radius: 0 0 var(--nova-radius) var(--nova-radius); }
+body.nova-admin #changelist .changelist-footer .paginator { padding: var(--nova-section-padding); }
+@media (max-width: 1100px) {
+  body.nova-admin #changelist .changelist-form-container:has(> #changelist-filter) { gap: 16px; }
+  body.nova-admin #changelist .changelist-form-container:has(> #changelist-filter) > div { max-width: calc(100% - 206px); }
+}
+@media (max-width: 767px) {
+  body.nova-admin #changelist .changelist-form-container:has(> #changelist-filter) { display: flex; flex-direction: column; gap: 18px; }
+  body.nova-admin #changelist .changelist-form-container:has(> #changelist-filter) > div { max-width: 100%; width: 100%; }
+}
+
+/* Optional third level: configured section → native application → model.
+   The section contains only applications already visible to this request. */
+body.nova-admin .nova-nav-section { margin: 0 0 20px; }
+body.nova-admin .nova-nav-section-title { display: flex; align-items: center; gap: 8px; padding: 9px 10px; margin-bottom: 5px; color: var(--body-loud-color); font-size: 11px; font-weight: 700; letter-spacing: .04em; cursor: pointer; list-style: none; }
+body.nova-admin .nova-nav-section-title::-webkit-details-marker { display: none; }
+body.nova-admin .nova-nav-section-title::before { content: '›'; font-size: 16px; line-height: 1; }
+body.nova-admin .nova-nav-section[open] > .nova-nav-section-title::before { transform: rotate(90deg); }
+body.nova-admin .nova-nav-section-apps { margin-inline-start: 9px; padding-inline-start: 6px; border-inline-start: 1px solid var(--hairline-color); }
+body.nova-admin .nova-nav-section .nova-nav-group { margin-bottom: 6px; }
+body.nova-admin .nova-nav-section .nova-nav-group > summary { font-size: 12px; }
+
+/* Single native selects inherit a fixed height from Django. Reset it so the
+   theme's vertical padding cannot clip the label. Do not touch listboxes or
+   Select2's deliberately hidden source select. */
+body.nova-admin select:not([multiple]):not([size]):not(.select2-hidden-accessible) {
+  box-sizing: border-box;
+  min-height: 40px;
+  min-height: max(var(--nova-control-min-height), var(--nova-touch-min));
+  height: auto;
+  line-height: 1.35;
+}
+body.nova-admin .related-widget-wrapper-link {
+  box-sizing: border-box;
+  width: 34px;
+  height: 40px;
+  height: max(var(--nova-control-min-height), var(--nova-touch-min));
+  padding: var(--nova-control-padding-block);
+  vertical-align: middle;
+}
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--single {
+  box-sizing: border-box;
+  min-height: 40px;
+  min-height: max(var(--nova-control-min-height), var(--nova-touch-min));
+}
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--single .select2-selection__rendered { line-height: calc(max(var(--nova-control-min-height), var(--nova-touch-min)) - 2px); }
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--single .select2-selection__arrow { height: calc(max(var(--nova-control-min-height), var(--nova-touch-min)) - 2px); }
+/* Main ModelAdmin fieldsets only: inline/date/time/number widgets retain their
+   native compact sizing, including the same form's TabularInline cells. */
+body.nova-admin.change-form #content-main > [id$='_form'] > div > fieldset.aligned .vTextField {
+  width: min(100%, 36rem);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+/* Readable no-JS/native multi-select fallback in the main form only. Django's
+   initialized horizontal/stacked selector moves its .filtered selects into
+   .selector, so both that enhancement and Select2's hidden source are excluded. */
+body.nova-admin.change-form #content-main > [id$='_form'] > div > fieldset.aligned select[multiple]:not(.select2-hidden-accessible):not(.filtered):not(.selector select) {
+  width: min(24rem, 100%);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+/* An unenhanced related wrapper may shrink to the options' intrinsic width.
+   Give that exact wrapper its own bounded width; use an automatic flex basis
+   so a column parent does not turn that width into a reserved height. Share it between the
+   listbox and related link. Once Django initializes .selector this stops
+   matching; initialized horizontal/stacked widgets keep Django's own layout. */
+body.nova-admin.change-form #content-main > [id$='_form'] > div > fieldset.aligned .related-widget-wrapper:has(> select[multiple]:not(.select2-hidden-accessible):not(.filtered):not(.selector select)) {
+  width: min(24rem, 100%);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+body.nova-admin.change-form #content-main > [id$='_form'] > div > fieldset.aligned .related-widget-wrapper > select[multiple]:not(.select2-hidden-accessible):not(.filtered):not(.selector select) {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+body.nova-admin.change-form #content-main > [id$='_form'] > div > fieldset.aligned .related-widget-wrapper:has(> select[multiple]:not(.select2-hidden-accessible):not(.filtered):not(.selector select)) > .related-widget-wrapper-link {
+  flex: 0 0 34px;
+  margin-inline-start: 0;
+}
+
+/* Let native flex items and fieldsets shrink below their table/widget intrinsic
+   widths. Scrolling belongs to the inline wrapper, never the document body. */
+body.nova-admin .main > .content {
+  min-width: 0;
+}
+body.nova-admin #content-main,
+body.nova-admin #content-main > form,
+body.nova-admin #content-main > form > div {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+body.nova-admin fieldset.module {
+  min-width: 0;
+  min-inline-size: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+body.nova-admin .inline-group,
+body.nova-admin .inline-related.tabular {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+body.nova-admin .inline-related.tabular .wrapper {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+@media (max-width: 1024px) {
+  body.nova-admin #header {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    height: auto;
+    flex-shrink: 0;
+    align-items: stretch;
+    gap: 12px;
+  }
+  body.nova-admin #branding,
+  body.nova-admin #user-tools,
+  body.nova-admin .nova-theme-switcher {
+    min-width: 0;
+    max-width: 100%;
+    margin-inline: 0;
+    box-sizing: border-box;
+  }
+  body.nova-admin #user-tools {
+    float: none;
+    text-align: start;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  body.nova-admin #site-name { max-width: 100%; margin-inline: 0; }
+  body.nova-admin #site-name a { max-width: 100%; overflow-wrap: anywhere; }
+  body.nova-admin #site-name a::before { flex-shrink: 0; }
+  body.nova-admin .nova-theme-switcher {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  body.nova-admin .nova-theme-switcher select {
+    flex: 1 1 10rem;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  body.nova-admin .nova-theme-switcher :is(label, button) { flex: 0 0 auto; }
+}
+@media (max-width: 767px) {
+  /* Django's mobile rule uses 100vw - 30px; Nova's padded panels need the
+     actual containing block width instead of viewport-based field widths. */
+  body.nova-admin .aligned .form-row {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  body.nova-admin .aligned .form-row > div {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  body.nova-admin .aligned :is(.flex-container, .fieldBox, label, legend) {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  body.nova-admin .aligned :is(label, legend) { overflow-wrap: anywhere; }
+  body.nova-admin .related-widget-wrapper {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  body.nova-admin .related-widget-wrapper > select:not(.select2-hidden-accessible),
+  body.nova-admin .related-widget-wrapper > .select2-container,
+  body.nova-admin .related-widget-wrapper > .selector {
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  body.nova-admin .related-widget-wrapper > .related-widget-wrapper-link { flex: 0 0 34px; }
+  body.nova-admin .inline-group { overflow: visible; }
+}
+
+/* Wide native lists keep readable columns on phones. Small tables stay fluid;
+   only the results viewport scrolls, with every cell still available. */
+@media (max-width: 767px) {
+  body.nova-admin #changelist-form .results {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  body.nova-admin #result_list:has(> thead > tr > th:nth-child(5)) {
+    min-width: 44rem;
+  }
+  body.nova-admin #result_list:has(> thead > tr > th:nth-child(5)) .field-sku {
+    white-space: nowrap;
+  }
+  /* A native selection column plus seven data columns needs more room than
+     the 5–7-column baseline. Keep that extra width in .results, not the page. */
+  body.nova-admin #result_list:has(> thead > tr > th:nth-child(8)) {
+    min-width: 54rem;
+  }
+  body.nova-admin #result_list:has(> thead > tr > th:nth-child(8)) .field-name {
+    min-width: 140px;
+  }
+}
+
+/* Polished native controls. These are still platform selects, number inputs,
+   Django's Select2 and explicit CheckboxInput opt-ins, with no event handlers. */
+body.nova-admin { --nova-control-radius: 9px; }
+body.nova-admin select:not([multiple]):not([size]):not(.select2-hidden-accessible) {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  min-height: 40px;
+  min-height: max(var(--nova-control-min-height), var(--nova-touch-min));
+  height: auto;
+  line-height: 1.35;
+  border-radius: var(--nova-control-radius, 7px);
+  padding: 9px 38px 9px 12px;
+  padding: var(--nova-control-padding-block) 38px var(--nova-control-padding-block) var(--nova-control-padding-inline);
+  background-color: var(--body-bg);
+  background-image: linear-gradient(45deg, transparent 50%, var(--body-quiet-color) 50%), linear-gradient(135deg, var(--body-quiet-color) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  box-shadow: 0 1px 2px #00000008;
+  cursor: pointer;
+}
+body.nova-admin [dir=rtl] select:not([multiple]):not([size]):not(.select2-hidden-accessible),
+body.nova-admin[dir=rtl] select:not([multiple]):not([size]):not(.select2-hidden-accessible) {
+  padding-inline: var(--nova-control-padding-inline) 38px;
+  background-position: 18px 50%, 23px 50%;
+}
+body.nova-admin select option { background: var(--nova-panel); color: var(--body-fg); }
+body.nova-admin select option:disabled { color: var(--body-quiet-color); }
+body.nova-admin select:hover:where(:not(:disabled)) { border-color: var(--body-quiet-color); }
+body.nova-admin :is(select, input[type=number]):focus { border-color: var(--accent); box-shadow: none; }
+body.nova-admin input[type=number] {
+  appearance: auto;
+  min-height: 40px;
+  min-height: max(var(--nova-control-min-height), var(--nova-touch-min));
+  box-sizing: border-box;
+  border-radius: var(--nova-control-radius, 7px);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+/* One external ring, no inner shadow or replacement stepper. The browser keeps
+   native arrows, keyboard stepping, step/min/max validation and locale input. */
+body.nova-admin input[type=number]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  box-shadow: none;
+}
+body.nova-admin :is(input, textarea)[readonly] { background-color: var(--darkened-bg); color: var(--body-quiet-color); }
+body.nova-admin :is(input, select, textarea):disabled {
+  opacity: .78;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+body.nova-admin select:disabled { background-color: var(--darkened-bg); }
+body.nova-admin :is(input, select, textarea)[aria-invalid=true],
+body.nova-admin .errors :is(input[type=number], input, textarea, select) { border-color: var(--error-fg); }
+
+/* Select2 is initialized and owned by Django. Match its real class/ARIA states
+   rather than hiding the source widget or synthesizing a second combobox. */
+body.nova-admin .select2-container--admin-autocomplete { max-width: 100%; }
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--single,
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--multiple {
+  min-height: 40px;
+  min-height: max(var(--nova-control-min-height), var(--nova-touch-min));
+  border-radius: var(--nova-control-radius, 7px);
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px #00000008;
+}
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--single .select2-selection__rendered {
+  padding-inline: 12px 32px;
+  line-height: calc(max(var(--nova-control-min-height), var(--nova-touch-min)) - 2px);
+}
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--single .select2-selection__arrow { width: 30px; height: calc(max(var(--nova-control-min-height), var(--nova-touch-min)) - 2px); }
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--single .select2-selection__arrow b { border-top-color: var(--body-quiet-color); }
+body.nova-admin .select2-container--admin-autocomplete.select2-container--open .select2-selection--single .select2-selection__arrow b { border-color: transparent transparent var(--body-quiet-color) transparent; }
+body.nova-admin .select2-container--admin-autocomplete .select2-selection:hover { border-color: var(--body-quiet-color); }
+body.nova-admin .select2-container--admin-autocomplete.select2-container--focus .select2-selection,
+body.nova-admin .select2-container--admin-autocomplete.select2-container--open .select2-selection,
+body.nova-admin .select2-container--admin-autocomplete .select2-selection:focus-visible {
+  min-height: 40px;
+  min-height: max(var(--nova-control-min-height), var(--nova-touch-min));
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  box-shadow: none;
+}
+body.nova-admin .select2-container--admin-autocomplete .select2-dropdown {
+  border: 1px solid var(--border-color);
+  border-radius: var(--nova-control-radius, 7px);
+  background: var(--nova-panel);
+  box-shadow: 0 12px 32px #00000024;
+}
+body.nova-admin .select2-container--admin-autocomplete .select2-search--dropdown {
+  background: var(--nova-panel);
+  padding: 10px;
+  border-bottom: 1px solid var(--hairline-color);
+}
+body.nova-admin .select2-container--admin-autocomplete .select2-search--dropdown .select2-search__field {
+  box-sizing: border-box;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--nova-control-radius, 7px);
+  background: var(--body-bg);
+  color: var(--body-fg);
+  font: 13px/1.35 var(--nova-font);
+}
+body.nova-admin .select2-container--admin-autocomplete .select2-results > .select2-results__options {
+  max-height: 240px;
+  padding: 5px;
+  background: var(--nova-panel);
+}
+body.nova-admin .select2-container--admin-autocomplete .select2-results__option {
+  padding: 9px 10px;
+  border-radius: var(--nova-small-radius, 6px);
+  font-size: 13px;
+  line-height: 1.45;
+}
+body.nova-admin .select2-container--admin-autocomplete .select2-results__option[aria-selected=true] { background: var(--selected-bg); color: var(--link-selected-fg); font-weight: 600; }
+body.nova-admin .select2-container--admin-autocomplete .select2-results__option--highlighted[aria-selected] { background: var(--button-bg); color: var(--button-fg); }
+body.nova-admin .select2-container--admin-autocomplete .select2-results__option[aria-disabled=true] { color: var(--body-quiet-color); background: transparent; cursor: not-allowed; }
+body.nova-admin .select2-container--admin-autocomplete .select2-results__message { color: var(--body-quiet-color); padding: 13px 10px; }
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--multiple .select2-selection__rendered { padding: 3px 8px 7px; }
+body.nova-admin .select2-container--admin-autocomplete .select2-selection--multiple .select2-selection__choice { background: var(--selected-bg); color: var(--link-selected-fg); border: 1px solid var(--border-color); border-radius: 5px; padding: 3px 7px; }
+body.nova-admin .select2-container--admin-autocomplete .select2-selection__choice__remove { color: var(--link-selected-fg); margin-inline-end: 6px; }
+/* The multi-select's outer selection owns focus, so its nested text search must
+   not add a second square ring. Dropdown search remains separately outlined. */
+body.nova-admin .select2-container--admin-autocomplete .select2-search--inline .select2-search__field:focus-visible { outline: none; box-shadow: none; }
+body.nova-admin .select2-container--admin-autocomplete.select2-container--disabled .select2-selection {
+  background: var(--darkened-bg);
+  border-color: var(--border-color);
+  opacity: .78;
+  cursor: not-allowed;
+  outline: none;
+  box-shadow: none;
+}
+body.nova-admin .errors .select2-container--admin-autocomplete .select2-selection,
+body.nova-admin select[aria-invalid=true] + .select2-container--admin-autocomplete .select2-selection { border-color: var(--error-fg); }
+
+/* Boolean data remains data: native icon alt text is retained. A visual switch
+   is ONLY applied to an explicit .nova-switch native checkbox; row selection,
+   actions, inline-delete checkboxes and auth permissions are untouched. */
+body.nova-admin :is(#result_list, .readonly) img[src$="/icon-yes.svg"],
+body.nova-admin :is(#result_list, .readonly) img[src$="/icon-no.svg"],
+body.nova-admin :is(#result_list, .readonly) img[src$="/icon-unknown.svg"] { box-sizing: content-box; width: 13px; height: 13px; padding: 6px; border-radius: 50%; vertical-align: middle; background: var(--nova-neutral-bg); }
+body.nova-admin :is(#result_list, .readonly) img[src$="/icon-yes.svg"] { background: var(--nova-success-bg); }
+body.nova-admin input[type=checkbox].nova-switch,
+body.nova-admin #result_list input[type=checkbox].nova-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  display: inline-block;
+  width: 40px;
+  height: 24px;
+  min-width: 40px;
+  border: 2px solid var(--nova-switch-track);
+  border-radius: 999px;
+  padding: 0;
+  margin: 4px 0;
+  vertical-align: middle;
+  background-color: var(--nova-switch-track);
+  background-image: radial-gradient(circle at center, var(--nova-switch-knob) 8px, transparent 8.5px);
+  background-size: 18px 18px;
+  background-position: 1px center;
+  background-repeat: no-repeat;
+  box-shadow: none;
+  cursor: pointer;
+}
+body.nova-admin input[type=checkbox].nova-switch:checked,
+body.nova-admin #result_list input[type=checkbox].nova-switch:checked { background-color: var(--button-bg); border-color: var(--button-bg); background-position: calc(100% - 1px) center; }
+body.nova-admin input[type=checkbox].nova-switch:disabled,
+body.nova-admin #result_list input[type=checkbox].nova-switch:disabled { cursor: not-allowed; opacity: .6; }
+body.nova-admin .nova-status { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; line-height: 1.65; font-weight: 600; white-space: nowrap; background: var(--nova-neutral-bg); color: var(--body-quiet-color); }
+body.nova-admin .nova-status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
+body.nova-admin .nova-status--active { color: var(--nova-success-fg); background: var(--nova-success-bg); }
+body.nova-admin .nova-status--draft { color: var(--link-selected-fg); background: var(--selected-bg); }
+body.nova-admin #changelist .changelist-footer > input[type=submit] { margin: 12px 16px; }
+body.nova-admin .nova-list-edit-help { margin: 0; padding: 12px 16px; font-size: 12px; color: var(--body-quiet-color); border-bottom: 1px solid var(--hairline-color); }
+@media (forced-colors: active) {
+  body.nova-admin select:not([multiple]):not([size]):not(.select2-hidden-accessible):is(:enabled, :disabled) { appearance: auto; background-image: none; }
+  body.nova-admin input[type=checkbox].nova-switch,
+  body.nova-admin #result_list input[type=checkbox].nova-switch { appearance: auto; width: 24px; height: 24px; min-width: 24px; background: none; border: revert; }
+  body.nova-admin .nova-status { border: 1px solid CanvasText; }
+}
+
+/* Optional business image columns. Dimensions/cropping belong to the demo's
+   semantic ModelAdmin component; Nova adds only palette/table presentation. */
+body.nova-admin .nova-media-thumb { border-color: var(--border-color); background: var(--darkened-bg); color: var(--body-quiet-color); }
+body.nova-admin .nova-media-link { border-radius: var(--nova-action-radius, 8px); }
+body.nova-admin .nova-media-link:focus-visible { outline: 2px solid var(--link-fg); outline-offset: 4px; }
+body.nova-admin #result_list .field-image_thumbnail { width: 1%; white-space: nowrap; vertical-align: middle; }
+
+/* Density reaches real native list rows, tabular/stacked inlines and form rows.
+   Django's original-object label keeps its reserved top space. */
+body.nova-admin .inline-group .tabular :is(th, td):not(.original) {
+  padding: var(--nova-cell-padding);
+  line-height: var(--nova-row-line-height);
+}
+body.nova-admin .inline-group .tabular tr.has_original td:not(.original) { padding-top: 2em; }
+body.nova-admin .inline-group .tabular tr.add-row td { padding: var(--nova-section-padding); }
+body.nova-admin :is(input[type=text], input[type=password], input[type=email], input[type=number], input[type=url], input[type=search], input[type=date], input[type=time], .button, input[type=submit], input[type=button], .submit-row a, .object-tools a, .nova-theme-switcher button) {
+  box-sizing: border-box;
+  min-height: max(var(--nova-control-min-height), var(--nova-touch-min));
+}
+body.nova-admin :is(.button, input[type=submit], input[type=button], .submit-row a, .object-tools a) { padding: var(--nova-action-padding); }
+body.nova-admin .nova-theme-switcher :is(select, button) { min-height: max(var(--nova-control-min-height), var(--nova-touch-min)); }
+/* Match actual element language, including mixed-language pages. English
+   headings keep their existing tracking; Simplified Chinese uses normal gaps. */
+body.nova-admin #site-name:lang(zh-hans),
+body.nova-admin #content :is(h1, h2, h3, h4, h5, h6):lang(zh-hans) { letter-spacing: normal; }
+
+@media (pointer: coarse), (max-width: 767px) {
+  body.nova-admin { --nova-touch-min: 44px; }
+  /* Preserve the compact desktop setting while guaranteeing finger targets.
+     These minima apply directly so later density-only overrides cannot shrink
+     select dropdown results or save/action buttons below 44px. */
+  body.nova-admin :is(input[type=text], input[type=password], input[type=email], input[type=number], input[type=url], input[type=search], input[type=date], input[type=time], select:not(.select2-hidden-accessible), button, .button, input[type=submit], input[type=button], .submit-row a, .object-tools a, .paginator a, .related-widget-wrapper-link, .select2-selection, .select2-results__option) {
+    min-height: max(44px, var(--nova-control-min-height));
+    box-sizing: border-box;
+  }
+  body.nova-admin :is(input[type=checkbox], input[type=radio]):not(.nova-switch),
+  body.nova-admin #result_list input[type=checkbox]:not(.nova-switch) {
+    min-width: 24px;
+    min-height: 24px;
+    margin-block: 4px;
+    vertical-align: middle;
+  }
+  body.nova-admin :is(.related-widget-wrapper-link) { min-width: 44px; }
+  body.nova-admin :is(.submit-row a, .object-tools a, .paginator a) { display: inline-flex; align-items: center; }
+}
+
+/* Optional declarative project branding. No settings value becomes CSS/HTML. */
+body.nova-admin #site-name.nova-custom-brand a::before { content: none; }
+/* A definite height lets viewBox-only SVGs contribute their aspect-ratio width
+   during flex intrinsic sizing, before the title is measured for wrapping. */
+body.nova-admin .nova-brand-logo { display: block; flex: 0 0 auto; max-width: 160px; max-height: 36px; width: auto; height: 36px; object-fit: contain; }
+body.nova-admin .nova-brand-footer { margin: 0; padding: 16px 24px; text-align: center; color: var(--body-quiet-color); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+body.nova-admin #site-name.nova-custom-brand a { max-width: 100%; }
+body.nova-admin #site-name.nova-custom-brand span { overflow-wrap: anywhere; }
+
+/* Navigation metadata stays secondary to the native model link. */
+body.nova-admin .nova-nav-shortcuts { margin: 0 0 18px; }
+body.nova-admin .nova-nav-shortcut-title { margin: 0; padding: 8px 10px; font-size: 11px; font-weight: 650; color: var(--body-quiet-color); }
+body.nova-admin .nova-nav-shortcut-list { list-style: none; margin: 0; padding: 0; }
+body.nova-admin .nova-nav-shortcut-list li { list-style: none; margin: 0; padding: 0; }
+body.nova-admin .nova-nav-shortcut-list a { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--nova-control-radius, 7px); color: var(--body-fg); font-size: 12px; }
+body.nova-admin .nova-nav-shortcut-list a:hover { background: var(--nova-hover); }
+body.nova-admin .nova-nav-icon { display: inline-block; width: 16px; height: 16px; flex: 0 0 16px; vertical-align: -.2em; }
+body.nova-admin .nova-nav-model-label { display: inline; overflow-wrap: anywhere; }
+body.nova-admin .nova-nav-badge { display: inline-block; min-width: 1.4em; margin-inline-start: 6px; padding: 0 5px; border-radius: 999px; background: var(--darkened-bg); color: var(--body-quiet-color); font: 500 10px/1.8 var(--nova-font); text-align: center; font-variant-numeric: tabular-nums; }
+body.nova-admin .nova-nav-favorite { display: inline-grid; place-items: center; box-sizing: border-box; width: 28px; min-width: 28px; min-height: 28px; padding: 0; border: 1px solid transparent; border-radius: var(--nova-small-radius, 6px); color: var(--body-quiet-color); background: transparent; cursor: pointer; font: inherit; }
+body.nova-admin .nova-nav-favorite:hover { background: var(--nova-hover); border-color: var(--border-color); }
+body.nova-admin .nova-nav-favorite[aria-pressed=true] { color: var(--link-fg); background: var(--selected-bg); }
+@media (pointer: coarse), (max-width: 767px) {
+  body.nova-admin .nova-nav-favorite { width: 44px; min-width: 44px; min-height: 44px; }
+  body.nova-admin .nova-nav-shortcut-list a { min-height: 44px; box-sizing: border-box; }
+}
+body.nova-admin .nova-nav-group th a { display: flex; align-items: center; gap: 6px; }
+body.nova-admin .nova-nav-badge { margin-inline-start: auto; }
+body.nova-admin .nova-nav-group td:has(.nova-nav-favorite) { white-space: nowrap; }
+body.nova-admin .nova-nav-favorite[hidden],
+body.nova-admin .nova-nav-shortcuts[hidden] { display: none; }
+/* Cancel legacy table-span spacing inside the richer model link only. */
+body.nova-admin .nova-nav-group th .nova-nav-model-label { display: inline; padding: 0; color: inherit; }
+body.nova-admin .nova-nav-group th .nova-nav-badge { display: inline-block; padding: 0 5px; color: var(--body-quiet-color); }

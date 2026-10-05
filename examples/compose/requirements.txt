@@ -1,0 +1,4 @@
+# Example-only dependencies. The reusable theme still requires Django alone.
+Django==5.2.17
+psycopg[binary]==3.3.6
+

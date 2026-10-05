@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "quick_python": [
+    {
+      "python": "3.11.17",
+      "django": "5.2.17",
+      "captcha": false
+    },
+    {
+      "python": "3.12.15",
+      "django": "6.0.8",
+      "captcha": false
+    },
+    {
+      "python": "3.14.8",
+      "django": "6.1.1",
+      "captcha": true
+    }
+  ],
+  "node": [
+    {
+      "node": "22.23.3",
+      "npm": "10.9.9",
+      "stage": "maintenance-lts"
+    },
+    {
+      "node": "24.21.0",
+      "npm": "11.19.0",
+      "stage": "active-lts"
+    },
+    {
+      "node": "26.10.0",
+      "npm": "11.19.1",
+      "stage": "current"
+    }
+  ],
+  "quick_node": "24.21.0",
+  "django_wheels": {
+    "5.2.17": {
+      "filename": "django-5.2.17-py3-none-any.whl",
+      "sha256": "f04fb3b36ee119e1af4fa1d397d5fd6cf12700f49321e84d4f4c642c5b1973db"
+    },
+    "6.0.8": {
+      "filename": "django-6.0.8-py3-none-any.whl",
+      "sha256": "9b98b7e1902e0e575ea4f42c175fc9512784f7f2580898286aee3388b322219d"
+    },
+    "6.1.1": {
+      "filename": "django-6.1.1-py3-none-any.whl",
+      "sha256": "585fb82bf15053c42cf52e67c2f1b54a032dca384759315fd6678ab1870d1d72"
+    }
+  },
+  "ranged_response": {
+    "version": "0.2.0",
+    "sha256": "f71fff352a37316b9bead717fc76e4ddd6c9b99c4680cdf4783b9755af1cf985",
+    "metadata_url": "https://pypi.org/pypi/django-ranged-response/0.2.0/json"
+  }
+}

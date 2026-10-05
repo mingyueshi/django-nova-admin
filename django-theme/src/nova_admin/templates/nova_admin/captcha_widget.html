@@ -1,0 +1,18 @@
+{% load i18n %}
+<div class="nova-captcha" data-nova-captcha data-refresh-url="{{ nova_captcha_refresh_url }}"
+     data-loading-message="{% translate 'Loading a new verification image…' context "Nova Admin" %}"
+     data-success-message="{% translate 'New verification image ready.' context "Nova Admin" %}"
+     data-error-message="{% translate 'Could not load a new image. Reload this page before signing in.' context "Nova Admin" %}"
+     data-image-error-message="{% translate 'The verification image did not load. Try a new image or contact your administrator.' context "Nova Admin" %}">
+  <div class="nova-captcha-challenge">
+    <img class="nova-captcha-image" src="{{ image }}" alt="{% translate 'Verification challenge. Enter the characters shown, or use the available alternative.' context "Nova Admin" %}" data-captcha-image>
+  </div>
+  {% include "django/forms/widgets/multiwidget.html" %}
+  <p class="nova-captcha-status" role="status" aria-live="polite" aria-atomic="true" data-captcha-status></p>
+  <div class="nova-captcha-actions">
+    <button type="button" class="nova-captcha-refresh" data-captcha-refresh hidden>{% translate 'New image' context "Nova Admin" %}</button>
+    {% if audio %}<a href="{{ audio }}" data-captcha-audio>{% translate 'Listen to verification audio' context "Nova Admin" %}</a>{% endif %}
+    <details class="nova-captcha-help"><summary>{% translate 'Alternative sign-in help' context "Nova Admin" %}</summary><p>{{ nova_captcha_help }}{% if nova_captcha_support_url %} <a href="{{ nova_captcha_support_url }}">{% translate 'Alternative sign-in help' context "Nova Admin" %}</a>{% endif %}</p></details>
+  </div>
+  <noscript><p>{% translate 'Reload this page for a new image. Your sign-in still works without JavaScript.' context "Nova Admin" %}</p></noscript>
+</div>

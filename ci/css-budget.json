@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "policy": "Hand-written, unminified CSS; no compiler or CSS dependency. Gzip is measurement only. Reviewed 10% size headroom; third-party and generated duplicate CSS excluded.",
+  "files": {
+    "django-theme/src/nova_admin/static/nova_admin/captcha.css": {
+      "bytes": 1886,
+      "gzip_bytes": 756,
+      "sha256": "da9f380496e4a931f6d1046c4d96a84dae16997326ef3ed11d22e92497c14bf9",
+      "limits": {
+        "bytes": 2075,
+        "gzip_bytes": 832
+      }
+    },
+    "django-theme/src/nova_admin/static/nova_admin/login.css": {
+      "bytes": 7382,
+      "gzip_bytes": 2160,
+      "sha256": "957cbcd6af3b036d9f5ec1aa968affedd9fe21a22f081d216a85368dea9d2189",
+      "limits": {
+        "bytes": 8121,
+        "gzip_bytes": 2376
+      }
+    },
+    "django-theme/src/nova_admin/static/nova_admin/theme.css": {
+      "bytes": 58854,
+      "gzip_bytes": 11232,
+      "sha256": "edf797d6387b4b8538672cdb33a7c6c7f0addbcc856ab730fc9c8cc6a9942390",
+      "limits": {
+        "bytes": 64740,
+        "gzip_bytes": 12356
+      }
+    },
+    "django-theme/src/nova_admin/static/nova_admin/tokens.css": {
+      "bytes": 3263,
+      "gzip_bytes": 793,
+      "sha256": "9222d155ff9811ec9cfe5563c683ca23a45cc80b770a2beab8ab00c25f54bda5",
+      "limits": {
+        "bytes": 3590,
+        "gzip_bytes": 873
+      }
+    },
+    "dist/extensions.css": {
+      "bytes": 1649,
+      "gzip_bytes": 677,
+      "sha256": "500969bdcf46ae7d481a361aa961626da9456509e6a5c5066e981ab383ccfaa9",
+      "limits": {
+        "bytes": 1814,
+        "gzip_bytes": 745
+      }
+    },
+    "dist/login-preview.css": {
+      "bytes": 5979,
+      "gzip_bytes": 1831,
+      "sha256": "accb31a4754db5816f0fbc46d22f435e3adb06159c82b49a745a30e774eb965d",
+      "limits": {
+        "bytes": 6577,
+        "gzip_bytes": 2015
+      }
+    },
+    "dist/login.css": {
+      "bytes": 6089,
+      "gzip_bytes": 1753,
+      "sha256": "59b475d03e6ee680daf4f49834eadc32d082e6a0be8ff2111641b7117cbb4b63",
+      "limits": {
+        "bytes": 6698,
+        "gzip_bytes": 1929
+      }
+    },
+    "dist/styles.css": {
+      "bytes": 74456,
+      "gzip_bytes": 15185,
+      "sha256": "491e04646a86c273c4d58cc0b8d0236981ccb754489eaac989c934c6377b59d1",
+      "limits": {
+        "bytes": 81902,
+        "gzip_bytes": 16704
+      }
+    }
+  }
+}

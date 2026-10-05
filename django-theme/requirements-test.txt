@@ -1,0 +1,4 @@
+# Default development version. Multi-Python exact cells: scripts/test-matrix.json.
+Django==6.1.1
+beautifulsoup4==4.15.0
+build==1.6.1

@@ -1,0 +1,30 @@
+{
+  "name": "nova-admin-preview",
+  "version": "1.8.0",
+  "private": true,
+  "type": "module",
+  "description": "NOVA Chinese Django Admin theme concept preview",
+  "scripts": {
+    "dev": "python -m http.server 4173 --bind 127.0.0.1 --directory dist",
+    "check": "node --check dist/js/app.js && node --check dist/js/data.js && node --check dist/js/icons.js && node --check dist/js/scenarios.js && node --check dist/js/catalog.js && node --check dist/js/navigation.js && node --check dist/js/native-samples.js && node --check dist/js/controls.js && node --check dist/js/media.js && node --check dist/js/news.js && node --check dist/js/collection.js && node --check dist/js/login.js && node --check dist/js/pagination.js && node --check dist/js/presentation.js && node --check dist/js/extensions-guide.js",
+    "test:dom": "node --experimental-vm-modules tests/interactions.cjs",
+    "test:workflows": "node --experimental-vm-modules tests/workflows.cjs",
+    "test:controls": "node --experimental-vm-modules tests/controls.cjs",
+    "test:media": "node --experimental-vm-modules tests/media-news.cjs",
+    "test": "npm run format:check && npm run check && npm run test:dom && npm run test:workflows && npm run test:controls && npm run test:media && npm run test:recovery && npm run test:enterprise && npm run test:boundaries && npm run test:bulk-publish && npm run test:login && npm run test:presentation && npm run test:pagination && npm run test:extensions",
+    "test:recovery": "node --experimental-vm-modules tests/recovery-edges.cjs",
+    "test:enterprise": "node --experimental-vm-modules tests/enterprise.cjs",
+    "format": "prettier \"dist/js/*.js\" --write",
+    "format:check": "prettier \"dist/js/*.js\" --check",
+    "test:boundaries": "node --experimental-vm-modules tests/refactor-boundaries.cjs",
+    "test:bulk-publish": "node --experimental-vm-modules tests/catalog-bulk-publish.cjs",
+    "test:login": "node --experimental-vm-modules tests/login-demo.cjs",
+    "test:presentation": "node --experimental-vm-modules tests/presentation.cjs",
+    "test:pagination": "node --experimental-vm-modules tests/pagination.cjs",
+    "test:extensions": "node tests/extensions-guide.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0",
+    "prettier": "3.9.9"
+  }
+}

@@ -1,0 +1,16 @@
+/* Demo business-media geometry only. Kept in native mode with the ModelAdmin
+   column; no theme/nav/widget overrides, scripts, or remote asset requests. */
+.nova-media-link { display: inline-block; vertical-align: middle; }
+.nova-media-link:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.nova-media-thumb { box-sizing: border-box; position: relative; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; vertical-align: middle; flex: none; background: #edf0f6; color: #667085; border: 1px solid #d7dce6; font: 11px/1.3 system-ui, sans-serif; }
+.nova-media-thumb--avatar { width: 44px; height: 44px; border-radius: 50%; }
+.nova-media-thumb--product { width: 60px; height: 60px; border-radius: 8px; }
+.nova-media-thumb--cover { width: 96px; height: 54px; border-radius: 6px; }
+.nova-media-slice { position: absolute; width: 100%; aspect-ratio: 1; top: 50%; left: 0; transform: translateY(-50%); }
+.nova-media-thumb--cover .nova-media-slice { aspect-ratio: 16 / 9; }
+.nova-media-slice img { position: absolute; display: block; width: 300%; height: 200%; max-width: none; max-height: none; left: 0; top: 0; }
+.nova-media-col-1 img { left: -100%; }
+.nova-media-col-2 img { left: -200%; }
+.nova-media-row-1 img { top: -100%; }
+.nova-media-fallback { position: absolute; inset: 0; display: grid; place-items: center; }
+@media (forced-colors: active) { .nova-media-thumb { border-color: CanvasText; background: Canvas; color: CanvasText; } }

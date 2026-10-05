@@ -1,0 +1,7 @@
+{% extends "project_admin/pagination_change_list.html" %}
+{% block result_list %}
+  {% if cl.formset %}
+    <p class="nova-list-edit-help">精选推荐开关仅更改待保存状态，请点击「保存」后生效。</p>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

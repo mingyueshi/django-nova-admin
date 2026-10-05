@@ -1,0 +1,19 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+
+{% block nav-sidebar %}
+  {% if nova_admin_active and nova_admin_navigation and has_permission %}
+    {% include "nova_admin/navigation.html" %}
+  {% else %}
+    {{ block.super }}
+  {% endif %}
+{% endblock %}
+
+{% block content_title %}
+  {% if nova_admin_active %}
+    <h1>{% translate 'Site overview' context 'Nova Admin' %}</h1>
+    <p class="nova-page-description">{% translate 'Manage models and everyday work. Available content depends on your site permissions.' context 'Nova Admin' %}</p>
+  {% else %}
+    {{ block.super }}
+  {% endif %}
+{% endblock %}

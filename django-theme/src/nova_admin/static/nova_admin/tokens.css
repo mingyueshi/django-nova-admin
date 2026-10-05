@@ -1,0 +1,62 @@
+/* Nova semantic tokens. Hand-written, no build step. Load after theme.css.
+   Palette overrides are intentionally unset: per-role fallbacks preserve the
+   existing appearance. A project can set just the four --nova-brand-* values.
+   Existing role-specific Django variables and density presets still work when
+   loaded after this file. See BRANDING.md for contrast and override order. */
+body.nova-admin {
+  --nova-density: 1;
+  --nova-spacing: 1;
+  --nova-control-radius: calc(var(--nova-radius) * 7 / 12);
+  --nova-action-radius: calc(var(--nova-radius) * 2 / 3);
+  --nova-small-radius: calc(var(--nova-radius) / 2);
+  --nova-login-radius: calc(var(--nova-radius) * 3 / 4);
+  --nova-cell-padding: calc(13px * var(--nova-density)) calc(16px * var(--nova-spacing));
+  --nova-form-row-padding: calc(18px * var(--nova-density)) calc(16px * var(--nova-spacing));
+  --nova-control-padding-block: calc(9px * var(--nova-density));
+  --nova-control-padding-inline: calc(11px * var(--nova-spacing));
+  --nova-control-min-height: calc(40px * var(--nova-density));
+  --nova-action-padding: calc(11px * var(--nova-density)) calc(17px * var(--nova-spacing));
+  --nova-section-padding: calc(14px * var(--nova-density)) calc(16px * var(--nova-spacing));
+}
+body.nova-admin.nova-mode-auto,
+body.nova-admin.nova-mode-light {
+  --primary: var(--nova-brand-light, #6e59ce);
+  --accent: var(--nova-brand-light, #6e59ce);
+  --header-link-color: var(--nova-brand-light, #604bbd);
+  --breadcrumbs-link-fg: var(--nova-brand-light, #604bbd);
+  --link-fg: var(--nova-brand-light, #604bbd);
+  --link-hover-color: var(--nova-brand-light-hover, #493594);
+  --link-selected-fg: var(--nova-brand-light-hover, #493594);
+  --button-bg: var(--nova-brand-light, #6e59ce);
+  --button-hover-bg: var(--nova-brand-light-hover, #5943b5);
+  --default-button-bg: var(--nova-brand-light, #237858);
+  --default-button-hover-bg: var(--nova-brand-light-hover, #1b6248);
+}
+body.nova-admin.nova-mode-dark {
+  --primary: var(--nova-brand-dark, #a998ff);
+  --accent: var(--nova-brand-dark, #a998ff);
+  --header-link-color: var(--nova-brand-dark, #d1c7ff);
+  --breadcrumbs-link-fg: var(--nova-brand-dark, #d1c7ff);
+  --link-fg: var(--nova-brand-dark, #b9aaff);
+  --link-hover-color: var(--nova-brand-dark-hover, #dfd7ff);
+  --link-selected-fg: var(--nova-brand-dark, #d1c7ff);
+  --button-bg: var(--nova-brand-dark, #a998ff);
+  --button-hover-bg: var(--nova-brand-dark-hover, #bdb0ff);
+  --default-button-bg: var(--nova-brand-dark, #55d7a7);
+  --default-button-hover-bg: var(--nova-brand-dark-hover, #7ee7bd);
+}
+@media (prefers-color-scheme: dark) {
+  body.nova-admin.nova-mode-auto {
+    --primary: var(--nova-brand-dark, #a998ff);
+    --accent: var(--nova-brand-dark, #a998ff);
+    --header-link-color: var(--nova-brand-dark, #d1c7ff);
+    --breadcrumbs-link-fg: var(--nova-brand-dark, #d1c7ff);
+    --link-fg: var(--nova-brand-dark, #b9aaff);
+    --link-hover-color: var(--nova-brand-dark-hover, #dfd7ff);
+    --link-selected-fg: var(--nova-brand-dark, #d1c7ff);
+    --button-bg: var(--nova-brand-dark, #a998ff);
+    --button-hover-bg: var(--nova-brand-dark-hover, #bdb0ff);
+    --default-button-bg: var(--nova-brand-dark, #55d7a7);
+    --default-button-hover-bg: var(--nova-brand-dark-hover, #7ee7bd);
+  }
+}

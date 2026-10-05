@@ -1,0 +1,2 @@
+# Optional reproducible catalog compiler when GNU gettext is unavailable.
+polib==1.2.0

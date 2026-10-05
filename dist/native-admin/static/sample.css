@@ -1,0 +1,9 @@
+/* Export-only safety/navigation chrome. Not part of the Nova theme. */
+.sample-banner{box-sizing:border-box;background:#edf3ff;color:#203452;border-bottom:1px solid #bac8e2;padding:12px 24px;font:12px/1.55 system-ui,sans-serif;position:relative;z-index:1000}
+.sample-banner strong{font-size:14px;color:#183254}.sample-banner p{margin:4px 0 8px;padding:0;color:#344a69;font-size:12px}
+.sample-banner nav{display:flex;flex-wrap:wrap;gap:6px 14px}.sample-banner a{color:#274d91;text-decoration:underline;font-size:12px}
+.sample-navigation summary{cursor:pointer;min-height:24px;font-size:12px}.sample-navigation[open] nav{padding-top:8px}
+.sample-banner a[aria-current=page]{font-weight:700;text-decoration:none}.sample-banner a:focus-visible{outline:2px solid #274d91;outline-offset:3px}
+a[aria-disabled=true]{cursor:default}.sample-gallery{margin:0;background:#f3f5fa;color:#1c2940;font:15px/1.65 system-ui,sans-serif}
+.sample-gallery main{max-width:1080px;margin:0 auto;padding:32px 20px}.sample-gallery h1{font-size:30px;line-height:1.2}.sample-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.sample-card{background:white;padding:22px;border:1px solid #dce2ed;border-radius:12px}.sample-card h2{margin-top:0}.sample-card ul{padding-left:20px}.sample-card a{color:#274d91}.sample-gallery footer{font-size:13px;color:#52617a;margin-top:24px}
+@media(max-width:760px){.sample-grid{grid-template-columns:1fr}.sample-banner{padding:10px 14px}.sample-banner nav{gap:6px 10px}.sample-gallery main{padding:22px 14px}}

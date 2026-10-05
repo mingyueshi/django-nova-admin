@@ -1,0 +1,318 @@
+name: Nova CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Validation scope
+        type: choice
+        options: [full, quick]
+        default: full
+  workflow_call:
+    outputs:
+      build_artifact:
+        description: Exact tested build artifact ID, stable across a candidate-only retry
+        value: ${{ jobs.build.outputs.artifact }}
+    inputs:
+      full:
+        description: Run the complete supported matrix
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: nova-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      scope: ${{ steps.plan.outputs.scope }}
+      python: ${{ steps.plan.outputs.python }}
+      node: ${{ steps.plan.outputs.node }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12.15'
+      - id: plan
+        env:
+          SCOPE: ${{ (inputs.full == true || inputs.scope == 'full') && 'full' || 'quick' }}
+        run: python scripts/ci_support.py plan --scope "$SCOPE" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      artifact: ${{ steps.artifact.outputs.artifact-id }}
+      support: ${{ steps.support.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12.15'
+      - name: Install hash-pinned build/check tools
+        run: |
+          python -m pip install --require-hashes --no-deps --only-binary=:all: --index-url https://pypi.org/simple -r ci/requirements-tools.txt
+      - name: Check CI adapters and existing matrix runner
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python -m unittest discover -s scripts/tests -v
+          python -m unittest discover -s django-theme/scripts/tests -v
+      - name: Validate workflow syntax with pinned actionlint
+        run: |
+          mkdir "$RUNNER_TEMP/actionlint"
+          curl --fail --location --max-time 120 --output "$RUNNER_TEMP/actionlint.tar.gz" https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+          printf '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  %s\n' "$RUNNER_TEMP/actionlint.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP/actionlint" actionlint
+          "$RUNNER_TEMP/actionlint/actionlint" -shellcheck= -pyflakes= .github/workflows/*.yml
+      - name: Validate inert exported samples
+        run: |
+          python scripts/css_budget.py
+          python django-theme/scripts/test_export_safety.py --export-dir dist/native-admin
+          python django-theme/scripts/export_admin_samples.py --check dist/native-admin
+      - name: Build and verify source-bound wheel and static payload
+        run: python scripts/ci_artifacts.py build --directory "$RUNNER_TEMP/artifact" --commit "$GITHUB_SHA"
+      - name: Prepare checksum-pinned sdist-only optional dependency
+        run: python scripts/ci_support.py ranged-wheel --output "$RUNNER_TEMP/test-support"
+      - id: artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nova-build-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/artifact/
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: false
+          include-hidden-files: false
+      - id: support
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nova-test-support-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/test-support/*.whl
+            ${{ runner.temp }}/test-support/provenance.json
+          if-no-files-found: error
+          retention-days: 7
+
+  python:
+    needs: [plan, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix: ${{ fromJSON(needs.plan.outputs.python) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact }}
+          path: ${{ runner.temp }}/artifact
+          digest-mismatch: error
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.build.outputs.support }}
+          path: ${{ runner.temp }}/test-support
+          digest-mismatch: error
+      - name: Verify artifact and run isolated source/wheel profiles
+        env:
+          PYTHON_VERSION: ${{ matrix.python }}
+          DJANGO_VERSION: ${{ matrix.django }}
+          WITH_CAPTCHA: ${{ matrix.captcha }}
+        run: |
+          python scripts/ci_artifacts.py verify --directory "$RUNNER_TEMP/artifact" --commit "$GITHUB_SHA"
+          wheel=("$RUNNER_TEMP/artifact/"*.whl)
+          args=()
+          if [[ "$WITH_CAPTCHA" == 'true' ]]; then args+=(--with-captcha); fi
+          python django-theme/scripts/test-matrix.py --cell "$PYTHON_VERSION/$DJANGO_VERSION" --python "$PYTHON_VERSION=$(command -v python)" --root "$RUNNER_TEMP/matrix" --wheel "${wheel[0]}" --find-links "$RUNNER_TEMP/test-support" "${args[@]}"
+          "$RUNNER_TEMP/matrix/python-$PYTHON_VERSION/django-$DJANGO_VERSION/core/source/venv/bin/python" scripts/template_drift.py --output "$RUNNER_TEMP/template-drift"
+          python scripts/ci_support.py collect-python --run-root "$RUNNER_TEMP/matrix" --output "$RUNNER_TEMP/python-report" --commit "$GITHUB_SHA" --cell "$PYTHON_VERSION/$DJANGO_VERSION" --captcha "$WITH_CAPTCHA"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nova-report-python-${{ matrix.python }}-${{ matrix.django }}
+          overwrite: true
+          path: ${{ runner.temp }}/python-report/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Preserve failure diagnostics only
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nova-failure-python-${{ matrix.python }}-${{ matrix.django }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/matrix/results.json
+            ${{ runner.temp }}/matrix/python-*/django-*/*/*/*.log
+            ${{ runner.temp }}/template-drift/
+          if-no-files-found: warn
+          retention-days: 7
+
+  node:
+    needs: [plan, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix: ${{ fromJSON(needs.plan.outputs.node) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12.15'
+      - name: Obtain exact official Django sidebar files, without installing Django
+        run: |
+          mkdir "$RUNNER_TEMP/django-wheels"
+          for version in 5.2.17 6.0.8 6.1.1; do
+            python -m pip download --no-deps --only-binary=:all: --index-url https://pypi.org/simple --dest "$RUNNER_TEMP/django-wheels" "Django==$version"
+          done
+          python scripts/ci_support.py sidebars --wheelhouse "$RUNNER_TEMP/django-wheels" --output "$RUNNER_TEMP/sidebars"
+      - name: Install locked dependencies and run complete JS regressions
+        env:
+          NODE_VERSION: ${{ matrix.node }}
+          NPM_VERSION: ${{ matrix.npm }}
+        run: |
+          node scripts/ci_node.mjs --node "$NODE_VERSION" --npm "$NPM_VERSION" --logs "$RUNNER_TEMP/node-logs" --sidebars "$RUNNER_TEMP/sidebars"
+          python scripts/ci_support.py collect-node --logs "$RUNNER_TEMP/node-logs" --output "$RUNNER_TEMP/node-report" --commit "$GITHUB_SHA" --node "$NODE_VERSION" --npm "$NPM_VERSION"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nova-report-node-${{ matrix.node }}
+          overwrite: true
+          path: ${{ runner.temp }}/node-report/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Preserve failure diagnostics only
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nova-failure-node-${{ matrix.node }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/node-logs/*.log
+            ${{ runner.temp }}/node-logs/runtime.json
+            ${{ runner.temp }}/node-logs/steps.json
+            ${{ runner.temp }}/node-logs/inputs.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  security:
+    name: Optional Axes interoperability
+    needs: [plan, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12.15'
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact }}
+          path: ${{ runner.temp }}/artifact
+          digest-mismatch: error
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.build.outputs.support }}
+          path: ${{ runner.temp }}/test-support
+          digest-mismatch: error
+      - name: Verify artifact and prepare exact optional wheels
+        env:
+          SCOPE: ${{ needs.plan.outputs.scope }}
+        run: |
+          python scripts/ci_artifacts.py verify --directory "$RUNNER_TEMP/artifact" --commit "$GITHUB_SHA"
+          mkdir "$RUNNER_TEMP/security-wheels"
+          versions=(6.1.1)
+          if [[ "$SCOPE" == full ]]; then versions=(5.2.17 6.0.8 6.1.1); fi
+          for version in "${versions[@]}"; do
+            python -m pip download --no-deps --only-binary=:all: --index-url https://pypi.org/simple --dest "$RUNNER_TEMP/security-wheels" "Django==$version"
+          done
+          python -m pip download --no-deps --only-binary=:all: --index-url https://pypi.org/simple --dest "$RUNNER_TEMP/security-wheels" asgiref==3.12.1 sqlparse==0.6.0 beautifulsoup4==4.15.0 soupsieve==2.10 typing_extensions==4.16.0 django-simple-captcha==0.7.0 Pillow==12.2.0 django-axes==8.3.1
+          wheel=("$RUNNER_TEMP/artifact/"*.whl)
+          python django-theme/scripts/test-security.py --wheel "${wheel[0]}" --python "$(command -v python)" --root "$RUNNER_TEMP/security-matrix" --wheelhouse "$RUNNER_TEMP/security-wheels" --wheelhouse "$RUNNER_TEMP/test-support" --django "${versions[@]}"
+      - name: Preserve optional integration evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nova-security-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/security-matrix/results.json
+            ${{ runner.temp }}/security-matrix/*/provenance.json
+            ${{ runner.temp }}/security-matrix/*/*.log
+          if-no-files-found: warn
+          retention-days: 7
+
+  verify:
+    name: Nova CI gate
+    needs: [plan, build, python, node, security]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any required job did not pass
+        env:
+          PLAN_RESULT: ${{ needs.plan.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          PYTHON_RESULT: ${{ needs.python.result }}
+          NODE_RESULT: ${{ needs.node.result }}
+          SECURITY_RESULT: ${{ needs.security.result }}
+        run: test "$PLAN_RESULT/$BUILD_RESULT/$PYTHON_RESULT/$NODE_RESULT/$SECURITY_RESULT" = 'success/success/success/success/success'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12.15'
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact }}
+          path: ${{ runner.temp }}/artifact
+          digest-mismatch: error
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: nova-report-*
+          path: ${{ runner.temp }}/reports
+          digest-mismatch: error
+      - name: Check exact report coverage and source identity
+        env:
+          SCOPE: ${{ needs.plan.outputs.scope }}
+        run: |
+          python scripts/ci_artifacts.py verify --directory "$RUNNER_TEMP/artifact" --commit "$GITHUB_SHA"
+          wheel=("$RUNNER_TEMP/artifact/"*.whl)
+          python scripts/ci_support.py verify-reports --reports "$RUNNER_TEMP/reports" --scope "$SCOPE" --commit "$GITHUB_SHA" --wheel "${wheel[0]}" > "$RUNNER_TEMP/verification.json"
+          cat "$RUNNER_TEMP/verification.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nova-verification-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/verification.json
+          if-no-files-found: error
+          retention-days: 7

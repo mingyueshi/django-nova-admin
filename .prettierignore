@@ -1,0 +1,5 @@
+# This prototype cleanup deliberately excludes Django and exported/vendor assets.
+**/*
+!dist/
+!dist/js/
+!dist/js/*.js

@@ -1,0 +1,25 @@
+.sites-runtime/
+node_modules/
+*.zip
+__pycache__/
+.venv/
+*.sqlite3
+qa/
+
+
+# Local secrets and generated environments
+.env
+.env.*
+!.env.example
+!.env.sample
+.local/
+.openai/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.log
+django-theme/build/
+django-theme/dist/
+PACKAGE_MANIFEST.json

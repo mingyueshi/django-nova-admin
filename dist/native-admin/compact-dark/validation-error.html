@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+
+<html data-theme="dark" dir="ltr" lang="zh-hans">
+<head><meta charset="utf-8"/><meta content="default-src 'none'; script-src 'none'; connect-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'" http-equiv="Content-Security-Policy"/><meta content="no-referrer" name="referrer"/><meta content="noindex, nofollow" name="robots"/>
+<title>原生表单校验错误 · 企业深色 · 紧凑密度 · 真实 Django 模板渲染样本</title>
+<meta content="light dark" name="color-scheme"/>
+<link href="../static/admin/css/base.css" rel="stylesheet"/>
+<link href="../static/admin/css/dark_mode.css" rel="stylesheet"/>
+
+<link href="../static/admin/css/nav_sidebar.css" rel="stylesheet"/>
+
+<link href="../static/nova_admin/theme.css" rel="stylesheet"/>
+<link href="../static/nova_admin/tokens.css" rel="stylesheet"/>
+<link href="../static/catalog/enterprise.css" rel="stylesheet"/>
+<link href="../static/catalog/enterprise-compact.css" rel="stylesheet"/>
+<link href="../static/admin/css/widgets.css" rel="stylesheet"/>
+<link href="../static/admin/css/forms.css" rel="stylesheet"/>
+
+
+
+
+<link href="../static/catalog/demo-media.css" media="all" rel="stylesheet"/>
+<link href="../static/admin/css/vendor/select2/select2.min.css" media="screen" rel="stylesheet"/>
+<link href="../static/admin/css/autocomplete.css" media="screen" rel="stylesheet"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="../static/admin/css/responsive.css" rel="stylesheet"/>
+<meta content="NONE,NOARCHIVE" name="robots"/>
+<link href="../static/sample.css" rel="stylesheet"/></head>
+<body class="nova-admin nova-mode-dark app-catalog model-product change-form"><aside aria-label="真实 Django 模板渲染样本" class="sample-banner"><strong>真实 Django 模板渲染样本</strong><p>Django 6.1.1 · 企业深色 · 紧凑密度 · 合成数据。只读静态导出，无登录、保存或删除能力；原生脚本及增强控件已移除。列表开关保留禁用的原生复选框，仅展示已保存状态。</p><details class="sample-navigation"><summary>切换页面与外观</summary><nav aria-label="样本导航"><a href="../index.html">全部样本</a><a href="index.html">工作台</a><a href="changelist.html">商品列表 · 方形图片</a><a href="members.html">会员列表 · 圆形头像</a><a href="news.html">新闻列表 · 横向封面</a><a href="changeform.html">商品编辑 · 关系字段与内联</a><a aria-current="page" href="validation-error.html">原生表单校验错误</a><a href="delete-confirm.html">原生删除确认</a><a href="login.html">原生登录页</a><a href="../light/validation-error.html">企业浅色 · 标准密度</a><a href="../dark/validation-error.html">企业深色 · 标准密度</a><a href="../auto/validation-error.html">跟随系统 · 标准密度</a><a href="../compact-light/validation-error.html">企业浅色 · 紧凑密度</a><a aria-current="page" href="../compact-dark/validation-error.html">企业深色 · 紧凑密度</a><a href="../compact-auto/validation-error.html">跟随系统 · 紧凑密度</a><a href="../native/validation-error.html">Django 原生外观</a></nav></details></aside>
+<a class="skip-to-content-link" href="#content-start">跳到主要内容</a>
+
+<div id="container">
+
+<header id="header">
+<div id="branding">
+<div class="nova-custom-brand" id="site-name"><a href="index.html"><img alt="NOVA" class="nova-brand-logo" decoding="async" src="../static/catalog/brand/logo.svg"/><span>Nova · 管理中心</span></a></div>
+</div>
+<div id="user-tools">
+            
+                欢迎，
+                <strong>示例</strong>.
+            
+            
+                
+                    <a aria-disabled="true" tabindex="-1" title="静态渲染样本：此操作不可用">查看站点</a> /
+                
+                
+                    
+                    
+                
+                
+                <form data-sample-form="inert" id="logout-form">
+
+<button aria-disabled="true" disabled="disabled" type="button">退出登录</button>
+</form>
+<button aria-disabled="true" class="theme-toggle" disabled="disabled" type="button">
+<span class="visually-hidden theme-label-when-auto">切换主题（当前主题：自动）</span>
+<span class="visually-hidden theme-label-when-light">切换主题（当前主题：浅色）</span>
+<span class="visually-hidden theme-label-when-dark">切换主题（当前主题：深色）</span>
+<svg aria-hidden="true" class="theme-icon-when-auto">
+<use xlink:href="#icon-auto"></use>
+</svg>
+<svg aria-hidden="true" class="theme-icon-when-dark">
+<use xlink:href="#icon-moon"></use>
+</svg>
+<svg aria-hidden="true" class="theme-icon-when-light">
+<use xlink:href="#icon-sun"></use>
+</svg>
+</button>
+</div>
+<form aria-label="后台外观" class="nova-theme-switcher" data-sample-form="inert">
+
+
+<label for="nova-admin-mode">外观</label>
+<select aria-disabled="true" disabled="disabled" id="nova-admin-mode">
+<option selected="" value="dark">Nova 深色</option>
+<option value="light">Nova 浅色</option>
+<option value="auto">Nova 自动（跟随系统）</option>
+<option value="native">Django 原生</option>
+</select>
+<button aria-disabled="true" disabled="disabled" type="button">应用</button>
+</form>
+</header>
+
+<nav aria-label="条形导航">
+<ol class="breadcrumbs">
+<li><a href="index.html">首页</a></li>
+<li><a href="index.html">商品示例</a></li>
+<li><a href="changelist.html">商品</a></li>
+<li aria-current="page">Orbit 折叠支架</li>
+</ol>
+</nav>
+<div class="main shifted" id="main">
+<button aria-controls="nav-sidebar" aria-disabled="true" aria-expanded="false" class="nova-mobile-nav-toggle" disabled="disabled" hidden="" id="nova-mobile-nav-toggle" type="button">导航菜单</button>
+<button aria-disabled="true" aria-expanded="true" aria-label="切换导航" class="sticky toggle-nav-sidebar" disabled="disabled" id="toggle-nav-sidebar" type="button"></button>
+<nav aria-expanded="true" aria-label="侧边栏" class="sticky nova-navigation" id="nav-sidebar">
+<div class="nova-nav-heading">工作空间</div>
+<a class="nova-nav-home" href="index.html">工作台 <span aria-hidden="true">↗</span></a>
+<label class="visually-hidden" for="nav-filter">筛选导航项目</label>
+<input aria-disabled="true" aria-label="筛选导航项目" disabled="disabled" id="nav-filter" maxlength="200" placeholder="搜索菜单…" type="search"/>
+<section aria-labelledby="nova-nav-common-title" class="nova-nav-shortcuts">
+<h2 class="nova-nav-shortcut-title" id="nova-nav-common-title">常用模型</h2>
+<ul class="nova-nav-shortcut-list">
+<li>
+<a href="changelist.html"><svg aria-hidden="true" class="nova-nav-icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" viewbox="0 0 24 24" width="16"><path d="M3 7 12 3l9 4v10l-9 4-9-4V7Zm0 0 9 4 9-4M12 11v10M7 5l10 4"></path></svg>
+<span class="nova-nav-model-label">商品</span><span class="nova-nav-badge"><span class="visually-hidden">数量: </span>4</span></a>
+</li>
+<li>
+<a href="news.html"><svg aria-hidden="true" class="nova-nav-icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" viewbox="0 0 24 24" width="16"><path d="M14 2H4v20h16V8l-6-6ZM14 2v6h6M8 13h8M8 17h8"></path></svg>
+<span class="nova-nav-model-label">新闻</span></a>
+</li>
+</ul>
+</section>
+<section aria-labelledby="nova-nav-favorites-title" class="nova-nav-shortcuts" hidden="">
+<h2 class="nova-nav-shortcut-title" id="nova-nav-favorites-title">我的收藏</h2>
+<ul class="nova-nav-shortcut-list">
+<li hidden="">
+<a href="members.html"><svg aria-hidden="true" class="nova-nav-icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" viewbox="0 0 24 24" width="16"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M16 3a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-3.87M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0"></path></svg>
+<span class="nova-nav-model-label">会员资料</span></a>
+</li>
+<li hidden="">
+<a aria-disabled="true" tabindex="-1" title="静态渲染样本：此操作不可用">
+<span class="nova-nav-model-label">分类</span></a>
+</li>
+<li hidden="">
+<a href="changelist.html"><svg aria-hidden="true" class="nova-nav-icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" viewbox="0 0 24 24" width="16"><path d="M3 7 12 3l9 4v10l-9 4-9-4V7Zm0 0 9 4 9-4M12 11v10M7 5l10 4"></path></svg>
+<span class="nova-nav-model-label">商品</span><span class="nova-nav-badge"><span class="visually-hidden">数量: </span>4</span></a>
+</li>
+<li hidden="">
+<a href="news.html"><svg aria-hidden="true" class="nova-nav-icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" viewbox="0 0 24 24" width="16"><path d="M14 2H4v20h16V8l-6-6ZM14 2v6h6M8 13h8M8 17h8"></path></svg>
+<span class="nova-nav-model-label">新闻</span></a>
+</li>
+<li hidden="">
+<a aria-disabled="true" tabindex="-1" title="静态渲染样本：此操作不可用">
+<span class="nova-nav-model-label">标签</span></a>
+</li>
+<li hidden="">
+<a aria-disabled="true" tabindex="-1" title="静态渲染样本：此操作不可用">
+<span class="nova-nav-model-label">用户</span></a>
+</li>
+<li hidden="">
+<a aria-disabled="true" tabindex="-1" title="静态渲染样本：此操作不可用">
+<span class="nova-nav-model-label">用户组</span></a>
+</li>
+</ul>
+</section>
+<details class="nova-nav-section" open="">
+<summary class="nova-nav-section-title"><span>业务管理</span></summary>
+<div class="nova-nav-section-apps">
+<details class="nova-nav-group app-catalog current-app" open="">
+<summary><span><svg aria-hidden="true" class="nova-nav-icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" viewbox="0 0 24 24" width="16"><path d="M3 7V4h6l2 3h10v13H3V7Z"></path></svg>
+商品示例</span><span aria-hidden="true" class="nova-nav-count">5</span></summary>
+<table>
+<caption class="visually-hidden">商品示例</caption>
+<tbody>
+<tr class="model-memberprofile">
+<th scope="row">
+<a href="members.html"><svg aria-hidden="true" class="nova-nav-icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" viewbox="0 0 24 24" width="16"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M16 3a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-3.87M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0"></path></svg>
+<span class="nova-nav-model-label">会员资料</span></a>
+</th>
+<td><button aria-disabled="true" aria-label="收藏会员资料" aria-pressed="false" class="nova-nav-favorite" disabled="disabled" hidden="" type="button"><span aria-hidden="true">☆</span></button><a aria-disabled="true" aria-label="新增 会员资料" class="nova-nav-add" tabindex="-1" title="静态渲染样本：此操作不可用">+</a></td>
+</tr>
+<tr class="model-category">
+<th scope="row">
+<a aria-disabled="true" tabindex="-1" title="静态渲染样本：此操作不可用">
+<span class="nova-nav-model-label">分类</span></a>
+</th>
+<td><button aria-disabled="true" aria-label="收藏分类" aria-pressed="false" class="nova-nav-favorite" disabled="disabled" hidden="" type="button"><span aria-hidden="true">☆</span></button><a aria-disabled="true" aria-label="新增 分类" class="nova-nav-add" tabindex="-1" title="静态渲染样本：此操作不可用">+</a></td>
+</tr>
+<tr class="model-product current-model">
+<th scope="row">
+<a aria-current="page" href="changelist.html"><svg aria-hidden="true" class="nova-nav-icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" viewbox="0 0 24 24" width="16"><path d="M3 7 12 3l9 4v10l-9 4-9-4V7Zm0 0 9 4 9-4M12 11v10M7 5l10 4"></path></svg>
+<span class="nova-nav-model-label">商品</span><span class="nova-nav-badge"><span class="visually-hidden">数量: </span>4</span></a>
+</th>
+<td><button aria-disabled="true" aria-label="收藏商品" aria-pressed="false" class="nova-nav-favorite" disabled="disabled" hidden="" type="button"><span aria-hidden="true">☆</span></button><a aria-disabled="true" aria-label="新增 商品" class="nova-nav-add" tabindex="-1" title="静态渲染样本：此操作不可用">+</a></td>
+</tr>
+<tr class="model-newsitem">
+<th scope="row">
+<a href="news.html"><svg aria-hidden="true" class="nova-nav-icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" viewbox="0 0 24 24" width="16"><path d="M14 2H4v20h16V8l-6-6ZM14 2v6h6M8 13h8M8 17h8"></path></svg>
+<span class="nova-nav-model-label">新闻</span></a>
+</th>
+<td><button aria-disabled="true" aria-label="收藏新闻" aria-pressed="false" class="nova-nav-favorite" disabled="disabled" hidden="" type="button"><span aria-hidden="true">☆</span></button><a aria-disabled="true" aria-label="新增 新闻" class="nova-nav-add" tabindex="-1" title="静态渲染样本：此操作不可用">+</a></td>
+</tr>
+<tr class="model-tag">
+<th scope="row">
+<a aria-disabled="true" tabindex="-1" title="静态渲染样本：此操作不可用">
+<span class="nova-nav-model-label">标签</span></a>
+</th>
+<td><button aria-disabled="true" aria-label="收藏标签" aria-pressed="false" class="nova-nav-favorite" disabled="disabled" hidden="" type="button"><span aria-hidden="true">☆</span></button><a aria-disabled="true" aria-label="新增 标签" class="nova-nav-add" tabindex="-1" title="静态渲染样本：此操作不可用">+</a></td>
+</tr>
+</tbody>
+</table>
+</details>
+</div></details>
+<details class="nova-nav-section" open="">
+<summary class="nova-nav-section-title"><span>系统管理</span></summary>
+<div class="nova-nav-section-apps">
+<details class="nova-nav-group app-auth" open="">
+<summary><span><svg aria-hidden="true" class="nova-nav-icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" viewbox="0 0 24 24" width="16"><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2M18 12a6 6 0 1 1-12 0 6 6 0 0 1 12 0M14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0"></path></svg>
+认证和授权</span><span aria-hidden="true" class="nova-nav-count">2</span></summary>
+<table>
+<caption class="visually-hidden">认证和授权</caption>
+<tbody>
+<tr class="model-user">
+<th scope="row">
+<a aria-disabled="true" tabindex="-1" title="静态渲染样本：此操作不可用">
+<span class="nova-nav-model-label">用户</span></a>
+</th>
+<td><button aria-disabled="true" aria-label="收藏用户" aria-pressed="false" class="nova-nav-favorite" disabled="disabled" hidden="" type="button"><span aria-hidden="true">☆</span></button><a aria-disabled="true" aria-label="新增 用户" class="nova-nav-add" tabindex="-1" title="静态渲染样本：此操作不可用">+</a></td>
+</tr>
+<tr class="model-group">
+<th scope="row">
+<a aria-disabled="true" tabindex="-1" title="静态渲染样本：此操作不可用">
+<span class="nova-nav-model-label">用户组</span></a>
+</th>
+<td><button aria-disabled="true" aria-label="收藏用户组" aria-pressed="false" class="nova-nav-favorite" disabled="disabled" hidden="" type="button"><span aria-hidden="true">☆</span></button><a aria-disabled="true" aria-label="新增 用户组" class="nova-nav-add" tabindex="-1" title="静态渲染样本：此操作不可用">+</a></td>
+</tr>
+</tbody>
+</table>
+</details>
+</div></details>
+</nav>
+<main class="content" id="content-start" tabindex="-1">
+
+<div class="colM" id="content">
+<div class="titles-and-tools">
+<div class="titles">
+<h1>修改 商品</h1>
+<h2>Orbit 折叠支架</h2>
+</div>
+<ul class="object-tools">
+<li>
+<a aria-disabled="true" class="historylink" tabindex="-1" title="静态渲染样本：此操作不可用">历史</a>
+</li>
+</ul>
+</div>
+<div id="content-main">
+<form data-sample-form="inert" id="product_form">
+<div>
+<p class="errornote">
+    请更正以下错误。
+    </p>
+<fieldset aria-labelledby="fieldset-0-0-heading" class="module aligned">
+<h2 class="fieldset-heading" id="fieldset-0-0-heading">商品信息</h2>
+<div class="form-row field-name">
+<div class="flex-container errors">
+<label class="required" for="id_name">商品名称：</label>
+<ul class="errorlist" id="id_name_error"><li>这个字段是必须的</li></ul>
+<input aria-describedby="id_name_error" aria-disabled="true" aria-invalid="true" class="vTextField" disabled="disabled" id="id_name" maxlength="120" type="text"/>
+</div>
+</div>
+<div class="form-row field-sku">
+<div class="flex-container">
+<label class="required" for="id_sku">SKU：</label>
+<input aria-disabled="true" class="vTextField" disabled="disabled" id="id_sku" maxlength="40" type="text" value="SAMPLE-ORBIT-01"/>
+</div>
+</div>
+<div class="form-row field-image_key">
+<div class="flex-container">
+<label for="id_image_key">商品图片：</label>
+<div class="help" id="id_image_key_helptext">
+<div>仅选择内置合成图片；不接受网址或上传。</div>
+</div>
+<select aria-describedby="id_image_key_helptext" aria-disabled="true" disabled="disabled" id="id_image_key">
+<option selected="" value="">请选择</option>
+<option value="0">合成示例 1</option>
+<option value="1">合成示例 2</option>
+<option value="2">合成示例 3</option>
+<option value="3">合成示例 4</option>
+<option value="4">合成示例 5</option>
+<option value="5">合成示例 6</option>
+</select>
+</div>
+</div>
+<div class="form-row field-category">
+<div class="flex-container">
+<label for="id_category">分类：</label>
+<div class="related-widget-wrapper">
+<select aria-disabled="true" class="admin-autocomplete" disabled="disabled" id="id_category" lang="zh-CN">
+<option value=""></option>
+<option selected="" value="101">设计工作室</option>
+</select>
+<a aria-disabled="true" class="related-widget-wrapper-link change-related" id="change_id_category" tabindex="-1" title="更改选中的分类"><img alt="" height="24" src="../static/admin/img/icon-changelink.svg" width="24"/></a><a aria-disabled="true" class="related-widget-wrapper-link add-related" id="add_id_category" tabindex="-1" title="静态渲染样本：此操作不可用"><img alt="" height="24" src="../static/admin/img/icon-addlink.svg" width="24"/></a><a aria-disabled="true" class="related-widget-wrapper-link delete-related" id="delete_id_category" tabindex="-1" title="取消选中 分类"><img alt="" height="24" src="../static/admin/img/icon-deletelink.svg" width="24"/></a><a aria-disabled="true" class="related-widget-wrapper-link view-related" id="view_id_category" tabindex="-1" title="查看已选择的分类"><img alt="" height="24" src="../static/admin/img/icon-viewlink.svg" width="24"/></a>
+</div>
+</div>
+</div>
+<div class="form-row field-tags">
+<fieldset aria-describedby="id_tags_helptext"><legend>标签：</legend>
+<div class="flex-container">
+<div class="help" id="id_tags_helptext">
+<div>按住 Control 键或 Mac 上的 Command 键来选择多项。</div>
+</div>
+<div class="related-widget-wrapper">
+<select aria-disabled="true" class="selectfilter" disabled="disabled" id="id_tags" multiple="">
+<option selected="" value="201">新品</option>
+<option value="202">精选</option>
+</select>
+<a aria-disabled="true" class="related-widget-wrapper-link add-related" id="add_id_tags" tabindex="-1" title="静态渲染样本：此操作不可用"><img alt="" height="24" src="../static/admin/img/icon-addlink.svg" width="24"/></a>
+</div>
+</div>
+</fieldset>
+</div>
+</fieldset>
+<fieldset aria-labelledby="fieldset-0-1-heading" class="module aligned">
+<h2 class="fieldset-heading" id="fieldset-0-1-heading">价格与库存</h2>
+<div class="form-row flex-container form-multiline field-price field-stock">
+<div class="flex-container errors fieldBox field-price">
+<label class="required" for="id_price">价格：</label>
+<ul class="errorlist" id="id_price_error"><li>确保该值大于或等于0。</li></ul>
+<input aria-describedby="id_price_error" aria-disabled="true" aria-invalid="true" disabled="disabled" id="id_price" step="0.01" type="number" value="-1"/>
+</div>
+<div class="flex-container errors fieldBox field-stock">
+<label class="required inline" for="id_stock">库存：</label>
+<ul class="errorlist" id="id_stock_error"><li>确保该值大于或等于0。</li></ul>
+<input aria-describedby="id_stock_error" aria-disabled="true" aria-invalid="true" class="vIntegerField" disabled="disabled" id="id_stock" min="0" type="number" value="-3"/>
+</div>
+</div>
+<div class="form-row field-status">
+<div class="flex-container">
+<label class="required" for="id_status">状态：</label>
+<select aria-disabled="true" disabled="disabled" id="id_status">
+<option value="draft">草稿</option>
+<option selected="" value="active">已上架</option>
+<option value="archived">已归档</option>
+</select>
+</div>
+</div>
+<div class="form-row field-featured">
+<div class="flex-container checkbox-row">
+<div class="checkbox">
+<input aria-describedby="id_featured_helptext" aria-disabled="true" aria-label="精选推荐（保存后生效）" checked="" class="nova-switch" disabled="disabled" id="id_featured" title="精选推荐：修改后请点击保存" type="checkbox"/>
+<label class="vCheckboxLabel" for="id_featured">精选推荐</label>
+</div>
+<div class="help" id="id_featured_helptext">
+<div>勾选后需保存才会生效。列表中的开关也使用 Django 原生批量保存。</div>
+</div>
+</div>
+</div>
+</fieldset>
+<fieldset aria-labelledby="fieldset-0-2-heading" class="module aligned collapse">
+<details><summary>
+<h2 class="fieldset-heading" id="fieldset-0-2-heading">维护信息</h2>
+</summary>
+<div class="form-row field-updated_at">
+<div class="flex-container">
+<label>更新时间：</label>
+<div class="readonly">2026年10月1日 20:00</div>
+</div>
+</div>
+</details>
+</fieldset>
+<div class="js-inline-admin-formset inline-group" id="variants-group">
+<div class="tabular inline-related last-related">
+
+<fieldset aria-labelledby="variants-heading" class="module">
+<h2 class="inline-heading" id="variants-heading">
+  
+    商品规格
+  
+  </h2>
+<div class="wrapper">
+<table>
+<thead><tr>
+<th class="original"></th>
+<th class="column-name required">规格：
+       
+       </th>
+<th class="column-value required">规格值：
+       
+       </th>
+<th>删除？</th>
+</tr></thead>
+<tbody>
+<tr class="form-row has_original" id="variants-0">
+<td class="original">
+<p>
+          
+          颜色: 石墨灰
+          
+          
+          
+            </p>
+
+
+</td>
+<td class="field-name">
+<input aria-disabled="true" class="vTextField" disabled="disabled" id="id_variants-0-name" maxlength="80" type="text" value="颜色"/>
+</td>
+<td class="field-value">
+<ul class="errorlist" id="id_variants-0-value_error"><li>这个字段是必须的</li></ul>
+<input aria-describedby="id_variants-0-value_error" aria-disabled="true" aria-invalid="true" class="vTextField" disabled="disabled" id="id_variants-0-value" maxlength="80" type="text"/>
+</td>
+<td class="delete"><input aria-disabled="true" disabled="disabled" id="id_variants-0-DELETE" type="checkbox"/></td>
+</tr>
+<tr class="form-row has_original" id="variants-1">
+<td class="original">
+<p>
+          
+          尺寸: 标准版
+          
+          
+          
+            </p>
+
+
+</td>
+<td class="field-name">
+<input aria-disabled="true" class="vTextField" disabled="disabled" id="id_variants-1-name" maxlength="80" type="text" value="尺寸"/>
+</td>
+<td class="field-value">
+<input aria-disabled="true" class="vTextField" disabled="disabled" id="id_variants-1-value" maxlength="80" type="text" value="标准版"/>
+</td>
+<td class="delete"><input aria-disabled="true" disabled="disabled" id="id_variants-1-DELETE" type="checkbox"/></td>
+</tr>
+<tr class="form-row" id="variants-2">
+<td class="original">
+
+
+</td>
+<td class="field-name">
+<input aria-disabled="true" class="vTextField" disabled="disabled" id="id_variants-2-name" maxlength="80" type="text"/>
+</td>
+<td class="field-value">
+<input aria-disabled="true" class="vTextField" disabled="disabled" id="id_variants-2-value" maxlength="80" type="text"/>
+</td>
+<td class="delete"></td>
+</tr>
+<tr class="form-row empty-form" id="variants-empty">
+<td class="original">
+
+
+</td>
+<td class="field-name">
+<input aria-disabled="true" class="vTextField" disabled="disabled" id="id_variants-__prefix__-name" maxlength="80" type="text"/>
+</td>
+<td class="field-value">
+<input aria-disabled="true" class="vTextField" disabled="disabled" id="id_variants-__prefix__-value" maxlength="80" type="text"/>
+</td>
+<td class="delete"></td>
+</tr>
+</tbody>
+</table>
+</div>
+</fieldset>
+</div>
+</div>
+<div class="submit-row">
+<input aria-disabled="true" class="default" disabled="disabled" type="submit" value="保存"/>
+<input aria-disabled="true" disabled="disabled" type="submit" value="保存并增加另一个"/>
+<input aria-disabled="true" disabled="disabled" type="submit" value="保存并继续编辑"/>
+<a class="deletelink" href="delete-confirm.html" role="button">删除</a>
+</div>
+
+
+</div>
+</form></div>
+<br class="clear"/>
+</div>
+
+</main>
+</div>
+<footer id="footer"><p class="nova-brand-footer">NOVA · 本地演示</p></footer>
+</div>
+
+
+<svg class="base-svgs" xmlns="http://www.w3.org/2000/svg">
+<symbol id="icon-auto" viewbox="0 0 24 24"><path d="M0 0h24v24H0z" fill="currentColor"></path><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2V4a8 8 0 1 0 0 16z"></path></symbol>
+<symbol id="icon-moon" viewbox="0 0 24 24"><path d="M0 0h24v24H0z" fill="currentColor"></path><path d="M10 7a7 7 0 0 0 12 4.9v.1c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2h.1A6.979 6.979 0 0 0 10 7zm-6 5a8 8 0 0 0 15.062 3.762A9 9 0 0 1 8.238 4.938 7.999 7.999 0 0 0 4 12z"></path></symbol>
+<symbol id="icon-sun" viewbox="0 0 24 24"><path d="M0 0h24v24H0z" fill="currentColor"></path><path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.415-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"></path></symbol>
+</svg>
+
+</body>
+</html>

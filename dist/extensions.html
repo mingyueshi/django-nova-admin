@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NOVA · 项目扩展</title><link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./extensions.css">
+  <script src="./js/extensions-guide.js" defer></script>
+</head>
+<body>
+  <main class="extension-guide">
+    <header class="extension-header"><a class="text-link" href="./index.html#native-samples">返回模板演示</a><button class="btn" id="guide-theme" type="button">切换深色</button></header>
+    <h1>项目扩展</h1><p class="extension-lead">主题 0.6.0 的配置与维护入口。下面的导航样例来自真实 Django 模板，保留的交互只在浏览器本地运行</p>
+    <div class="extension-links"><a class="btn primary" href="./navigation-lab/zh-hans-light.html">体验收藏与常用模型</a><a class="btn" href="./native-admin/light/login.html">查看品牌登录样本</a><a class="btn" href="./navigation-lab/zh-hans-light-custom.html">对比自定义品牌</a></div>
+    <section class="extension-section"><h2>换品牌，不重写组件</h2><p>在主题样式之后加载项目 CSS。浅色、深色各用一个主色和悬停色，再调整密度、圆角与间距</p>
+      <pre><code>body.nova-admin {
+  --nova-brand-light: #1d4ed8;
+  --nova-brand-light-hover: #1e40af;
+  --nova-brand-dark: #93c5fd;
+  --nova-brand-dark-hover: #bfdbfe;
+  --nova-density: 1;
+  --nova-spacing: 1;
+  --nova-radius: 12px;
+}</code></pre><p class="extension-note">紧凑模式仍保留手机触控尺寸。更换颜色后需检查正文、按钮和焦点对比度；项目可继续覆盖 Django 的单个语义颜色</p>
+    </section>
+    <div class="extension-grid">
+      <section class="extension-section"><h2>品牌资源</h2><p>NOVA_ADMIN_BRANDING 配置 logo、favicon、登录背景和纯文本页脚；资源使用项目内的 static 路径</p><details><summary>配置示例</summary><pre><code>NOVA_ADMIN_BRANDING = {
+  "logo": "catalog/brand/logo.svg",
+  "logo_alt": "NOVA",
+  "favicon": "catalog/brand/favicon.svg",
+  "login_background": "catalog/brand/login-background.svg",
+  "footer": "NOVA · 本地演示",
+}</code></pre></details><p class="extension-note">模板 block、转义与原生恢复说明见源码 BRANDING.md。手机保留无外层面板的登录布局</p></section>
+      <section class="extension-section"><h2>权限内的快捷导航</h2><p>收藏按用户和 AdminSite 隔离。常用模型只从当前用户可见的真实菜单挑选，图标使用受控名称，徽标由项目一次性提供</p><details><summary>配置示例</summary><pre><code>NOVA_ADMIN_NAV_FAVORITES = True
+NOVA_ADMIN_NAV_COMMON_MODELS = ["catalog.product"]
+NOVA_ADMIN_NAV_ICONS = {"catalog.product": "box"}
+# 可选：项目级、权限过滤的批量计数 hook
+NOVA_ADMIN_NAV_BADGE_PROVIDER = "catalog.navigation.demo_product_badges"</code></pre></details><p class="extension-note">收藏保存在本机浏览器，不跨设备同步。主题默认不查询业务记录；计数 hook 需要遵守 ModelAdmin 的数据范围</p></section>
+      <section class="extension-section"><h2>配置自检</h2><p>django check 会提示遗漏上下文处理器、错误挂载命名空间和无效导航配置。可选端点不挂载时仍能使用配置固定外观</p><pre><code>python demo/manage.py check</code></pre><p class="extension-note">Nova 检查用于提示配置问题，不会自动修改设置；业务对象级权限仍由项目实现</p></section>
+      <section class="extension-section"><h2>模板漂移预警</h2><p>同时比较 Nova 覆盖与 Django 原版、当前原版与已审查基线。主线工作流记录精确 SHA 和回归日志</p><pre><code>python scripts/template_drift.py \
+  --output /tmp/nova-template-review</code></pre><p class="extension-note">已准备每周主线预警配置；GitHub 尚未接入，所以 cron 未运行。main 检查不代表已支持未来 Django 6.2</p></section>
+      <section class="extension-section"><h2>隔离启动示例</h2><p>Compose 示例包含 PostgreSQL、验证码和两个 AdminSite，本地生成文件密钥，管理员账号由你创建</p><pre><code>python examples/compose/demo.py up --captcha --create-superuser</code></pre><p class="extension-note">本轮云环境没有 Docker：配置、启动器与 Django 多站流程已验证，容器和 PostgreSQL 运行尚未实测。完整前提和命令见 examples/compose/README.md</p></section>
+      <section class="extension-section"><h2>验证码与登录防护</h2><p>可选 Axes 接入覆盖错误验证码、密码失败和非员工账号拒绝，计数与锁定继续由 Axes 负责</p><p class="extension-note">Axes 8.3.1 为单独测试的可选集成。共享 IP、代理信任和生产限流策略仍需项目配置；不承诺消除所有时序枚举。旧 admin-honeypot 未列为现代版本支持，音频未实测</p></section>
+      <section class="extension-section"><h2>无需 CSS 构建</h2><p>主题使用手写 CSS，不引入编译器。CI 记录原始和 gzip 体积基线；如以后提供压缩版，必须同时保留源文件映射</p><pre><code>python scripts/css_budget.py</code></pre><p class="extension-note">体积统计排除 Django 第三方资源和重复导出快照。调整预算需要显式审查，不随每次构建自动放宽</p></section>
+      <section class="extension-section"><h2>恢复与验证边界</h2><p>主题仍基于原生 AdminSite、ModelAdmin、表单、权限和 CSRF。切回原生外观不会关闭已启用的验证码或 Axes</p><p class="extension-note">正式范围为文档列出的 7 组 Python/Django 精确组合。此站只有合成预览、只读模板样本和本地导航交互，不提供真实管理服务</p></section>
+    </div>
+  </main>
+</body>
+</html>

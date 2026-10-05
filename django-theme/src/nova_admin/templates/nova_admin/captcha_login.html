@@ -1,0 +1,14 @@
+{% extends "admin/login.html" %}
+{% load static nova_tags %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'nova_admin/captcha.css' %}" {% nova_nonce %}>
+{% endblock %}
+{% block extrahead %}
+  {{ block.super }}
+  <script src="{% static 'nova_admin/captcha.js' %}" defer {% nova_nonce %}></script>
+{% endblock %}
+{% block content %}
+  {% include "nova_admin/login_content.html" %}
+{% endblock %}
