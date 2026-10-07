@@ -2,7 +2,7 @@
 # English source strings are the fallback; Django core messages are not overridden.
 msgid ""
 msgstr ""
-"Project-Id-Version: nova-django-admin-theme 0.6.0\n"
+"Project-Id-Version: nova-django-admin-theme 0.6.1rc1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-10-01 00:00+0000\n"
 "PO-Revision-Date: 2026-10-01 00:00+0000\n"

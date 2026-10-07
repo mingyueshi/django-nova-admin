@@ -144,5 +144,136 @@ async function test(name, run) {
     app.w.Storage.prototype.setItem = set;
     click(app, 'business'); assert.equal(saved(app).nodes.business, false);
   });
-  console.log(`${passed} preview navigation scenarios passed`);
+  await test('mobile disclosure exposes one controlled sidebar and synchronized expanded state', async setup => {
+    const app = await setup();
+    const button = app.d.querySelector('.mobile-menu');
+    const sidebar = app.d.getElementById(button.getAttribute('aria-controls'));
+    assert.equal(button.type, 'button');
+    assert.ok(sidebar.classList.contains('sidebar'));
+    assert.equal(app.d.querySelectorAll('#' + sidebar.id).length, 1);
+    assert.equal(button.getAttribute('aria-expanded'), 'false');
+    assert.equal(button.getAttribute('aria-label'), '打开导航');
+    button.focus(); button.click();
+    assert.equal(button.getAttribute('aria-expanded'), 'true');
+    assert.equal(button.getAttribute('aria-label'), '关闭导航');
+    assert.equal(app.d.querySelector('.shell').classList.contains('mobile-open'), true);
+    assert.equal(app.d.body.style.overflow, 'hidden');
+    assert.equal(app.d.activeElement, sidebar.querySelector('a'));
+    app.d.dispatchEvent(new app.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(button.getAttribute('aria-expanded'), 'false');
+    assert.equal(app.d.activeElement, button);
+    assert.equal(app.d.body.style.overflow, '');
+  });
+  await test('mobile repeated activation and backdrop close restore state and keyboard focus', async setup => {
+    const app = await setup(); const button = app.d.querySelector('.mobile-menu');
+    for (let iteration = 0; iteration < 3; iteration++) {
+      button.click(); assert.equal(button.getAttribute('aria-expanded'), 'true');
+      button.click(); assert.equal(button.getAttribute('aria-expanded'), 'false');
+      assert.equal(app.d.activeElement, button);
+    }
+    button.click(); app.d.querySelector('[data-action="close-nav"]').click();
+    assert.equal(button.getAttribute('aria-expanded'), 'false');
+    assert.equal(app.d.querySelector('.shell').classList.contains('mobile-open'), false);
+    assert.equal(app.d.activeElement, button); assert.equal(app.d.body.style.overflow, '');
+  });
+  await test('mobile Tab boundaries remain contained and Escape returns to its trigger', async setup => {
+    const app = await setup(); const button = app.d.querySelector('.mobile-menu');
+    const sidebar = app.d.querySelector('.sidebar');
+    const first = sidebar.querySelector('a');
+    const last = sidebar.querySelector('[data-action="native"]');
+    // jsdom has no layout; supply only the two visible focus boundaries.
+    first.getClientRects = last.getClientRects = () => [{ width: 10, height: 10 }];
+    button.click();
+    const backward = new app.w.KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+    first.dispatchEvent(backward); assert.equal(backward.defaultPrevented, true); assert.equal(app.d.activeElement, last);
+    const forward = new app.w.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    last.dispatchEvent(forward); assert.equal(forward.defaultPrevented, true); assert.equal(app.d.activeElement, first);
+    first.dispatchEvent(new app.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(app.d.activeElement, button); assert.equal(button.getAttribute('aria-expanded'), 'false');
+  });
+  await test('mobile same-route and new-route navigation release scrolling and retain disclosure choices', async setup => {
+    const app = await setup(); let button = app.d.querySelector('.mobile-menu');
+    button.click(); app.d.querySelector('.brand').click();
+    assert.equal(button.getAttribute('aria-expanded'), 'false'); assert.equal(app.d.body.style.overflow, '');
+    assert.equal(app.d.activeElement, button);
+    button.click(); click(app, 'business'); click(app, 'organization');
+    app.d.querySelector('.nav-list a[href="#users"]').click(); await wait();
+    button = app.d.querySelector('.mobile-menu');
+    assert.equal(button.getAttribute('aria-expanded'), 'false');
+    assert.equal(button.getAttribute('aria-controls'), 'nova-preview-sidebar');
+    assert.equal(app.d.body.style.overflow, ''); assert.equal(app.d.activeElement, app.d.querySelector('#view h1'));
+    assert.equal(open(app, 'business'), true); assert.equal(open(app, 'organization'), true);
+    const reload = await setup({ url: 'https://example.test/#users', storage: snapshot(app) });
+    assert.equal(reload.d.querySelector('.mobile-menu').getAttribute('aria-expanded'), 'false');
+    assert.equal(open(reload, 'business'), true); assert.equal(open(reload, 'organization'), true);
+  });
+  await test('mobile disclosure retains matching state when history restores the page', async setup => {
+    const app = await setup(); const button = app.d.querySelector('.mobile-menu');
+    button.click();
+    app.w.dispatchEvent(new app.w.PageTransitionEvent('pageshow', { persisted: true }));
+    assert.equal(button.getAttribute('aria-expanded'), 'true');
+    assert.equal(app.d.querySelector('.shell').classList.contains('mobile-open'), true);
+    app.d.dispatchEvent(new app.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(button.getAttribute('aria-expanded'), 'false'); assert.equal(app.d.activeElement, button);
+  });
+  await test('closing a sidebar dialog preserves the still-open mobile disclosure and scroll lock', async setup => {
+    const app = await setup(); const button = app.d.querySelector('.mobile-menu');
+    button.click();
+    const trigger = app.d.querySelector('.sidebar [data-action="docs"]'); trigger.focus(); trigger.click();
+    await wait(); assert.ok(app.d.querySelector('#overlay-root .drawer'));
+    app.d.querySelector('#overlay-root [data-action="close"]').click();
+    assert.equal(app.d.querySelector('#overlay-root').children.length, 0);
+    assert.equal(button.getAttribute('aria-expanded'), 'true');
+    assert.equal(app.d.querySelector('.shell').classList.contains('mobile-open'), true);
+    assert.equal(app.d.body.style.overflow, 'hidden'); assert.equal(app.d.activeElement, trigger);
+    trigger.dispatchEvent(new app.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(button.getAttribute('aria-expanded'), 'false'); assert.equal(app.d.body.style.overflow, '');
+    assert.equal(app.d.activeElement, button);
+  });
+  await test('layout replacement restores open mobile ARIA and connected sidebar focus', async setup => {
+    const app = await setup({ url: 'https://example.test/#settings' });
+    const previous = app.d.querySelector('.mobile-menu'); previous.click();
+    // Exercise the existing layout redraw without relying on a private app API.
+    app.d.querySelector('#settings-form').dispatchEvent(new app.w.Event('submit', { bubbles: true, cancelable: true }));
+    const button = app.d.querySelector('.mobile-menu');
+    assert.notEqual(button, previous); assert.equal(button.getAttribute('aria-expanded'), 'true');
+    assert.equal(app.d.getElementById(button.getAttribute('aria-controls')), app.d.querySelector('.sidebar'));
+    assert.equal(app.d.querySelector('.shell').classList.contains('mobile-open'), true);
+    assert.equal(app.d.body.style.overflow, 'hidden');
+    assert.equal(app.d.activeElement, app.d.querySelector('.sidebar a'));
+    app.d.dispatchEvent(new app.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(button.getAttribute('aria-expanded'), 'false'); assert.equal(app.d.activeElement, button);
+  });
+  await test('saving a command-search editor returns to the still-open mobile sidebar', async setup => {
+    const app = await setup(); app.d.querySelector('.mobile-menu').click();
+    app.d.dispatchEvent(new app.w.KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true }));
+    const search = app.d.querySelector('#command-search'); search.value = '林知夏';
+    search.dispatchEvent(new app.w.Event('input', { bubbles: true }));
+    app.d.querySelector('.command-results [data-edit="1"]').click(); await wait();
+    app.d.querySelector('#user-form').dispatchEvent(new app.w.Event('submit', { bubbles: true, cancelable: true }));
+    const button = app.d.querySelector('.mobile-menu');
+    assert.equal(app.d.querySelector('#overlay-root').children.length, 0);
+    assert.equal(button.getAttribute('aria-expanded'), 'true');
+    assert.equal(app.d.querySelector('.shell').classList.contains('mobile-open'), true);
+    assert.equal(app.d.body.style.overflow, 'hidden'); assert.equal(app.d.activeElement, app.d.querySelector('.sidebar a'));
+    app.d.dispatchEvent(new app.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(app.d.activeElement, button); assert.equal(button.getAttribute('aria-expanded'), 'false');
+  });
+  await test('read-denied but writable storage preserves unread choices through clicks until reload', async setup => {
+    const previous = JSON.stringify({ version: 2, nodes: { system: true, developer: true } });
+    let originalGet;
+    const app = await setup({ storage: { [key]: previous }, beforeLoad(w) {
+      originalGet = w.Storage.prototype.getItem;
+      w.Storage.prototype.getItem = function () { throw Error('read denied'); };
+    } });
+    click(app, 'business'); assert.equal(open(app, 'business'), true);
+    assert.equal(originalGet.call(app.w.localStorage, key), previous);
+    app.w.Storage.prototype.getItem = originalGet;
+    click(app, 'organization');
+    assert.equal(app.w.localStorage.getItem(key), previous);
+    const reload = await setup({ storage: { [key]: previous } });
+    assert.equal(open(reload, 'system'), true); assert.equal(open(reload, 'developer'), true);
+    assert.equal(open(reload, 'business'), false);
+  });
+  console.log(`TOTAL ${passed} preview navigation scenarios passed`);
 })().catch(error => { console.error(error); process.exitCode = 1; });

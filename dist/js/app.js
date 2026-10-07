@@ -230,12 +230,25 @@ function person(u) {
   return `<div class="person">${thumbnail(imageSpec('avatar', u.id, u.name))}<div><strong>${esc(u.name)}</strong><small>${esc(u.email)}</small></div></div>`;
 }
 function layout() {
+  const restoreMobileFocus = state.mobile && !$('#overlay-root')?.children.length;
   $('#app').innerHTML =
-    `<div class="shell ${state.mobile ? 'mobile-open' : ''}"><button class="mobile-backdrop" data-action="close-nav" aria-label="关闭导航"></button><aside class="sidebar"><a class="brand" href="#overview" aria-label="NOVA 管理首页"><span class="brand-mark">N</span><span class="brand-name">NOVA</span></a><button class="workspace-select" data-action="workspace"><span class="workspace-icon">${icon('layers')}</span><span class="workspace-copy"><strong>${esc(state.settings.workspace)}</strong></span>${icon('down')}</button><div class="section-label">工作空间</div><nav class="nav-list" aria-label="主导航">${renderNavigation(state, icon, esc, navOpened)}</nav><div class="sidebar-bottom"><div class="sidebar-integration"><span class="integration-mark">${icon('terminal')}</span><div><strong>Django Admin</strong><button data-action="docs">集成与原生恢复说明 ${icon('arrow')}</button></div></div><button class="nav-item" data-action="native">${icon('history')}<span>原生恢复对照</span></button><div class="user-profile"><span class="avatar peach">演</span><div><p>演示管理员</p><small>本地演示 · 无真实账户</small></div></div></div></aside><div class="main-area">${state.native ? '<div class="preview-banner">当前为原生外观模拟。真实 Django 恢复方式见集成说明。</div>' : ''}<header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu" data-action="mobile" aria-label="打开导航">${icon('menu')}</button>${renderBreadcrumb(state, icon, esc, state.view === 'catalog' ? catalogRouteLabel(state.route) : '')}</div><div class="topbar-actions"><span class="prototype">交互原型 · 模拟数据</span><button class="global-search" data-action="search" aria-label="搜索页面或用户（${searchShortcut().spoken}）" aria-keyshortcuts="${searchShortcut().keys}"><span>${icon('search')}</span><span>搜索页面或用户</span><kbd aria-hidden="true">${searchShortcut().label}</kbd>${window.innerWidth < 701 ? icon('search') : ''}</button><button class="icon-button" data-action="theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? '切换浅色主题' : '切换深色主题'}">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><button class="icon-button unread" data-action="notifications" aria-label="查看演示通知">${icon('bell')}</button><span class="topbar-divider"></span><span class="avatar peach">演</span></div></header><main id="main" class="content" tabindex="-1"><div id="view"></div><footer class="footer"><span class="footer-left"><i class="live-dot"></i>NOVA ADMIN <span>·</span> 设计预览 v1.8.0</span><span class="footer-right">所有数据为本地模拟 <span>·</span> <a href="./responsive.html" target="_blank" rel="noopener">多尺寸预览 ↗</a> <span>·</span> <a href="#" data-action="docs">Django 集成说明</a></span></footer></main></div></div>`;
+    `<div class="shell ${state.mobile ? 'mobile-open' : ''}"><button class="mobile-backdrop" data-action="close-nav" aria-label="关闭导航"></button><aside class="sidebar" id="nova-preview-sidebar"><a class="brand" href="#overview" aria-label="NOVA 管理首页"><span class="brand-mark">N</span><span class="brand-name">NOVA</span></a><button class="workspace-select" data-action="workspace"><span class="workspace-icon">${icon('layers')}</span><span class="workspace-copy"><strong>${esc(state.settings.workspace)}</strong></span>${icon('down')}</button><div class="section-label">工作空间</div><nav class="nav-list" aria-label="主导航">${renderNavigation(state, icon, esc, navOpened)}</nav><div class="sidebar-bottom"><div class="sidebar-integration"><span class="integration-mark">${icon('terminal')}</span><div><strong>Django Admin</strong><button data-action="docs">集成与原生恢复说明 ${icon('arrow')}</button></div></div><button class="nav-item" data-action="native">${icon('history')}<span>原生恢复对照</span></button><div class="user-profile"><span class="avatar peach">演</span><div><p>演示管理员</p><small>本地演示 · 无真实账户</small></div></div></div></aside><div class="main-area">${state.native ? '<div class="preview-banner">当前为原生外观模拟。真实 Django 恢复方式见集成说明。</div>' : ''}<header class="topbar"><div class="breadcrumb"><button type="button" class="icon-button mobile-menu" data-action="mobile" aria-controls="nova-preview-sidebar" aria-expanded="${state.mobile}" aria-label="${state.mobile ? '关闭导航' : '打开导航'}">${icon('menu')}</button>${renderBreadcrumb(state, icon, esc, state.view === 'catalog' ? catalogRouteLabel(state.route) : '')}</div><div class="topbar-actions"><span class="prototype">交互原型 · 模拟数据</span><button class="global-search" data-action="search" aria-label="搜索页面或用户（${searchShortcut().spoken}）" aria-keyshortcuts="${searchShortcut().keys}"><span>${icon('search')}</span><span>搜索页面或用户</span><kbd aria-hidden="true">${searchShortcut().label}</kbd>${window.innerWidth < 701 ? icon('search') : ''}</button><button class="icon-button" data-action="theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? '切换浅色主题' : '切换深色主题'}">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><button class="icon-button unread" data-action="notifications" aria-label="查看演示通知">${icon('bell')}</button><span class="topbar-divider"></span><span class="avatar peach">演</span></div></header><main id="main" class="content" tabindex="-1"><div id="view"></div><footer class="footer"><span class="footer-left"><i class="live-dot"></i>NOVA ADMIN <span>·</span> 设计预览 v1.8.1-rc.1</span><span class="footer-right">所有数据为本地模拟 <span>·</span> <a href="./responsive.html" target="_blank" rel="noopener">多尺寸预览 ↗</a> <span>·</span> <a href="#" data-action="docs">Django 集成说明</a></span></footer></main></div></div>`;
   document.body.classList.toggle('native', state.native);
   document.body.classList.toggle('reduced-motion', !state.settings.animations);
   renderView();
   if (storageFailed) showStorageWarning();
+  setMobileNavigation(state.mobile, restoreMobileFocus ? 'menu' : '');
+}
+function setMobileNavigation(open, focus = '') {
+  state.mobile = Boolean(open);
+  $('.shell')?.classList.toggle('mobile-open', state.mobile);
+  const toggle = $('.mobile-menu');
+  toggle?.setAttribute('aria-expanded', String(state.mobile));
+  toggle?.setAttribute('aria-label', state.mobile ? '关闭导航' : '打开导航');
+  document.body.style.overflow =
+    state.mobile || $('#overlay-root')?.children.length ? 'hidden' : '';
+  if (focus === 'menu') $('.sidebar a')?.focus();
+  else if (focus === 'toggle') toggle?.focus();
 }
 function intro(title, subtitle, actions, cls = '') {
   return `<div class="page-intro ${cls}"><div><h1>${title}</h1><p>${subtitle}</p></div><div class="page-actions">${actions}</div></div>`;
@@ -438,7 +451,7 @@ function cleanCurrentDrafts() {
 function applyRoute(route) {
   state.route = route;
   state.view = routeView(route);
-  state.mobile = false;
+  setMobileNavigation(false);
   closeOverlay(true);
   layout();
   window.scrollTo({ top: 0 });
@@ -448,8 +461,7 @@ function applyRoute(route) {
 function navigate(route) {
   if (!validRoute(route)) return;
   if (state.route === route) {
-    state.mobile = false;
-    document.querySelector('.shell')?.classList.remove('mobile-open');
+    setMobileNavigation(false, state.mobile ? 'toggle' : '');
     if (state.view === 'catalog') {
       renderView();
       $('#view h1')?.focus({ preventScroll: true });
@@ -558,7 +570,7 @@ function closeOverlay(force = false) {
   }
   overlayStack = [];
   root.innerHTML = '';
-  document.body.style.overflow = '';
+  setMobileNavigation(state.mobile);
   $('#app').inert = false;
   if (lastFocus?.isConnected) lastFocus.focus();
   else $('#view h1')?.focus({ preventScroll: true });
@@ -686,18 +698,8 @@ const actions = {
   },
   theme: () =>
     applyAppearance(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true),
-  mobile: () => {
-    state.mobile = true;
-    $('.shell')?.classList.add('mobile-open');
-    document.body.style.overflow = 'hidden';
-    $('.sidebar a')?.focus();
-  },
-  'close-nav': () => {
-    state.mobile = false;
-    $('.shell')?.classList.remove('mobile-open');
-    document.body.style.overflow = '';
-    $('.mobile-menu')?.focus();
-  },
+  mobile: () => setMobileNavigation(!state.mobile, state.mobile ? 'toggle' : 'menu'),
+  'close-nav': () => setMobileNavigation(false, 'toggle'),
   native: () => {
     selectNativeComparison(state.view, state.route);
     navigate('native-samples');

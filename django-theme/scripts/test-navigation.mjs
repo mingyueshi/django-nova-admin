@@ -354,6 +354,31 @@ for (const path of paths) {
       assert.equal(result.errors.length, 0);
     }
   });
+  await test('read-denied but writable storage never loses preexisting navigation or favorite choices', () => {
+    const first = setup({extensions: true});
+    first.apps[1].querySelector('summary').click();
+    first.window.document.querySelector('[data-nova-favorite="auth.user"]').click();
+    first.fire('input', 'Users');
+    const localBefore = new Map(first.local.data);
+    const sessionBefore = new Map(first.session.data);
+    first.local.failRead = first.session.failRead = true;
+    const denied = setup({extensions: true, local: first.local, session: first.session});
+    denied.apps[0].querySelector('summary').click();
+    denied.window.document.querySelector('[data-nova-favorite="catalog.product"]').click();
+    denied.fire('input', '商品');
+    assert.equal(denied.apps[0].open, true);
+    assert.deepEqual(denied.local.data, localBefore);
+    assert.deepEqual(denied.session.data, sessionBefore);
+    denied.local.failRead = denied.session.failRead = false;
+    denied.fire('input', '');
+    denied.apps[0].querySelector('summary').click();
+    assert.deepEqual(denied.local.data, localBefore); // This page stays memory-only.
+    const reload = setup({extensions: true, local: first.local, session: first.session});
+    reload.fire('input', '');
+    assert.equal(reload.apps[1].open, true);
+    assert.equal(reload.apps[0].open, false);
+    assert.equal(reload.window.document.querySelector('[data-nova-favorite="auth.user"]').getAttribute('aria-pressed'), 'true');
+  });
   await test('query and collapse storage remain bounded', () => {
     const result = setup();
     result.fire('input', 'a'.repeat(1000));

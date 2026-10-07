@@ -56,6 +56,7 @@ export function flattenedNavigation(nodes = navigationTree) {
 // Preview preferences are separate from real AdminSite/user-scoped state.
 // v1 was seeded with open defaults, so it cannot identify manual choices.
 const branchKeys = new Set();
+const unreadPreferences = new WeakSet();
 (function collect(nodes) {
   for (const node of nodes) {
     if (node.children) {
@@ -69,9 +70,15 @@ export function navigationPreferenceKey() {
 }
 export function readNavigationPreferences(fallback) {
   const result = Object.create(null);
+  let raw;
   try {
-    const raw = window.localStorage.getItem(navigationPreferenceKey());
-    if (!raw || raw.length > 4000) return result;
+    raw = window.localStorage.getItem(navigationPreferenceKey());
+  } catch {
+    if (!fallback) unreadPreferences.add(result);
+    return fallback || result;
+  }
+  if (!raw || raw.length > 4000) return result;
+  try {
     const saved = JSON.parse(raw);
     if (saved?.version !== 2 || !saved.nodes || Array.isArray(saved.nodes)) return result;
     for (const key of branchKeys) {
@@ -80,14 +87,16 @@ export function readNavigationPreferences(fallback) {
       }
     }
   } catch {
-    // Storage can be denied, full, or malformed; in-page navigation still works.
-    return fallback || result;
+    // Successfully read but malformed data can be replaced by a fresh choice.
   }
   return result;
 }
 export function saveNavigationPreference(opened, key, value) {
   if (!branchKeys.has(key) || typeof value !== 'boolean') return false;
   opened[key] = value;
+  // Never overwrite unread choices with this page's partial, in-memory state.
+  // Reload after storage access recovers to resume safe persistence.
+  if (unreadPreferences.has(opened)) return false;
   const nodes = Object.create(null);
   for (const name of branchKeys) {
     if (Object.hasOwn(opened, name) && typeof opened[name] === 'boolean') {

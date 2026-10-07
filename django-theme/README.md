@@ -1,12 +1,13 @@
-# Nova Django Admin Theme 0.6.0
+# Nova Django Admin Theme 0.6.1rc1
 
-本轮增加可选品牌/令牌/导航扩展、自检与上游漂移工具；核心仍无额外依赖。新的 Axes 登录桥接只在项目显式选择 security extra 与对应登录表单后启用。入口见 [BRANDING.md](BRANDING.md)、[NAVIGATION_EXTENSIONS.md](NAVIGATION_EXTENSIONS.md)、[UPSTREAM_DRIFT.md](UPSTREAM_DRIFT.md)。维护范围与本轮实际验证分别见 [COMPATIBILITY.md](COMPATIBILITY.md) 和 [TEST_REPORT.md](TEST_REPORT.md)。
+当前候选版本：**0.6.1rc1**。仅通过审查后的固定提交或受控 wheel 同步到宿主，尚未发布 PyPI；历史版本验证记录不代表此候选已完成所有浏览器检查。
+0.6.0 基础能力包括可选品牌/令牌/导航扩展、自检与上游漂移工具；核心仍无额外依赖。Axes 登录桥接只在项目显式选择 security extra 与对应登录表单后启用。入口见 [BRANDING.md](BRANDING.md)、[NAVIGATION_EXTENSIONS.md](NAVIGATION_EXTENSIONS.md)、[UPSTREAM_DRIFT.md](UPSTREAM_DRIFT.md)。维护范围与历史验证分别见 [COMPATIBILITY.md](COMPATIBILITY.md) 和 [TEST_REPORT.md](TEST_REPORT.md)；当前候选的验证边界见仓库根目录 [NAVIGATION_ICONS_QA.md](../NAVIGATION_ICONS_QA.md)。
 
 核心安装仍只依赖Django。启用验证码需显式安装extra、挂载接口并迁移其独立表，见 [CAPTCHA_INTEGRATION.md](CAPTCHA_INTEGRATION.md)。原生外观/主题关闭后，已启用的验证码继续要求验证；完全卸载主题时，也要先处理已配置的login_form/login_template及可选刷新URL。
 
 # Nova · 原生 Django Admin 可逆主题
 
-Nova 0.6.0 是可复用的 Django Admin 主题包，直接作用于项目现有的 `AdminSite` / `ModelAdmin`。支持深色、浅色、跟随系统和 Django 原生外观，包含可选的分组 → 应用 → 模型三级导航。**这是实际运行 Django 模板、权限、表单和数据库流程的主题，不是用 React 重做的管理后台。**
+Nova 0.6.1rc1 是可复用的 Django Admin 主题包，直接作用于项目现有的 `AdminSite` / `ModelAdmin`。支持深色、浅色、跟随系统和 Django 原生外观，包含可选的分组 → 应用 → 模型三级导航。**这是实际运行 Django 模板、权限、表单和数据库流程的主题，不是用 React 重做的管理后台。**
 
 ## 覆盖范围与边界
 
@@ -118,7 +119,7 @@ NOVA_ADMIN_NAV_GROUPS = [
 - 搜索模型时自动展开匹配分组与应用；清空后恢复各层原展开状态
 - native、全局关闭、popup 和站点侧栏关闭均不会渲染该分组导航
 
-折叠偏好存放于当前浏览器的 `nova.admin.navigation.v2.<站点及用户作用域>`，只保存主动操作的有限不透明标识和布尔值。旧 v1 同时记录过自动展开与默认值，无法可靠区分用户选择，因此不迁移旧折叠数据，升级后从默认折叠开始；旧数据不删除。收藏、搜索、主题以及 Django 整侧栏偏好使用各自原有键，互不覆盖。存储被禁用时本页仍可展开/收起，但无法跨刷新保存。跨标签和 Back 缓存恢复会同步最新折叠偏好，搜索中的临时展开仍不写入偏好。
+折叠偏好存放于当前浏览器的 `nova.admin.navigation.v2.<站点及用户作用域>`，只保存主动操作的有限不透明标识和布尔值。旧 v1 同时记录过自动展开与默认值，无法可靠区分用户选择，因此不迁移旧折叠数据，升级后从默认折叠开始；旧数据不删除。收藏、搜索、主题以及 Django 整侧栏偏好使用各自原有键，互不覆盖。存储被禁用时本页仍可展开/收起，但无法跨刷新保存。若首次读取失败，本页不写回未知的导航、收藏或搜索偏好；恢复访问后刷新才重新启用持久化。跨标签和 Back 缓存恢复会同步最新折叠偏好，搜索中的临时展开仍不写入偏好。
 
 业务图标的内建目录、安全模板标签与配置示例见 [ICON_GUIDE.md](ICON_GUIDE.md)。
 

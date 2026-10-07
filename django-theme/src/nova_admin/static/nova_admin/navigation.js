@@ -71,13 +71,18 @@
         // across visits. Disabled/quota-limited/corrupt storage is never fatal.
         const read = (kind, limit, key = storageKey, version = 1) => {
             if (!key) return null;
+            let raw;
             try {
-                const raw = window[kind].getItem(key);
-                if (!raw || raw.length > limit) return null;
+                raw = window[kind].getItem(key);
+            } catch (_) {
+                return undefined; // Unread preferences must never be overwritten.
+            }
+            if (!raw || raw.length > limit) return null;
+            try {
                 const value = JSON.parse(raw);
                 return value && value.version === version ? value : null;
             } catch (_) {
-                return undefined; // Distinguish unavailable storage from an empty preference.
+                return null; // Successfully read but malformed data can be reset.
             }
         };
         const write = (kind, value, key = storageKey) => {
@@ -126,7 +131,7 @@
             });
         };
         const persistFavorites = () => {
-            if (favoritesEnabled) write('localStorage', {
+            if (favoritesEnabled && favoriteState !== undefined) write('localStorage', {
                 version: 1, models: Array.from(favorites).slice(0, MAX_FAVORITES),
             }, favoriteKey);
         };
@@ -162,6 +167,13 @@
         // Only explicitly activated nodes are saved. Untouched nodes stay closed.
         let openWriteFailed = false;
         const persistOpen = () => {
+            // A failed initial read means existing choices are unknown. Keep
+            // this page memory-only, including later clicks, until a fresh load
+            // can read them. Never replace unread preferences with a partial map.
+            if (stored === undefined) {
+                openWriteFailed = true;
+                return;
+            }
             openWriteFailed = !write('localStorage', {
                 version: 2,
                 nodes: details.filter(item => savedNodes.has(keys.get(item))).slice(0, MAX_NODES)
@@ -173,7 +185,7 @@
         const applyFilter = () => {
             filter.value = filter.value.slice(0, MAX_QUERY);
             const query = normalize(filter.value);
-            write('sessionStorage', {version: 1, signature, query: filter.value}, filterKey);
+            if (storedFilter !== undefined) write('sessionStorage', {version: 1, signature, query: filter.value}, filterKey);
             if (query === previousQuery) return;
             let hasMatches = false;
             records.forEach(record => {

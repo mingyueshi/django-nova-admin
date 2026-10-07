@@ -63,7 +63,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':540,'theme_js':97,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TESTS,'theme_js':support.THEME_JS_TESTS,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -107,6 +107,50 @@ class MatrixTests(unittest.TestCase):
             filename=next(iter(support.read(ROOT/'ci/matrix.json')['django_wheels'].values()))['filename']
             (wheelhouse/filename).write_bytes(b'wrong wheel')
             with self.assertRaises(ValueError):support.sidebars(wheelhouse,root/'sidebars')
+
+class NodeEvidenceTests(unittest.TestCase):
+    def logs(self, root):
+        node = support.read(ROOT / 'ci/matrix.json')['node'][1]
+        (root / 'runtime.json').write_text(json.dumps({'node': 'v' + node['node'], 'npm': node['npm']}))
+        required = ['npm-version', 'install', 'dependency-tree', 'frontend', 'navigation', 'enhancements', 'captcha']
+        (root / 'steps.json').write_text(json.dumps([{'name': name, 'exitCode': 0} for name in required]))
+        (root / 'inputs.json').write_text(json.dumps({name: support.digest(ROOT / name) for name in ['package.json', 'package-lock.json']}))
+        (root / 'frontend.log').write_text('TOTAL 540 existing checks passed\nTOTAL 8 icon tests passed\nTOTAL 21 preview navigation scenarios passed\n')
+        (root / 'navigation.log').write_text('102 navigation DOM scenarios passed (3 Django script versions).\n')
+        (root / 'enhancements.log').write_text('TOTAL 8 search enhancement tests passed\n')
+        (root / 'captcha.log').write_text('TOTAL 11 CAPTCHA enhancement tests passed\n')
+        (root / 'dependency-tree.json').write_text('{}')
+        return node
+
+    def test_current_evidence_includes_icons_mobile_and_three_theme_versions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); logs = root / 'logs'; logs.mkdir(); node = self.logs(logs)
+            result = support.collect_node(logs, root / 'out', COMMIT, node['node'], node['npm'])
+            self.assertEqual(result['frontend'], 569)
+            self.assertEqual(result['theme_js'], 121)
+
+    def test_old_or_missing_suite_evidence_cannot_pass(self):
+        replacements = [
+            ('frontend.log', 'TOTAL 540 old frontend checks passed\n'),
+            ('frontend.log', 'TOTAL 540 existing checks passed\nTOTAL 8 unrelated checks\nTOTAL 21 preview navigation scenarios passed\n'),
+            ('frontend.log', 'TOTAL 540 existing checks passed\nTOTAL 8 icon tests passed\nTOTAL 21 unrelated checks\n'),
+            ('navigation.log', '78 navigation DOM scenarios passed (3 Django script versions).\n'),
+            ('navigation.log', '33 navigation DOM scenarios passed (1 Django script versions).\n'),
+            ('navigation.log', '1102 navigation DOM scenarios passed (3 Django script versions).\n'),
+            ('navigation.log', '102 navigation DOM scenarios passed (3 Django script versions).\n' * 2),
+            ('enhancements.log', 'TOTAL 18 search enhancement tests passed\n'),
+            ('enhancements.log', 'TOTAL 8 search enhancement tests passed\n' * 2),
+            ('captcha.log', 'TOTAL 110 CAPTCHA enhancement tests passed\n'),
+            ('captcha.log', 'TOTAL 11 CAPTCHA enhancement tests passed\n' * 2),
+            ('frontend.log', 'TOTAL 532 existing checks passed\nTOTAL 8 icon tests passed\nTOTAL 8 icon tests passed\nTOTAL 21 preview navigation scenarios passed\n'),
+            ('frontend.log', 'TOTAL 519 existing checks passed\nTOTAL 8 icon tests passed\nTOTAL 21 preview navigation scenarios passed\nTOTAL 21 preview navigation scenarios passed\n'),
+        ]
+        for name, content in replacements:
+            with self.subTest(name=name, content=content), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp); logs = root / 'logs'; logs.mkdir(); node = self.logs(logs)
+                (logs / name).write_text(content)
+                with self.assertRaises(ValueError):
+                    support.collect_node(logs, root / 'out', COMMIT, node['node'], node['npm'])
 
 class ArtifactTests(unittest.TestCase):
     def test_paths_refuse_traversal_and_hidden_files(self):

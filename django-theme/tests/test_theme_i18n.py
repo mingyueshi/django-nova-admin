@@ -24,7 +24,7 @@ from tests.test_navigation_groups import allowed_app
 @override_settings(LANGUAGE_CODE="en", LOCALE_PATHS=())
 class NovaCatalogTests(SimpleTestCase):
     def test_runtime_version_matches_current_release(self):
-        self.assertEqual(__version__, "0.6.0")
+        self.assertEqual(__version__, "0.6.1rc1")
 
     def test_compiled_chinese_catalog_contains_only_nova_context(self):
         directory = resources.files("nova_admin").joinpath("locale", "zh_Hans", "LC_MESSAGES")
