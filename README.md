@@ -1,5 +1,7 @@
 # NOVA Admin
 
+导航分组与应用现默认折叠，只保存用户主动展开/收起的选择，跨页面和刷新保持；搜索临时展开不会改写偏好。升级时旧自动展开记录不迁移，详见 [导航配置与存储说明](django-theme/README.md#可选三级导航配置)。新增 [98 个业务图标目录与配置](django-theme/ICON_GUIDE.md)，静态预览入口为 `dist/icons.html`。
+
 版本：交互预览 **1.8.0** / 原生 Django 主题 **0.6.0** · 2026-10-03
 
 本轮新增设计令牌与品牌配置、权限内的收藏/常用模型/图标/计数、自检警告、上游漂移预警、隔离 Compose 示例和可选 Axes 接入。入口见 [品牌指南](django-theme/BRANDING.md)、[导航扩展](django-theme/NAVIGATION_EXTENSIONS.md)、[模板漂移](django-theme/UPSTREAM_DRIFT.md)、[Compose](examples/compose/README.md)、[验证码与安全工具](django-theme/CAPTCHA_INTEGRATION.md)。公开演示只承载合成预览与只读样本。2026-10-05 应要求交付最新版完整源码包，并同步至 [GitHub 仓库](https://github.com/mingyueshi/nova-admin)。本次交付校验和验证范围见 [DELIVERY.md](DELIVERY.md)。

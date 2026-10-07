@@ -58,6 +58,6 @@ PROJECT_ADMIN_COMPACT = False
 # Optional grouped navigation uses native permission-filtered available_apps.
 NOVA_ADMIN_NAVIGATION = True
 NOVA_ADMIN_NAV_GROUPS = [
-    {"label": "业务管理", "apps": ["catalog"]},
-    {"label": "系统管理", "apps": ["auth"]},
+    {"key": "business", "label": "业务管理", "apps": ["catalog"]},
+    {"key": "system", "label": "系统管理", "apps": ["auth"]},
 ]

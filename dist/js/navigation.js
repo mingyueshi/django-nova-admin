@@ -53,6 +53,55 @@ export function flattenedNavigation(nodes = navigationTree) {
     n.children ? flattenedNavigation(n.children) : [[n.id, n.icon, n.label]],
   );
 }
+// Preview preferences are separate from real AdminSite/user-scoped state.
+// v1 was seeded with open defaults, so it cannot identify manual choices.
+const branchKeys = new Set();
+(function collect(nodes) {
+  for (const node of nodes) {
+    if (node.children) {
+      branchKeys.add(node.key);
+      collect(node.children);
+    }
+  }
+})(navigationTree);
+export function navigationPreferenceKey() {
+  return 'nova.preview.navigation.v2.' + new URL('.', window.location.href).pathname;
+}
+export function readNavigationPreferences(fallback) {
+  const result = Object.create(null);
+  try {
+    const raw = window.localStorage.getItem(navigationPreferenceKey());
+    if (!raw || raw.length > 4000) return result;
+    const saved = JSON.parse(raw);
+    if (saved?.version !== 2 || !saved.nodes || Array.isArray(saved.nodes)) return result;
+    for (const key of branchKeys) {
+      if (Object.hasOwn(saved.nodes, key) && typeof saved.nodes[key] === 'boolean') {
+        result[key] = saved.nodes[key];
+      }
+    }
+  } catch {
+    // Storage can be denied, full, or malformed; in-page navigation still works.
+    return fallback || result;
+  }
+  return result;
+}
+export function saveNavigationPreference(opened, key, value) {
+  if (!branchKeys.has(key) || typeof value !== 'boolean') return false;
+  opened[key] = value;
+  const nodes = Object.create(null);
+  for (const name of branchKeys) {
+    if (Object.hasOwn(opened, name) && typeof opened[name] === 'boolean') {
+      nodes[name] = opened[name];
+    }
+  }
+  try {
+    window.localStorage.setItem(navigationPreferenceKey(), JSON.stringify({ version: 2, nodes }));
+    return true;
+  } catch {
+    // Keep explicit choices in memory even without persistent storage.
+    return false;
+  }
+}
 export function renderNavigation(state, icon, escape, opened) {
   const activeKeys = new Set(
     navigationTrail(state.view)
@@ -63,7 +112,7 @@ export function renderNavigation(state, icon, escape, opened) {
     nodes
       .map((n) => {
         if (n.children) {
-          const isOpen = opened[n.key] ?? activeKeys.has(n.key);
+          const isOpen = opened[n.key] === true;
           return `<div class="navigation-branch depth-${depth}"><button type="button" class="nav-group ${activeKeys.has(n.key) ? 'contains-active' : ''}" data-nav-group="${n.key}" aria-expanded="${isOpen}" aria-controls="nav-group-${n.key}">${n.icon ? icon(n.icon) : '<span class="nav-tree-dot"></span>'}<span>${n.label}</span>${icon('chevron', 'group-chevron')}</button><div id="nav-group-${n.key}" class="nav-children" ${isOpen ? '' : 'hidden'}>${draw(n.children, depth + 1)}</div></div>`;
         }
         const isActive = state.view === n.id;

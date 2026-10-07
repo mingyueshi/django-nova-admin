@@ -12,3 +12,6 @@ include CAPTCHA_INTEGRATION.md PAGINATION_INTEGRATION.md
 include COMPATIBILITY.md
 
 include BRANDING.md NAVIGATION_EXTENSIONS.md UPSTREAM_DRIFT.md
+
+include src/nova_admin/icons.json
+include ICON_GUIDE.md

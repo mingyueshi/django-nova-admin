@@ -106,7 +106,8 @@ def build(theme: Path, output: Path):
     for language in ("zh-hans", "en"):
         chinese = language == "zh-hans"
         labels = ["业务管理", "系统管理"] if chinese else ["Business", "System management"]
-        groups = [{"label": labels[0], "apps": ["catalog"]}, {"label": labels[1], "apps": ["auth"]}]
+        groups = [{"key": "business", "label": labels[0], "apps": ["catalog"]},
+                  {"key": "system", "label": labels[1], "apps": ["auth"]}]
         with override_settings(NOVA_ADMIN_NAV_GROUPS=groups), translation.override(language):
             response = client.get(reverse("admin:catalog_product_changelist"))
         if response.status_code != 200:
@@ -138,7 +139,7 @@ def build(theme: Path, output: Path):
         label = "导航交互样例，合成权限菜单，无业务后端" if chinese else "Navigation interaction sample: synthetic permission menu, no business backend"
         header = "NOVA · 导航预览" if chinese else "NOVA · Navigation preview"
         heading = "收藏与导航" if chinese else "Favorites and navigation"
-        instructions = ("可以用键盘或鼠标折叠分组与应用，搜索分组、应用或模型名称，并刷新验证状态保留。手机上点击「导航菜单」展开；Esc 先清空筛选，再次按下可收起菜单。全部菜单链接只跳到本页说明，不执行管理操作。" if chinese else "Use the keyboard or mouse to collapse groups and apps. Search group, app or model names and reload to check saved state. On phones, open Navigation; Escape clears a search, then closes the menu on the next press. Every menu destination is a local page anchor and performs no admin action.")
+        instructions = ("分组与应用默认折叠；可以用键盘或鼠标展开/收起，搜索分组、应用或模型名称，并刷新验证状态保留。手机上点击「导航菜单」展开；Esc 先清空筛选，再次按下可收起菜单。全部菜单链接只跳到本页说明，不执行管理操作。" if chinese else "Groups and apps start collapsed. Use the keyboard or mouse to expand/collapse them. Search group, app or model names and reload to check saved state. On phones, open Navigation; Escape clears a search, then closes the menu on the next press. Every menu destination is a local page anchor and performs no admin action.")
         privacy = ("折叠状态仅保存在此浏览器的 localStorage，筛选保存在当前标签页的 sessionStorage。此样例执行两份经过核验的导航脚本；不登录、不提交表单、不请求业务 API。应用/模型名称来自宿主示例项目，不由主题翻译。" if chinese else "Collapse preferences stay in this browser’s localStorage; the filter stays in this tab’s sessionStorage. This sample executes two verified navigation scripts only. It has no login, form submission or business API calls. App/model names are supplied by the example host project, not translated by the theme.")
         variants = [(f"{lang}-{mode}.html", f"{lang} · {mode}") for lang in ("zh-hans", "en") for mode in ("dark", "light", "auto")]
         variants += [("zh-hans-light-custom.html", "自定义品牌 · 浅色"), ("zh-hans-dark-custom.html", "自定义品牌 · 深色")]

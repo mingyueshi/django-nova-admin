@@ -61,8 +61,12 @@ protection.
 
 ## Icons and one bulk badge provider
 
-Supported icon names are `box`, `users`, `tag`, `folder`, `file`, `chart`, `home`,
-`star`, and `settings`. They select fixed, package-owned SVG paths. Icon values
+The catalog now includes 98 built-in business icons; all original names remain
+valid. See the Chinese [icon catalog and integration guide](ICON_GUIDE.md), or
+open `dist/icons.html` in the repository preview. Applications use `app_label`;
+models use `app_label.lowercase_model_name`. Unknown or unset navigation names
+continue to omit the icon without changing the link. Names select fixed,
+package-owned SVG paths. Icon values
 cannot inject HTML, template paths, CSS, links, or remote assets. Unknown values
 are ignored. Icons are decorative; native labels remain the accessible names.
 

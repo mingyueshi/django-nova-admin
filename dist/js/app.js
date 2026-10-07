@@ -10,7 +10,9 @@ import {
   selectNativeComparison,
 } from './native-samples.js';
 import {
-  navigationTrail,
+  readNavigationPreferences,
+  saveNavigationPreference,
+  navigationPreferenceKey,
   flattenedNavigation,
   renderNavigation,
   renderBreadcrumb,
@@ -159,13 +161,28 @@ let lastFocus = null,
   pendingRole = null,
   pendingNavigation = null,
   mainFormDirty = false;
-const navOpened = {
-  business: true,
-  organization: true,
-  system: true,
-  developer: false,
-  ...read('nova-nav-open', {}),
+const navOpened = readNavigationPreferences();
+let navPersistenceFailed = false;
+const restoreNavigationMenu = () => {
+  if (navPersistenceFailed) return;
+  const latest = readNavigationPreferences(navOpened);
+  if (latest === navOpened) return;
+  for (const key of Object.keys(navOpened)) delete navOpened[key];
+  Object.assign(navOpened, latest);
+  // Do not rerender forms or dialogs when another tab changes only navigation.
+  document.querySelectorAll('[data-nav-group]').forEach((button) => {
+    const key = button.dataset.navGroup;
+    const open = navOpened[key] === true;
+    button.setAttribute('aria-expanded', String(open));
+    document.getElementById('nav-group-' + key).hidden = !open;
+  });
 };
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) restoreNavigationMenu();
+});
+window.addEventListener('storage', (event) => {
+  if (event.key === navigationPreferenceKey() || event.key === null) restoreNavigationMenu();
+});
 let overlayStack = [];
 let appearanceMode = 'light';
 try {
@@ -423,9 +440,6 @@ function applyRoute(route) {
   state.view = routeView(route);
   state.mobile = false;
   closeOverlay(true);
-  navigationTrail(state.view)
-    .filter((n) => n.key)
-    .forEach((n) => (navOpened[n.key] = true));
   layout();
   window.scrollTo({ top: 0 });
   $('#view h1')?.focus({ preventScroll: true });
@@ -845,10 +859,7 @@ document.addEventListener('click', (e) => {
       open = group.getAttribute('aria-expanded') !== 'true';
     group.setAttribute('aria-expanded', open);
     document.getElementById('nav-group-' + key).hidden = !open;
-    navOpened[key] = open;
-    try {
-      localStorage.setItem('nova-nav-open', JSON.stringify(navOpened));
-    } catch {}
+    navPersistenceFailed = !saveNavigationPreference(navOpened, key, open);
     return;
   }
   let a = e.target.closest('[data-action]');

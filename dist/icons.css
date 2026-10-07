@@ -1,0 +1,18 @@
+/* Local icon reference only; shares the preview's light/dark design tokens. */
+.icon-integration { margin: 28px 0 36px; }
+.icon-browser h2 { font-size: 20px; }
+.icon-filters { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin: 20px 0 16px; }
+.icon-filters > div:first-child { flex: 1 1 260px; }
+.icon-filters label { display: block; font-size: 14px; margin-bottom: 8px; }
+.icon-filters input, .icon-filters select { display: block; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: var(--panel); font: inherit; }
+.icon-filters select { min-width: 180px; }
+.icon-filters :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.icon-browser .extension-note { color: var(--muted); font-size: 14px; }
+.icon-grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); gap: 12px; padding: 0; margin: 20px 0; }
+.icon-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 0; min-height: 132px; padding: 20px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); text-align: center; }
+.icon-card[hidden] { display: none; }
+.icon-card .icon { width: 24px; height: 24px; color: var(--text); margin-bottom: 4px; }
+.icon-card code { font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; user-select: all; overflow-wrap: anywhere; }
+.icon-card span { color: var(--muted); font-size: 13px; }
+@media(max-width:480px) { .icon-filters > div { flex: 1 1 100%; } .icon-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media(forced-colors:active) { .icon-card, .icon-filters input, .icon-filters select { border-color: CanvasText; } }

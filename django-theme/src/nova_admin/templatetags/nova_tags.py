@@ -1,5 +1,6 @@
 """Small cross-version helpers; never replace Django Admin's own templates."""
 import json
+import re
 
 from django import template
 from django.utils.crypto import salted_hmac
@@ -59,6 +60,10 @@ def nova_navigation_groups(context):
     by_label = {app["app_label"]: app for app in apps}
     assigned = set()
     groups = []
+    # Resolve duplicates against all configured groups, before permission
+    # filtering. Otherwise a key can move to another group when access changes.
+    group_keys = [group.get("key") for group in config
+                  if isinstance(group, dict) and isinstance(group.get("key"), str)]
     for group in config:
         if not isinstance(group, dict):
             continue
@@ -72,8 +77,28 @@ def nova_navigation_groups(context):
                 visible.append(by_label[member])
                 assigned.add(member)
         if visible:
-            groups.append({"label": label.strip(), "apps": visible})
+            result = {"label": label.strip(), "apps": visible}
+            key = group.get("key")
+            if isinstance(key, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,99}", key) and group_keys.count(key) == 1:
+                result["key"] = key
+            groups.append(result)
     remaining = [app for app in apps if app["app_label"] not in assigned]
     if remaining:
         groups.append({"label": pgettext("Nova Admin", "Other apps"), "apps": remaining})
     return groups
+
+
+@register.simple_tag
+def nova_icon(name, css_class="", label="", size=16):
+    """Render a catalog name safely; unknown names use the neutral grid icon."""
+    from nova_admin.icons import render_icon
+
+    return render_icon(name, css_class, label, size)
+
+
+@register.simple_tag
+def nova_navigation_icon(icon_path):
+    """Retain path-based includes without accepting arbitrary SVG path input."""
+    from nova_admin.icons import render_navigation_icon
+
+    return render_navigation_icon(icon_path)

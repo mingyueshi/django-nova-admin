@@ -8,6 +8,7 @@ async function createApp(options={}){
  for(const [key,value] of Object.entries(options.storage||{}))w.localStorage.setItem(key,value);
  let mediaListener;const media={matches:!!options.systemDark,addEventListener(name,listener){if(name==='change')mediaListener=listener;}};
  w.matchMedia=()=>media;
+ options.beforeLoad?.(w);
  const context=dom.getInternalVMContext(),modules=new Map();
  async function load(file){if(modules.has(file))return modules.get(file);const m=new vm.SourceTextModule(fs.readFileSync(file,'utf8'),{context,identifier:file});modules.set(file,m);await m.link(spec=>load(path.resolve(path.dirname(file),spec)));return m;}
  await(await load(path.join(base,'js/app.js'))).evaluate();

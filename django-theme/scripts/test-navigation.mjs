@@ -16,7 +16,8 @@ if (!paths.length) paths.push(execFileSync(process.env.PYTHON || 'python3', ['-c
 ], {encoding: 'utf8'}).trim());
 const scope = 'a'.repeat(64);
 const otherScope = 'b'.repeat(64);
-const stateKey = value => 'nova.admin.navigation.v1.' + value;
+const stateKey = value => 'nova.admin.navigation.v2.' + value;
+const filterKey = value => 'nova.admin.navigation.v1.' + value;
 const nativeFilterKey = 'django.admin.navSidebarFilterValue';
 const delay = () => new Promise(resolve => setTimeout(resolve, 0));
 class MemoryStorage {
@@ -112,9 +113,9 @@ for (const path of paths) {
       if (grouped) { assert.equal(result.sections[0].open, true); assert.equal(result.sections[1].hidden, true); }
       result.fire('keyup', '');
       await delay();
-      assert.deepEqual(result.apps.map(app => app.open), [false, true]);
+      assert.deepEqual(result.apps.map(app => app.open), [false, false]);
       assert.ok(result.apps.every(app => !app.hidden));
-      if (grouped) assert.deepEqual(result.sections.map(section => section.open), [false, true]);
+      if (grouped) assert.deepEqual(result.sections.map(section => section.open), [false, false]);
       result.fire('change', 'USERS');
       assert.deepEqual(result.visible(), ['user']);
       result.fire('input', 'unmatched');
@@ -164,6 +165,7 @@ for (const path of paths) {
   await test('stored query and pre-search collapse survive a page visit', async () => {
     const result = setup();
     result.apps[1].querySelector('summary').click();
+    result.apps[1].querySelector('summary').click();
     await delay();
     assert.equal(result.apps[1].open, false);
     result.fire('input', 'Users');
@@ -176,7 +178,7 @@ for (const path of paths) {
     await delay();
     assert.equal(reload.filter.value, '');
     assert.deepEqual(reload.apps.map(app => app.open), [false, false]);
-    assert.deepEqual(reload.sections.map(section => section.open), [false, true]);
+    assert.deepEqual(reload.sections.map(section => section.open), [false, false]);
   });
   await test('manual collapse during search never replaces pre-search state', async () => {
     const result = setup();
@@ -188,23 +190,114 @@ for (const path of paths) {
     assert.equal(result.apps[1].open, false);
     result.fire('input', '');
     await delay();
-    assert.equal(result.apps[1].open, true);
-    assert.deepEqual(result.sections.map(section => section.open), [false, true]);
+    assert.equal(result.apps[1].open, false);
+    assert.deepEqual(result.sections.map(section => section.open), [false, false]);
   });
-  await test('new active model is revealed once and remains manually collapsible', async () => {
+  await test('first visit and active route never expand untouched ancestors', () => {
     const result = setup({active: 'product'});
-    assert.equal(result.apps[0].open, true);
-    assert.equal(result.sections[0].open, true);
-    result.apps[0].querySelector('summary').click();
-    result.sections[0].querySelector('summary').click();
-    await delay();
-    const reload = setup({active: 'product', local: result.local, session: result.session});
-    assert.equal(reload.apps[0].open, false);
-    assert.equal(reload.sections[0].open, false);
+    assert.deepEqual(result.apps.map(item => item.open), [false, false]);
+    assert.deepEqual(result.sections.map(item => item.open), [false, false]);
+    assert.deepEqual(result.state().nodes, []);
     const different = setup({active: 'category', local: result.local, session: result.session});
-    assert.equal(different.apps[0].open, true);
-    assert.equal(different.sections[0].open, true);
+    assert.equal(different.apps[0].open, false);
+    assert.equal(different.sections[0].open, false);
     assert.equal(different.window.document.querySelector('[aria-current="page"]').textContent, '商品分类');
+  });
+  await test('manual open and close survive routes and reloads with independent levels', () => {
+    const result = setup({active: 'product'});
+    result.sections[0].querySelector('summary').click();
+    result.apps[0].querySelector('summary').click();
+    // No timeout: the user's choice is persisted before a navigation can unload.
+    assert.equal(result.state().nodes.length, 2);
+    const reload = setup({active: 'category', local: result.local});
+    assert.equal(reload.apps[0].open, true);
+    assert.equal(reload.sections[0].open, true);
+    assert.equal(reload.apps[1].open, false);
+    reload.sections[0].querySelector('summary').click();
+    const closedParent = setup({active: 'user', local: result.local});
+    assert.equal(closedParent.apps[0].open, true);
+    assert.equal(closedParent.sections[0].open, false);
+    closedParent.sections[0].querySelector('summary').click();
+    assert.equal(closedParent.apps[0].open, true);
+    closedParent.apps[0].querySelector('summary').click();
+    const closedChild = setup({active: 'product', local: result.local});
+    assert.equal(closedChild.apps[0].open, false);
+    assert.equal(closedChild.sections[0].open, true);
+  });
+  await test('legacy automatic choices are ignored without deleting unrelated preferences', () => {
+    const legacy = JSON.stringify({version: 1, active: 'legacy', nodes: [['a:0000000000000000', true]]});
+    const local = new MemoryStorage([[filterKey(scope), legacy], ['nova-theme', 'dark'], ['django.admin.navSidebarIsOpen', 'false']]);
+    const result = setup({local, active: 'product'});
+    assert.ok([...result.apps, ...result.sections].every(item => !item.open));
+    assert.equal(local.getItem(filterKey(scope)), legacy);
+    assert.equal(local.getItem('nova-theme'), 'dark');
+    assert.equal(local.getItem('django.admin.navSidebarIsOpen'), 'false');
+  });
+  await test('explicit group keys survive labels and visible membership changes', () => {
+    const html = markup().replace('class="nova-nav-section"', 'class="nova-nav-section" data-nova-nav-section="business"');
+    const result = setup({html});
+    result.sections[0].querySelector('summary').click();
+    const changed = html.replace('业务管理', 'Business').replace('data-nova-nav-app="catalog"', 'data-nova-nav-app="renamed"');
+    const reload = setup({html: changed, local: result.local});
+    assert.equal(reload.sections[0].open, true);
+    assert.equal(reload.apps[0].open, false);
+  });
+  await test('queued programmatic toggles and repeated initialization never invent choices', async () => {
+    const result = setup();
+    result.apps[0].open = true;
+    await delay();
+    assert.deepEqual(result.state().nodes, []);
+    result.apps[0].open = false;
+    result.window.eval(source);
+    result.apps[0].querySelector('summary').click();
+    result.apps[0].querySelector('summary').click();
+    result.apps[0].querySelector('summary').click();
+    assert.equal(result.apps[0].open, true);
+    assert.equal(result.state().nodes.length, 1);
+    assert.equal(setup({local: result.local}).apps[0].open, true);
+  });
+  await test('Back cache and other-tab storage changes refresh only disclosure preferences', () => {
+    const first = setup();
+    first.sections[0].querySelector('summary').click();
+    first.apps[0].querySelector('summary').click();
+    const next = setup({local: first.local});
+    next.apps[0].querySelector('summary').click();
+    next.sections[1].querySelector('summary').click();
+    first.window.dispatchEvent(new first.window.PageTransitionEvent('pageshow', {persisted: true}));
+    assert.equal(first.apps[0].open, false);
+    assert.deepEqual(first.sections.map(item => item.open), [true, true]);
+    first.fire('input', '商品');
+    next.sections[0].querySelector('summary').click();
+    first.window.dispatchEvent(new first.window.StorageEvent('storage', {key: stateKey(scope)}));
+    assert.equal(first.sections[0].open, true); // Search stays temporarily expanded.
+    first.fire('input', '');
+    assert.equal(first.sections[0].open, false);
+    assert.equal(first.apps[0].open, false);
+    assert.equal(first.sections[1].open, true);
+    first.local.removeItem(stateKey(scope));
+    first.window.dispatchEvent(new first.window.StorageEvent('storage', {key: null}));
+    assert.ok([...first.sections, ...first.apps].every(item => !item.open));
+  });
+  await test('Back cache with blocked storage preserves usable in-page choices', () => {
+    const result = setup();
+    result.apps[0].querySelector('summary').click();
+    result.local.failRead = true;
+    result.window.dispatchEvent(new result.window.PageTransitionEvent('pageshow', {persisted: true}));
+    assert.equal(result.apps[0].open, true);
+    result.apps[0].querySelector('summary').click();
+    assert.equal(result.apps[0].open, false);
+  });
+  await test('failed writes cannot revert local choices on Back or storage events', () => {
+    const result = setup();
+    result.local.failWrite = true;
+    result.apps[0].querySelector('summary').click();
+    result.window.dispatchEvent(new result.window.PageTransitionEvent('pageshow', {persisted: true}));
+    result.window.dispatchEvent(new result.window.StorageEvent('storage', {key: stateKey(scope)}));
+    assert.equal(result.apps[0].open, true);
+    result.local.failWrite = false;
+    result.apps[0].querySelector('summary').click();
+    assert.equal(result.apps[0].open, false);
+    assert.equal(setup({local: result.local}).apps[0].open, false);
   });
   await test('site/user scopes are isolated', async () => {
     const result = setup();
@@ -213,11 +306,13 @@ for (const path of paths) {
     result.fire('input', 'Users');
     const other = setup({namespace: otherScope, local: result.local, session: result.session});
     assert.equal(other.filter.value, '');
-    assert.equal(other.apps[1].open, true);
-    assert.equal(JSON.parse(result.session.getItem(stateKey(scope))).query, 'Users');
+    assert.equal(other.apps[1].open, false);
+    assert.equal(JSON.parse(result.session.getItem(filterKey(scope))).query, 'Users');
   });
   await test('permission changes prune stale state and cannot create cached links', () => {
     const result = setup();
+    result.apps[1].querySelector('summary').click();
+    result.sections[1].querySelector('summary').click();
     result.fire('input', 'Users');
     const previous = result.state();
     const limited = setup({limited: true, local: result.local, session: result.session});
@@ -232,14 +327,14 @@ for (const path of paths) {
   });
   await test('bad JSON, oversized and malformed stored schemas are ignored', () => {
     for (const bad of ['{', 'null', '[]', 'x'.repeat(17000), JSON.stringify({version: 9, nodes: []}),
-      JSON.stringify({version: 1, nodes: [['__proto__', false], ['a:' + 'c'.repeat(16), 'false']], active: {}}),
-      JSON.stringify({version: 1, nodes: Array.from({length: 201}, () => ['a:' + 'c'.repeat(16), false])}),
+      JSON.stringify({version: 2, nodes: [['__proto__', false], ['a:' + 'c'.repeat(16), 'false']], active: {}}),
+      JSON.stringify({version: 2, nodes: Array.from({length: 201}, () => ['a:' + 'c'.repeat(16), false])}),
     ]) {
       const result = setup({local: new MemoryStorage([[stateKey(scope), bad]]), session: new MemoryStorage([[stateKey(scope), bad]])});
       assert.equal(result.filter.value, '');
-      assert.deepEqual(result.apps.map(app => app.open), [false, true]);
+      assert.deepEqual(result.apps.map(app => app.open), [false, false]);
       assert.equal(result.errors.length, 0);
-      assert.equal(result.state().version, 1);
+      assert.equal(result.state().version, 2);
     }
   });
   await test('storage failures never disable Nova filtering or native summaries', async () => {
@@ -263,9 +358,11 @@ for (const path of paths) {
     const result = setup();
     result.fire('input', 'a'.repeat(1000));
     assert.equal(result.filter.value.length, 200);
-    assert.equal(JSON.parse(result.session.getItem(stateKey(scope))).query.length, 200);
+    assert.equal(JSON.parse(result.session.getItem(filterKey(scope))).query.length, 200);
     const group = '<details class="nova-nav-group" open data-nova-nav-app="APP"><summary><span>App</span></summary><table><tbody><tr data-nova-nav-model="model"><th scope="row"><a href="/m/">Model</a></th></tr></tbody></table></details>';
     const many = setup({html: `<body class="nova-admin"><nav class="nova-navigation" data-nova-nav-scope="${scope}"><input type="search" id="nav-filter">${Array.from({length: 250}, (_, index) => group.replace('APP', String(index))).join('')}</nav></body>`, runUpstream: false});
+    assert.deepEqual(many.state().nodes, []);
+    many.apps.forEach(app => app.querySelector('summary').click());
     assert.equal(many.state().nodes.length, 200);
     const noScope = setup({namespace: ''});
     noScope.fire('input', 'Users');

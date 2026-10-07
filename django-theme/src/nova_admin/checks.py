@@ -82,9 +82,12 @@ def navigation_settings_check(app_configs, **kwargs):
         problems.append("NOVA_ADMIN_NAV_COMMON_MODELS must contain at most 50 'app_label.model_name' strings.")
     icons = getattr(settings, "NOVA_ADMIN_NAV_ICONS", {})
     if (not isinstance(icons, dict) or any(
-            not isinstance(key, str) or not key or not isinstance(icon, str) or icon not in ICON_PATHS
+            not isinstance(key, str) or not 1 <= len(key.split(".")) <= 2 or
+            not all(part.isidentifier() for part in key.split(".")) or
+            ("." in key and key.rsplit(".", 1)[1] != key.rsplit(".", 1)[1].lower()) or
+            not isinstance(icon, str) or icon not in ICON_PATHS
             for key, icon in icons.items())):
-        problems.append("NOVA_ADMIN_NAV_ICONS must map app/model keys to a supported built-in icon name.")
+        problems.append("NOVA_ADMIN_NAV_ICONS must map app_label or app_label.lowercase_model_name keys to a supported built-in icon name.")
     for name in ("NOVA_ADMIN_NAV_ICON_PROVIDER", "NOVA_ADMIN_NAV_BADGE_PROVIDER"):
         value = getattr(settings, name, None)
         if value is not None and resolve_provider(value) is None:

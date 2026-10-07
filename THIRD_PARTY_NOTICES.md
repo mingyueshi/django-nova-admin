@@ -30,3 +30,7 @@ jsdom 26.1.0（MIT）及其依赖通过 `package-lock.json` 锁定并由 npm 安
 
 
 登录模板内容部分改编自Django原生admin/login.html，BSD 3-Clause完整许可随主题运行包置于nova_admin/LICENSE-DJANGO.txt。可选验证码依赖django-simple-captcha0.7.0（MIT）/Pillow12.2.0；依赖由官方PyPI安装，不把其库源代码、字体或系统音频工具打入本包。静态验证码图片由隔离合成数据库在本地生成，无真实账号、服务令牌或第三方请求。
+
+## 内建业务图标
+
+`django-theme/src/nova_admin/icons.json` 是 Django 主题和静态预览共用的内建图标清单。保留仓库已有的简洁线性路径，新增业务图标为项目内手写线稿，按根目录 MIT 许可提供；没有引入第三方图标整库、字体、CDN 或运行时外部素材。`dist/js/icons-data.js` 由 `scripts/sync_icons.py` 从同一清单生成。这里的图标不包含 `dist/native-admin/` 下的 Django 原生素材，后者继续适用上述 Django 声明。

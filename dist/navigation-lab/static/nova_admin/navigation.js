@@ -40,7 +40,9 @@
         sections.forEach(section => {
             const members = Array.from(section.querySelectorAll('.nova-nav-group'))
                 .map(app => app.dataset.novaNavApp || '').sort();
-            keys.set(section, 's:' + fingerprint(JSON.stringify(members)));
+            // Explicit keys survive label, ordering and membership changes.
+            const identity = section.dataset.novaNavSection;
+            keys.set(section, 's:' + fingerprint(identity ? 'key:' + identity : JSON.stringify(members)));
         });
         const records = apps.map(app => ({
             node: app,
@@ -60,29 +62,35 @@
             keys.get(record.node), keys.get(record.section), record.rows.map(row => row.key).sort(),
         ]).sort()));
         const scope = navigation.dataset.novaNavScope || '';
-        const storageKey = /^[a-f0-9]{64}$/.test(scope) ? 'nova.admin.navigation.v1.' + scope : '';
+        const scoped = /^[a-f0-9]{64}$/.test(scope);
+        const storageKey = scoped ? 'nova.admin.navigation.v2.' + scope : '';
+        const filterKey = scoped ? 'nova.admin.navigation.v1.' + scope : '';
+        // v1 mixed automatic expansion with manual choices. Do not migrate it:
+        // guessing which entries were intentional would reopen untouched menus.
         // Search is tab-scoped (like Django's original filter); collapse persists
         // across visits. Disabled/quota-limited/corrupt storage is never fatal.
-        const read = (kind, limit, key = storageKey) => {
+        const read = (kind, limit, key = storageKey, version = 1) => {
             if (!key) return null;
             try {
                 const raw = window[kind].getItem(key);
                 if (!raw || raw.length > limit) return null;
                 const value = JSON.parse(raw);
-                return value && value.version === 1 ? value : null;
+                return value && value.version === version ? value : null;
             } catch (_) {
-                return null;
+                return undefined; // Distinguish unavailable storage from an empty preference.
             }
         };
         const write = (kind, value, key = storageKey) => {
-            if (!key) return;
+            if (!key) return false;
             try {
                 window[kind].setItem(key, JSON.stringify(value));
+                return true;
             } catch (_) {
                 // Navigation remains usable when browser storage is unavailable.
+                return false;
             }
         };
-        const stored = read('localStorage', 16000);
+        const stored = read('localStorage', 16000, storageKey, 2);
         // Favorites store bounded opaque model fingerprints, never labels/URLs.
         // All links remain server-rendered from this visit's permitted app list.
         const favoriteKey = storageKey ? 'nova.admin.favorites.v1.' + scope : '';
@@ -133,55 +141,40 @@
         // An enabled page with zero permitted models must prune all old IDs.
         // Disabling the feature deliberately preserves its previous choices.
         if (favoritesEnabled && favoriteKey) persistFavorites();
-        const savedNodes = new Map();
-        if (stored && Array.isArray(stored.nodes) && stored.nodes.length <= MAX_NODES) {
-            stored.nodes.forEach(entry => {
+        const decodeNodes = value => {
+            const nodes = new Map();
+            if (value && Array.isArray(value.nodes) && value.nodes.length <= MAX_NODES) value.nodes.forEach(entry => {
                 if (Array.isArray(entry) && entry.length === 2 &&
                     typeof entry[0] === 'string' && /^(a|s):[a-f0-9]{16}$/.test(entry[0]) &&
-                    typeof entry[1] === 'boolean') savedNodes.set(entry[0], entry[1]);
+                    typeof entry[1] === 'boolean') nodes.set(entry[0], entry[1]);
             });
-        }
-        const openState = new Map();
-        const expectedOpen = new Map();
-        const setOpen = (item, value) => {
-            expectedOpen.set(item, value);
-            item.open = value;
+            return nodes;
         };
+        let savedNodes = decodeNodes(stored);
+        const openState = new Map();
+        const setOpen = (item, value) => { item.open = value; };
         details.forEach(item => {
-            const value = savedNodes.has(keys.get(item)) ? savedNodes.get(keys.get(item)) : item.open;
+            const value = savedNodes.get(keys.get(item)) === true;
             openState.set(item, value);
             setOpen(item, value);
         });
-        const activeRow = navigation.querySelector('tr.current-model');
-        const activeApp = (activeRow && activeRow.closest('.nova-nav-group')) ||
-            navigation.querySelector('.nova-nav-group.current-app');
-        const active = activeApp ? fingerprint(JSON.stringify([
-            keys.get(activeApp), activeRow ? activeRow.dataset.novaNavModel : '',
-        ])) : null;
-        // Reveal a newly visited model once. Explicitly collapsing its ancestors
-        // remains possible and survives reloads of that model.
-        if (activeApp && (!stored || stored.active !== active)) {
-            [activeApp.closest('.nova-nav-section'), activeApp].filter(Boolean).forEach(item => {
-                openState.set(item, true);
-                setOpen(item, true);
+        // aria-current still identifies the page; routes never change disclosure.
+        // Only explicitly activated nodes are saved. Untouched nodes stay closed.
+        let openWriteFailed = false;
+        const persistOpen = () => {
+            openWriteFailed = !write('localStorage', {
+                version: 2,
+                nodes: details.filter(item => savedNodes.has(keys.get(item))).slice(0, MAX_NODES)
+                    .map(item => [keys.get(item), savedNodes.get(keys.get(item))]),
             });
-        }
-        const persistOpen = () => write('localStorage', {
-            version: 1,
-            active,
-            nodes: details.slice(0, MAX_NODES).map(item => [keys.get(item), openState.get(item)]),
-        });
+        };
         let filtering = false;
         let previousQuery = null;
         const applyFilter = () => {
             filter.value = filter.value.slice(0, MAX_QUERY);
             const query = normalize(filter.value);
-            write('sessionStorage', {version: 1, signature, query: filter.value});
+            write('sessionStorage', {version: 1, signature, query: filter.value}, filterKey);
             if (query === previousQuery) return;
-            if (query && !filtering) {
-                details.forEach(item => openState.set(item, item.open));
-                persistOpen();
-            }
             let hasMatches = false;
             records.forEach(record => {
                 const parentMatches = query && (record.title.includes(query) ||
@@ -207,13 +200,18 @@
             filtering = Boolean(query);
             previousQuery = query;
         };
-        details.forEach(item => item.addEventListener('toggle', () => {
-            // Programmatic search expansion also queues toggle events. Only an
-            // actual user change may update the saved, pre-search open state.
-            if (item.open === expectedOpen.get(item)) return;
-            expectedOpen.set(item, item.open);
+        details.forEach(item => item.querySelector(':scope > summary')?.addEventListener('click', event => {
+            if (event.defaultPrevented || event.button !== 0) return;
+            // Native summaries synthesize click for Enter/Space as well as a
+            // pointer. Record synchronously: queued toggle events can be lost on
+            // immediate navigation or coalesced by rapid clicks. Keep native
+            // keyboard/focus semantics without extra roles or ARIA state copies.
+            event.preventDefault();
+            const value = !item.open;
+            setOpen(item, value);
             if (!filtering) {
-                openState.set(item, item.open);
+                openState.set(item, value);
+                savedNodes.set(keys.get(item), value);
                 persistOpen();
             }
         }));
@@ -225,12 +223,30 @@
         // to these rows. Reset that initial display once; only Nova's handlers
         // are attached to the replacement input, so the two filters do not race.
         records.forEach(record => record.rows.forEach(row => { row.node.style.display = ''; }));
-        const storedFilter = read('sessionStorage', 2000);
+        const storedFilter = read('sessionStorage', 2000, filterKey);
         filter.value = storedFilter && storedFilter.signature === signature &&
             typeof storedFilter.query === 'string' && storedFilter.query.length <= MAX_QUERY ?
             storedFilter.query : '';
         persistOpen(); // Prune stale nodes; saved state never creates DOM or links.
         applyFilter();
+        const restoreStoredOpen = () => {
+            if (openWriteFailed) return; // Do not replace unsaved in-page choices with stale storage.
+            const latest = read('localStorage', 16000, storageKey, 2);
+            if (latest === undefined) return; // Keep this page usable when storage is blocked.
+            savedNodes = decodeNodes(latest);
+            details.forEach(item => {
+                const value = savedNodes.get(keys.get(item)) === true;
+                openState.set(item, value);
+                if (!filtering) setOpen(item, value);
+            });
+        };
+        window.addEventListener('pageshow', event => {
+            // Back/Forward may restore the entire DOM without executing scripts.
+            if (event.persisted) restoreStoredOpen();
+        });
+        window.addEventListener('storage', event => {
+            if (event.key === storageKey || event.key === null) restoreStoredOpen();
+        });
         if (focused) {
             filter.focus({preventScroll: true});
             filter.setSelectionRange(...selection);

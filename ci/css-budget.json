@@ -73,6 +73,15 @@
         "bytes": 81902,
         "gzip_bytes": 16704
       }
+    },
+    "dist/icons.css": {
+      "bytes": 1793,
+      "gzip_bytes": 754,
+      "sha256": "e5ce03af2539ac4809951a5dba22e3426c5d693817dffab9dcac7e19b6d50e29",
+      "limits": {
+        "bytes": 1973,
+        "gzip_bytes": 830
+      }
     }
   }
 }

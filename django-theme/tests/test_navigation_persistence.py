@@ -87,6 +87,7 @@ class NavigationPersistenceMarkupTests(TestCase):
         )]
         self.assertTrue(details)
         for item in details:
+            self.assertNotIn("open", item["attrs"])
             children = [child for child in elements if child["ancestors"] and child["ancestors"][-1] is item]
             self.assertEqual(children[0]["tag"], "summary")
             self.assertNotIn("role", children[0]["attrs"])
@@ -96,6 +97,17 @@ class NavigationPersistenceMarkupTests(TestCase):
         current = [item for item in elements if item["attrs"].get("aria-current") == "page" and nav in item["ancestors"]]
         self.assertEqual(len(current), 1)
         self.assertEqual(current[0]["attrs"]["href"], reverse("admin:catalog_product_changelist"))
+
+    @override_settings(NOVA_ADMIN_NAV_GROUPS=[{"key": "business", "label": "Business", "apps": ["catalog"]}])
+    def test_both_disclosure_levels_are_closed_even_on_the_current_model(self):
+        elements = self.elements(self.client.get(reverse("admin:catalog_product_changelist")))
+        details = [item for item in elements if item["tag"] == "details" and any(
+            name in item["attrs"].get("class", "").split() for name in ["nova-nav-group", "nova-nav-section"]
+        )]
+        self.assertEqual(len(details), 2)
+        self.assertTrue(all("open" not in item["attrs"] for item in details))
+        section = next(item for item in details if "nova-nav-section" in item["attrs"]["class"])
+        self.assertEqual(section["attrs"]["data-nova-nav-section"], "business")
 
     def test_native_mode_has_no_nova_state_attributes_or_script(self):
         session = self.client.session
