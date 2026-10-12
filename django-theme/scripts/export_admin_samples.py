@@ -48,6 +48,18 @@ PAGES = {
     "delete-confirm": "原生删除确认",
     "login": "原生登录页",
 }
+PALETTES = {"teal": "医疗青", "indigo": "专业靛", "violet": "文教紫", "terracotta": "零售陶"}
+PALETTE_PAGES = ("index", "changelist", "login")
+
+
+def sample_profiles(with_palettes=False):
+    profiles = [(mode, mode, "default", tuple(PAGES)) for mode in MODES]
+    if with_palettes:
+        profiles += [(f"palette-{palette}-{mode}", mode, palette, PALETTE_PAGES)
+                     for palette in PALETTES for mode in ("light", "dark")]
+    return profiles
+
+
 STATIC_SUFFIXES = {".css", ".svg", ".png", ".gif", ".jpg", ".jpeg", ".webp", ".woff", ".woff2", ".ttf", ".ico"}
 SUBMISSION_ATTRS = {"action", "method", "enctype", "accept-charset", "target", "name", "form", "formaction", "formmethod", "formenctype", "formtarget", "formnovalidate"}
 FORBIDDEN_TAGS = {"script", "iframe", "object", "embed", "base", "applet", "audio", "video", "source", "track", "template", "foreignobject"}
@@ -148,7 +160,10 @@ def local_static(value: str) -> str | None:
     return "../static/" + relative
 
 
-def sanitize_html(raw: str, *, mode: str, page: str, django_version: str, routes: dict[str, str]) -> str:
+def sanitize_html(raw: str, *, mode: str, page: str, django_version: str, routes: dict[str, str], palette: str = "default") -> str:
+    if palette not in {"default", *PALETTES} or (palette != "default" and (mode not in {"light", "dark"} or page not in PALETTE_PAGES)):
+        raise ValueError("Unsupported palette sample profile")
+    profile_label = MODES[mode] + (f" · {PALETTES[palette]}配色代表页" if palette != "default" else "")
     soup = BeautifulSoup(raw, "html.parser")
     for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):
         comment.extract()
@@ -227,7 +242,7 @@ def sanitize_html(raw: str, *, mode: str, page: str, django_version: str, routes
         if toggle is not None:
             toggle["aria-expanded"] = "true"
     if soup.title:
-        soup.title.string = f"{PAGES[page]} · {MODES[mode]} · {LABEL}"
+        soup.title.string = f"{PAGES[page]} · {profile_label} · {LABEL}"
     for attrs in reversed((
         {"charset": "utf-8"},
         {"http-equiv": "Content-Security-Policy", "content": CSP},
@@ -241,12 +256,14 @@ def sanitize_html(raw: str, *, mode: str, page: str, django_version: str, routes
     heading.string = LABEL
     banner.append(heading)
     note = soup.new_tag("p")
-    note.string = f"Django {django_version} · {MODES[mode]} · 合成数据。只读静态导出，无登录、保存或删除能力；原生脚本及增强控件已移除。列表开关保留禁用的原生复选框，仅展示已保存状态。"
+    note.string = f"Django {django_version} · {profile_label} · 合成数据。只读静态导出，无登录、保存或删除能力；原生脚本及增强控件已移除。列表开关保留禁用的原生复选框，仅展示已保存状态。"
     if soup.select_one(".nova-captcha"):
         note.string += " 验证码为合成数据库生成的静态PNG，密钥和提交能力已移除。"
     banner.append(note)
     navigation = soup.new_tag("nav", attrs={"aria-label": "样本导航"})
-    for label, href, current in [("全部样本", "../index.html", False)] + [(label, f"{slug}.html", slug == page) for slug, label in PAGES.items()] + [(label, f"../{slug}/{page}.html", slug == mode) for slug, label in MODES.items()]:
+    page_options = PAGES if palette == "default" else {slug: PAGES[slug] for slug in PALETTE_PAGES}
+    mode_options = [(label, f"../{slug}/{page}.html", slug == mode) for slug, label in MODES.items()] if palette == "default" else [(MODES[slug], f"../palette-{palette}-{slug}/{page}.html", slug == mode) for slug in ("light", "dark")]
+    for label, href, current in [("全部样本", "../index.html", False)] + [(label, f"{slug}.html", slug == page) for slug, label in page_options.items()] + mode_options:
         anchor = soup.new_tag("a", href=href)
         anchor.string = label
         if current:
@@ -276,8 +293,10 @@ a[aria-disabled=true]{cursor:default}.sample-gallery{margin:0;background:#f3f5fa
 """
 
 
-def gallery(version: str) -> str:
+def gallery(version: str, with_palettes=False) -> str:
     cards = "".join(f'<section class="sample-card"><h2>{label}</h2><ul>' + "".join(f'<li><a href="{mode}/{page}.html">{name}</a></li>' for page, name in PAGES.items()) + "</ul></section>" for mode, label in MODES.items())
+    if with_palettes:
+        cards += "".join(f'<section class="sample-card"><h2>{PALETTES[palette]} · {MODES[mode]}</h2><p>配色代表页：仅标准密度浅色／深色；名称为场景参考，非行业标准</p><ul>' + "".join(f'<li><a href="{directory}/{page}.html">{PAGES[page]}</a></li>' for page in pages) + "</ul></section>" for directory, mode, palette, pages in sample_profiles(True) if palette != "default")
     return f'''<!doctype html><html lang="zh-hans"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="{CSP}"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow"><title>{LABEL} · Nova Admin</title><link rel="stylesheet" href="static/sample.css"></head><body class="sample-gallery"><main><h1>{LABEL}</h1><p>由 Django {version} 的真实 Admin 视图、模板和合成数据库生成。选择外观与页面，查看可逆主题在原生管理后台中的真实结构。</p><p>这些页面是只读快照；所有提交、认证、远程请求及 Django JavaScript 均已移除。自动完成、双栏多选和动态新增内联等增强效果请在本地可运行 Demo 中验收。</p><div class="sample-grid">{cards}</div><footer>不含生产数据、账户凭据、会话或 CSRF token。Django 原生样本固定使用其原生浅色主题。文件可整体放到任意 URL 前缀，无需服务器端 Django。</footer></main></body></html>'''
 
 
@@ -406,14 +425,17 @@ def validate_inert_forms_and_csp(soup: BeautifulSoup, source: str = "HTML") -> d
     return {"inert_forms": forms, "functional_forms": 0, "inert_controls": controls}
 
 
-def validate_export(output: Path) -> dict:
+def validate_export(output: Path, *, with_palettes=None) -> dict:
     if not (output / MARKER).is_file():
         raise AssertionError("Missing export identity marker")
     for notice in ("DJANGO-LICENSE.txt", "NOVA-LICENSE.txt", "THIRD_PARTY_NOTICES.txt", "static/admin/css/vendor/select2/LICENSE-SELECT2.md"):
         if not (output / notice).is_file() or not (output / notice).read_text(encoding="utf-8").strip():
             raise AssertionError(f"Required redistribution notice missing: {notice}")
     pages = sorted(output.rglob("*.html"))
-    expected = {"index.html"} | {f"{mode}/{page}.html" for mode in MODES for page in PAGES}
+    if with_palettes is None:
+        manifest_path = output / "manifest.json"
+        with_palettes = json.loads(manifest_path.read_text()).get("palette_representatives", False) if manifest_path.is_file() else False
+    expected = {"index.html"} | {f"{directory}/{page}.html" for directory, mode, palette, profile_pages in sample_profiles(with_palettes) for page in profile_pages}
     if {p.relative_to(output).as_posix() for p in pages} != expected:
         raise AssertionError("Fixture inventory does not match the declared appearance/density export contract")
     total_links = total_controls = total_forms = total_switches = checked_switches = total_media = 0
@@ -465,6 +487,12 @@ def validate_export(output: Path) -> dict:
                     total_links += 1
         if path.parent.name == "native" and ("nova_admin/theme.css" in raw or "nova-admin" in soup.body.get("class", [])):
             raise AssertionError("Native fixture must not activate Nova CSS")
+        if path.parent != output and path.parent.name.startswith("palette-"):
+            _, palette, mode = path.parent.name.split("-")
+            if f"nova-palette-{palette}" not in soup.body.get("class", []) or f"nova-mode-{mode}" not in soup.body.get("class", []) or soup.html.get("data-theme") != mode:
+                raise AssertionError(f"Palette/mode mismatch in {path}")
+            if "nova_admin/presets.css" not in raw:
+                raise AssertionError(f"Palette fixture missing palette stylesheet: {path}")
         if path.parent.name in {"dark", "light"} and "nova_admin/theme.css" not in raw:
             raise AssertionError("Themed fixture is missing actual Nova CSS")
     css_files = list(output.rglob("*.css"))
@@ -588,6 +616,7 @@ Use the intended Django environment when running the command; the exporter recor
 
 - `index.html`: gallery
 - `light/`, `dark/`, `auto/`, `compact-light/`, `compact-dark/`, `compact-auto/`, `native/`: eight pages each (`index`, `changelist`, `members`, `news`, `changeform`, `validation-error`, `delete-confirm`, `login`)
+- Optional `--with-palettes`: 24 additional representative pages, four palettes × light/dark × dashboard/product list/login. Standard density only; auto/compact/native combinations retain default coverage.
 - `static/admin/`: exact Django CSS and image assets, with upstream attribution
 - `static/nova_admin/`: actual theme assets from this checkout
 - `static/catalog/`: demo-owned enterprise branding/density overrides, business-image geometry and three bundled synthetic WebP sheets
@@ -635,7 +664,7 @@ def capture_login_captcha(raw: str, client, output: Path, mode: str) -> str:
     return str(soup)
 
 
-def export(output: Path, with_captcha=False, with_extensions=False):
+def export(output: Path, with_captcha=False, with_extensions=False, with_palettes=False):
     output = output.resolve()
     if output == ROOT or ROOT.is_relative_to(output) or output.is_relative_to(ROOT / "demo") or output.is_relative_to(ROOT / "src"):
         raise ValueError("Output must not replace the repository, source or demo database tree")
@@ -664,16 +693,19 @@ def export(output: Path, with_captcha=False, with_extensions=False):
         stage = Path(temporary)
         (stage / MARKER).write_text("Synthetic inert Django Admin samples. Regenerate with scripts/export_admin_samples.py\n", encoding="utf-8")
         copy_static(stage)
-        for mode in MODES:
+        for directory, mode, palette, profile_pages in sample_profiles(with_palettes):
+            settings.NOVA_ADMIN_DEFAULT_PALETTE = palette
             settings.NOVA_ADMIN_DEFAULT_MODE = theme_mode(mode)
             settings.PROJECT_ADMIN_COMPACT = mode.startswith("compact-")
             client = Client()
             client.force_login(user)
             session = client.session
             session["nova_admin_mode"] = theme_mode(mode)
+            session["nova_admin_palette"] = palette
             session.save()
-            (stage / mode).mkdir()
-            for page in PAGES:
+            (stage / directory).mkdir()
+            profile_routes = {url: page for url, page in routes.items() if page in profile_pages}
+            for page in profile_pages:
                 response = Client().get(endpoints[page]) if page == "login" else client.post(endpoints[page], invalid_data) if page == "validation-error" else client.get(endpoints[page])
                 if response.status_code != 200:
                     raise AssertionError(f"Unexpected {response.status_code} rendering {mode}/{page}")
@@ -684,13 +716,13 @@ def export(output: Path, with_captcha=False, with_extensions=False):
                         raise AssertionError("Invalid export POST unexpectedly changed data")
                 original_html = response.content.decode("utf-8")
                 if page == "login" and with_captcha:
-                    original_html = capture_login_captcha(original_html, client, stage, mode)
-                rendered = sanitize_html(original_html, mode=mode, page=page, django_version=django.get_version(), routes=routes)
+                    original_html = capture_login_captcha(original_html, client, stage, directory)
+                rendered = sanitize_html(original_html, mode=mode, page=page, django_version=django.get_version(), routes=profile_routes, palette=palette)
                 original_form_count = len(BeautifulSoup(original_html, "html.parser").find_all("form"))
                 rendered_form_count = len(BeautifulSoup(rendered, "html.parser").find_all("form"))
                 if original_form_count != rendered_form_count:
                     raise AssertionError("Export must preserve original semantic form count")
-                (stage / mode / f"{page}.html").write_text(rendered, encoding="utf-8")
+                (stage / directory / f"{page}.html").write_text(rendered, encoding="utf-8")
                 for template in response.templates:
                     origin = getattr(template, "origin", None)
                     if origin and Path(origin.name).is_file():
@@ -702,18 +734,18 @@ def export(output: Path, with_captcha=False, with_extensions=False):
                         else:
                             raise AssertionError("Template resolved outside the expected source trees")
                         template_hashes[identity] = sha256(source)
-                render_records.append({"mode": mode, "page": page, "file": f"{mode}/{page}.html", "status": response.status_code, "semantic_forms_preserved": original_form_count, "render_method": "POST (invalid, no writes)" if page == "validation-error" else "GET", "templates": sorted({template.name for template in response.templates if template.name})})
-        (stage / "index.html").write_text(gallery(django.get_version()), encoding="utf-8")
+                render_records.append({"mode": mode, "palette": palette, "page": page, "file": f"{directory}/{page}.html", "status": response.status_code, "semantic_forms_preserved": original_form_count, "render_method": "POST (invalid, no writes)" if page == "validation-error" else "GET", "templates": sorted({template.name for template in response.templates if template.name})})
+        (stage / "index.html").write_text(gallery(django.get_version(), with_palettes=with_palettes), encoding="utf-8")
         (stage / "README.md").write_text(readme(django.get_version()), encoding="utf-8")
-        validation = validate_export(stage)
+        validation = validate_export(stage, with_palettes=with_palettes)
         after_hashes = {p.relative_to(ROOT).as_posix(): sha256(p) for p in sources}
         if before_hashes != after_hashes:
             raise RuntimeError("Sources changed while generating samples; rerun after edits are complete")
         import tomllib
         project = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
         manifest = {
-            "format_version": 2, "label": LABEL, "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-            "source": {"django": django.get_version(), "python": sys.version.split()[0], "beautifulsoup4": importlib.metadata.version("beautifulsoup4"), "theme_project": project["name"], "theme_version": project["version"], "optional_captcha": importlib.metadata.version("django-simple-captcha") if with_captcha else None, "source_sha256": before_hashes, "rendered_template_sha256": dict(sorted(template_hashes.items()))},
+            "format_version": 2, "palette_representatives": with_palettes, "label": LABEL, "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+            "source": {"django": django.get_version(), "python": sys.version.split()[0], "beautifulsoup4": importlib.metadata.version("beautifulsoup4"), "theme_project": project["name"], "theme_version": project["version"], "optional_extensions": with_extensions, "optional_captcha": importlib.metadata.version("django-simple-captcha") if with_captcha else None, "source_sha256": before_hashes, "rendered_template_sha256": dict(sorted(template_hashes.items()))},
             "data": {"provenance": "synthetic-only", "database": ":memory:", "real_database_accessed": False, "password": "unusable; no credential created", "persistent_business_writes": False, "media": "Three bundled synthetic sheets: fictional adult avatars, unbranded products and fictional editorial scenes; no remote URLs or private media", "fixed_product_timestamp_utc": "2026-10-01T12:00:00+00:00"},
             "rendered_pages": render_records, "visual_stabilization": ["Native theme fixed to light", "Server-rendered sidebars marked open (#main.shifted; aria-expanded=true)"], "safety_validation": validation,
             "output_sha256": {p.relative_to(stage).as_posix(): sha256(p) for p in sorted(stage.rglob("*")) if p.is_file()},
@@ -738,6 +770,7 @@ def main():
     parser.add_argument("--check", type=Path, metavar="EXPORT_DIR", help="Validate an existing export without touching Django or any database")
     parser.add_argument("--with-captcha", action="store_true", help="Render optional CAPTCHA with synthetic local PNGs; requires the captcha extra")
     parser.add_argument("--with-extensions", action="store_true", help="Render the explicit local branding/navigation configuration; all exported controls remain inert")
+    parser.add_argument("--with-palettes", action="store_true", help="Add 24 light/dark standard-density palette representatives (dashboard/list/login); preserve all 57 default/native pages")
     args = parser.parse_args()
     if args.check:
         sanitizer_self_test()
@@ -745,7 +778,7 @@ def main():
         verify_manifest(args.check.resolve())
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
-        export(args.output, with_captcha=args.with_captcha, with_extensions=args.with_extensions)
+        export(args.output, with_captcha=args.with_captcha, with_extensions=args.with_extensions, with_palettes=args.with_palettes)
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ Use the intended Django environment when running the command; the exporter recor
 
 - `index.html`: gallery
 - `light/`, `dark/`, `auto/`, `compact-light/`, `compact-dark/`, `compact-auto/`, `native/`: eight pages each (`index`, `changelist`, `members`, `news`, `changeform`, `validation-error`, `delete-confirm`, `login`)
+- Optional `--with-palettes`: 24 additional representative pages, four palettes × light/dark × dashboard/product list/login. Standard density only; auto/compact/native combinations retain default coverage.
 - `static/admin/`: exact Django CSS and image assets, with upstream attribution
 - `static/nova_admin/`: actual theme assets from this checkout
 - `static/catalog/`: demo-owned enterprise branding/density overrides, business-image geometry and three bundled synthetic WebP sheets

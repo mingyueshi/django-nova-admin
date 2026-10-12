@@ -53,6 +53,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 NOVA_ADMIN_ENABLED = True
 NOVA_ADMIN_DEFAULT_MODE = "light"
+NOVA_ADMIN_DEFAULT_PALETTE = "default"
 PROJECT_ADMIN_COMPACT = False
 
 # Optional grouped navigation uses native permission-filtered available_apps.

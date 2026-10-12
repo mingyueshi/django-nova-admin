@@ -2,7 +2,7 @@
 from django.conf import settings
 from django.urls import NoReverseMatch, get_resolver, get_urlconf, reverse
 
-from .preferences import selected_mode
+from .preferences import selected_mode, selected_palette
 from .branding import branding
 
 
@@ -76,6 +76,7 @@ def theme(request):
         "nova_admin_enabled": enabled,
         "nova_admin_active": enabled and mode != "native",
         "nova_admin_mode": mode,
+        "nova_admin_palette": selected_palette(request),
         "nova_admin_navigation": bool(getattr(settings, "NOVA_ADMIN_NAVIGATION", False)),
         "nova_admin_preference_url": preference_url,
         "nova_admin_branding": branding() if enabled and mode != "native" else {},

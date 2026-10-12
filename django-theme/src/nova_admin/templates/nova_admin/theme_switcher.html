@@ -9,5 +9,13 @@
     <option value="auto"{% if nova_admin_mode == 'auto' %} selected{% endif %}>{% translate 'Nova auto' context 'Nova Admin' %}</option>
     <option value="native"{% if nova_admin_mode == 'native' %} selected{% endif %}>{% translate 'Django native' context 'Nova Admin' %}</option>
   </select>
+  <label for="nova-admin-palette">{% translate 'Color palette' context 'Nova Admin' %}</label>
+  <select id="nova-admin-palette" name="palette">
+    <option value="default"{% if nova_admin_palette == 'default' %} selected{% endif %}>{% translate 'Project default' context 'Nova Admin' %}</option>
+    <option value="teal"{% if nova_admin_palette == 'teal' %} selected{% endif %}>{% translate 'Healthcare teal' context 'Nova Admin' %}</option>
+    <option value="indigo"{% if nova_admin_palette == 'indigo' %} selected{% endif %}>{% translate 'Professional indigo' context 'Nova Admin' %}</option>
+    <option value="violet"{% if nova_admin_palette == 'violet' %} selected{% endif %}>{% translate 'Education violet' context 'Nova Admin' %}</option>
+    <option value="terracotta"{% if nova_admin_palette == 'terracotta' %} selected{% endif %}>{% translate 'Retail terracotta' context 'Nova Admin' %}</option>
+  </select>
   <button type="submit">{% translate 'Apply' context 'Nova Admin' %}</button>
 </form>

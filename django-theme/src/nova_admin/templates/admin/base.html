@@ -7,6 +7,7 @@
     {% block nova_styles %}
     <link rel="stylesheet" href="{% static 'nova_admin/theme.css' %}" {% nova_nonce %}>
     <link rel="stylesheet" href="{% static 'nova_admin/tokens.css' %}" {% nova_nonce %}>
+    <link rel="stylesheet" href="{% static 'nova_admin/presets.css' %}" {% nova_nonce %}>
     {% endblock %}
   {% endif %}
 {% endblock %}
@@ -24,7 +25,7 @@
 
 {% block footer %}{{ block.super }}{% if nova_admin_active %}{% block nova_footer %}{% include "nova_admin/brand_footer.html" %}{% endblock %}{% endif %}{% endblock %}
 
-{% block bodyclass %}{{ block.super }}{% if nova_admin_active %} nova-admin nova-mode-{{ nova_admin_mode }}{% endif %}{% endblock %}
+{% block bodyclass %}{{ block.super }}{% if nova_admin_active %} nova-admin nova-mode-{{ nova_admin_mode }} nova-palette-{{ nova_admin_palette|default:"default" }}{% endif %}{% endblock %}
 
 {% block usertools %}
   {{ block.super }}

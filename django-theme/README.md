@@ -255,3 +255,12 @@ Node 交互回归需要先在研究包根目录运行 npm ci。随后激活 Djan
 ## 0.3.0 企业项目预设
 
 完整可复制项目词典、中文全角冒号、默认浅色与企业蓝见 [PROJECT_CUSTOMIZATION.md](PROJECT_CUSTOMIZATION.md)。真实密度变量与自动外观见 [DENSITY_PRESETS.md](DENSITY_PRESETS.md)。这些项目文案/模板不包含在通用主题 wheel 中；研究包提供完整 Demo 与源文件。旧会话保存的选择继续优先，不会被浅色默认强制覆盖。项目中文定制与 Nova 外观恢复互相独立。
+
+### Palette presets
+
+Appearance and color are independently selectable. Keep “Project default” for
+unchanged project branding, or choose 医疗青 / 专业靛 / 文教紫 / 零售陶. See
+[PALETTE_PRESETS.md](PALETTE_PRESETS.md) for session validation, compatibility,
+CSS override order, and tests.
+
+中文接入、验证边界和人工验收重点见 [PALETTE_PRESETS_ZH.md](PALETTE_PRESETS_ZH.md)。

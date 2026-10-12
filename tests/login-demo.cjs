@@ -98,7 +98,12 @@ async function createDemo(options = {}) {
   const module = new vm.SourceTextModule(script, {
     context: dom.getInternalVMContext(), identifier: path.join(project, 'dist/js/login.js'),
   });
-  await module.link((specifier) => { throw new Error(`Unexpected login dependency: ${specifier}`); });
+  await module.link(async (specifier) => {
+    assert.equal(specifier, './palette.js', 'Login only imports local presentation helpers');
+    const dependency = new vm.SourceTextModule(fs.readFileSync(path.join(project, 'dist/js/palette.js'), 'utf8'), { context: dom.getInternalVMContext() });
+    await dependency.link(() => { throw new Error('Unexpected nested dependency'); });
+    return dependency;
+  });
   await module.evaluate();
 
   const click = (selector) => q(selector).click();
@@ -191,7 +196,7 @@ test('public mock entry has local assets, no auth endpoint, CSP and visible disc
   const csp = q('meta[http-equiv="Content-Security-Policy"]').content;
   assert.match(csp, /(?:^|;)\s*connect-src 'none'(?:;|$)/);
   assert.match(csp, /(?:^|;)\s*form-action 'none'(?:;|$)/);
-  assert.deepEqual([...d.querySelectorAll('script')].map((node) => [node.type, node.getAttribute('src')]), [['module', './js/login.js']]);
+  assert.deepEqual([...d.querySelectorAll('script')].map((node) => [node.type, node.getAttribute('src')]), [['', './js/preferences-init.js'], ['module', './js/login.js']]);
   for (const element of d.querySelectorAll('[src],link[href]')) {
     const value = element.getAttribute('src') || element.getAttribute('href');
     assert.ok(value.startsWith('./'), `Only same-directory assets expected: ${value}`);

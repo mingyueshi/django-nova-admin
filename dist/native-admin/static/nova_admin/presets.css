@@ -1,0 +1,67 @@
+/* Optional palettes, after tokens.css and before host-project styles.
+   The default has no declarations: preserve generic purple/green-save and
+   existing host branding exactly. :where() keeps brand overrides at the same
+   specificity as body.nova-admin so a later host stylesheet remains authoritative.
+   Error, success, warning, delete and surface roles intentionally stay semantic. */
+body.nova-admin:where(.nova-palette-teal) {
+  --nova-brand-light: #0f766e;
+  --nova-brand-light-hover: #115e59;
+  --nova-brand-dark: #5eead4;
+  --nova-brand-dark-hover: #99f6e4;
+  --nova-palette-selected-light: #ccfbf1;
+  --nova-palette-row-light: #f0fdfa;
+  --nova-palette-selected-dark: #123b38;
+  --nova-palette-row-dark: #102e2e;
+}
+body.nova-admin:where(.nova-palette-indigo) {
+  --nova-brand-light: #4338ca;
+  --nova-brand-light-hover: #3730a3;
+  --nova-brand-dark: #a5b4fc;
+  --nova-brand-dark-hover: #c7d2fe;
+  --nova-palette-selected-light: #e0e7ff;
+  --nova-palette-row-light: #f7f8ff;
+  --nova-palette-selected-dark: #282e54;
+  --nova-palette-row-dark: #202641;
+}
+body.nova-admin:where(.nova-palette-violet) {
+  --nova-brand-light: #6d28d9;
+  --nova-brand-light-hover: #5b21b6;
+  --nova-brand-dark: #c4b5fd;
+  --nova-brand-dark-hover: #ddd6fe;
+  --nova-palette-selected-light: #ede9fe;
+  --nova-palette-row-light: #faf8ff;
+  --nova-palette-selected-dark: #34254f;
+  --nova-palette-row-dark: #29203d;
+}
+body.nova-admin:where(.nova-palette-terracotta) {
+  --nova-brand-light: #9a3412;
+  --nova-brand-light-hover: #7c2d12;
+  --nova-brand-dark: #fdba74;
+  --nova-brand-dark-hover: #fed7aa;
+  --nova-palette-selected-light: #ffedd5;
+  --nova-palette-row-light: #fff7ed;
+  --nova-palette-selected-dark: #483024;
+  --nova-palette-row-dark: #30231f;
+}
+body.nova-admin.nova-mode-light:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta) {
+  --selected-bg: var(--nova-palette-selected-light);
+  --selected-row: var(--nova-palette-row-light);
+  --nova-hover: var(--nova-palette-row-light);
+}
+body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta) {
+  --selected-bg: var(--nova-palette-selected-light);
+  --selected-row: var(--nova-palette-row-light);
+  --nova-hover: var(--nova-palette-row-light);
+}
+body.nova-admin.nova-mode-dark:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta) {
+  --selected-bg: var(--nova-palette-selected-dark);
+  --selected-row: var(--nova-palette-row-dark);
+  --nova-hover: var(--nova-palette-row-dark);
+}
+@media (prefers-color-scheme: dark) {
+  body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta) {
+    --selected-bg: var(--nova-palette-selected-dark);
+    --selected-row: var(--nova-palette-row-dark);
+    --nova-hover: var(--nova-palette-row-dark);
+  }
+}

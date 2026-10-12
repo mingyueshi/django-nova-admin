@@ -1,0 +1,78 @@
+/* Optional industry-inspired palettes, not industry standards. Default is untouched.
+   Hand-written tokens only; status colors and existing SVG currentColor stay semantic. */
+:root:where([data-palette="teal"]) {
+  --nova-brand-light: #0f766e;
+  --nova-brand-light-hover: #115e59;
+  --nova-brand-dark: #5eead4;
+  --nova-brand-dark-hover: #99f6e4;
+  --nova-brand-selection-light: #ccfbf1;
+  --nova-brand-row-light: #f0fdfa;
+  --nova-brand-selection-dark: #123b38;
+  --nova-brand-row-dark: #102e2e;
+}
+:root:where([data-palette="indigo"]) {
+  --nova-brand-light: #4338ca;
+  --nova-brand-light-hover: #3730a3;
+  --nova-brand-dark: #a5b4fc;
+  --nova-brand-dark-hover: #c7d2fe;
+  --nova-brand-selection-light: #e0e7ff;
+  --nova-brand-row-light: #f7f8ff;
+  --nova-brand-selection-dark: #282e54;
+  --nova-brand-row-dark: #202641;
+}
+:root:where([data-palette="violet"]) {
+  --nova-brand-light: #6d28d9;
+  --nova-brand-light-hover: #5b21b6;
+  --nova-brand-dark: #c4b5fd;
+  --nova-brand-dark-hover: #ddd6fe;
+  --nova-brand-selection-light: #ede9fe;
+  --nova-brand-row-light: #faf8ff;
+  --nova-brand-selection-dark: #34254f;
+  --nova-brand-row-dark: #29203d;
+}
+:root:where([data-palette="terracotta"]) {
+  --nova-brand-light: #9a3412;
+  --nova-brand-light-hover: #7c2d12;
+  --nova-brand-dark: #fdba74;
+  --nova-brand-dark-hover: #fed7aa;
+  --nova-brand-selection-light: #ffedd5;
+  --nova-brand-row-light: #fff7ed;
+  --nova-brand-selection-dark: #483024;
+  --nova-brand-row-dark: #30231f;
+}
+/* :where keeps host styles with ordinary :root specificity able to override. */
+:root[data-theme="dark"]:where([data-palette]:not([data-palette="default"])) {
+  --muted: #9ba8c2;
+  --accent: var(--nova-brand-dark);
+  --accent-bg: var(--nova-brand-selection-dark);
+  --button-bg: var(--nova-brand-dark);
+  --button-hover-bg: var(--nova-brand-dark-hover);
+  --link-fg: var(--nova-brand-dark);
+  --palette-hover: var(--nova-brand-dark-hover);
+  --palette-row: var(--nova-brand-row-dark);
+}
+:root[data-theme="light"]:where([data-palette]:not([data-palette="default"])) {
+  --muted: #5a667c;
+  --accent: var(--nova-brand-light);
+  --accent-bg: var(--nova-brand-selection-light);
+  --button-bg: var(--nova-brand-light);
+  --button-hover-bg: var(--nova-brand-light-hover);
+  --link-fg: var(--nova-brand-light);
+  --palette-hover: var(--nova-brand-light-hover);
+  --palette-row: var(--nova-brand-row-light);
+}
+:where([data-palette]:not([data-palette="default"])) .btn.primary:hover {
+  background: var(--palette-hover);
+  border-color: var(--palette-hover);
+  filter: none;
+}
+:where([data-palette]:not([data-palette="default"])) tbody tr:hover {
+  background: var(--palette-row);
+}
+:where([data-palette]:not([data-palette="default"])) .login-primary-link:hover {
+  background: var(--button-hover-bg);
+}
+/* Compact palette control wraps instead of overflowing mobile login. */
+.login-preview-toolbar { flex-wrap: wrap; gap: 8px 16px; }
+.palette-status { max-width: 1120px; margin: 0 auto; padding: 0 24px; font-size: 12px; }
+.palette-status:empty { display: none; }

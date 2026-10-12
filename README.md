@@ -228,3 +228,11 @@ python demo/manage.py runserver 127.0.0.1:8000 --settings=config.captcha_setting
 ## CI/CD
 
 GitHub Actions配置已准备：PR快速矩阵、手动完整矩阵、源码绑定的wheel/静态产物，以及默认关闭的手动审批候选交付。当前没有接入GitHub仓库或生产发布；本地验证不等于线上CI运行。配置、边界与复制步骤见 [CI/CD接入说明](CI_CD.md)。
+
+## 独立配色预设
+
+系统设置与登录预览新增医疗青、专业靛、文教紫、零售陶；这些名称仅为演示定位，不是行业标准。配色与浅色、深色、跟随系统、原生恢复分开。默认仍为企业蓝，通用 Django 包默认仍为紫色主色和绿色保存按钮。
+
+静态预览仅用独立 `nova-palette` 保存偏好，首屏、跨页与同源窗口恢复；存储不可用时可继续当页使用。不会清除 `nova-theme` 或业务数据。Django 使用受 CSRF 保护的独立 session 偏好，配置和宿主覆盖见 [中文配色接入与验收说明](django-theme/PALETTE_PRESETS_ZH.md)。
+
+新样式为两份小型手写 token 样式表，没有 CSS 编译依赖或四套主题复制。成功、警告、危险的状态语义保留。`python scripts/test_palette_contrast.py` 量测新色彩的明确不透明角色；这不等于浏览器视觉或整站无障碍认证。

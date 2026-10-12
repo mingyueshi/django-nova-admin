@@ -4,12 +4,13 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; form-action 'none'; object-src 'none'; base-uri 'none'; style-src 'self'; img-src 'self' data:; script-src 'self'">
 <title>登录页预览 · NOVA Admin</title>
-<link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./login.css"><link rel="stylesheet" href="./login-preview.css">
+<script src="./js/preferences-init.js"></script>
+<link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./login.css"><link rel="stylesheet" href="./login-preview.css"><link rel="stylesheet" href="./presets.css">
 <script type="module" src="./js/login.js"></script>
 </head>
 <body class="nova-admin login nova-login-demo">
 <a class="login-skip" href="#demo-login-title">跳转到登录表单</a>
-<div class="login-preview-toolbar"><a href="./#native-samples">‹ 返回</a><label><span class="login-visually-hidden">外观</span><select id="login-appearance"><option value="light">企业浅色</option><option value="dark">深色</option><option value="auto">跟随系统</option></select></label></div>
+<div class="login-preview-toolbar"><a href="./#native-samples">‹ 返回</a><label><span class="login-visually-hidden">外观</span><select id="login-appearance"><option value="light">企业浅色</option><option value="dark">深色</option><option value="auto">跟随系统</option></select></label><label><span class="login-visually-hidden">配色方案</span><select id="login-palette" data-palette-select aria-describedby="palette-status"><option value="default">默认配色</option></select></label></div><p id="palette-status" class="palette-status" role="status"></p>
 <main id="container">
 <header id="header"><a class="login-brand" href="./"><span class="login-brand-mark">N</span><span>NOVA</span></a></header>
 <div id="content"><div class="nova-login-layout">

@@ -1,3 +1,4 @@
+import { applyPalette, savedPalette, paletteOptions } from './palette.js';
 // Public interaction demo only. No authentication, fetch, cookies or credential storage.
 // The optional Django integration validates its challenge independently on the server.
 const $ = (selector) => document.querySelector(selector);
@@ -37,6 +38,12 @@ system?.addEventListener?.('change', () => {
   if (appearance === 'auto') applyAppearance('auto');
 });
 applyAppearance(appearance);
+$('#login-palette').innerHTML = paletteOptions(savedPalette());
+applyPalette(savedPalette());
+$('#login-palette').addEventListener('change', (event) => {
+  const saved = applyPalette(event.target.value, true);
+  $('#palette-status').textContent = saved ? '' : '配色已在当前页应用，浏览器未能保存偏好';
+});
 
 function randomCode() {
   const values = new Uint32Array(4);

@@ -203,6 +203,79 @@ class InertFormSafetyTests(unittest.TestCase):
         self.assertLess(sum(path.stat().st_size for path in directory.iterdir()), 800_000)
         self.assertFalse(list(EXPORT_DIR.rglob("*-sheet.png")))
 
+    def test_palette_inventory_is_explicit_and_preserves_default_contract(self):
+        base = exporter.sample_profiles()
+        expanded = exporter.sample_profiles(True)
+        self.assertEqual(sum(len(pages) for _, _, _, pages in base) + 1, 57)
+        self.assertEqual(expanded[:len(base)], base)
+        representatives = expanded[len(base):]
+        self.assertEqual(sum(len(pages) for _, _, _, pages in representatives), 24)
+        self.assertEqual({palette for _, _, palette, _ in representatives}, set(exporter.PALETTES))
+        for directory, mode, palette, pages in representatives:
+            self.assertEqual(directory, f"palette-{palette}-{mode}")
+            self.assertIn(mode, {"light", "dark"})
+            self.assertEqual(pages, ("index", "changelist", "login"))
+
+    def test_palette_navigation_only_targets_supported_representatives(self):
+        raw = '<html><head><title>Palette</title></head><body class="nova-admin nova-mode-dark nova-palette-teal"><form action="/admin/_preferences/" method="post"><select name="palette"><option>teal</option></select><button>Save</button></form></body></html>'
+        safe = exporter.sanitize_html(raw, mode="dark", page="login", palette="teal", django_version="test", routes={})
+        soup = BeautifulSoup(safe, "html.parser")
+        self.assertIn("nova-palette-teal", soup.body["class"])
+        self.assertEqual(soup.html["data-theme"], "dark")
+        self.assertEqual({a["href"] for a in soup.select('.sample-banner a')}, {
+            "../index.html", "index.html", "changelist.html", "login.html",
+            "../palette-teal-light/login.html", "../palette-teal-dark/login.html",
+        })
+        self.assertEqual(exporter.validate_inert_forms_and_csp(soup)["functional_forms"], 0)
+        self.assertNotIn("/admin/", safe)
+        for palette, mode, page in (("unknown", "dark", "login"), ("teal", "native", "login"), ("teal", "auto", "index"), ("teal", "dark", "changeform")):
+            with self.subTest(palette=palette, mode=mode, page=page), self.assertRaises(ValueError):
+                exporter.sanitize_html(raw, mode=mode, page=page, palette=palette, django_version="test", routes={})
+
+    def test_generated_palette_representatives_match_real_rendered_profiles(self):
+        if EXPORT_DIR is None:
+            self.skipTest("Pass --export-dir to verify generated profiles")
+        manifest = json.loads((EXPORT_DIR / "manifest.json").read_text())
+        if not manifest.get("palette_representatives"):
+            self.assertFalse(list(EXPORT_DIR.glob("palette-*")))
+            return
+        records = {record["file"]: record for record in manifest["rendered_pages"]}
+        for directory, mode, palette, pages in exporter.sample_profiles(True):
+            if palette == "default":
+                continue
+            for page in pages:
+                file = f"{directory}/{page}.html"
+                with self.subTest(file=file):
+                    soup = BeautifulSoup((EXPORT_DIR / file).read_text(), "html.parser")
+                    self.assertIn(f"nova-palette-{palette}", soup.body["class"])
+                    self.assertIn(f"nova-mode-{mode}", soup.body["class"])
+                    self.assertEqual(soup.html["data-theme"], mode)
+                    self.assertTrue(soup.select('link[href$="nova_admin/presets.css"]'))
+                    self.assertEqual(records[file]["palette"], palette)
+                    self.assertEqual(records[file]["mode"], mode)
+                    self.assertEqual(records[file]["render_method"], "GET")
+                    if page == "login" and manifest["source"].get("optional_captcha"):
+                        image = soup.select_one(".nova-captcha-image")
+                        self.assertIsNotNone(image)
+                        self.assertEqual(image["src"], f"../static/nova_admin/captcha-login-{directory}.png")
+                        self.assertTrue((EXPORT_DIR / "static" / "nova_admin" / f"captcha-login-{directory}.png").read_bytes().startswith(b"\x89PNG\r\n\x1a\n"))
+                    self.assertEqual(exporter.validate_inert_forms_and_csp(soup)["functional_forms"], 0)
+
+    def test_generated_extension_profile_is_disclosed_and_preserved(self):
+        if EXPORT_DIR is None:
+            self.skipTest("Pass --export-dir to verify generated profiles")
+        manifest = json.loads((EXPORT_DIR / "manifest.json").read_text())
+        if not manifest["source"].get("optional_extensions"):
+            return
+        for directory, mode, palette, pages in exporter.sample_profiles(manifest.get("palette_representatives", False)):
+            for page in pages:
+                soup = BeautifulSoup((EXPORT_DIR / directory / f"{page}.html").read_text(), "html.parser")
+                if mode == "native":
+                    self.assertIsNone(soup.select_one(".nova-brand-footer"))
+                else:
+                    self.assertIsNotNone(soup.select_one(".nova-brand-footer"))
+                    self.assertTrue(soup.select('img[src$="catalog/brand/logo.svg"]'))
+
     def test_generated_export_contract_and_manifest(self):
         if EXPORT_DIR is None:
             self.skipTest("Pass --export-dir to verify a generated export too")

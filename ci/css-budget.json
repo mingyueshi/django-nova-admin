@@ -73,6 +73,24 @@
         "bytes": 81902,
         "gzip_bytes": 16704
       }
+    },
+    "dist/presets.css": {
+      "bytes": 3037,
+      "gzip_bytes": 888,
+      "sha256": "6e18d2bc209d198f8436426df9854d2407b981f3e535562735dbda3b6b6c9d74",
+      "limits": {
+        "bytes": 3341,
+        "gzip_bytes": 977
+      }
+    },
+    "django-theme/src/nova_admin/static/nova_admin/presets.css": {
+      "bytes": 2912,
+      "gzip_bytes": 702,
+      "sha256": "077e56cbad071e501a1568e968b44f9aabf4fdbd328fc531a91ed0551b1d37f5",
+      "limits": {
+        "bytes": 3204,
+        "gzip_bytes": 773
+      }
     }
   }
 }

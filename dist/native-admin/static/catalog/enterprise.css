@@ -1,7 +1,7 @@
 /* Host-project branding: loaded after Nova by demo/templates/admin/base_site.html.
    Nova remains reusable; native recovery never loads this stylesheet. */
 /* Four project brand colors feed Nova's semantic tokens in every appearance. */
-body.nova-admin {
+body.nova-admin:where(.nova-palette-default) {
   --nova-brand-light: #1d4ed8;
   --nova-brand-light-hover: #1e40af;
   --nova-brand-dark: #93c5fd;
@@ -16,8 +16,8 @@ body.nova-admin.nova-mode-auto {
   --link-fg: var(--nova-brand-light, #1d4ed8);
   --link-hover-color: var(--nova-brand-light-hover, #1e40af);
   --link-selected-fg: var(--nova-brand-light-hover, #1e40af);
-  --selected-bg: #dbeafe;
-  --selected-row: #eff6ff;
+  --selected-bg: var(--nova-palette-selected-light, #dbeafe);
+  --selected-row: var(--nova-palette-row-light, #eff6ff);
   --button-fg: #ffffff;
   --button-bg: var(--nova-brand-light, #1d4ed8);
   --button-hover-bg: var(--nova-brand-light-hover, #1e40af);
@@ -26,7 +26,7 @@ body.nova-admin.nova-mode-auto {
   --object-tools-fg: #ffffff;
   --object-tools-bg: var(--nova-brand-light, #1d4ed8);
   --object-tools-hover-bg: var(--nova-brand-light-hover, #1e40af);
-  --nova-hover: #eff6ff;
+  --nova-hover: var(--nova-palette-row-light, #eff6ff);
 }
 body.nova-admin.nova-mode-dark {
   --primary: var(--nova-brand-dark, #93c5fd);
@@ -36,8 +36,8 @@ body.nova-admin.nova-mode-dark {
   --link-fg: var(--nova-brand-dark, #93c5fd);
   --link-hover-color: var(--nova-brand-dark-hover, #bfdbfe);
   --link-selected-fg: var(--nova-brand-dark-hover, #bfdbfe);
-  --selected-bg: #193454;
-  --selected-row: #172d49;
+  --selected-bg: var(--nova-palette-selected-dark, #193454);
+  --selected-row: var(--nova-palette-row-dark, #172d49);
   --button-fg: #102036;
   --button-bg: var(--nova-brand-dark, #93c5fd);
   --button-hover-bg: var(--nova-brand-dark-hover, #bfdbfe);
@@ -46,7 +46,7 @@ body.nova-admin.nova-mode-dark {
   --object-tools-fg: #102036;
   --object-tools-bg: var(--nova-brand-dark, #93c5fd);
   --object-tools-hover-bg: var(--nova-brand-dark-hover, #bfdbfe);
-  --nova-hover: #172d49;
+  --nova-hover: var(--nova-palette-row-dark, #172d49);
 }
 @media (prefers-color-scheme: dark) {
   body.nova-admin.nova-mode-auto {
@@ -57,8 +57,8 @@ body.nova-admin.nova-mode-dark {
     --link-fg: var(--nova-brand-dark, #93c5fd);
     --link-hover-color: var(--nova-brand-dark-hover, #bfdbfe);
     --link-selected-fg: var(--nova-brand-dark-hover, #bfdbfe);
-    --selected-bg: #193454;
-    --selected-row: #172d49;
+    --selected-bg: var(--nova-palette-selected-dark, #193454);
+    --selected-row: var(--nova-palette-row-dark, #172d49);
     --button-fg: #102036;
     --button-bg: var(--nova-brand-dark, #93c5fd);
     --button-hover-bg: var(--nova-brand-dark-hover, #bfdbfe);
@@ -67,6 +67,6 @@ body.nova-admin.nova-mode-dark {
     --object-tools-fg: #102036;
     --object-tools-bg: var(--nova-brand-dark, #93c5fd);
     --object-tools-hover-bg: var(--nova-brand-dark-hover, #bfdbfe);
-    --nova-hover: #172d49;
+    --nova-hover: var(--nova-palette-row-dark, #172d49);
   }
 }

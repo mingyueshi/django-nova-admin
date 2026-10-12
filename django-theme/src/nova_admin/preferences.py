@@ -5,6 +5,8 @@ from django.conf import settings
 from django.utils.http import url_has_allowed_host_and_scheme
 
 SESSION_KEY = "nova_admin_mode"
+PALETTE_SESSION_KEY = "nova_admin_palette"
+PALETTES = frozenset({"default", "teal", "indigo", "violet", "terracotta"})
 MODES = frozenset({"dark", "light", "auto", "native"})
 
 
@@ -15,6 +17,15 @@ def selected_mode(request):
     session = getattr(request, "session", {})
     mode = session.get(SESSION_KEY, default)
     return mode if isinstance(mode, str) and mode in MODES else default
+
+
+def selected_palette(request):
+    """Palette is independent of mode; malformed settings/session fail closed."""
+    default = getattr(settings, "NOVA_ADMIN_DEFAULT_PALETTE", "default")
+    if not isinstance(default, str) or default not in PALETTES:
+        default = "default"
+    palette = getattr(request, "session", {}).get(PALETTE_SESSION_KEY, default)
+    return palette if isinstance(palette, str) and palette in PALETTES else default
 
 
 def safe_admin_return(request, candidate, admin_index):

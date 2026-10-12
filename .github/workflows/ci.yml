@@ -86,6 +86,7 @@ jobs:
       - name: Validate inert exported samples
         run: |
           python scripts/css_budget.py
+          python scripts/test_palette_contrast.py
           python django-theme/scripts/test_export_safety.py --export-dir dist/native-admin
           python django-theme/scripts/export_admin_samples.py --check dist/native-admin
       - name: Build and verify source-bound wheel and static payload

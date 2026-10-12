@@ -11,6 +11,7 @@
 
 <link href="../static/nova_admin/theme.css" rel="stylesheet"/>
 <link href="../static/nova_admin/tokens.css" rel="stylesheet"/>
+<link href="../static/nova_admin/presets.css" rel="stylesheet"/>
 <link href="../static/catalog/enterprise.css" rel="stylesheet"/>
 <link href="../static/admin/css/dashboard.css" rel="stylesheet"/>
 
@@ -20,7 +21,7 @@
 <link href="../static/admin/css/responsive.css" rel="stylesheet"/>
 <meta content="NONE,NOARCHIVE" name="robots"/>
 <link href="../static/sample.css" rel="stylesheet"/></head>
-<body class="nova-admin nova-mode-auto dashboard"><aside aria-label="真实 Django 模板渲染样本" class="sample-banner"><strong>真实 Django 模板渲染样本</strong><p>Django 6.1.1 · 跟随系统 · 标准密度 · 合成数据。只读静态导出，无登录、保存或删除能力；原生脚本及增强控件已移除。列表开关保留禁用的原生复选框，仅展示已保存状态。</p><details class="sample-navigation"><summary>切换页面与外观</summary><nav aria-label="样本导航"><a href="../index.html">全部样本</a><a aria-current="page" href="index.html">工作台</a><a href="changelist.html">商品列表 · 方形图片</a><a href="members.html">会员列表 · 圆形头像</a><a href="news.html">新闻列表 · 横向封面</a><a href="changeform.html">商品编辑 · 关系字段与内联</a><a href="validation-error.html">原生表单校验错误</a><a href="delete-confirm.html">原生删除确认</a><a href="login.html">原生登录页</a><a href="../light/index.html">企业浅色 · 标准密度</a><a href="../dark/index.html">企业深色 · 标准密度</a><a aria-current="page" href="../auto/index.html">跟随系统 · 标准密度</a><a href="../compact-light/index.html">企业浅色 · 紧凑密度</a><a href="../compact-dark/index.html">企业深色 · 紧凑密度</a><a href="../compact-auto/index.html">跟随系统 · 紧凑密度</a><a href="../native/index.html">Django 原生外观</a></nav></details></aside>
+<body class="nova-admin nova-mode-auto nova-palette-default dashboard"><aside aria-label="真实 Django 模板渲染样本" class="sample-banner"><strong>真实 Django 模板渲染样本</strong><p>Django 6.1.1 · 跟随系统 · 标准密度 · 合成数据。只读静态导出，无登录、保存或删除能力；原生脚本及增强控件已移除。列表开关保留禁用的原生复选框，仅展示已保存状态。</p><details class="sample-navigation"><summary>切换页面与外观</summary><nav aria-label="样本导航"><a href="../index.html">全部样本</a><a aria-current="page" href="index.html">工作台</a><a href="changelist.html">商品列表 · 方形图片</a><a href="members.html">会员列表 · 圆形头像</a><a href="news.html">新闻列表 · 横向封面</a><a href="changeform.html">商品编辑 · 关系字段与内联</a><a href="validation-error.html">原生表单校验错误</a><a href="delete-confirm.html">原生删除确认</a><a href="login.html">原生登录页</a><a href="../light/index.html">企业浅色 · 标准密度</a><a href="../dark/index.html">企业深色 · 标准密度</a><a aria-current="page" href="../auto/index.html">跟随系统 · 标准密度</a><a href="../compact-light/index.html">企业浅色 · 紧凑密度</a><a href="../compact-dark/index.html">企业深色 · 紧凑密度</a><a href="../compact-auto/index.html">跟随系统 · 紧凑密度</a><a href="../native/index.html">Django 原生外观</a></nav></details></aside>
 <a class="skip-to-content-link" href="#content-start">跳到主要内容</a>
 
 <div id="container">
@@ -71,6 +72,14 @@
 <option value="light">Nova 浅色</option>
 <option selected="" value="auto">Nova 自动（跟随系统）</option>
 <option value="native">Django 原生</option>
+</select>
+<label for="nova-admin-palette">配色</label>
+<select aria-disabled="true" disabled="disabled" id="nova-admin-palette">
+<option selected="" value="default">项目默认</option>
+<option value="teal">医疗青</option>
+<option value="indigo">专业靛</option>
+<option value="violet">文教紫</option>
+<option value="terracotta">零售陶</option>
 </select>
 <button aria-disabled="true" disabled="disabled" type="button">应用</button>
 </form>
