@@ -404,7 +404,7 @@ function settingsView() {
       )
       .join(
         '',
-      )}</select><small>立即应用；首次访问默认浅色，保留你已保存的选择</small></div><div class="field"><label for="palette-mode">配色方案</label><select id="palette-mode" data-palette-select>${paletteOptions(document.documentElement.dataset.palette)}</select><small>行业名仅供演示定位，可自由选用；不改变成功、警告和危险的含义。</small></div><div style="display:flex;gap:10px;flex-wrap:wrap">${button('切换深浅主题', 'theme', '', 'sun')}${button('查看原生模板对照', 'native', '', 'history')}${button('集成与恢复说明', 'docs', 'subtle', 'book')}</div></div></section><section class="panel"><div class="panel-head"><h2>重置演示数据</h2></div><div class="settings-body"><p class="muted" style="font-size:12px;margin-bottom:18px">清除当前浏览器里的用户、角色及偏好修改，恢复最初的演示内容。</p>${button('恢复演示初始状态', 'reset-demo', 'danger', 'history')}</div></section></div>`
+      )}</select><small>立即应用；首次访问默认浅色，保留你已保存的选择</small></div><div class="field"><label for="palette-mode">配色方案</label><select id="palette-mode" data-palette-select>${paletteOptions(document.documentElement.dataset.palette)}</select><small>石墨黑、午夜蓝在深色外观下同时调整背景与面板；配色和外观可分别选择。</small></div><div style="display:flex;gap:10px;flex-wrap:wrap">${button('切换深浅主题', 'theme', '', 'sun')}${button('查看原生模板对照', 'native', '', 'history')}${button('集成与恢复说明', 'docs', 'subtle', 'book')}</div></div></section><section class="panel"><div class="panel-head"><h2>重置演示数据</h2></div><div class="settings-body"><p class="muted" style="font-size:12px;margin-bottom:18px">清除当前浏览器里的用户、角色及偏好修改，恢复最初的演示内容。</p>${button('恢复演示初始状态', 'reset-demo', 'danger', 'history')}</div></section></div>`
   );
 }
 function hasUnsavedChanges() {

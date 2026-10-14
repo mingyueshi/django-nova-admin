@@ -35,7 +35,7 @@ class PaletteSelectionTests(SimpleTestCase):
         for palette in PALETTES - {"default"}:
             self.assertIn(f"body.nova-admin:where(.nova-palette-{palette})", css)
         for token in ("brand-light", "brand-light-hover", "brand-dark", "brand-dark-hover"):
-            self.assertEqual(css.count(f"--nova-{token}:"), 4)
+            self.assertEqual(css.count(f"--nova-{token}:"), len(PALETTES) - 1)
         self.assertIn("@media (prefers-color-scheme: dark)", css)
         for forbidden in ("--error-fg:", "--delete-button-bg:", "--nova-success-bg:"):
             self.assertNotIn(forbidden, css)
@@ -68,6 +68,29 @@ class PaletteIntegrationTests(TestCase):
                         self.assertContains(response, f"nova-palette-{palette}")
                         self.assertContains(response, "nova_admin/presets.css")
 
+    def test_anonymous_login_restores_palette_without_enabling_preference_writes(self):
+        client = Client()
+        login = reverse("admin:login")
+        for mode in MODES:
+            for palette in PALETTES:
+                with self.subTest(mode=mode, palette=palette):
+                    session = client.session
+                    session[SESSION_KEY] = mode
+                    session[PALETTE_SESSION_KEY] = palette
+                    session.save()
+                    response = client.get(login)
+                    if mode == "native":
+                        self.assertNotContains(response, "nova_admin/presets.css")
+                        self.assertNotContains(response, "nova-palette-")
+                    else:
+                        self.assertContains(response, f"nova-palette-{palette}")
+                        self.assertContains(response, f"nova-mode-{mode}")
+                    before = dict(client.session)
+                    response = client.post(self.preference, {"mode": "light", "palette": "default"})
+                    self.assertEqual(response.status_code, 302)
+                    self.assertTrue(response.url.startswith(login + "?"))
+                    self.assertEqual(dict(client.session), before)
+
     def test_invalid_pairs_never_partially_write(self):
         self.client.post(self.preference, {"mode": "dark", "palette": "teal"})
         before = dict(self.client.session)
@@ -81,11 +104,13 @@ class PaletteIntegrationTests(TestCase):
             self.client.post(self.preference, {"mode": "light"})
             self.assertNotIn(PALETTE_SESSION_KEY, self.client.session)
             self.assertContains(self.client.get(self.index), "nova-palette-indigo")
-        self.client.post(self.preference, {"mode": "dark", "palette": "terracotta"})
-        self.client.post(self.preference, {"mode": "native"})
-        self.assertEqual(self.client.session[PALETTE_SESSION_KEY], "terracotta")
-        self.client.post(self.preference, {"mode": "auto"})
-        self.assertContains(self.client.get(self.index), "nova-palette-terracotta")
+        for palette in PALETTES:
+            with self.subTest(palette=palette):
+                self.client.post(self.preference, {"mode": "dark", "palette": palette})
+                self.client.post(self.preference, {"mode": "native"})
+                self.assertEqual(self.client.session[PALETTE_SESSION_KEY], palette)
+                self.client.post(self.preference, {"mode": "auto"})
+                self.assertContains(self.client.get(self.index), f"nova-palette-{palette}")
 
     def test_palette_is_csrf_protected(self):
         client = Client(enforce_csrf_checks=True)
@@ -121,7 +146,7 @@ class PaletteIntegrationTests(TestCase):
         html = response.content.decode()
         assets = ["nova_admin/theme.css", "nova_admin/tokens.css", "nova_admin/presets.css", "catalog/enterprise.css"]
         self.assertEqual(sorted(assets, key=html.index), assets)
-        for language, labels in (("en", ["Color palette", "Project default", "Healthcare teal", "Professional indigo", "Education violet", "Retail terracotta"]), ("zh-hans", ["配色", "项目默认", "医疗青", "专业靛", "文教紫", "零售陶"])):
+        for language, labels in (("en", ["Color palette", "Project default", "Healthcare teal", "Professional indigo", "Education violet", "Retail terracotta", "Graphite black", "Midnight blue"]), ("zh-hans", ["配色", "项目默认", "医疗青", "专业靛", "文教紫", "零售陶", "石墨黑", "午夜蓝"])):
             with override(language):
                 page = self.client.get(self.index)
                 for label in labels:

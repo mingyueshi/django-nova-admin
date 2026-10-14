@@ -40,6 +40,49 @@
   --nova-brand-selection-dark: #483024;
   --nova-brand-row-dark: #30231f;
 }
+/* Graphite and midnight also provide dark surfaces; light appearance stays independent. */
+:root:where([data-palette="graphite"]) {
+  --nova-brand-light: #3f3f46;
+  --nova-brand-light-hover: #27272a;
+  --nova-brand-dark: #d4d4d8;
+  --nova-brand-dark-hover: #f4f4f5;
+  --nova-brand-selection-light: #e4e4e7;
+  --nova-brand-row-light: #f4f4f5;
+  --nova-brand-selection-dark: #303036;
+  --nova-brand-row-dark: #25252a;
+  --nova-surface-dark-bg: #111113;
+  --nova-surface-dark-sidebar: #18181b;
+  --nova-surface-dark-panel: #1f1f23;
+  --nova-surface-dark-panel2: #27272c;
+  --nova-surface-dark-text: #f4f4f5;
+  --nova-surface-dark-muted: #b4b4bd;
+  --nova-surface-dark-medium: #d4d4d8;
+  --nova-surface-dark-line: #393940;
+  --nova-surface-dark-border: #777780;
+  --nova-surface-dark-tool: #3f3f46;
+  --nova-surface-dark-tool-hover: #52525b;
+}
+:root:where([data-palette="midnight"]) {
+  --nova-brand-light: #1e40af;
+  --nova-brand-light-hover: #1e3a8a;
+  --nova-brand-dark: #93c5fd;
+  --nova-brand-dark-hover: #bfdbfe;
+  --nova-brand-selection-light: #dbeafe;
+  --nova-brand-row-light: #eff6ff;
+  --nova-brand-selection-dark: #16345a;
+  --nova-brand-row-dark: #102944;
+  --nova-surface-dark-bg: #080f1f;
+  --nova-surface-dark-sidebar: #0c162a;
+  --nova-surface-dark-panel: #101e35;
+  --nova-surface-dark-panel2: #162941;
+  --nova-surface-dark-text: #edf4ff;
+  --nova-surface-dark-muted: #a7bbd8;
+  --nova-surface-dark-medium: #c5d5eb;
+  --nova-surface-dark-line: #2a4363;
+  --nova-surface-dark-border: #5d83ad;
+  --nova-surface-dark-tool: #2c486c;
+  --nova-surface-dark-tool-hover: #385b85;
+}
 /* :where keeps host styles with ordinary :root specificity able to override. */
 :root[data-theme="dark"]:where([data-palette]:not([data-palette="default"])) {
   --muted: #9ba8c2;
@@ -53,6 +96,7 @@
 }
 :root[data-theme="light"]:where([data-palette]:not([data-palette="default"])) {
   --muted: #5a667c;
+  --body-quiet-color: #5a667c;
   --accent: var(--nova-brand-light);
   --accent-bg: var(--nova-brand-selection-light);
   --button-bg: var(--nova-brand-light);
@@ -71,6 +115,28 @@
 }
 :where([data-palette]:not([data-palette="default"])) .login-primary-link:hover {
   background: var(--button-hover-bg);
+}
+/* Shared dark surfaces for the workspace and static login preview. */
+:root[data-theme="dark"]:where([data-palette="graphite"], [data-palette="midnight"]) {
+  --bg: var(--nova-surface-dark-bg);
+  --sidebar: var(--nova-surface-dark-sidebar);
+  --panel: var(--nova-surface-dark-panel);
+  --panel2: var(--nova-surface-dark-panel2);
+  --text: var(--nova-surface-dark-text);
+  --muted: var(--nova-surface-dark-muted);
+  --line: var(--nova-surface-dark-line);
+  --body-bg: var(--nova-surface-dark-bg);
+  --nova-panel: var(--nova-surface-dark-panel);
+  --body-fg: var(--nova-surface-dark-text);
+  --body-loud-color: var(--nova-surface-dark-text);
+  --body-quiet-color: var(--nova-surface-dark-muted);
+  --hairline-color: var(--nova-surface-dark-line);
+  --border-color: var(--nova-surface-dark-border);
+  --darkened-bg: var(--nova-surface-dark-sidebar);
+  --button-fg: var(--nova-surface-dark-bg);
+}
+:where(:root[data-theme="dark"][data-palette="graphite"], :root[data-theme="dark"][data-palette="midnight"]) :is(input, select, textarea) {
+  border-color: var(--nova-surface-dark-border);
 }
 /* Compact palette control wraps instead of overflowing mobile login. */
 .login-preview-toolbar { flex-wrap: wrap; gap: 8px 16px; }

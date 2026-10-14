@@ -3,10 +3,16 @@
 The appearance form has two independent, translated selects:
 
 - Mode: `dark`, `light`, `auto`, `native` (existing behavior).
-- Palette: `default`, `teal` (医疗青), `indigo` (专业靛), `violet` (文教紫), `terracotta` (零售陶).
+- Palette: `default`, `teal` (医疗青), `indigo` (专业靛), `violet` (文教紫), `terracotta` (零售陶), `graphite` (石墨黑), `midnight` (午夜蓝).
 
 These industry-oriented names describe demonstration positioning only, not
 industry standards or a requirement for a particular kind of organization.
+
+Graphite black uses neutral charcoal surfaces; Midnight blue uses deep navy
+surfaces. Select either palette together with `dark`, or use `auto` to follow
+the system. Both also have light accent counterparts: selecting a palette never
+changes the appearance preference. Their dark backgrounds cover the workspace,
+sidebar, cards, form controls and login page.
 
 `NOVA_ADMIN_DEFAULT_PALETTE = "default"` is optional. A valid saved session
 preference (`nova_admin_palette`) overrides it. Unknown settings and malformed
@@ -35,6 +41,12 @@ variables. It also supplies light/dark selection and row colors; these map to
 Django's `--selected-bg`, `--selected-row` and Nova's `--nova-hover`. `auto` follows
 the OS with the existing media-query model. Semantic error, warning, success and
 destructive-action colors remain unchanged.
+
+Graphite and Midnight additionally define `--nova-surface-dark-*` tokens for
+background, sidebar, panel, raised panel, text, secondary text, border and tool
+roles. Their mappings apply only in `dark` and `auto` with a dark system
+preference. Later host mode rules can override these mappings just like the
+existing selection roles. Native mode and global disable omit the preset sheet.
 
 Preset brand declarations use `body.nova-admin:where(.nova-palette-teal)` (and
 its sibling names), so a later `body.nova-admin` brand override wins. Selection

@@ -217,5 +217,13 @@ msgid "Retail terracotta"
 msgstr "零售陶"
 
 msgctxt "Nova Admin"
+msgid "Graphite black"
+msgstr "石墨黑"
+
+msgctxt "Nova Admin"
+msgid "Midnight blue"
+msgstr "午夜蓝"
+
+msgctxt "Nova Admin"
 msgid "Unknown color palette"
 msgstr "未知配色"

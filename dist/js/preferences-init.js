@@ -9,7 +9,10 @@
   } catch {}
   try {
     const value = localStorage.getItem('nova-palette');
-    if (['default', 'teal', 'indigo', 'violet', 'terracotta'].includes(value)) palette = value;
+    if (
+      ['default', 'teal', 'indigo', 'violet', 'terracotta', 'graphite', 'midnight'].includes(value)
+    )
+      palette = value;
   } catch {}
   root.dataset.palette = palette;
   root.dataset.themeMode = mode;

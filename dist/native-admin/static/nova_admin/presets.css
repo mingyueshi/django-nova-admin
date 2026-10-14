@@ -2,7 +2,7 @@
    The default has no declarations: preserve generic purple/green-save and
    existing host branding exactly. :where() keeps brand overrides at the same
    specificity as body.nova-admin so a later host stylesheet remains authoritative.
-   Error, success, warning, delete and surface roles intentionally stay semantic. */
+   Error, success, warning and delete roles intentionally stay semantic. */
 body.nova-admin:where(.nova-palette-teal) {
   --nova-brand-light: #0f766e;
   --nova-brand-light-hover: #115e59;
@@ -43,25 +43,123 @@ body.nova-admin:where(.nova-palette-terracotta) {
   --nova-palette-selected-dark: #483024;
   --nova-palette-row-dark: #30231f;
 }
-body.nova-admin.nova-mode-light:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta) {
+/* Dark surface presets have light counterparts and never force the appearance mode. */
+body.nova-admin:where(.nova-palette-graphite) {
+  --nova-brand-light: #3f3f46;
+  --nova-brand-light-hover: #27272a;
+  --nova-brand-dark: #d4d4d8;
+  --nova-brand-dark-hover: #f4f4f5;
+  --nova-palette-selected-light: #e4e4e7;
+  --nova-palette-row-light: #f4f4f5;
+  --nova-palette-selected-dark: #303036;
+  --nova-palette-row-dark: #25252a;
+  --nova-surface-dark-bg: #111113;
+  --nova-surface-dark-sidebar: #18181b;
+  --nova-surface-dark-panel: #1f1f23;
+  --nova-surface-dark-panel2: #27272c;
+  --nova-surface-dark-text: #f4f4f5;
+  --nova-surface-dark-muted: #b4b4bd;
+  --nova-surface-dark-medium: #d4d4d8;
+  --nova-surface-dark-line: #393940;
+  --nova-surface-dark-border: #777780;
+  --nova-surface-dark-tool: #3f3f46;
+  --nova-surface-dark-tool-hover: #52525b;
+}
+body.nova-admin:where(.nova-palette-midnight) {
+  --nova-brand-light: #1e40af;
+  --nova-brand-light-hover: #1e3a8a;
+  --nova-brand-dark: #93c5fd;
+  --nova-brand-dark-hover: #bfdbfe;
+  --nova-palette-selected-light: #dbeafe;
+  --nova-palette-row-light: #eff6ff;
+  --nova-palette-selected-dark: #16345a;
+  --nova-palette-row-dark: #102944;
+  --nova-surface-dark-bg: #080f1f;
+  --nova-surface-dark-sidebar: #0c162a;
+  --nova-surface-dark-panel: #101e35;
+  --nova-surface-dark-panel2: #162941;
+  --nova-surface-dark-text: #edf4ff;
+  --nova-surface-dark-muted: #a7bbd8;
+  --nova-surface-dark-medium: #c5d5eb;
+  --nova-surface-dark-line: #2a4363;
+  --nova-surface-dark-border: #5d83ad;
+  --nova-surface-dark-tool: #2c486c;
+  --nova-surface-dark-tool-hover: #385b85;
+}
+body.nova-admin.nova-mode-light:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight) {
   --selected-bg: var(--nova-palette-selected-light);
   --selected-row: var(--nova-palette-row-light);
   --nova-hover: var(--nova-palette-row-light);
 }
-body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta) {
+body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight) {
   --selected-bg: var(--nova-palette-selected-light);
   --selected-row: var(--nova-palette-row-light);
   --nova-hover: var(--nova-palette-row-light);
 }
-body.nova-admin.nova-mode-dark:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta) {
+body.nova-admin.nova-mode-dark:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight) {
   --selected-bg: var(--nova-palette-selected-dark);
   --selected-row: var(--nova-palette-row-dark);
   --nova-hover: var(--nova-palette-row-dark);
 }
 @media (prefers-color-scheme: dark) {
-  body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta) {
+  body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight) {
     --selected-bg: var(--nova-palette-selected-dark);
     --selected-row: var(--nova-palette-row-dark);
     --nova-hover: var(--nova-palette-row-dark);
+  }
+}
+/* Match the mode rules' specificity so later host styles remain authoritative. */
+body.nova-admin.nova-mode-dark:where(.nova-palette-graphite, .nova-palette-midnight) {
+  --body-bg: var(--nova-surface-dark-bg);
+  --body-fg: var(--nova-surface-dark-text);
+  --body-quiet-color: var(--nova-surface-dark-muted);
+  --body-medium-color: var(--nova-surface-dark-medium);
+  --body-loud-color: var(--nova-surface-dark-text);
+  --primary-fg: var(--nova-surface-dark-bg);
+  --secondary: var(--nova-surface-dark-panel);
+  --header-bg: var(--nova-surface-dark-panel);
+  --header-color: var(--nova-surface-dark-text);
+  --header-branding-color: var(--nova-surface-dark-text);
+  --breadcrumbs-bg: var(--nova-surface-dark-bg);
+  --breadcrumbs-fg: var(--nova-surface-dark-muted);
+  --hairline-color: var(--nova-surface-dark-line);
+  --border-color: var(--nova-surface-dark-border);
+  --darkened-bg: var(--nova-surface-dark-sidebar);
+  --button-fg: var(--nova-surface-dark-bg);
+  --close-button-bg: var(--nova-surface-dark-tool);
+  --close-button-hover-bg: var(--nova-surface-dark-tool-hover);
+  --object-tools-fg: var(--nova-surface-dark-text);
+  --object-tools-bg: var(--nova-surface-dark-tool);
+  --object-tools-hover-bg: var(--nova-surface-dark-tool-hover);
+  --nova-panel: var(--nova-surface-dark-panel);
+  --nova-neutral-bg: var(--nova-surface-dark-panel2);
+  --nova-switch-track: var(--nova-surface-dark-border);
+}
+@media (prefers-color-scheme: dark) {
+  body.nova-admin.nova-mode-auto:where(.nova-palette-graphite, .nova-palette-midnight) {
+    --body-bg: var(--nova-surface-dark-bg);
+    --body-fg: var(--nova-surface-dark-text);
+    --body-quiet-color: var(--nova-surface-dark-muted);
+    --body-medium-color: var(--nova-surface-dark-medium);
+    --body-loud-color: var(--nova-surface-dark-text);
+    --primary-fg: var(--nova-surface-dark-bg);
+    --secondary: var(--nova-surface-dark-panel);
+    --header-bg: var(--nova-surface-dark-panel);
+    --header-color: var(--nova-surface-dark-text);
+    --header-branding-color: var(--nova-surface-dark-text);
+    --breadcrumbs-bg: var(--nova-surface-dark-bg);
+    --breadcrumbs-fg: var(--nova-surface-dark-muted);
+    --hairline-color: var(--nova-surface-dark-line);
+    --border-color: var(--nova-surface-dark-border);
+    --darkened-bg: var(--nova-surface-dark-sidebar);
+    --button-fg: var(--nova-surface-dark-bg);
+    --close-button-bg: var(--nova-surface-dark-tool);
+    --close-button-hover-bg: var(--nova-surface-dark-tool-hover);
+    --object-tools-fg: var(--nova-surface-dark-text);
+    --object-tools-bg: var(--nova-surface-dark-tool);
+    --object-tools-hover-bg: var(--nova-surface-dark-tool-hover);
+    --nova-panel: var(--nova-surface-dark-panel);
+    --nova-neutral-bg: var(--nova-surface-dark-panel2);
+    --nova-switch-track: var(--nova-surface-dark-border);
   }
 }
