@@ -40,7 +40,7 @@
   --nova-brand-selection-dark: #483024;
   --nova-brand-row-dark: #30231f;
 }
-/* Graphite and midnight also provide dark surfaces; light appearance stays independent. */
+/* Surface palettes also provide dark backgrounds; light appearance stays independent. */
 :root:where([data-palette="graphite"]) {
   --nova-brand-light: #3f3f46;
   --nova-brand-light-hover: #27272a;
@@ -65,23 +65,65 @@
 :root:where([data-palette="midnight"]) {
   --nova-brand-light: #1e40af;
   --nova-brand-light-hover: #1e3a8a;
-  --nova-brand-dark: #93c5fd;
-  --nova-brand-dark-hover: #bfdbfe;
+  --nova-brand-dark: #b5b8ff;
+  --nova-brand-dark-hover: #d9dbff;
   --nova-brand-selection-light: #dbeafe;
   --nova-brand-row-light: #eff6ff;
-  --nova-brand-selection-dark: #16345a;
-  --nova-brand-row-dark: #102944;
-  --nova-surface-dark-bg: #080f1f;
-  --nova-surface-dark-sidebar: #0c162a;
-  --nova-surface-dark-panel: #101e35;
-  --nova-surface-dark-panel2: #162941;
-  --nova-surface-dark-text: #edf4ff;
-  --nova-surface-dark-muted: #a7bbd8;
-  --nova-surface-dark-medium: #c5d5eb;
-  --nova-surface-dark-line: #2a4363;
-  --nova-surface-dark-border: #5d83ad;
-  --nova-surface-dark-tool: #2c486c;
-  --nova-surface-dark-tool-hover: #385b85;
+  --nova-brand-selection-dark: #34376c;
+  --nova-brand-row-dark: #242852;
+  --nova-surface-dark-bg: #10102b;
+  --nova-surface-dark-sidebar: #16163a;
+  --nova-surface-dark-panel: #1c1d46;
+  --nova-surface-dark-panel2: #262953;
+  --nova-surface-dark-text: #f0f0ff;
+  --nova-surface-dark-muted: #b2b7df;
+  --nova-surface-dark-medium: #d1d5f3;
+  --nova-surface-dark-line: #393e70;
+  --nova-surface-dark-border: #858dc4;
+  --nova-surface-dark-tool: #343965;
+  --nova-surface-dark-tool-hover: #454d83;
+}
+:root:where([data-palette="forest"]) {
+  --nova-brand-light: #24613b;
+  --nova-brand-light-hover: #194a2b;
+  --nova-brand-dark: #a6e3b1;
+  --nova-brand-dark-hover: #ccf5d3;
+  --nova-brand-selection-light: #dcefdc;
+  --nova-brand-row-light: #f0f8ef;
+  --nova-brand-selection-dark: #274c35;
+  --nova-brand-row-dark: #1f3d2c;
+  --nova-surface-dark-bg: #0b1d14;
+  --nova-surface-dark-sidebar: #11271b;
+  --nova-surface-dark-panel: #193526;
+  --nova-surface-dark-panel2: #234532;
+  --nova-surface-dark-text: #ecfff0;
+  --nova-surface-dark-muted: #b0d0ba;
+  --nova-surface-dark-medium: #d0ead7;
+  --nova-surface-dark-line: #3b5c48;
+  --nova-surface-dark-border: #789e81;
+  --nova-surface-dark-tool: #34533d;
+  --nova-surface-dark-tool-hover: #46694f;
+}
+:root:where([data-palette="amber"]) {
+  --nova-brand-light: #8a4b0f;
+  --nova-brand-light-hover: #693606;
+  --nova-brand-dark: #f7c77f;
+  --nova-brand-dark-hover: #ffe1ae;
+  --nova-brand-selection-light: #ffebc7;
+  --nova-brand-row-light: #fff7e8;
+  --nova-brand-selection-dark: #4c3820;
+  --nova-brand-row-dark: #3b2b19;
+  --nova-surface-dark-bg: #23180d;
+  --nova-surface-dark-sidebar: #2b1f12;
+  --nova-surface-dark-panel: #342719;
+  --nova-surface-dark-panel2: #41321f;
+  --nova-surface-dark-text: #fff4e2;
+  --nova-surface-dark-muted: #d4b99a;
+  --nova-surface-dark-medium: #ead2b3;
+  --nova-surface-dark-line: #59482f;
+  --nova-surface-dark-border: #a48a64;
+  --nova-surface-dark-tool: #61492c;
+  --nova-surface-dark-tool-hover: #785b36;
 }
 /* :where keeps host styles with ordinary :root specificity able to override. */
 :root[data-theme="dark"]:where([data-palette]:not([data-palette="default"])) {
@@ -117,7 +159,7 @@
   background: var(--button-hover-bg);
 }
 /* Shared dark surfaces for the workspace and static login preview. */
-:root[data-theme="dark"]:where([data-palette="graphite"], [data-palette="midnight"]) {
+:root[data-theme="dark"]:where([data-palette="graphite"], [data-palette="midnight"], [data-palette="forest"], [data-palette="amber"]) {
   --bg: var(--nova-surface-dark-bg);
   --sidebar: var(--nova-surface-dark-sidebar);
   --panel: var(--nova-surface-dark-panel);
@@ -135,7 +177,7 @@
   --darkened-bg: var(--nova-surface-dark-sidebar);
   --button-fg: var(--nova-surface-dark-bg);
 }
-:where(:root[data-theme="dark"][data-palette="graphite"], :root[data-theme="dark"][data-palette="midnight"]) :is(input, select, textarea) {
+:where(:root[data-theme="dark"][data-palette="graphite"], :root[data-theme="dark"][data-palette="midnight"], :root[data-theme="dark"][data-palette="forest"], :root[data-theme="dark"][data-palette="amber"]) :is(input, select, textarea) {
   border-color: var(--nova-surface-dark-border);
 }
 /* Compact palette control wraps instead of overflowing mobile login. */

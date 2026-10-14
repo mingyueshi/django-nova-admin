@@ -50,7 +50,7 @@ PAGES = {
 }
 PALETTES = {
     "teal": "医疗青", "indigo": "专业靛", "violet": "文教紫", "terracotta": "零售陶",
-    "graphite": "石墨黑", "midnight": "午夜蓝",
+    "graphite": "石墨黑", "midnight": "午夜蓝", "forest": "松林绿", "amber": "暖琥珀",
 }
 PALETTE_PAGES = ("index", "changelist", "login")
 
@@ -619,7 +619,7 @@ Use the intended Django environment when running the command; the exporter recor
 
 - `index.html`: gallery
 - `light/`, `dark/`, `auto/`, `compact-light/`, `compact-dark/`, `compact-auto/`, `native/`: eight pages each (`index`, `changelist`, `members`, `news`, `changeform`, `validation-error`, `delete-confirm`, `login`)
-- Optional `--with-palettes`: 36 additional representative pages, six palettes × light/dark × dashboard/product list/login. Standard density only; auto/compact/native combinations retain default coverage.
+- Optional `--with-palettes`: 48 additional representative pages, eight palettes × light/dark × dashboard/product list/login. Standard density only; auto/compact/native combinations retain default coverage.
 - `static/admin/`: exact Django CSS and image assets, with upstream attribution
 - `static/nova_admin/`: actual theme assets from this checkout
 - `static/catalog/`: demo-owned enterprise branding/density overrides, business-image geometry and three bundled synthetic WebP sheets
@@ -773,7 +773,7 @@ def main():
     parser.add_argument("--check", type=Path, metavar="EXPORT_DIR", help="Validate an existing export without touching Django or any database")
     parser.add_argument("--with-captcha", action="store_true", help="Render optional CAPTCHA with synthetic local PNGs; requires the captcha extra")
     parser.add_argument("--with-extensions", action="store_true", help="Render the explicit local branding/navigation configuration; all exported controls remain inert")
-    parser.add_argument("--with-palettes", action="store_true", help="Add 36 light/dark standard-density palette representatives (dashboard/list/login); preserve all 57 default/native pages")
+    parser.add_argument("--with-palettes", action="store_true", help="Add 48 light/dark standard-density palette representatives (dashboard/list/login); preserve all 57 default/native pages")
     args = parser.parse_args()
     if args.check:
         sanitizer_self_test()

@@ -29,7 +29,7 @@ FRONTEND_SUMMARIES = {
     'presentation': 'TOTAL 28 presentation checks passed',
     'pagination': 'TOTAL 254 pagination checks passed (Node/jsdom)',
     'extensions': 'TOTAL 5 extensions guide tests passed',
-    'palettes': 'TOTAL 66 palette checks passed',
+    'palettes': 'TOTAL 82 palette checks passed',
 }
 FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_SUMMARIES.items()}
 FRONTEND_TOTAL = sum(FRONTEND_COUNTS.values())

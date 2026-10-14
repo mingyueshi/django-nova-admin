@@ -10,7 +10,17 @@
   try {
     const value = localStorage.getItem('nova-palette');
     if (
-      ['default', 'teal', 'indigo', 'violet', 'terracotta', 'graphite', 'midnight'].includes(value)
+      [
+        'default',
+        'teal',
+        'indigo',
+        'violet',
+        'terracotta',
+        'graphite',
+        'midnight',
+        'forest',
+        'amber',
+      ].includes(value)
     )
       palette = value;
   } catch {}

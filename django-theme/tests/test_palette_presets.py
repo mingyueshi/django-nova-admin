@@ -146,7 +146,7 @@ class PaletteIntegrationTests(TestCase):
         html = response.content.decode()
         assets = ["nova_admin/theme.css", "nova_admin/tokens.css", "nova_admin/presets.css", "catalog/enterprise.css"]
         self.assertEqual(sorted(assets, key=html.index), assets)
-        for language, labels in (("en", ["Color palette", "Project default", "Healthcare teal", "Professional indigo", "Education violet", "Retail terracotta", "Graphite black", "Midnight blue"]), ("zh-hans", ["配色", "项目默认", "医疗青", "专业靛", "文教紫", "零售陶", "石墨黑", "午夜蓝"])):
+        for language, labels in (("en", ["Color palette", "Project default", "Healthcare teal", "Professional indigo", "Education violet", "Retail terracotta", "Graphite black", "Midnight blue", "Forest green", "Warm amber"]), ("zh-hans", ["配色", "项目默认", "医疗青", "专业靛", "文教紫", "零售陶", "石墨黑", "午夜蓝", "松林绿", "暖琥珀"])):
             with override(language):
                 page = self.client.get(self.index)
                 for label in labels:

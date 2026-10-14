@@ -68,48 +68,90 @@ body.nova-admin:where(.nova-palette-graphite) {
 body.nova-admin:where(.nova-palette-midnight) {
   --nova-brand-light: #1e40af;
   --nova-brand-light-hover: #1e3a8a;
-  --nova-brand-dark: #93c5fd;
-  --nova-brand-dark-hover: #bfdbfe;
+  --nova-brand-dark: #b5b8ff;
+  --nova-brand-dark-hover: #d9dbff;
   --nova-palette-selected-light: #dbeafe;
   --nova-palette-row-light: #eff6ff;
-  --nova-palette-selected-dark: #16345a;
-  --nova-palette-row-dark: #102944;
-  --nova-surface-dark-bg: #080f1f;
-  --nova-surface-dark-sidebar: #0c162a;
-  --nova-surface-dark-panel: #101e35;
-  --nova-surface-dark-panel2: #162941;
-  --nova-surface-dark-text: #edf4ff;
-  --nova-surface-dark-muted: #a7bbd8;
-  --nova-surface-dark-medium: #c5d5eb;
-  --nova-surface-dark-line: #2a4363;
-  --nova-surface-dark-border: #5d83ad;
-  --nova-surface-dark-tool: #2c486c;
-  --nova-surface-dark-tool-hover: #385b85;
+  --nova-palette-selected-dark: #34376c;
+  --nova-palette-row-dark: #242852;
+  --nova-surface-dark-bg: #10102b;
+  --nova-surface-dark-sidebar: #16163a;
+  --nova-surface-dark-panel: #1c1d46;
+  --nova-surface-dark-panel2: #262953;
+  --nova-surface-dark-text: #f0f0ff;
+  --nova-surface-dark-muted: #b2b7df;
+  --nova-surface-dark-medium: #d1d5f3;
+  --nova-surface-dark-line: #393e70;
+  --nova-surface-dark-border: #858dc4;
+  --nova-surface-dark-tool: #343965;
+  --nova-surface-dark-tool-hover: #454d83;
 }
-body.nova-admin.nova-mode-light:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight) {
+body.nova-admin:where(.nova-palette-forest) {
+  --nova-brand-light: #24613b;
+  --nova-brand-light-hover: #194a2b;
+  --nova-brand-dark: #a6e3b1;
+  --nova-brand-dark-hover: #ccf5d3;
+  --nova-palette-selected-light: #dcefdc;
+  --nova-palette-row-light: #f0f8ef;
+  --nova-palette-selected-dark: #274c35;
+  --nova-palette-row-dark: #1f3d2c;
+  --nova-surface-dark-bg: #0b1d14;
+  --nova-surface-dark-sidebar: #11271b;
+  --nova-surface-dark-panel: #193526;
+  --nova-surface-dark-panel2: #234532;
+  --nova-surface-dark-text: #ecfff0;
+  --nova-surface-dark-muted: #b0d0ba;
+  --nova-surface-dark-medium: #d0ead7;
+  --nova-surface-dark-line: #3b5c48;
+  --nova-surface-dark-border: #789e81;
+  --nova-surface-dark-tool: #34533d;
+  --nova-surface-dark-tool-hover: #46694f;
+}
+body.nova-admin:where(.nova-palette-amber) {
+  --nova-brand-light: #8a4b0f;
+  --nova-brand-light-hover: #693606;
+  --nova-brand-dark: #f7c77f;
+  --nova-brand-dark-hover: #ffe1ae;
+  --nova-palette-selected-light: #ffebc7;
+  --nova-palette-row-light: #fff7e8;
+  --nova-palette-selected-dark: #4c3820;
+  --nova-palette-row-dark: #3b2b19;
+  --nova-surface-dark-bg: #23180d;
+  --nova-surface-dark-sidebar: #2b1f12;
+  --nova-surface-dark-panel: #342719;
+  --nova-surface-dark-panel2: #41321f;
+  --nova-surface-dark-text: #fff4e2;
+  --nova-surface-dark-muted: #d4b99a;
+  --nova-surface-dark-medium: #ead2b3;
+  --nova-surface-dark-line: #59482f;
+  --nova-surface-dark-border: #a48a64;
+  --nova-surface-dark-tool: #61492c;
+  --nova-surface-dark-tool-hover: #785b36;
+}
+body.nova-admin.nova-mode-light:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber) {
   --selected-bg: var(--nova-palette-selected-light);
   --selected-row: var(--nova-palette-row-light);
   --nova-hover: var(--nova-palette-row-light);
 }
-body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight) {
+body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber) {
   --selected-bg: var(--nova-palette-selected-light);
   --selected-row: var(--nova-palette-row-light);
   --nova-hover: var(--nova-palette-row-light);
 }
-body.nova-admin.nova-mode-dark:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight) {
+body.nova-admin.nova-mode-dark:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber) {
   --selected-bg: var(--nova-palette-selected-dark);
   --selected-row: var(--nova-palette-row-dark);
   --nova-hover: var(--nova-palette-row-dark);
 }
 @media (prefers-color-scheme: dark) {
-  body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight) {
+  body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber) {
     --selected-bg: var(--nova-palette-selected-dark);
     --selected-row: var(--nova-palette-row-dark);
     --nova-hover: var(--nova-palette-row-dark);
   }
 }
 /* Match the mode rules' specificity so later host styles remain authoritative. */
-body.nova-admin.nova-mode-dark:where(.nova-palette-graphite, .nova-palette-midnight) {
+body.nova-admin.nova-mode-dark:where(.nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber) {
   --body-bg: var(--nova-surface-dark-bg);
   --body-fg: var(--nova-surface-dark-text);
   --body-quiet-color: var(--nova-surface-dark-muted);
@@ -136,7 +178,7 @@ body.nova-admin.nova-mode-dark:where(.nova-palette-graphite, .nova-palette-midni
   --nova-switch-track: var(--nova-surface-dark-border);
 }
 @media (prefers-color-scheme: dark) {
-  body.nova-admin.nova-mode-auto:where(.nova-palette-graphite, .nova-palette-midnight) {
+  body.nova-admin.nova-mode-auto:where(.nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber) {
     --body-bg: var(--nova-surface-dark-bg);
     --body-fg: var(--nova-surface-dark-text);
     --body-quiet-color: var(--nova-surface-dark-muted);

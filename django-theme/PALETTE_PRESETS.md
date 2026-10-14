@@ -3,16 +3,24 @@
 The appearance form has two independent, translated selects:
 
 - Mode: `dark`, `light`, `auto`, `native` (existing behavior).
-- Palette: `default`, `teal` (医疗青), `indigo` (专业靛), `violet` (文教紫), `terracotta` (零售陶), `graphite` (石墨黑), `midnight` (午夜蓝).
+- Palette: `default`, `teal` (医疗青), `indigo` (专业靛), `violet` (文教紫), `terracotta` (零售陶), `graphite` (石墨黑), `midnight` (午夜蓝), `forest` (松林绿), `amber` (暖琥珀).
 
 These industry-oriented names describe demonstration positioning only, not
 industry standards or a requirement for a particular kind of organization.
 
-Graphite black uses neutral charcoal surfaces; Midnight blue uses deep navy
-surfaces. Select either palette together with `dark`, or use `auto` to follow
-the system. Both also have light accent counterparts: selecting a palette never
+Graphite black uses neutral charcoal surfaces; Midnight blue uses deep indigo
+surfaces and a pale periwinkle accent, with clearer panel separation than the default dark palette.
+Forest green uses forest-green surfaces with a mint accent; Warm amber uses warm
+brown surfaces with an amber accent. Select any of these four palettes together
+with `dark`, or use `auto` to follow the system. All four also have light accent
+counterparts: selecting a palette never
 changes the appearance preference. Their dark backgrounds cover the workspace,
 sidebar, cards, form controls and login page.
+
+The optional exported gallery includes 48 palette representatives: eight
+palettes × light/dark × dashboard/product list/login, plus 57 default/native
+pages, for 105 HTML files in total. Palette representatives use standard density;
+they do not provide separate auto or compact snapshots.
 
 `NOVA_ADMIN_DEFAULT_PALETTE = "default"` is optional. A valid saved session
 preference (`nova_admin_palette`) overrides it. Unknown settings and malformed
@@ -42,7 +50,7 @@ Django's `--selected-bg`, `--selected-row` and Nova's `--nova-hover`. `auto` fol
 the OS with the existing media-query model. Semantic error, warning, success and
 destructive-action colors remain unchanged.
 
-Graphite and Midnight additionally define `--nova-surface-dark-*` tokens for
+Graphite, Midnight, Forest and Amber additionally define `--nova-surface-dark-*` tokens for
 background, sidebar, panel, raised panel, text, secondary text, border and tool
 roles. Their mappings apply only in `dark` and `auto` with a dark system
 preference. Later host mode rules can override these mappings just like the
@@ -76,11 +84,22 @@ python -m venv /tmp/nova-palette-venv
 PYTHONPATH=src:demo:. /tmp/nova-palette-venv/bin/python demo/manage.py test tests --noinput
 ```
 
+The Forest/Amber local revision on 2026-10-14 passed 622 frontend checks
+(82 palette checks), 328 Django tests (326 passing, two expected skips),
+60 script tests, 23 export-safety tests across 105 HTML pages, and 1444 opaque
+color-role checks. The runtime was Node 24.21.0 / npm 11.19.0 and Python 3.12.14 /
+Django 6.1.1. Chromium verified 42 static-preview states plus cross-tab preference
+sync and 24 rendered Django snapshot combinations at 390px and 1440px. Desktop
+and mobile screenshots were inspected. These are local checks; live Django
+login interaction, other runtime versions, third-party hosts, and public
+deployment were not rerun for this revision.
+
 The Chinese `.po` and packaged `.mo` catalog are both updated. To regenerate the
 latter without GNU gettext: install `polib==1.2.0`, then use `polib.pofile(path)`
 and `save_as_mofile()`; it is a build-time helper, not a runtime dependency.
 
-Verified in isolated Python 3.12.14 environments against Django 5.2.17 and
-6.1.1: 327 tests, all passing; two expected skips are the optional CAPTCHA and
+The historical first-four-palette baseline used isolated Python 3.12.14
+environments against Django 5.2.17 and 6.1.1: 327 tests, 325 passing;
+two expected skips are the optional CAPTCHA and
 Axes integrations. No database persists after the test run. Browser/visual
 verification is separate from this server-side suite.

@@ -259,9 +259,10 @@ Node 交互回归需要先在研究包根目录运行 npm ci。随后激活 Djan
 ### Palette presets
 
 Appearance and color are independently selectable. Keep “Project default” for
-unchanged project branding, or choose 医疗青 / 专业靛 / 文教紫 / 零售陶 / 石墨黑 / 午夜蓝.
-Graphite and Midnight include distinct dark backgrounds, panels and controls;
-use dark or system-following appearance to enable those surfaces. See
+unchanged project branding, or choose 医疗青 / 专业靛 / 文教紫 / 零售陶 / 石墨黑 / 午夜蓝 / 松林绿 / 暖琥珀.
+Graphite, Midnight, Forest and Amber include distinct dark backgrounds, panels and controls.
+Forest pairs green surfaces with mint accents; Amber pairs warm brown surfaces with amber accents.
+Use dark or system-following appearance to enable those surfaces. See
 [PALETTE_PRESETS.md](PALETTE_PRESETS.md) for session validation, compatibility,
 CSS override order, and tests.
 

@@ -63,7 +63,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':606,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':97,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':622,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':97,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -123,7 +123,7 @@ TOTAL 31 passed, 0 failed (Node/jsdom static login demo)
 TOTAL 28 presentation checks passed
 TOTAL 254 pagination checks passed (Node/jsdom)
 TOTAL 5 extensions guide tests passed
-TOTAL 66 palette checks passed
+TOTAL 82 palette checks passed
 """
     GROUP_LOGS = {
         'frontend': FRONTEND_LOG,
@@ -151,15 +151,15 @@ TOTAL 66 palette checks passed
     def collect(self, root):
         return support.collect_node(root / 'logs', root / 'output', COMMIT, '24.21.0', '11.19.0')
 
-    def test_current_logs_record_all_606_checks_including_palettes(self):
+    def test_current_logs_record_all_622_checks_including_palettes(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.logs(root)
             result = self.collect(root)
-            self.assertEqual(result['frontend'], 606)
+            self.assertEqual(result['frontend'], 622)
             self.assertEqual(len(result['frontend_suites']), 13)
-            self.assertEqual(result['frontend_suites']['palettes'], 66)
-            self.assertEqual(sum(result['frontend_suites'].values()), 606)
+            self.assertEqual(result['frontend_suites']['palettes'], 82)
+            self.assertEqual(sum(result['frontend_suites'].values()), 622)
             self.assertEqual(json.loads((root / 'output/report.json').read_text()), result)
 
     def test_every_frontend_suite_requires_exactly_one_success_summary(self):
@@ -177,20 +177,21 @@ TOTAL 66 palette checks passed
                     self.assertFalse((root / 'output').exists())
 
     def test_same_total_cannot_hide_an_absent_suite(self):
-        # Omit the 66 palette checks but add those 66 to pagination: still 606.
+        # Omit the 82 palette checks but add those 82 to pagination: still 622.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             logs = self.logs(root)
-            content = self.FRONTEND_LOG.replace('TOTAL 66 palette checks passed\n', '').replace('TOTAL 254', 'TOTAL 320')
+            content = self.FRONTEND_LOG.replace('TOTAL 82 palette checks passed\n', '').replace('TOTAL 254', 'TOTAL 336')
             (logs / 'frontend.log').write_text(content)
             with self.assertRaises(ValueError): self.collect(root)
 
-    def test_prior_590_check_log_is_rejected(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            logs = self.logs(root)
-            (logs / 'frontend.log').write_text(self.FRONTEND_LOG.replace('TOTAL 66 palette', 'TOTAL 50 palette'))
-            with self.assertRaises(ValueError): self.collect(root)
+    def test_prior_palette_suite_counts_are_rejected(self):
+        for prior_count in (50, 66):
+            with self.subTest(prior_count=prior_count), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                logs = self.logs(root)
+                (logs / 'frontend.log').write_text(self.FRONTEND_LOG.replace('TOTAL 82 palette', f'TOTAL {prior_count} palette'))
+                with self.assertRaises(ValueError): self.collect(root)
 
     def test_every_theme_js_group_rejects_missing_duplicate_or_failed_summary(self):
         for group in ('navigation', 'enhancements', 'captcha'):
@@ -223,9 +224,11 @@ TOTAL 66 palette checks passed
 
     def test_gate_rejects_stale_or_incomplete_frontend_counts(self):
         changes = [lambda x: x.update(frontend=540), lambda x: x.update(frontend=590),
+                   lambda x: x.update(frontend=606),
                    lambda x: x.pop('frontend_suites'),
                    lambda x: x['frontend_suites'].pop('palettes'),
-                   lambda x: x['frontend_suites'].update(palettes=50)]
+                   lambda x: x['frontend_suites'].update(palettes=50),
+                   lambda x: x['frontend_suites'].update(palettes=66)]
         for change in changes:
             with self.subTest(change=change), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
