@@ -82,14 +82,22 @@ class NovaCatalogTests(SimpleTestCase):
                 self.assertIn('method="post"', html)
 
     def test_enhancement_script_preserves_nonce_escaping(self):
-        html = render_to_string("admin/base.html", {
-            "nova_admin_active": True, "nova_admin_mode": "dark",
-            "has_permission": False, "csp_nonce": 'nonce"&<>',
-        })
-        script = re.search(r'<script\b[^>]*nova_admin/enhancements\.js[^>]*>', html)
-        self.assertIsNotNone(script)
-        self.assertIn('nonce="nonce&quot;&amp;&lt;&gt;"', script.group())
-        self.assertIn('data-nova-search-placeholder="Search records…"', script.group())
+        labels = {
+            "en": ("Search records…", "Show filters", "Hide filters", "Scroll table horizontally", "Scroll table left", "Scroll table right"),
+            "zh-hans": ("搜索记录…", "显示过滤器", "隐藏过滤器", "横向滚动表格", "向左滚动表格", "向右滚动表格"),
+        }
+        names = ("search-placeholder", "show-filters", "hide-filters", "scroll-table", "scroll-left", "scroll-right")
+        for language, texts in labels.items():
+            with self.subTest(language=language), override(language):
+                html = render_to_string("admin/base.html", {
+                    "nova_admin_active": True, "nova_admin_mode": "dark",
+                    "has_permission": False, "csp_nonce": 'nonce"&<>',
+                })
+                script = re.search(r'<script\b[^>]*nova_admin/enhancements\.js[^>]*>', html)
+                self.assertIsNotNone(script)
+                self.assertIn('nonce="nonce&quot;&amp;&lt;&gt;"', script.group())
+                for name, text in zip(names, texts):
+                    self.assertIn(f'data-nova-{name}="{text}"', script.group())
 
 
 class NavigationPreferenceScopeTests(SimpleTestCase):

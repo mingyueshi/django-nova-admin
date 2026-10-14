@@ -235,3 +235,23 @@ msgstr "暖琥珀"
 msgctxt "Nova Admin"
 msgid "Unknown color palette"
 msgstr "未知配色"
+
+msgctxt "Nova Admin"
+msgid "Show filters"
+msgstr "显示过滤器"
+
+msgctxt "Nova Admin"
+msgid "Hide filters"
+msgstr "隐藏过滤器"
+
+msgctxt "Nova Admin"
+msgid "Scroll table horizontally"
+msgstr "横向滚动表格"
+
+msgctxt "Nova Admin"
+msgid "Scroll table left"
+msgstr "向左滚动表格"
+
+msgctxt "Nova Admin"
+msgid "Scroll table right"
+msgstr "向右滚动表格"

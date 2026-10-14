@@ -63,7 +63,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':622,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':97,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':622,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':121,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -128,7 +128,7 @@ TOTAL 82 palette checks passed
     GROUP_LOGS = {
         'frontend': FRONTEND_LOG,
         'navigation': '78 navigation DOM scenarios passed (3 Django script versions).\n',
-        'enhancements': 'TOTAL 8 search enhancement tests passed\n',
+        'enhancements': 'TOTAL 32 changelist enhancement tests passed\n',
         'captcha': 'TOTAL 11 CAPTCHA enhancement tests passed\n',
     }
 
@@ -157,6 +157,7 @@ TOTAL 82 palette checks passed
             self.logs(root)
             result = self.collect(root)
             self.assertEqual(result['frontend'], 622)
+            self.assertEqual(result['theme_js'], 121)
             self.assertEqual(len(result['frontend_suites']), 13)
             self.assertEqual(result['frontend_suites']['palettes'], 82)
             self.assertEqual(sum(result['frontend_suites'].values()), 622)
@@ -223,7 +224,7 @@ TOTAL 82 palette checks passed
             with self.assertRaisesRegex(ValueError, 'Incomplete Node commands'): self.collect(root)
 
     def test_gate_rejects_stale_or_incomplete_frontend_counts(self):
-        changes = [lambda x: x.update(frontend=540), lambda x: x.update(frontend=590),
+        changes = [lambda x: x.update(theme_js=97), lambda x: x.update(frontend=540), lambda x: x.update(frontend=590),
                    lambda x: x.update(frontend=606),
                    lambda x: x.pop('frontend_suites'),
                    lambda x: x['frontend_suites'].pop('palettes'),

@@ -33,6 +33,8 @@ FRONTEND_SUMMARIES = {
 }
 FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_SUMMARIES.items()}
 FRONTEND_TOTAL = sum(FRONTEND_COUNTS.values())
+ENHANCEMENT_TOTAL = 32
+THEME_JS_TOTAL = 78 + ENHANCEMENT_TOTAL + 11
 
 def read(path):
     return json.loads(Path(path).read_text())
@@ -160,7 +162,7 @@ def collect_node(logs, output, commit, node, npm):
     for name, pattern, summaries in [
         ('frontend', r'^TOTAL .+$', list(FRONTEND_SUMMARIES.values())),
         ('navigation', r'^\d+ navigation DOM scenarios .+$', ['78 navigation DOM scenarios passed (3 Django script versions).']),
-        ('enhancements', r'^TOTAL .+$', ['TOTAL 8 search enhancement tests passed']),
+        ('enhancements', r'^TOTAL .+$', [f'TOTAL {ENHANCEMENT_TOTAL} changelist enhancement tests passed']),
         ('captcha', r'^TOTAL .+$', ['TOTAL 11 CAPTCHA enhancement tests passed']),
     ]:
         content = (logs / (name + '.log')).read_text()
@@ -169,7 +171,7 @@ def collect_node(logs, output, commit, node, npm):
     output = safe_new_directory(output)
     for name in ['frontend.log', 'navigation.log', 'enhancements.log', 'captcha.log', 'runtime.json', 'dependency-tree.json']:
         (output / name).write_bytes((logs / name).read_bytes())
-    result = {'kind': 'node', 'commit': commit, 'node': node, 'npm': npm, 'status': 'passed', 'frontend': FRONTEND_TOTAL, 'frontend_suites': dict(FRONTEND_COUNTS), 'theme_js': 97,
+    result = {'kind': 'node', 'commit': commit, 'node': node, 'npm': npm, 'status': 'passed', 'frontend': FRONTEND_TOTAL, 'frontend_suites': dict(FRONTEND_COUNTS), 'theme_js': THEME_JS_TOTAL,
               'package_lock_sha256': digest(ROOT / 'package-lock.json')}
     (output / 'report.json').write_text(json.dumps(result, indent=2) + '\n')
     return result
@@ -201,7 +203,7 @@ def verify_reports(reports, scope, commit, wheel_sha):
             found_python[key] = row
         elif row['kind'] == 'node':
             key = row['node']
-            if key not in nodes or key in found_node or row['npm'] != nodes[key]['npm'] or row['frontend'] != FRONTEND_TOTAL or row.get('frontend_suites') != FRONTEND_COUNTS or row['theme_js'] != 97 or row['package_lock_sha256'] != digest(ROOT / 'package-lock.json'):
+            if key not in nodes or key in found_node or row['npm'] != nodes[key]['npm'] or row['frontend'] != FRONTEND_TOTAL or row.get('frontend_suites') != FRONTEND_COUNTS or row['theme_js'] != THEME_JS_TOTAL or row['package_lock_sha256'] != digest(ROOT / 'package-lock.json'):
                 raise ValueError('Unexpected, duplicate, or mismatched Node report')
             found_node[key] = row
         else:

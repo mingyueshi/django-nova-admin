@@ -225,6 +225,8 @@ body.nova-admin tbody tr.selected { background: var(--selected-row); }
 body.nova-admin #changelist .actions,
 body.nova-admin #changelist #toolbar,
 body.nova-admin #changelist .paginator { background: var(--nova-panel); color: var(--body-fg); padding: var(--nova-section-padding); border-color: var(--hairline-color); }
+/* Django 5.2 gives actions width:100%; include Nova's padding in that width. */
+body.nova-admin #changelist .actions { box-sizing: border-box; }
 body.nova-admin #changelist-filter h2 { background: var(--nova-panel); color: var(--body-loud-color); border-bottom: 1px solid var(--hairline-color); border-radius: var(--nova-radius) var(--nova-radius) 0 0; }
 body.nova-admin #nav-sidebar { background: var(--body-bg); border-color: var(--hairline-color); }
 body.nova-admin #nav-sidebar .module { border: 0; border-radius: 0; }
@@ -272,6 +274,10 @@ body.nova-admin.dashboard #content-main { width: calc(100% - 285px); }
 body.nova-admin.dashboard .module table { width: 100%; }
 body.nova-admin.dashboard .module th { width: auto; }
 body.nova-admin.dashboard .module td { white-space: nowrap; }
+/* App-list cards contain links only: trim row backgrounds to their outer
+   corners and let the card draw the final border. Form modules stay unclipped. */
+body.nova-admin.dashboard #content-main > .module:has(> table > caption) { overflow: clip; }
+body.nova-admin.dashboard #content-main > .module > table > tbody > tr:last-child > :is(th, td) { border-bottom: 0; }
 body.nova-admin #content-related { width: 260px; margin-right: -285px; }
 body.nova-admin #content-related .module { border: 0; box-shadow: none; margin: 0; }
 body.nova-admin #content-related h3 { margin: 18px 16px 8px; color: var(--body-quiet-color); font-size: 12px; }
@@ -282,7 +288,8 @@ body.nova-admin .actionlist li:last-child { border: 0; }
 
 /* Two-level application → model navigation. Existing Django navigation JS owns
    the toggle and search. <details> remains keyboard-usable without custom JS. */
-body.nova-admin #nav-sidebar.nova-navigation { background: var(--nova-panel); padding: 22px 12px; box-sizing: border-box; }
+body.nova-admin #nav-sidebar.nova-navigation { background: var(--nova-panel); border: 0; padding: 22px 12px; box-sizing: border-box; }
+body.nova-admin .main:has(> #nav-sidebar.nova-navigation) > #toggle-nav-sidebar { border: 0; }
 body.nova-admin .nova-nav-heading { display: flex; align-items: center; justify-content: space-between; padding: 2px 10px 14px; color: var(--body-quiet-color); font-size: 12px; }
 body.nova-admin .nova-nav-heading span { font-size: 8px; letter-spacing: .1em; }
 body.nova-admin .nova-nav-home { display: flex; justify-content: space-between; margin-bottom: 16px; padding: 10px 12px; border-radius: var(--nova-action-radius, 8px); background: var(--darkened-bg); font-weight: 600; color: var(--body-fg); }
@@ -390,6 +397,10 @@ body.nova-admin .paginator .this-page { background: var(--selected-bg); color: v
    overrides of flex-container, label ordering, fieldsets, or native ARIA. */
 body.nova-admin .change-form .module { margin-bottom: 22px; }
 body.nova-admin .form-row { overflow: visible; }
+/* The fieldset owns its outer border; keep only separators between form rows.
+   Do not clip calendars, related-object controls, or their focus rings. */
+body.nova-admin fieldset.module.aligned > .form-row:last-child,
+body.nova-admin fieldset.module.aligned > details > .form-row:last-child { border-bottom: 0; }
 body.nova-admin .aligned label,
 body.nova-admin .aligned legend { color: var(--body-fg); font-size: 13px; }
 body.nova-admin .aligned label.required,
@@ -492,8 +503,10 @@ body.nova-admin.dashboard #content-related { margin-right: 0; }
    alongside. Match that structure, without rewriting either template. */
 body.nova-admin #changelist .changelist-form-container:has(> #changelist-filter) { gap: 24px; }
 body.nova-admin #changelist .changelist-form-container:has(> #changelist-filter) > div { max-width: calc(100% - 244px); }
-body.nova-admin #changelist .changelist-footer { border: 0; padding: 0; background: var(--nova-panel); border-radius: 0 0 var(--nova-radius) var(--nova-radius); }
-body.nova-admin #changelist .changelist-footer .paginator { padding: var(--nova-section-padding); }
+/* The form draws the rounded surface, including when an empty list contains
+   only this footer. Nested backgrounds and borders must not cover its corners. */
+body.nova-admin #changelist .changelist-footer { border: 0; padding: 0; background: transparent; border-radius: 0 0 var(--nova-radius) var(--nova-radius); }
+body.nova-admin #changelist .changelist-footer .paginator { padding: var(--nova-section-padding); border: 0; background: transparent; }
 @media (max-width: 1100px) {
   body.nova-admin #changelist .changelist-form-container:has(> #changelist-filter) { gap: 16px; }
   body.nova-admin #changelist .changelist-form-container:has(> #changelist-filter) > div { max-width: calc(100% - 206px); }
@@ -982,3 +995,196 @@ body.nova-admin .nova-nav-shortcuts[hidden] { display: none; }
 /* Cancel legacy table-span spacing inside the richer model link only. */
 body.nova-admin .nova-nav-group th .nova-nav-model-label { display: inline; padding: 0; color: inherit; }
 body.nova-admin .nova-nav-group th .nova-nav-badge { display: inline-block; padding: 0 5px; color: var(--body-quiet-color); }
+
+/* Keep the upstream header and branding blocks. Only the optional Nova desktop
+   navigation uses this two-column shell; mobile, login and popup retain their
+   existing flow. Django still owns the sidebar's .shifted state and toggle. */
+body.nova-admin .nova-user-tools { display: contents; }
+@media (min-width: 1025px) {
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #container {
+    --nova-shell-nav-width: 22px;
+    display: grid;
+    grid-template-columns: var(--nova-shell-nav-width) minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr auto;
+    min-height: 100vh;
+    height: auto;
+    background: var(--nova-panel);
+  }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #container:has(> .main.shifted) { --nova-shell-nav-width: 298px; }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: grid;
+    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0;
+    padding: 0;
+    border: 0;
+    background: var(--body-bg);
+  }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #container:has(> .main.shifted) #header { grid-template-columns: var(--nova-shell-nav-width) minmax(0, 1fr); }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #branding {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    margin: 0;
+    padding: 20px 24px;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--hairline-color);
+  }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #container:has(> .main.shifted) #branding { background: var(--nova-panel); }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #site-name { margin: 0; min-width: 0; }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #site-name a { max-width: 100%; overflow-wrap: anywhere; }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #site-name a::before { flex-shrink: 0; }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) .nova-user-tools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    min-width: 0;
+    padding: 18px 24px;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--hairline-color);
+  }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #user-tools { min-width: 0; white-space: normal; }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) .nova-theme-switcher { flex-wrap: wrap; }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #container > .main { display: contents; }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #container > nav { grid-column: 2; grid-row: 2; background: var(--body-bg); }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) .main > .content {
+    grid-column: 2;
+    grid-row: 3;
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+    background: var(--body-bg);
+  }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #footer { grid-column: 2; grid-row: 4; background: var(--body-bg); }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) #toggle-nav-sidebar {
+    grid-column: 1;
+    grid-row: 2 / 5;
+    position: sticky;
+    top: 0;
+    inset-inline-start: auto;
+    align-self: stretch;
+    width: 22px;
+    max-height: 100vh;
+  }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) .main > #nav-sidebar.nova-navigation {
+    grid-column: 1;
+    grid-row: 2 / 5;
+    position: sticky;
+    top: 0;
+    inset-inline: auto;
+    align-self: start;
+    width: 276px;
+    max-height: 100vh;
+    margin: 0;
+    margin-inline-start: 22px;
+    overflow: auto;
+    display: none;
+  }
+  body.nova-admin:has(#nav-sidebar.nova-navigation) .main.shifted > #nav-sidebar.nova-navigation { display: block; visibility: visible; }
+}
+
+/* Native background icons need their own space after density's shared button
+   padding. Recent-action icons follow the first line, including wrapped labels. */
+body.nova-admin .object-tools a:is(.addlink, .viewsitelink) {
+  padding-inline-end: 38px;
+  background-position: right 14px center;
+  background-size: 13px 13px;
+}
+body.nova-admin:dir(rtl) .object-tools a:is(.addlink, .viewsitelink) { background-position: left 14px center; }
+body.nova-admin.dashboard #content-main .module td a:is(.addlink, .changelink, .viewlink) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding-inline-start: 22px;
+  line-height: 1.5;
+  background-position: left center;
+  background-size: 14px 14px;
+}
+body.nova-admin #content-related .actionlist li {
+  padding-inline-start: 24px;
+  line-height: 1.5;
+  background-position: left 12px;
+  background-size: 14px 14px;
+}
+body.nova-admin.dashboard:dir(rtl) #content-main .module td a:is(.addlink, .changelink, .viewlink) { background-position: right center; }
+body.nova-admin:dir(rtl) #content-related .actionlist li { background-position: right 12px; }
+
+/* Progressive list tools leave the original filter and editable form intact.
+   Both native arrangements (5.2/6.0 and 6.1) release their filter column. */
+body.nova-admin .nova-changelist-controls { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+body.nova-admin #changelist #toolbar:has(> .nova-changelist-controls) { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+body.nova-admin #changelist #toolbar > form { flex: 1 1 auto; min-width: 0; }
+body.nova-admin #changelist #toolbar > .nova-changelist-controls { flex: 0 0 auto; margin: 0; margin-inline-start: auto; }
+body.nova-admin :is(.nova-filter-toggle, .nova-results-scroll-button) {
+  min-height: max(36px, var(--nova-touch-min));
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--nova-control-radius, 7px);
+  background: var(--nova-panel);
+  color: var(--body-fg);
+  font: inherit;
+  cursor: pointer;
+}
+body.nova-admin :is(.nova-filter-toggle, .nova-results-scroll-button):hover { background: var(--nova-hover); }
+body.nova-admin #changelist-filter[hidden],
+body.nova-admin .nova-results-scroll-tools[hidden] { display: none; }
+body.nova-admin #changelist.nova-filters-collapsed { gap: 0; }
+body.nova-admin #changelist.nova-filters-collapsed .changelist-form-container { width: 100%; gap: 0; }
+body.nova-admin #changelist.nova-filters-collapsed .changelist-form-container > div { width: 100%; max-width: 100%; }
+body.nova-admin #changelist.nova-filters-collapsed .changelist-form-container:has(> #changelist-filter) > div { max-width: 100%; }
+body.nova-admin #changelist.nova-filters-collapsed :is(.results, #toolbar, .xfull) { width: auto; }
+body.nova-admin .nova-results-scroll-tools {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  direction: ltr;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  border-block: 1px solid var(--hairline-color);
+  background: var(--nova-panel);
+}
+body.nova-admin .nova-results-scrollbar {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: ew-resize;
+}
+body.nova-admin .nova-results-scrollbar::-webkit-slider-runnable-track {
+  height: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--darkened-bg);
+}
+body.nova-admin .nova-results-scrollbar::-moz-range-track { height: 6px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--darkened-bg); }
+body.nova-admin .nova-results-scrollbar::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 48px;
+  height: 28px;
+  margin-top: -11px;
+  box-sizing: border-box;
+  border: 2px solid var(--body-bg);
+  border-radius: 7px;
+  background: var(--accent);
+}
+body.nova-admin .nova-results-scrollbar::-moz-range-thumb { width: 44px; height: 24px; border: 2px solid var(--body-bg); border-radius: 7px; background: var(--accent); }
+body.nova-admin .nova-results-scroll-button { flex: 0 0 auto; min-width: 36px; padding: 2px 10px; font-size: 22px; line-height: 1; }
+body.nova-admin .nova-results-scroll-button:disabled { opacity: .4; cursor: default; }
+body.nova-admin .nova-results-scrollbar:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }

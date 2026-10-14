@@ -16,7 +16,7 @@
   {{ block.super }}
   {% if nova_admin_active %}
     {% block nova_favicon %}{% if nova_admin_branding.favicon_url %}<link rel="icon" href="{{ nova_admin_branding.favicon_url|force_escape }}">{% endif %}{% endblock %}
-    <script src="{% static 'nova_admin/enhancements.js' %}" defer {% nova_nonce %} data-nova-search-placeholder="{% translate 'Search records…' context 'Nova Admin' %}"></script>
+    <script src="{% static 'nova_admin/enhancements.js' %}" defer {% nova_nonce %} data-nova-search-placeholder="{% translate 'Search records…' context 'Nova Admin' %}" data-nova-show-filters="{% translate 'Show filters' context 'Nova Admin' %}" data-nova-hide-filters="{% translate 'Hide filters' context 'Nova Admin' %}" data-nova-scroll-table="{% translate 'Scroll table horizontally' context 'Nova Admin' %}" data-nova-scroll-left="{% translate 'Scroll table left' context 'Nova Admin' %}" data-nova-scroll-right="{% translate 'Scroll table right' context 'Nova Admin' %}"></script>
   {% endif %}
   {% if nova_admin_active and nova_admin_navigation %}
     <script src="{% static 'nova_admin/navigation.js' %}" defer {% nova_nonce %}></script>
@@ -28,10 +28,12 @@
 {% block bodyclass %}{{ block.super }}{% if nova_admin_active %} nova-admin nova-mode-{{ nova_admin_mode }} nova-palette-{{ nova_admin_palette|default:"default" }}{% endif %}{% endblock %}
 
 {% block usertools %}
+  {% if nova_admin_active and nova_admin_navigation and has_permission and not is_popup %}<div class="nova-user-tools">{% endif %}
   {{ block.super }}
   {% if nova_admin_enabled and nova_admin_preference_url and has_permission and not is_popup %}
     {% include "nova_admin/theme_switcher.html" %}
   {% endif %}
+  {% if nova_admin_active and nova_admin_navigation and has_permission and not is_popup %}</div>{% endif %}
 {% endblock %}
 
 {% block nav-sidebar %}

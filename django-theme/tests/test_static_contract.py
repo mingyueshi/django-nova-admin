@@ -115,6 +115,53 @@ class StaticLayoutContractTests(SimpleTestCase):
         self.assertIn("width: 100%", enabled)
         self.assertIn("text-align: start", enabled)
 
+    def test_desktop_shell_preserves_native_sidebar_state_and_main_landmark(self):
+        scope = "body.nova-admin:has(#nav-sidebar.nova-navigation)"
+        shell = self.declarations(scope + " #container")
+        self.assertIn("grid-template-columns: var(--nova-shell-nav-width) minmax(0, 1fr)", shell)
+        self.assertIn("--nova-shell-nav-width: 22px", shell)
+        self.assertIn("--nova-shell-nav-width: 298px", self.declarations(scope + " #container:has(> .main.shifted)"))
+        self.assertIn("display: contents", self.declarations(scope + " #container > .main"))
+        self.assertNotIn("display: contents", self.declarations(scope + " .main > .content"))
+        self.assertIn("grid-column: 2", self.declarations(scope + " .main > .content"))
+        self.assertIn("grid-column: 2", self.declarations(scope + " #container > nav"))
+        self.assertIn("display: none", self.declarations(scope + " .main > #nav-sidebar.nova-navigation"))
+        self.assertIn("display: block", self.declarations(scope + " .main.shifted > #nav-sidebar.nova-navigation"))
+        desktop = self.css.split("@media (min-width: 1025px)", 1)[1]
+        self.assertIn(scope + " #container", desktop)
+
+    def test_native_action_icons_keep_space_after_density_padding(self):
+        action = self.declarations("body.nova-admin .object-tools a:is(.addlink, .viewsitelink)")
+        self.assertIn("padding-inline-end: 38px", action)
+        self.assertIn("background-position: right 14px center", action)
+        self.assertGreater(self.css.index("body.nova-admin .object-tools a:is(.addlink, .viewsitelink)"), self.css.index("body.nova-admin :is(.button, input[type=submit], input[type=button], .submit-row a, .object-tools a)"))
+        recent = self.declarations("body.nova-admin #content-related .actionlist li")
+        self.assertIn("padding-inline-start: 24px", recent)
+        self.assertIn("background-position: left 12px", recent)
+
+    def test_filter_collapse_releases_both_native_column_arrangements(self):
+        selector = "body.nova-admin #changelist.nova-filters-collapsed .changelist-form-container"
+        self.assertIn("width: 100%", self.declarations(selector))
+        self.assertIn("gap: 0", self.declarations(selector))
+        self.assertIn("max-width: 100%", self.declarations(selector + " > div"))
+        self.assertIn("max-width: 100%", self.declarations(selector + ":has(> #changelist-filter) > div"))
+        self.assertIn("body.nova-admin #changelist-filter[hidden]", self.css)
+        toolbar = self.declarations("body.nova-admin #changelist #toolbar:has(> .nova-changelist-controls)")
+        self.assertIn("display: flex", toolbar)
+        self.assertIn("flex-wrap: wrap", toolbar)
+        self.assertIn("margin: 0", self.declarations("body.nova-admin #changelist #toolbar > .nova-changelist-controls"))
+
+    def test_table_scroll_aid_is_local_with_visible_controls_and_focus(self):
+        tools = self.declarations("body.nova-admin .nova-results-scroll-tools")
+        self.assertIn("max-width: 100%", tools)
+        self.assertIn("position: sticky", tools)
+        self.assertIn("top: 0", tools)
+        bar = self.declarations("body.nova-admin .nova-results-scrollbar")
+        for declaration in ("min-width: 0", "appearance: none", "height: 36px", "cursor: ew-resize"):
+            self.assertIn(declaration, bar)
+        self.assertIn("display: none", self.declarations("body.nova-admin .nova-results-scroll-tools[hidden]"))
+        self.assertIn("outline: 2px solid", self.declarations("body.nova-admin .nova-results-scrollbar:focus-visible"))
+
     def test_unenhanced_multiselect_has_reading_width_only_in_main_fieldsets(self):
         selector = "body.nova-admin.change-form #content-main > [id$='_form'] > div > fieldset.aligned select[multiple]:not(.select2-hidden-accessible):not(.filtered):not(.selector select)"
         rule = self.declarations(selector)
@@ -134,7 +181,7 @@ class StaticLayoutContractTests(SimpleTestCase):
 
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from catalog.models import Product
 from tests.test_navigation_groups import NavigationElements
@@ -166,6 +213,30 @@ class NativeFieldStructureTests(TestCase):
         self.assertEqual(controls["category"]["tag"], "select")
         self.assertNotIn("multiple", controls["category"]["attrs"])
         self.assertIn("multiple", controls["tags"]["attrs"])
+
+    @override_settings(NOVA_ADMIN_NAVIGATION=True)
+    def test_toolbar_wrapper_preserves_native_header_and_opt_out_boundaries(self):
+        self.client.force_login(self.user)
+        url = reverse("admin:catalog_product_change", args=[self.product.pk])
+        response = self.client.get(url)
+        elements = NavigationElements(response.content.decode()).elements
+        wrapper = next(item for item in elements if NavigationElements.has_class(item, "nova-user-tools"))
+        self.assertTrue(any(item["attrs"].get("id") == "header" for item in wrapper["ancestors"]))
+        user_tools = next(item for item in elements if item["attrs"].get("id") == "user-tools")
+        self.assertTrue(any(NavigationElements.has_class(item, "nova-user-tools") for item in user_tools["ancestors"]))
+        self.assertContains(response, 'id="branding"', count=1)
+        self.assertContains(response, 'id="logout-form"', count=1)
+        self.assertNotContains(self.client.get(url, {"_popup": "1"}), 'class="nova-user-tools"')
+        with override_settings(NOVA_ADMIN_ENABLED=False):
+            self.assertNotContains(self.client.get(url), 'class="nova-user-tools"')
+        with override_settings(NOVA_ADMIN_NAVIGATION=False):
+            self.assertNotContains(self.client.get(url), 'class="nova-user-tools"')
+        session = self.client.session
+        session["nova_admin_mode"] = "native"
+        session.save()
+        self.assertNotContains(self.client.get(url), 'class="nova-user-tools"')
+        self.client.logout()
+        self.assertNotContains(self.client.get(reverse("admin:login")), 'class="nova-user-tools"')
 
 
 class NativeControlStyleContractTests(SimpleTestCase):
