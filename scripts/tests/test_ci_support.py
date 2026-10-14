@@ -63,7 +63,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':540,'theme_js':97,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':606,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':97,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -107,6 +107,136 @@ class MatrixTests(unittest.TestCase):
             filename=next(iter(support.read(ROOT/'ci/matrix.json')['django_wheels'].values()))['filename']
             (wheelhouse/filename).write_bytes(b'wrong wheel')
             with self.assertRaises(ValueError):support.sidebars(wheelhouse,root/'sidebars')
+
+
+class NodeEvidenceTests(unittest.TestCase):
+    # Copied summaries from the current successful npm/frontend and theme JS logs.
+    FRONTEND_LOG = """TOTAL 31 passed
+TOTAL 33 workflow tests passed
+TOTAL 15 control tests passed
+TOTAL 19 media and news tests passed
+TOTAL 36 recovery edge tests passed (Node/jsdom)
+TOTAL 13 enterprise preview tests passed
+TOTAL 68 refactor boundary checks passed (Node/jsdom)
+TOTAL 7 catalog bulk publish checks passed (Node/jsdom)
+TOTAL 31 passed, 0 failed (Node/jsdom static login demo)
+TOTAL 28 presentation checks passed
+TOTAL 254 pagination checks passed (Node/jsdom)
+TOTAL 5 extensions guide tests passed
+TOTAL 66 palette checks passed
+"""
+    GROUP_LOGS = {
+        'frontend': FRONTEND_LOG,
+        'navigation': '78 navigation DOM scenarios passed (3 Django script versions).\n',
+        'enhancements': 'TOTAL 8 search enhancement tests passed\n',
+        'captcha': 'TOTAL 11 CAPTCHA enhancement tests passed\n',
+    }
+
+    def logs(self, root):
+        logs = root / 'logs'
+        logs.mkdir()
+        for name, content in self.GROUP_LOGS.items():
+            (logs / (name + '.log')).write_text(content)
+        data = {
+            'runtime': {'node': 'v24.21.0', 'npm': '11.19.0'},
+            'steps': [{'name': name, 'exitCode': 0, 'signal': None} for name in
+                      ['npm-version', 'install', 'dependency-tree', 'frontend', 'navigation', 'enhancements', 'captcha']],
+            'inputs': {name: support.digest(ROOT / name) for name in ['package.json', 'package-lock.json']},
+            'dependency-tree': {},
+        }
+        for name, content in data.items():
+            (logs / (name + '.json')).write_text(json.dumps(content))
+        return logs
+
+    def collect(self, root):
+        return support.collect_node(root / 'logs', root / 'output', COMMIT, '24.21.0', '11.19.0')
+
+    def test_current_logs_record_all_606_checks_including_palettes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.logs(root)
+            result = self.collect(root)
+            self.assertEqual(result['frontend'], 606)
+            self.assertEqual(len(result['frontend_suites']), 13)
+            self.assertEqual(result['frontend_suites']['palettes'], 66)
+            self.assertEqual(sum(result['frontend_suites'].values()), 606)
+            self.assertEqual(json.loads((root / 'output/report.json').read_text()), result)
+
+    def test_every_frontend_suite_requires_exactly_one_success_summary(self):
+        for summary in self.FRONTEND_LOG.splitlines():
+            for change in ('missing', 'duplicate', 'failed', 'wrong-count'):
+                with self.subTest(summary=summary, change=change), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    logs = self.logs(root)
+                    altered = {'missing': '', 'duplicate': summary + '\n' + summary,
+                               'failed': summary.replace('passed', 'failed'),
+                               'wrong-count': summary.replace(summary.split()[1], '0', 1)}[change]
+                    (logs / 'frontend.log').write_text(self.FRONTEND_LOG.replace(summary + '\n', altered + '\n'))
+                    with self.assertRaisesRegex(ValueError, 'Node test evidence: frontend'):
+                        self.collect(root)
+                    self.assertFalse((root / 'output').exists())
+
+    def test_same_total_cannot_hide_an_absent_suite(self):
+        # Omit the 66 palette checks but add those 66 to pagination: still 606.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            logs = self.logs(root)
+            content = self.FRONTEND_LOG.replace('TOTAL 66 palette checks passed\n', '').replace('TOTAL 254', 'TOTAL 320')
+            (logs / 'frontend.log').write_text(content)
+            with self.assertRaises(ValueError): self.collect(root)
+
+    def test_prior_590_check_log_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            logs = self.logs(root)
+            (logs / 'frontend.log').write_text(self.FRONTEND_LOG.replace('TOTAL 66 palette', 'TOTAL 50 palette'))
+            with self.assertRaises(ValueError): self.collect(root)
+
+    def test_every_theme_js_group_rejects_missing_duplicate_or_failed_summary(self):
+        for group in ('navigation', 'enhancements', 'captcha'):
+            for change in ('missing', 'duplicate', 'failed'):
+                with self.subTest(group=group, change=change), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    logs = self.logs(root)
+                    content = self.GROUP_LOGS[group]
+                    content = {'missing': '', 'duplicate': content * 2,
+                               'failed': content.replace('passed', 'failed')}[change]
+                    (logs / (group + '.log')).write_text(content)
+                    with self.assertRaisesRegex(ValueError, 'Node test evidence: ' + group): self.collect(root)
+
+    def test_failed_test_line_cannot_be_hidden_by_success_summary(self):
+        for group in self.GROUP_LOGS:
+            with self.subTest(group=group), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                logs = self.logs(root)
+                (logs / (group + '.log')).write_text('FAIL example assertion\n' + self.GROUP_LOGS[group])
+                with self.assertRaises(ValueError): self.collect(root)
+
+    def test_nonzero_command_is_rejected_despite_success_summaries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            logs = self.logs(root)
+            steps = support.read(logs / 'steps.json')
+            steps[-1]['exitCode'] = 1
+            (logs / 'steps.json').write_text(json.dumps(steps))
+            with self.assertRaisesRegex(ValueError, 'Incomplete Node commands'): self.collect(root)
+
+    def test_gate_rejects_stale_or_incomplete_frontend_counts(self):
+        changes = [lambda x: x.update(frontend=540), lambda x: x.update(frontend=590),
+                   lambda x: x.pop('frontend_suites'),
+                   lambda x: x['frontend_suites'].pop('palettes'),
+                   lambda x: x['frontend_suites'].update(palettes=50)]
+        for change in changes:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                paths = MatrixTests().reports(root, 'quick')
+                node = paths[-1]
+                report = support.read(node)
+                change(report)
+                node.write_text(json.dumps(report))
+                with self.assertRaisesRegex(ValueError, 'Node report'):
+                    support.verify_reports(root, 'quick', COMMIT, WHEEL_SHA)
+
 
 class ArtifactTests(unittest.TestCase):
     def test_paths_refuse_traversal_and_hidden_files(self):

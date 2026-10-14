@@ -14,6 +14,25 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = re.compile(r'\d+\.\d+\.\d+\Z')
+# Exact success summaries emitted by the npm test suites, in package.json order.
+# Keep suite identity/counts, so an omitted suite cannot be hidden by another's total.
+FRONTEND_SUMMARIES = {
+    'dom': 'TOTAL 31 passed',
+    'workflows': 'TOTAL 33 workflow tests passed',
+    'controls': 'TOTAL 15 control tests passed',
+    'media': 'TOTAL 19 media and news tests passed',
+    'recovery': 'TOTAL 36 recovery edge tests passed (Node/jsdom)',
+    'enterprise': 'TOTAL 13 enterprise preview tests passed',
+    'boundaries': 'TOTAL 68 refactor boundary checks passed (Node/jsdom)',
+    'bulk-publish': 'TOTAL 7 catalog bulk publish checks passed (Node/jsdom)',
+    'login': 'TOTAL 31 passed, 0 failed (Node/jsdom static login demo)',
+    'presentation': 'TOTAL 28 presentation checks passed',
+    'pagination': 'TOTAL 254 pagination checks passed (Node/jsdom)',
+    'extensions': 'TOTAL 5 extensions guide tests passed',
+    'palettes': 'TOTAL 66 palette checks passed',
+}
+FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_SUMMARIES.items()}
+FRONTEND_TOTAL = sum(FRONTEND_COUNTS.values())
 
 def read(path):
     return json.loads(Path(path).read_text())
@@ -138,13 +157,19 @@ def collect_node(logs, output, commit, node, npm):
     inputs = read(logs / 'inputs.json')
     if inputs != {name:digest(ROOT / name) for name in ['package.json','package-lock.json']}:
         raise ValueError('Node test inputs differ from checkout')
-    totals = [int(x) for x in re.findall(r'^TOTAL (\d+) ', (logs / 'frontend.log').read_text(), re.M)]
-    if sum(totals) != 540 or '78 navigation DOM scenarios passed (3 Django script versions).' not in (logs / 'navigation.log').read_text() or 'TOTAL 8 search enhancement tests passed' not in (logs / 'enhancements.log').read_text() or not re.search(r'^TOTAL 11 ', (logs / 'captcha.log').read_text(), re.M):
-        raise ValueError('Missing expected Node test evidence')
+    for name, pattern, summaries in [
+        ('frontend', r'^TOTAL .+$', list(FRONTEND_SUMMARIES.values())),
+        ('navigation', r'^\d+ navigation DOM scenarios .+$', ['78 navigation DOM scenarios passed (3 Django script versions).']),
+        ('enhancements', r'^TOTAL .+$', ['TOTAL 8 search enhancement tests passed']),
+        ('captcha', r'^TOTAL .+$', ['TOTAL 11 CAPTCHA enhancement tests passed']),
+    ]:
+        content = (logs / (name + '.log')).read_text()
+        if re.findall(pattern, content, re.M) != summaries or re.search(r'^(?:FAIL|FAILED|not ok)\b', content, re.M):
+            raise ValueError('Missing, duplicate, or failed Node test evidence: ' + name)
     output = safe_new_directory(output)
     for name in ['frontend.log', 'navigation.log', 'enhancements.log', 'captcha.log', 'runtime.json', 'dependency-tree.json']:
         (output / name).write_bytes((logs / name).read_bytes())
-    result = {'kind': 'node', 'commit': commit, 'node': node, 'npm': npm, 'status': 'passed', 'frontend': 540, 'theme_js': 97,
+    result = {'kind': 'node', 'commit': commit, 'node': node, 'npm': npm, 'status': 'passed', 'frontend': FRONTEND_TOTAL, 'frontend_suites': dict(FRONTEND_COUNTS), 'theme_js': 97,
               'package_lock_sha256': digest(ROOT / 'package-lock.json')}
     (output / 'report.json').write_text(json.dumps(result, indent=2) + '\n')
     return result
@@ -176,7 +201,7 @@ def verify_reports(reports, scope, commit, wheel_sha):
             found_python[key] = row
         elif row['kind'] == 'node':
             key = row['node']
-            if key not in nodes or key in found_node or row['npm'] != nodes[key]['npm'] or row['frontend'] != 540 or row['theme_js'] != 97 or row['package_lock_sha256'] != digest(ROOT / 'package-lock.json'):
+            if key not in nodes or key in found_node or row['npm'] != nodes[key]['npm'] or row['frontend'] != FRONTEND_TOTAL or row.get('frontend_suites') != FRONTEND_COUNTS or row['theme_js'] != 97 or row['package_lock_sha256'] != digest(ROOT / 'package-lock.json'):
                 raise ValueError('Unexpected, duplicate, or mismatched Node report')
             found_node[key] = row
         else:

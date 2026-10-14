@@ -14,7 +14,7 @@
 | `django-theme/src/nova_admin/` | 可安装、可恢复原生的 Django Admin 主题 | 使用原来的 AdminSite、ModelAdmin、认证、权限、CSRF、表单和动作 |
 | `django-theme/demo/` | 可运行 Django 项目与图片列示例 | 本地 SQLite，由你创建管理员；真实增删改及关系字段流程 |
 | `dist/native-admin/` | 真实 Django 6.1.1 渲染的 56 页＋入口 | 明暗/自动、标准/紧凑与原生外观，完全只读；脚本、认证及提交能力已经移除 |
-| `tests/` | 交互预览的 540 项 DOM 测试 | jsdom，不代表浏览器视觉或真机认证 |
+| `tests/` | 交互预览的 606 项 DOM 测试 | jsdom，不代表浏览器视觉或真机认证 |
 | `django-theme/tests/` | 核心、可选验证码和 Axes 独立测试 | 精确补丁版本测试，详情见验证报告 |
 
 `dist/` 就是前端源码，**不存在缺失的 React/Vue 工程或构建步骤**。本包没有 Python/Node 环境或依赖缓存；首次安装依赖需要访问官方 PyPI/npm。原始 PNG 图集、截图、数据库、浏览器数据、日志和发布配置没有打包。三份约 694 KB 的 WebP 是各演示入口的本地资源，不依赖外链。
