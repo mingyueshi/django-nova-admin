@@ -649,6 +649,12 @@ body.nova-admin .inline-related.tabular .wrapper {
   overflow-x: auto;
   overscroll-behavior-x: contain;
 }
+/* Django 5.2 has no inner .wrapper; contain its native table on the inline
+   itself, while 6.x keeps using the dedicated table scroll container. */
+body.nova-admin .inline-related.tabular:not(:has(.wrapper)) {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
 @media (max-width: 1024px) {
   body.nova-admin #header {
     flex-direction: column;

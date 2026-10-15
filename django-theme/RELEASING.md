@@ -18,6 +18,8 @@
 
 发行核查确认 Django 在 `max-width: 1024px` 使用 `nowrap`/零宽度结果计数，与 Nova 控件尺寸冲突。本版在同一响应式范围允许搜索行换行、结果计数占独立整行、按钮保持自身高度；不改宿主模板、GET 参数、查询或列表动作。真实 Chromium 检查覆盖 320/375/390/414/768/1024/1025/1280px、中英文、浅色/深色；特别保留 768px 修复前后的截图与几何数据。检查方法及平台限制见 [RELEASE_ACCEPTANCE.md](RELEASE_ACCEPTANCE.md)。
 
+Django 5.2 的原生 tabular inline 尚无内层 `.wrapper`；本版在该结构上启用局部横向滚动，避免宽内联表格撑开手机页面。Django 6.x 保留原有 wrapper，普通字段组不增加裁切；字段、管理表单和动态添加行的语义保持原生。
+
 ## 回退
 
 优先使用现有“Django 原生”外观，或设置 `NOVA_ADMIN_ENABLED = False` 恢复原生呈现。已经显式启用的验证码仍然执行。需要回滚包时，重新安装先前固定的可信 wheel/源码和依赖锁，再重新收集静态资源并更新缓存；没有主题数据迁移需要回滚。完全卸载前按接入指南处理 context processor、URL 和可选 login form/template，不能只卸载依赖包。
