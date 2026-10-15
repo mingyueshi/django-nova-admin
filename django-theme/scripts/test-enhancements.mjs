@@ -295,3 +295,62 @@ checkList('Repeated script loading does not duplicate controls or click handlers
     assert.equal(f.results.scrollLeft, 240);
 });
 console.log(`TOTAL ${count} changelist enhancement tests passed`);
+
+// Actual Django header structure. Native URLs are intentionally different for
+// primary, toggle and remove so a regression cannot conflate their contracts.
+function sorting({body = 'nova-admin', priorities = true, name = '中文 Long name'} = {}, check) {
+    const options = (direction, priority, field) => `<div class="sortoptions"><a class="sortremove" href="?q=kept&o=${field}" title="Remove from sorting"></a>${priorities ? `<span class="sortpriority" title="Sorting priority: ${priority}">${priority}</span>` : ''}<a class="toggle ${direction}" href="?q=kept&o=${field}.toggle" title="Toggle sorting"></a></div>`;
+    const html = `<body class="${body}"><div id="changelist"><div class="results"><table id="result_list"><thead><tr>
+      <th scope="col" class="sortable column-name"><div class="text"><a href="?q=kept&o=1.-4">${name}</a></div><div class="clear"></div></th>
+      <th scope="col" class="column-image"><div class="text"><span>Image</span></div></th>
+      <th scope="col" class="sortable sorted ascending column-price">${options('ascending', 1, 4)}<div class="text"><a href="?q=kept&o=-4.6">Price</a></div><div class="clear"></div></th>
+      ${priorities ? `<th scope="col" class="sortable sorted descending column-state">${options('descending', 2, 6)}<div class="text"><a href="?q=kept&o=6.4">State</a></div><div class="clear"></div></th>` : ''}
+    </tr></thead></table></div></div></body>`;
+    const dom = new JSDOM(html, {runScripts:'outside-only', url:'https://admin.example.test/list/?q=kept'});
+    const d = dom.window.document;
+    const links = [...d.querySelectorAll('a')].map(a => a.outerHTML);
+    try {dom.window.eval(script); check(d, links, dom.window); count++; console.log('PASS sorting', check.name);} finally {dom.window.close();}
+}
+sorting({}, function nativeHrefAndState(d, links) {
+    assert.deepEqual([...d.querySelectorAll('a')].map(a => a.getAttribute('href')).sort(), links.map(html => new JSDOM(html).window.document.querySelector('a').getAttribute('href')).sort());
+    assert.equal(d.querySelector('.column-price').getAttribute('aria-sort'), 'ascending');
+    assert.equal(d.querySelector('.column-state').hasAttribute('aria-sort'), false);
+    assert.equal(d.querySelectorAll('[aria-sort]').length, 1);
+    assert.equal(d.querySelector('.column-image .nova-sort-heading'), null);
+    assert.match(d.querySelector('.column-state .text a').getAttribute('aria-label'), /Descending; Sorting priority: 2. Sort ascending. Make primary sort/);
+    assert.match(d.querySelector('.column-state .toggle').getAttribute('aria-label'), /Sort ascending$/);
+    assert.doesNotMatch(d.querySelector('.column-state .toggle').getAttribute('aria-label'), /primary/);
+    assert.match(d.querySelector('.sortremove').getAttribute('aria-label'), /Price.*Remove from sorting/);
+});
+sorting({priorities:false}, function singleSort(d) {
+    assert.equal(d.querySelector('.column-price').getAttribute('aria-sort'), 'ascending');
+    assert.match(d.querySelector('.column-name a').getAttribute('aria-label'), /Sort ascending. Make primary sort/);
+});
+sorting({body:''}, function nativeMode(d, links) {
+    assert.deepEqual([...d.querySelectorAll('a')].map(a => a.outerHTML), links);
+    assert.equal(d.querySelector('.nova-sort-heading'), null);
+});
+sorting({}, function repeatedEnhancement(d, links, window) {
+    const html = d.querySelector('#result_list').outerHTML;
+    window.eval(script);
+    assert.equal(d.querySelector('#result_list').outerHTML, html);
+});
+
+
+sorting({}, function nonSortablePrimary(d, links, window) {
+    // Re-run on a fresh native header where the host hid primary sorting.
+    const primary = d.querySelector('.column-price');
+    primary.remove();
+    const cl = d.querySelector('#changelist');
+    delete cl.dataset.novaEnhanced;
+    const secondary = d.querySelector('.column-state');
+    secondary.removeAttribute('aria-sort');
+    window.eval(script);
+    assert.equal(secondary.hasAttribute('aria-sort'), false);
+});
+
+sorting({name:'商品名称及所属业务分组的长列名 LongUnbrokenColumnHeadingForWrapping'}, function longLabel(d) {
+    assert.ok(d.querySelector('.column-name .nova-sort-heading--long'));
+    assert.equal(d.querySelector('.column-price .nova-sort-heading--long'), null);
+});
+console.log(`TOTAL ${count} changelist enhancement tests including sorting passed`);

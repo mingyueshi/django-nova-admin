@@ -240,3 +240,9 @@ GitHub Actions 包含 PR/主分支快速矩阵、手动完整矩阵、源码绑�
 静态预览仅用独立 `nova-palette` 保存偏好，首屏、跨页与同源窗口恢复；存储不可用时可继续当页使用。不会清除 `nova-theme` 或业务数据。Django 使用受 CSRF 保护的独立 session 偏好，配置和宿主覆盖见 [中文配色接入与验收说明](django-theme/PALETTE_PRESETS_ZH.md)。
 
 新样式为两份手写 token 样式表，没有 CSS 编译依赖或整套主题复制。成功、警告、危险的状态语义保留。`python scripts/test_palette_contrast.py` 量测新色彩的明确不透明角色；这不等于浏览器视觉或整站无障碍认证。
+
+## 原生列表排序演示
+
+运行本地 Django Demo 后进入「商品」列表，展开「排序演示：方向与多列优先级」。商品名称、价格等普通字段和自定义 `status_badge`（`ordering="status"`）均可排序，图片列不可排序。未排序列显示中性提示；点击列名按 Django 原生规则排序并提升为首要排序，箭头只切换该列方向，× 移除该列；数字表示多列优先级。搜索、筛选和分页容量参数继续由原生链接保留。
+
+完整交互应在运行中的 Django Demo 查看；`dist/native-admin` 保持既有只读快照。此次没有升级包版本或发布部署，验证范围、边界和人工检查步骤见 [排序验收记录](review/changelist-sorting-20261015.md)。

@@ -377,6 +377,26 @@ body.nova-admin #result_list { width: 100%; }
 body.nova-admin #result_list thead th { padding: 0; font-size: 11px; font-weight: 600; }
 body.nova-admin #result_list thead th .text a,
 body.nova-admin #result_list thead th .text span { padding: var(--nova-cell-padding); }
+body.nova-admin .nova-sort-demo-help { margin: 12px 16px; color: var(--body-quiet-color); font-size: 12px; }
+/* Native sortable links: visible neutral cue, full label target, separate
+   controls. Grid keeps long labels out of the arrow/priority/remove area. */
+body.nova-admin #result_list thead th.sortable { vertical-align: middle; text-transform: none; }
+body.nova-admin #result_list .nova-sort-heading { min-inline-size: 6.5rem; display: grid; grid-template-columns: minmax(4em, 1fr) auto; align-items: center; }
+body.nova-admin #result_list th.sorted .nova-sort-heading { min-inline-size: 11rem; }
+body.nova-admin #result_list th.sortable .nova-sort-heading--long { min-inline-size: 20rem; grid-template-columns: minmax(12rem, 1fr) auto; }
+body.nova-admin #result_list th.sortable .text { min-width: 0; padding: 0; }
+body.nova-admin #result_list th.sortable .text a { display: flex; align-items: center; gap: 8px; min-height: 44px; box-sizing: border-box; white-space: normal; overflow-wrap: anywhere; color: var(--body-fg); }
+body.nova-admin #result_list th.sortable:not(.sorted) .text a::after { content: ""; width: 10px; height: 14px; background: currentColor; clip-path: polygon(50% 0, 100% 36%, 65% 36%, 65% 64%, 100% 64%, 50% 100%, 0 64%, 35% 64%, 35% 36%, 0 36%); flex: none; margin-inline-start: auto; color: var(--body-quiet-color); font-size: 14px; }
+body.nova-admin #result_list th.sortable:hover { background: var(--selected-bg); }
+body.nova-admin #result_list th.sortable a:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; border-radius: 4px; }
+body.nova-admin #result_list th.sorted .sortoptions { display: flex; align-items: center; gap: 2px; float: none; padding: 4px; white-space: nowrap; }
+body.nova-admin #result_list th.sorted .sortpriority { margin: 0; min-width: 20px; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--body-fg); }
+body.nova-admin #result_list th.sorted .sortoptions a { display: grid; place-items: center; flex: none; position: static; width: 28px; height: 36px; background: none; border-radius: 4px; color: var(--body-fg); visibility: visible; }
+body.nova-admin #result_list th.sorted .sortoptions a:hover { background: var(--darkened-bg); color: var(--link-fg); }
+body.nova-admin #result_list th.sorted .sortoptions a::after { position: static; font-size: 16px; font-weight: 600; color: inherit; }
+body.nova-admin #result_list th.sorted a.sortremove::after { content: "×"; }
+body.nova-admin #result_list th.sorted a.ascending::after { content: "↑"; }
+body.nova-admin #result_list th.sorted a.descending::after { content: "↓"; }
 body.nova-admin #result_list tbody th { font-weight: 550; }
 body.nova-admin #result_list tbody th a { color: var(--body-loud-color); }
 body.nova-admin #result_list tbody td { color: var(--body-quiet-color); }
@@ -946,6 +966,7 @@ body.nova-admin .nova-status--draft { color: var(--link-selected-fg); background
 body.nova-admin #changelist .changelist-footer > input[type=submit] { margin: 12px 16px; }
 body.nova-admin .nova-list-edit-help { margin: 0; padding: 12px 16px; font-size: 12px; color: var(--body-quiet-color); border-bottom: 1px solid var(--hairline-color); }
 @media (forced-colors: active) {
+  body.nova-admin #result_list th.sortable:not(.sorted) .text a::after { background: CanvasText; forced-color-adjust: none; }
   body.nova-admin select:not([multiple]):not([size]):not(.select2-hidden-accessible):is(:enabled, :disabled) { appearance: auto; background-image: none; }
   body.nova-admin input[type=checkbox].nova-switch,
   body.nova-admin #result_list input[type=checkbox].nova-switch { appearance: auto; width: 24px; height: 24px; min-width: 24px; background: none; border: revert; }
