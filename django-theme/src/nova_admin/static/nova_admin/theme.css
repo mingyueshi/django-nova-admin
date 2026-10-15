@@ -477,6 +477,30 @@ body.nova-admin :is(a,button,input,select,textarea,summary):focus-visible { outl
   body.nova-admin.dashboard #content-main { width: 100%; }
   body.nova-admin.dashboard #content-related { width: 100%; margin: 0; float: none; clear: both; }
 }
+@media (max-width: 1024px) {
+  /* Django's nowrap search row gives .quiet width:0. With Nova's larger
+     controls, the count needs its own row throughout Django's tablet range. */
+  body.nova-admin #changelist-search > div {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+  }
+  body.nova-admin #toolbar form #searchbar {
+    flex: 1 1 140px;
+    min-width: 0;
+    width: auto;
+    margin: 0;
+  }
+  body.nova-admin #toolbar form input[type=submit] { flex: 0 0 auto; align-self: center; }
+  body.nova-admin #changelist-search .quiet {
+    flex: 1 0 100%;
+    width: auto;
+    margin: 0;
+    white-space: normal;
+  }
+}
 @media (max-width: 767px) {
   body.nova-admin #content { padding: calc(22px * var(--nova-spacing, 1)) calc(16px * var(--nova-spacing, 1)); }
   body.nova-admin #branding { margin: 0; }

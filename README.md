@@ -225,9 +225,13 @@ python demo/manage.py runserver 127.0.0.1:8000 --settings=config.captcha_setting
 
 这不是把前端分页连接到生产后端。原生项目级分页示例、允许值和接入边界见主题指南。
 
+## 0.6.1 主题发布包
+
+官方主线的布局、过滤器折叠、宽表操作与配色更新现整理为主题 `0.6.1`，预览包仍为 `1.8.0`。版本规则、安装升级、无迁移与回退步骤见 [发行说明](django-theme/RELEASING.md)，实际测试和覆盖边界见 [发行验证](django-theme/RELEASE_VALIDATION.md)。交付源码绑定的 wheel/sdist 与静态归档，不代表已发布到 PyPI 或公开 Release。
+
 ## CI/CD
 
-GitHub Actions配置已准备：PR快速矩阵、手动完整矩阵、源码绑定的wheel/静态产物，以及默认关闭的手动审批候选交付。当前没有接入GitHub仓库或生产发布；本地验证不等于线上CI运行。配置、边界与复制步骤见 [CI/CD接入说明](CI_CD.md)。
+GitHub Actions 包含 PR/主分支快速矩阵、手动完整矩阵、源码绑定的 wheel/sdist/静态产物，以及默认关闭的手动审批候选交付。官方仓库已运行快速 CI；本次发行提交的实际验证单独记录，没有自动包发布或生产部署。配置与边界见 [CI/CD接入说明](CI_CD.md)。
 
 ## 独立配色预设
 

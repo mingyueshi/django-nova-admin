@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build and verify local candidate artifacts. Never publish or deploy anything."""
 import argparse
+import ast
 import base64
 import csv
 from email.parser import BytesParser
@@ -8,6 +9,7 @@ import gzip
 import hashlib
 import io
 import json
+import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
@@ -48,6 +50,28 @@ def runtime_files(source):
             result[path.relative_to(base).as_posix()] = path.read_bytes()
     return result
 
+def check_metadata(info, project):
+    if info['Name'] != project['name'] or info['Version'] != project['version']:
+        raise ValueError('Package project/version mismatch')
+    if info['Requires-Python'] != project['requires-python'] or info['License-Expression'] != project['license']:
+        raise ValueError('Package Python/license metadata mismatch')
+    if info.get_all('License-File', []) != ['LICENSE']:
+        raise ValueError('Missing project license metadata')
+    def requirement(value):
+        dependency, _, marker = value.partition(';')
+        match = re.fullmatch(r'([A-Za-z0-9_.-]+)(.*)', dependency.replace(' ', ''))
+        if not match:
+            raise ValueError('Invalid dependency metadata')
+        return (match[1].lower().replace('_', '-'), tuple(sorted(match[2].split(','))),
+                marker.replace(' ', '').replace("'", '"'))
+    extras = project.get('optional-dependencies', {})
+    expected = list(project.get('dependencies', []))
+    expected += [value + '; extra == "' + extra + '"' for extra, values in extras.items() for value in values]
+    if sorted(map(requirement, info.get_all('Requires-Dist', []))) != sorted(map(requirement, expected)):
+        raise ValueError('Package dependency metadata mismatch')
+    if sorted(info.get_all('Provides-Extra', [])) != sorted(extras):
+        raise ValueError('Package extras metadata mismatch')
+
 def wheel_check(wheel, source):
     project = tomllib.loads((source / 'django-theme/pyproject.toml').read_text())['project']
     expected = runtime_files(source)
@@ -63,13 +87,15 @@ def wheel_check(wheel, source):
         if len(metadata) != 1:
             raise ValueError('Expected one wheel metadata record')
         info = BytesParser().parsebytes(archive.read(metadata[0]))
-        if info['Name'] != project['name'] or info['Version'] != project['version']:
-            raise ValueError('Wheel project/version mismatch')
+        check_metadata(info, project)
         theme = {x: archive.read(x) for x in names if x.startswith('nova_admin/')}
         if theme != expected:
             raise ValueError('Wheel runtime files differ from source')
         prefix = metadata[0].rsplit('/', 1)[0] + '/'
-        if any(not (x in expected or x.startswith(prefix)) for x in names):
+        if archive.read(prefix + 'licenses/LICENSE') != (source / 'django-theme/LICENSE').read_bytes():
+            raise ValueError('Wheel project license differs from source')
+        allowed = {prefix + name for name in ('METADATA', 'WHEEL', 'RECORD', 'top_level.txt', 'licenses/LICENSE')}
+        if set(names) != set(expected) | allowed:
             raise ValueError('Unexpected wheel content')
         record_path = prefix + 'RECORD'
         records = list(csv.reader(io.StringIO(archive.read(record_path).decode())))
@@ -85,6 +111,53 @@ def wheel_check(wheel, source):
             if hash_value != 'sha256=' + encoded or size != str(len(content)):
                 raise ValueError('Wheel RECORD digest mismatch')
     return {'name': project['name'], 'version': project['version'], 'runtime_files': len(expected)}
+
+def sdist_files(source):
+    """The source/documentation contract, independent of setuptools' file list."""
+    base = source / 'django-theme'
+    files = {p.name: p.read_bytes() for p in base.glob('*.md') if p.is_file() and not p.is_symlink()}
+    for name in ('pyproject.toml', 'MANIFEST.in', 'LICENSE', 'requirements-test.txt'):
+        files[name] = (base / name).read_bytes()
+    suffixes = {'demo': {'.py', '.html', '.css', '.webp', '.svg', '.json', '.po', '.mo', '.txt'},
+                'tests': {'.py'}, 'scripts': {'.py', '.sh', '.mjs', '.json'}}
+    for folder, allowed in suffixes.items():
+        for path in sorted((base / folder).rglob('*')):
+            relative = path.relative_to(base)
+            if any(part in ('__pycache__', '.venv', 'staticfiles', 'build', 'dist') for part in relative.parts):
+                continue
+            if path.is_symlink():
+                raise ValueError('Symlink in sdist source')
+            if path.is_file() and path.suffix in allowed:
+                files[relative.as_posix()] = path.read_bytes()
+    files.update({'src/' + name: data for name, data in runtime_files(source).items()})
+    return files
+
+def sdist_check(sdist, source):
+    project = tomllib.loads((source / 'django-theme/pyproject.toml').read_text())['project']
+    prefix = project['name'].replace('-', '_') + '-' + project['version'] + '/'
+    files, seen = {}, set()
+    with tarfile.open(sdist, 'r:gz') as archive:
+        for item in archive:
+            safe_name(item.name)
+            if item.name in seen or not (item.isdir() or item.isfile()):
+                raise ValueError('Duplicate or unsafe sdist member')
+            seen.add(item.name)
+            if item.name != prefix.rstrip('/') and not item.name.startswith(prefix):
+                raise ValueError('Unexpected sdist root')
+            if item.isfile():
+                files[item.name[len(prefix):]] = archive.extractfile(item).read()
+    expected = sdist_files(source)
+    if any(files.get(name) != data for name, data in expected.items()):
+        raise ValueError('Sdist source/documentation differs from source')
+    generated = {'PKG-INFO', 'setup.cfg'}
+    egg = 'src/' + project['name'].replace('-', '_') + '.egg-info/'
+    generated.update(egg + name for name in ('PKG-INFO', 'SOURCES.txt', 'dependency_links.txt', 'requires.txt', 'top_level.txt'))
+    if set(files) - set(expected) != generated:
+        raise ValueError('Unexpected or missing generated sdist content')
+    check_metadata(BytesParser().parsebytes(files['PKG-INFO']), project)
+    if files[egg + 'PKG-INFO'] != files['PKG-INFO']:
+        raise ValueError('Inconsistent sdist metadata')
+    return {'name': project['name'], 'version': project['version'], 'source_files': len(expected)}
 
 def static_files(source):
     result = {}
@@ -130,12 +203,18 @@ def source_identity(source, commit):
         raise ValueError('Checkout does not match expected commit')
     if subprocess.check_output(['git','status','--porcelain','--untracked-files=normal'], cwd=source, text=True).strip():
         raise ValueError('Candidate build requires a clean checkout')
+    project = tomllib.loads((source / 'django-theme/pyproject.toml').read_text())['project']
+    module = ast.parse((source / 'django-theme/src/nova_admin/__init__.py').read_text())
+    versions = [ast.literal_eval(node.value) for node in module.body if isinstance(node, ast.Assign)
+                and any(isinstance(target, ast.Name) and target.id == '__version__' for target in node.targets)]
+    if versions != [project['version']]:
+        raise ValueError('Runtime version differs from package metadata')
     return int(subprocess.check_output(['git','show','-s','--format=%ct','HEAD'], cwd=source, text=True).strip())
 
 def verify(directory, source, commit):
     directory = Path(directory)
     manifest = json.loads((directory / 'MANIFEST.json').read_text())
-    if manifest.get('schema') != 1 or not SHA.fullmatch(commit) or manifest.get('commit') != commit:
+    if manifest.get('schema') != 2 or not SHA.fullmatch(commit) or manifest.get('commit') != commit:
         raise ValueError('Artifact source identity mismatch')
     expected_names = {'MANIFEST.json','SHA256SUMS',*manifest['files']}
     actual_names = {p.name for p in directory.iterdir()}
@@ -151,9 +230,11 @@ def verify(directory, source, commit):
     if (directory / 'SHA256SUMS').read_text() != checksums:
         raise ValueError('Checksum list does not match manifest')
     wheel_name = manifest['wheel']
-    if set(manifest['files']) != {wheel_name, 'nova-static.tar.gz'} or not wheel_name.endswith('.whl'):
-        raise ValueError('Expected only theme wheel and static archive')
+    sdist_name = manifest['sdist']
+    if set(manifest['files']) != {wheel_name, sdist_name, 'nova-static.tar.gz'} or not wheel_name.endswith('.whl') or not sdist_name.endswith('.tar.gz'):
+        raise ValueError('Expected only theme wheel, sdist and static archive')
     wheel_info = wheel_check(directory / wheel_name, source)
+    sdist_check(directory / sdist_name, source)
     if wheel_info['version'] != manifest['theme_version'] or json.loads((source / 'package.json').read_text())['version'] != manifest['preview_version']:
         raise ValueError('Manifest version mismatch')
     static = read_static(directory / 'nova-static.tar.gz')
@@ -162,6 +243,8 @@ def verify(directory, source, commit):
     source_identity(source, commit)
     if manifest['theme_files'] != {name:digest(data) for name,data in runtime_files(source).items()}:
         raise ValueError('Theme source manifest mismatch')
+    if manifest['source_files'] != {name:digest(data) for name,data in sdist_files(source).items()}:
+        raise ValueError('Sdist source manifest mismatch')
     return manifest
 
 def build(source, output, commit):
@@ -170,20 +253,25 @@ def build(source, output, commit):
         raise ValueError('Artifact directory must be outside the source tree')
     epoch = source_identity(source, commit)
     output.mkdir(parents=True, exist_ok=False)
+    env = dict(os.environ, SOURCE_DATE_EPOCH=str(epoch))
     with tempfile.TemporaryDirectory(prefix='nova-wheel-build-') as temp:
         stage = Path(temp) / 'theme'
         shutil.copytree(source / 'django-theme', stage, ignore=shutil.ignore_patterns('__pycache__','*.pyc','*.sqlite3','*.sqlite3-*','.venv','build','dist','*.egg-info'))
-        subprocess.run([sys.executable,'-m','build','--no-isolation','--wheel','--outdir',str(output),str(stage)], check=True)
+        # build's default creates an sdist, then builds the wheel FROM that sdist.
+        subprocess.run([sys.executable,'-m','build','--no-isolation','--outdir',str(output),str(stage)], check=True, env=env)
     wheels = list(output.glob('*.whl'))
-    if len(wheels) != 1:
-        raise ValueError('Expected exactly one built wheel')
+    sdists = list(output.glob('*.tar.gz'))
+    if len(wheels) != 1 or len(sdists) != 1:
+        raise ValueError('Expected exactly one built wheel and sdist')
     info = wheel_check(wheels[0], source)
+    sdist_check(sdists[0], source)
     static = static_files(source)
     pack_static(static, output / 'nova-static.tar.gz', epoch)
     payload = {p.name:{'sha256':digest(p.read_bytes()),'size':p.stat().st_size} for p in sorted(output.iterdir())}
-    manifest = {'schema':1,'commit':commit,'theme_version':info['version'],'preview_version':json.loads((source / 'package.json').read_text())['version'],
-                'wheel':wheels[0].name,'files':payload,'static_files':{k:digest(v) for k,v in static.items()},
+    manifest = {'schema':2,'commit':commit,'source_date_epoch':epoch,'theme_version':info['version'],'preview_version':json.loads((source / 'package.json').read_text())['version'],
+                'wheel':wheels[0].name,'sdist':sdists[0].name,'files':payload,'static_files':{k:digest(v) for k,v in static.items()},
                 'theme_files':{k:digest(v) for k,v in runtime_files(source).items()},
+                'source_files':{k:digest(v) for k,v in sdist_files(source).items()},
                 'provenance':'unsigned content hashes; test completion is recorded separately'}
     (output / 'MANIFEST.json').write_text(json.dumps(manifest, indent=2)+'\n')
     (output / 'SHA256SUMS').write_text(''.join(f"{item['sha256']}  {name}\n" for name,item in sorted(payload.items())))

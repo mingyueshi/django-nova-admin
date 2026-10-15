@@ -1,4 +1,6 @@
-# Nova Django Admin Theme 0.6.0
+# Nova Django Admin Theme 0.6.1
+
+`0.6.1` 将官方主线的布局、过滤器折叠、宽表交互和配色更新整理为正式版本号发行包。升级不需要主题数据库迁移；先保留项目覆盖与依赖锁，再安装包、收集静态资源并更新缓存。发行边界、完整步骤和回退方法见 [RELEASING.md](RELEASING.md)，本次实际验证及覆盖边界见 [RELEASE_VALIDATION.md](RELEASE_VALIDATION.md)。本仓库交付本地发行产物，不代表已上传 PyPI 或创建公开 Release。
 
 本轮增加可选品牌/令牌/导航扩展、自检与上游漂移工具；核心仍无额外依赖。新的 Axes 登录桥接只在项目显式选择 security extra 与对应登录表单后启用。入口见 [BRANDING.md](BRANDING.md)、[NAVIGATION_EXTENSIONS.md](NAVIGATION_EXTENSIONS.md)、[UPSTREAM_DRIFT.md](UPSTREAM_DRIFT.md)。维护范围与本轮实际验证分别见 [COMPATIBILITY.md](COMPATIBILITY.md) 和 [TEST_REPORT.md](TEST_REPORT.md)。
 
@@ -6,7 +8,7 @@
 
 # Nova · 原生 Django Admin 可逆主题
 
-Nova 0.6.0 是可复用的 Django Admin 主题包，直接作用于项目现有的 `AdminSite` / `ModelAdmin`。支持深色、浅色、跟随系统和 Django 原生外观，包含可选的分组 → 应用 → 模型三级导航。**这是实际运行 Django 模板、权限、表单和数据库流程的主题，不是用 React 重做的管理后台。**
+Nova 0.6.1 是可复用的 Django Admin 主题包，直接作用于项目现有的 `AdminSite` / `ModelAdmin`。支持深色、浅色、跟随系统和 Django 原生外观，包含可选的分组 → 应用 → 模型三级导航。**这是实际运行 Django 模板、权限、表单和数据库流程的主题，不是用 React 重做的管理后台。**
 
 ## 覆盖范围与边界
 
@@ -219,7 +221,7 @@ python -m build
 
 矩阵脚本先核对每个解释器的真实微版本，再在明确指定的全新目录按 Python / Django / core或captcha / source或wheel 隔离执行。默认串行；日志与结果保留每组实际版本、安装来源和退出状态。`PYTHON` 只选择控制脚本的解释器，不再替代全部目标；`NOVA_MATRIX_LOGS` 已由独立运行目录中的分组日志代替。它不会下载运行时、复用未知环境或触碰 Demo 数据库。用法见 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
-当前核心套件发现270项，其中269项执行、1项是未启用可选验证码时的明确占位；可选验证码另有22项独立测试。套件保留项目中文、模板、auto、密度和分页覆盖；核心默认测试与项目默认浅色隔离。原有覆盖包括：真实 CRUD POST、FK/M2M 保存、内联新增/删除/校验与事务保持、无效关联、只读字段、自动完成权限与分页、批量发布/删除确认/日志、列表分页、CSRF、匿名/非 staff/只读拒绝、popup、三种恢复方式、两站点命名空间与自定义 has_permission、导航权限、nonce 属性转义、三级分组的过滤/去重/不泄露与布局回归。多项测试内部对 dark/light/native 分别执行。
+套件保留项目中文、模板、auto、密度和分页覆盖；核心默认测试与项目默认浅色隔离。实际发现/执行数量以 [本次发行验证](RELEASE_VALIDATION.md) 为准，不沿用历史套件次数。原有覆盖包括：真实 CRUD POST、FK/M2M 保存、内联新增/删除/校验与事务保持、无效关联、只读字段、自动完成权限与分页、批量发布/删除确认/日志、列表分页、CSRF、匿名/非 staff/只读拒绝、popup、三种恢复方式、两站点命名空间与自定义 has_permission、导航权限、nonce 属性转义、三级分组的过滤/去重/不泄露与布局回归。多项测试内部对 dark/light/native 分别执行。
 
 ## 真实模板静态样本（可选产物）
 

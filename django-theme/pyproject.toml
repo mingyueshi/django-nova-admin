@@ -4,13 +4,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nova-django-admin-theme"
-version = "0.6.0"
+version = "0.6.1"
 description = "A reversible native Django Admin theme with permission-aware navigation"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["Django>=5.2.17,<6.2"]
 license = "MIT"
+license-files = ["LICENSE"]
 classifiers = ["Framework :: Django :: 5.2", "Framework :: Django :: 6.0", "Framework :: Django :: 6.1", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Programming Language :: Python :: 3.14", "Development Status :: 3 - Alpha"]
+
+[project.urls]
+Homepage = "https://github.com/mingyueshi/django-nova-admin"
+Documentation = "https://github.com/mingyueshi/django-nova-admin/blob/main/django-theme/README.md"
+Changelog = "https://github.com/mingyueshi/django-nova-admin/blob/main/django-theme/CHANGELOG.md"
+Issues = "https://github.com/mingyueshi/django-nova-admin/issues"
 
 [project.optional-dependencies]
 captcha = ["django-simple-captcha==0.7.0", "Pillow==12.2.0"]

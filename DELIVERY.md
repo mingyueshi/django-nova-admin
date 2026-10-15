@@ -1,5 +1,7 @@
 # NOVA Admin 交付说明 · 2026-10-05
 
+本页保留 10 月 5 日导入交付的历史记录。当前官方仓库为 `mingyueshi/django-nova-admin`，主题 `0.6.1` 的新发行准备见 [发行与升级说明](django-theme/RELEASING.md) 和 [实际验证](django-theme/RELEASE_VALIDATION.md)；下方版本、来源和次数不作为本次发行包的结果。
+
 ## 版本与来源
 
 - 交互预览：1.8.0；Django 主题：0.6.0

@@ -1,26 +1,26 @@
 # Python / Django 兼容范围
 
-维护策略更新于 2026-10-03。本页区分上游允许的组合、Nova 实际执行的精确组合和未验证范围；安装元数据不是“所有组合都已通过”的承诺。
+发行核查更新于 2026-10-15。本页区分上游允许的组合、历史实际执行的精确组合和本次发行验证；安装元数据不是“所有组合都已通过”的承诺。`0.6.1` 的实际结果与未运行范围见 [RELEASE_VALIDATION.md](RELEASE_VALIDATION.md)。
 
-前端开发/测试的Node矩阵独立维护，见 [Node兼容说明](../NODE_COMPATIBILITY.md)。它不与以下Python/Django组合做无意义的全笛卡尔乘积；主题运行不依赖Node服务。
+前端开发/测试的Node矩阵独立维护，见 [Node兼容说明](https://github.com/mingyueshi/django-nova-admin/blob/main/NODE_COMPATIBILITY.md)。它不与以下Python/Django组合做无意义的全笛卡尔乘积；主题运行不依赖Node服务。
 
 ## 上游维护范围
 
-| Django 分支 | 官方 Python 范围 | Django 安全维护截止 |
-|---|---|---|
-| 5.2 LTS | 3.10–3.14；3.14 从 Django 5.2.8 起支持 | 2028-04 |
-| 6.0 | 3.12–3.14 | 2027-04 |
-| 6.1 | 3.12–3.14 | 2027-12 |
+| Django 分支 | 官方 Python 范围 | 2026-10-15 官方最新补丁 | Django 安全维护截止 |
+|---|---|---|---|
+| 5.2 LTS | 3.10–3.14；3.14 从 Django 5.2.8 起支持 | 5.2.18 | 2028-04 |
+| 6.0 | 3.12–3.14 | 6.0.9 | 2027-04 |
+| 6.1 | 3.12–3.14 | 6.1.2 | 2027-12 |
 
-本轮维护目标使用当前 Python 安全补丁：3.11.17、3.12.15、3.13.16、3.14.8。Python 3.11、3.12、3.13、3.14 的计划安全维护截止分别为 2027-10、2028-10、2029-10、2030-10。使用每条分支最新安全补丁，不把旧补丁的历史测试替代当前补丁验收。
+仓库既有精确维护矩阵固定 Python 3.11.17、3.12.15、3.13.16、3.14.8 和 Django 5.2.17、6.0.8、6.1.1；这是回归基线，不是“当前最新补丁”清单。本次在任务专用目录取得并核验四个精确 CPython，重新运行源码与 wheel 验证；实际执行结果和产物绑定见 RELEASE_VALIDATION.md 及随包 REPORT.md。Python 3.11、3.12、3.13、3.14 的计划安全维护截止分别为 2027-10、2028-10、2029-10、2030-10。使用每条分支最新安全补丁，不把旧补丁的历史测试替代当前补丁验收。Python 3.15 已发布，但 Django 的上述官方 Python 表未列入它，本版不新增支持或已测声明。
 
 Python 3.10 已于 2026-10-01 EOL，Django 4.2 已于 2026-04-07 EOL。它们不进入本轮默认维护矩阵。现有 `requires-python >=3.10` 继续保留，避免仅因文档扩充就改变已发布包的最低安装门槛；它只表示历史安装边界。已有 3.10 客户应单独安排升级，不能把这个元数据解释为继续获得 Python 上游安全维护。主题的 Django 依赖仍为 `Django>=5.2.17,<6.2`。
 
-## 精确验证矩阵
+## 历史精确验证矩阵（0.5.1，2026-10-03）
 
-以下七组已在本轮独立隔离环境中完成核心源码、核心 wheel、可选验证码源码和可选验证码 wheel 验证。每组核心各269项通过加1项预期跳过，验证码各22项通过：
+以下七组是历史 `0.5.1` 的隔离环境结果：核心源码、核心 wheel、可选验证码源码和可选验证码 wheel；每组核心各269项通过加1项预期跳过，验证码各22项通过。`0.6.0` 后续扩展次数见 TEST_REPORT.md。这些结果均不自动归属于 `0.6.1` 发行包：
 
-| Python | Django | 选择原因 | 本轮结果 |
+| Python | Django | 选择原因 | 历史结果 |
 |---|---|---|---|
 | 3.11.17 | 5.2.17 | 最低仍维护 Python / LTS 边界 | 四种运行全部通过 |
 | 3.12.15 | 5.2.17 | 原 LTS 基线更新安全补丁 | 四种运行全部通过 |
@@ -32,13 +32,13 @@ Python 3.10 已于 2026-10-01 EOL，Django 4.2 已于 2026-04-07 EOL。它们不
 
 此前 Python 3.12.14 × Django 5.2.17 / 6.0.8 / 6.1.1 的验证是保留的历史结果。它不等于本轮当前补丁结果。当前七组也不代表整个 Python × Django 笛卡尔积：例如 3.13 × 5.2、3.13 × 6.0、3.14 × 6.0 虽在上游范围内，本轮并未选择，须单独验证后才能增加“已测”标记。
 
-## 运行时与可选依赖
+## 历史运行时与可选依赖
 
-本轮运行时为标准 GIL CPython、Linux x86-64，由 Astral 的 python-build-standalone 20261001 预编译，通过固定 uv 0.12.22 安装到任务专用目录。上游语言实现为 CPython，二进制供应方为 Astral。uv 下载校验固定元数据中的 SHA-256；运行记录保留下载 URL、预期摘要与实际版本。没有更换系统 Python。
+上述历史运行时为标准 GIL CPython、Linux x86-64，由 Astral 的 python-build-standalone 20261001 预编译，通过固定 uv 0.12.22 安装到任务专用目录。上游语言实现为 CPython，二进制供应方为 Astral。历史记录保留下载 URL、预期摘要与实际版本。`0.6.1` 本轮使用同一供应方的 macOS ARM64 标准 GIL CPython，记录官方元数据摘要、下载摘要和真实版本；没有更换系统 Python。
 
 核心主题只依赖 Django。可选验证码继续固定 `django-simple-captcha==0.7.0`、`Pillow==12.2.0`；其依赖 `django-ranged-response==0.2.0` 在矩阵中固定。Pillow 12.2.0 提供本轮各 CPython 的官方 PyPI wheel，无需为扩大 Python 覆盖而无关升级。验证码需要图像生成与 FreeType，不能仅凭 import 成功就认为集成通过。
 
-不将 PyPy、free-threaded CPython、Windows、macOS、ARM64、Python 3.15、未来 Django 或其它历史补丁标为已测。也不覆盖第三方 Admin 插件、你的业务 ModelAdmin、生产数据库或部署设置。若必须维持 EOL 客户环境，应作为明确选择的 legacy 项目另行评估。
+历史矩阵不覆盖 PyPy、free-threaded CPython、Windows、macOS、ARM64、Python 3.15、未来 Django 或其它补丁。当前发行验证即便包含其中某个平台，也只覆盖明确列出的组合。第三方 Admin 插件、你的业务 ModelAdmin、生产数据库或部署设置仍需单独验证。
 
 ## 复现七组矩阵
 
@@ -61,7 +61,7 @@ python -m build --wheel
 
 bash scripts/test-matrix.sh \
   --root /tmp/nova-matrix-new-run \
-  --wheel /absolute/path/nova_django_admin_theme-0.5.1-py3-none-any.whl \
+  --wheel /absolute/path/nova_django_admin_theme-0.6.1-py3-none-any.whl \
   --interpreters /absolute/path/interpreters.json \
   --with-captcha \
   --find-links /absolute/path/wheelhouse \

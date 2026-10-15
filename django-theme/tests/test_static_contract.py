@@ -151,6 +151,23 @@ class StaticLayoutContractTests(SimpleTestCase):
         self.assertIn("flex-wrap: wrap", toolbar)
         self.assertIn("margin: 0", self.declarations("body.nova-admin #changelist #toolbar > .nova-changelist-controls"))
 
+    def test_responsive_search_result_count_has_a_full_row_without_stretching_submit(self):
+        row = "body.nova-admin #changelist-search > div"
+        count = "body.nova-admin #changelist-search .quiet"
+        for declaration in ("flex-wrap: wrap", "align-items: center", "width: 100%", "max-width: 100%"):
+            self.assertIn(declaration, self.declarations(row))
+        for declaration in ("flex: 1 0 100%", "width: auto", "margin: 0", "white-space: normal"):
+            self.assertIn(declaration, self.declarations(count))
+        submit = self.declarations("body.nova-admin #toolbar form input[type=submit]")
+        self.assertIn("flex: 0 0 auto", submit)
+        self.assertIn("align-self: center", submit)
+        field = self.declarations("body.nova-admin #toolbar form #searchbar")
+        self.assertIn("flex: 1 1 140px", field)
+        self.assertIn("min-width: 0", field)
+        # Django's nowrap/zero-width rules start at its tablet breakpoint.
+        preceding_media = self.css[:self.css.index(count)].rsplit("@media", 1)[-1]
+        self.assertTrue(preceding_media.startswith(" (max-width: 1024px)"))
+
     def test_table_scroll_aid_is_local_with_visible_controls_and_focus(self):
         tools = self.declarations("body.nova-admin .nova-results-scroll-tools")
         self.assertIn("max-width: 100%", tools)
@@ -213,6 +230,28 @@ class NativeFieldStructureTests(TestCase):
         self.assertEqual(controls["category"]["tag"], "select")
         self.assertNotIn("multiple", controls["category"]["attrs"])
         self.assertIn("multiple", controls["tags"]["attrs"])
+
+    def test_filtered_search_keeps_native_get_fields_and_result_count_in_both_languages(self):
+        from bs4 import BeautifulSoup
+        from django.utils.translation import override
+
+        Product.objects.create(name="Another item", sku="OTHER-001", price="12.00")
+        self.client.force_login(self.user)
+        for language in ("zh-hans", "en"):
+            for enabled in (True, False):
+                with self.subTest(language=language, enabled=enabled), override(language), override_settings(NOVA_ADMIN_ENABLED=enabled):
+                    response = self.client.get(reverse("admin:catalog_product_changelist"), {"q": "Layout"})
+                    self.assertEqual(response.status_code, 200)
+                    soup = BeautifulSoup(response.content, "html.parser")
+                    form = soup.select_one("#changelist-search")
+                    self.assertEqual(form["method"], "get")
+                    self.assertEqual(form.select_one('input[name="q"]')["value"], "Layout")
+                    count = form.select_one(".quiet")
+                    self.assertIn("1", count.get_text())
+                    self.assertIn("2", count.get_text())
+                    self.assertEqual(count.parent, form.select_one("div"))
+                    self.assertIsNotNone(count.select_one('a[href="?"]'))
+                    self.assertIsNotNone(form.select_one('input[type="submit"]'))
 
     @override_settings(NOVA_ADMIN_NAVIGATION=True)
     def test_toolbar_wrapper_preserves_native_header_and_opt_out_boundaries(self):

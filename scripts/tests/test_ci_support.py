@@ -300,7 +300,75 @@ class ArtifactTests(unittest.TestCase):
 
     def test_candidate_extra_file_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
-            root=Path(tmp);(root/'MANIFEST.json').write_text(json.dumps({'schema':1,'commit':COMMIT,'files':{}}));(root/'SHA256SUMS').write_text('');(root/'private.env').write_text('bad')
+            root=Path(tmp);(root/'MANIFEST.json').write_text(json.dumps({'schema':2,'commit':COMMIT,'files':{}}));(root/'SHA256SUMS').write_text('');(root/'private.env').write_text('bad')
             with self.assertRaises(ValueError):artifacts.verify(root,ROOT,COMMIT)
+
+class SdistTests(unittest.TestCase):
+    def fixture(self, root):
+        theme = root / 'django-theme'
+        (theme / 'src/nova_admin').mkdir(parents=True)
+        (theme / 'pyproject.toml').write_text('[project]\nname="nova-django-admin-theme"\nversion="0.6.1"\nrequires-python=">=3.10"\nlicense="MIT"\n')
+        for name in ('MANIFEST.in', 'LICENSE', 'requirements-test.txt', 'README.md', 'RELEASING.md'):
+            (theme / name).write_text('source ' + name)
+        (theme / 'src/nova_admin/__init__.py').write_text('__version__ = "0.6.1"\n')
+        files = artifacts.sdist_files(root)
+        info = b'Metadata-Version: 2.4\nName: nova-django-admin-theme\nVersion: 0.6.1\nRequires-Python: >=3.10\nLicense-Expression: MIT\nLicense-File: LICENSE\n\n'
+        files.update({'PKG-INFO': info, 'setup.cfg': b''})
+        egg = 'src/nova_django_admin_theme.egg-info/'
+        files.update({egg + name: info if name == 'PKG-INFO' else b'' for name in
+                      ('PKG-INFO', 'SOURCES.txt', 'dependency_links.txt', 'requires.txt', 'top_level.txt')})
+        return files
+
+    def write(self, root, files, extra=None):
+        target = root / 'theme.tar.gz'
+        with tarfile.open(target, 'w:gz') as archive:
+            for name, content in files.items():
+                item = tarfile.TarInfo('nova_django_admin_theme-0.6.1/' + name)
+                item.size = len(content)
+                archive.addfile(item, io.BytesIO(content))
+            if extra:
+                archive.addfile(extra)
+        return target
+
+    def test_complete_source_and_documents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = self.fixture(root)
+            self.assertEqual(artifacts.sdist_check(self.write(root, files), root)['source_files'], 7)
+
+    def test_missing_or_changed_document_refused(self):
+        for change in ('missing', 'changed'):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                files = self.fixture(root)
+                if change == 'missing': files.pop('RELEASING.md')
+                else: files['RELEASING.md'] = b'stale upgrade guide'
+                with self.assertRaisesRegex(ValueError, 'source/documentation'):
+                    artifacts.sdist_check(self.write(root, files), root)
+
+    def test_extra_secret_or_database_refused(self):
+        for name in ('.env', 'demo/db.sqlite3', 'demo/unexpected.py'):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                files = self.fixture(root)
+                files[name] = b'not part of source'
+                with self.assertRaises(ValueError): artifacts.sdist_check(self.write(root, files), root)
+
+    def test_duplicate_link_and_traversal_refused(self):
+        for name, kind in (('LICENSE', tarfile.REGTYPE), ('link', tarfile.SYMTYPE), ('../escape', tarfile.REGTYPE)):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                files = self.fixture(root)
+                item = tarfile.TarInfo('nova_django_admin_theme-0.6.1/' + name)
+                item.type, item.linkname = kind, '/etc/passwd'
+                with self.assertRaises(ValueError): artifacts.sdist_check(self.write(root, files, item), root)
+
+    def test_wrong_license_metadata_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = self.fixture(root)
+            files['PKG-INFO'] = files['PKG-INFO'].replace(b'MIT', b'BSD')
+            with self.assertRaisesRegex(ValueError, 'license metadata'):
+                artifacts.sdist_check(self.write(root, files), root)
 
 if __name__=='__main__':unittest.main()

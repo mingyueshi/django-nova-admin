@@ -1,6 +1,8 @@
 # CI/CD 接入与验证
 
-本仓库提供GitHub Actions配置和本地可复现的执行入口。当前云端源码没有GitHub远端；Actions、分支保护、审批环境和生产发布均未在GitHub上启用。下述工作流语法、脚本、测试与产物流程在云端本地验证，不能当作GitHub线上运行记录。
+本仓库提供 GitHub Actions 配置和本地可复现的执行入口。以下正文中的云端接入过程保留为最初交付背景；2026-10-15 已核实实际官方仓库为 `mingyueshi/django-nova-admin`，`main@f4f07b8da3ce9ddbfd69819f11705fd9bb8ca610` 的 [快速 CI 运行](https://github.com/mingyueshi/django-nova-admin/actions/runs/38528050393) 已通过。该历史运行不代替新发行提交的验证。未代为配置分支保护、审批环境、凭据或生产发布。
+
+`0.6.1` 的构建清单升级为 schema 2：在原 wheel/静态产物之外增加 sdist，并从 sdist 构建 wheel；增加源码/文档、许可证与运行时版本核验。现有下载/复核入口跟随同一源码脚本，不增加发布流程。详见 [发行与升级说明](django-theme/RELEASING.md)。
 
 ## 两条流程
 
@@ -44,7 +46,7 @@ Node独立跑22.23.3/npm10.9.9、24.21.0/npm11.19.0、26.10.0/npm11.19.1。Node2
 6. 每个Node版本独立npm ci，启用engine-strict，保留原lock及integrity；检查实际npm、全部40个包版本和依赖树，执行格式、语法及交互回归。导航脚本从三个固定Django官方wheel按SHA提取，不需要安装三个Django运行时
 7. 汇总器验证每个必需组合、步骤状态、源码/wheel、可选配置、commit、wheel哈希及Node锁哈希。快速结果不能冒充完整结果
 
-构建目录含主题wheel、`nova-static.tar.gz`、`MANIFEST.json`和`SHA256SUMS`。清单保存commit、主题/预览版本、每个产物的字节数与SHA，以及逐文件静态/主题哈希。包内容拒绝路径穿越、符号链接、重复成员和非预期文件。
+构建目录含主题 wheel、sdist、`nova-static.tar.gz`、`MANIFEST.json` 和 `SHA256SUMS`。清单保存 commit、主题/预览版本、每个产物的字节数与 SHA，以及逐文件静态/主题/源码和文档哈希。包内容拒绝路径穿越、符号链接、重复成员和非预期文件。
 
 上传/下载Actions使用自己的artifact digest，并在下载时设置`digest-mismatch: error`。随后再做上述项目级校验。普通SHA清单属于完整性校验，不是签名证明或供应链证明；本实现未申请OIDC或创建attestation权限。
 
@@ -119,4 +121,4 @@ Python隔离矩阵沿用[运行时说明](django-theme/COMPATIBILITY.md)中的te
 - 独立 security job 使用 Python3.12.15 的已构建 wheel，快速范围测试 Django6.1.1，完整范围再含5.2.17/6.0.8；Axes 为独立可选安装，不与7组核心/验证码矩阵做笛卡尔扩张。security job 失败/跳过也使最终 gate 失败
 - `upstream-drift.yml` 为每周一05:23 UTC及手动主线预警。固定Actions SHA，只读官方Django main当次SHA、保存差异与实验回归日志；不发布、不接受新基线、不扩大包版本上界
 - 主线源码的 `tests` 包会与本主题测试目录同名，工作流把本主题目录放在 PYTHONPATH 首位，并在 django-theme 目录执行；输出必须实际运行至少一项测试，不能把零测试当通过
-- 这些仍是源码内工作流；无GitHub远端/运行记录。Docker/Psycopg/真实PostgreSQL不在已执行本地矩阵中，详见Compose示例的明确验收边界
+- 此段最初为源码交付的维护门槛；当前实际仓库与已核实的历史快速 CI 运行见本文开头。Docker/Psycopg/真实 PostgreSQL 不在本次本地发行矩阵中，详见 Compose 示例的明确验收边界
