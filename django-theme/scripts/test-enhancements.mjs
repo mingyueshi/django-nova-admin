@@ -294,7 +294,6 @@ checkList('Repeated script loading does not duplicate controls or click handlers
     query(f, '.nova-results-scroll-right').click();
     assert.equal(f.results.scrollLeft, 240);
 });
-console.log(`TOTAL ${count} changelist enhancement tests passed`);
 
 // Actual Django header structure. Native URLs are intentionally different for
 // primary, toggle and remove so a regression cannot conflate their contracts.
@@ -353,4 +352,4 @@ sorting({name:'商品名称及所属业务分组的长列名 LongUnbrokenColumnH
     assert.ok(d.querySelector('.column-name .nova-sort-heading--long'));
     assert.equal(d.querySelector('.column-price .nova-sort-heading--long'), null);
 });
-console.log(`TOTAL ${count} changelist enhancement tests including sorting passed`);
+console.log(`TOTAL ${count} changelist enhancement tests passed`);
