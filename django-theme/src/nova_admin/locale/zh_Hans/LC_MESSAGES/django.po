@@ -255,3 +255,27 @@ msgstr "向左滚动表格"
 msgctxt "Nova Admin"
 msgid "Scroll table right"
 msgstr "向右滚动表格"
+
+msgctxt "Nova Admin"
+msgid "Sort ascending"
+msgstr "按升序排列"
+
+msgctxt "Nova Admin"
+msgid "Sort descending"
+msgstr "按降序排列"
+
+msgctxt "Nova Admin"
+msgid "Ascending"
+msgstr "升序"
+
+msgctxt "Nova Admin"
+msgid "Descending"
+msgstr "降序"
+
+msgctxt "Nova Admin"
+msgid "Make primary sort"
+msgstr "设为首要排序"
+
+msgctxt "Nova Admin"
+msgid "Remove from sorting"
+msgstr "移除排序"

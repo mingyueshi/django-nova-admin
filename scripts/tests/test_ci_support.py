@@ -63,7 +63,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':622,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':121,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':622,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':127,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -128,7 +128,7 @@ TOTAL 82 palette checks passed
     GROUP_LOGS = {
         'frontend': FRONTEND_LOG,
         'navigation': '78 navigation DOM scenarios passed (3 Django script versions).\n',
-        'enhancements': 'TOTAL 32 changelist enhancement tests passed\n',
+        'enhancements': 'TOTAL 38 changelist enhancement tests passed\n',
         'captcha': 'TOTAL 11 CAPTCHA enhancement tests passed\n',
     }
 
@@ -157,7 +157,7 @@ TOTAL 82 palette checks passed
             self.logs(root)
             result = self.collect(root)
             self.assertEqual(result['frontend'], 622)
-            self.assertEqual(result['theme_js'], 121)
+            self.assertEqual(result['theme_js'], 127)
             self.assertEqual(len(result['frontend_suites']), 13)
             self.assertEqual(result['frontend_suites']['palettes'], 82)
             self.assertEqual(sum(result['frontend_suites'].values()), 622)
@@ -205,6 +205,22 @@ TOTAL 82 palette checks passed
                                'failed': content.replace('passed', 'failed')}[change]
                     (logs / (group + '.log')).write_text(content)
                     with self.assertRaisesRegex(ValueError, 'Node test evidence: ' + group): self.collect(root)
+
+    def test_stale_enhancement_count_and_prior_report_total_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            logs = self.logs(root)
+            (logs / 'enhancements.log').write_text('TOTAL 32 changelist enhancement tests passed\n')
+            with self.assertRaisesRegex(ValueError, 'Node test evidence: enhancements'):
+                self.collect(root)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = MatrixTests().reports(root, 'quick')
+            report = support.read(paths[-1])
+            report['theme_js'] = 121
+            paths[-1].write_text(json.dumps(report))
+            with self.assertRaises(ValueError):
+                support.verify_reports(root, 'quick', COMMIT, WHEEL_SHA)
 
     def test_failed_test_line_cannot_be_hidden_by_success_summary(self):
         for group in self.GROUP_LOGS:
