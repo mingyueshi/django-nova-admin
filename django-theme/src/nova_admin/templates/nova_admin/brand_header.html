@@ -1,2 +1,3 @@
-{% load i18n %}
-<div id="site-name" class="nova-custom-brand"><a href="{% url 'admin:index' %}"><img class="nova-brand-logo" src="{{ nova_admin_branding.logo_url|force_escape }}" alt="{{ nova_admin_branding.logo_alt|force_escape }}" decoding="async"><span>{{ site_header|default:_('Django administration') }}</span></a></div>
+{% load nova_tags %}
+{% nova_brand as brand %}
+<div id="site-name" class="nova-custom-brand"><a href="{% url 'admin:index' %}">{% if nova_admin_branding.logo_url %}<img class="nova-brand-logo" src="{{ nova_admin_branding.logo_url|force_escape }}" alt="{{ nova_admin_branding.logo_alt|force_escape }}" decoding="async">{% else %}<span class="nova-brand-initial" aria-hidden="true">{{ brand.initial|force_escape }}</span>{% endif %}<span class="nova-brand-name">{{ brand.name|force_escape }}</span></a></div>

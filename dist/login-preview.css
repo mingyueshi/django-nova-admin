@@ -13,7 +13,9 @@ button { cursor:pointer; }
 .login-preview-toolbar select { border:1px solid var(--border-color); background:transparent; color:var(--body-fg); border-radius:7px; padding:6px 9px; min-height:36px; border-color:transparent; }
 body.nova-admin.login.nova-login-demo #container { margin-top:12px; margin-bottom:32px; }
 body.nova-login-demo #header { display:flex; align-items:center; justify-content:flex-start; }
-.login-brand { display:flex; align-items:center; gap:10px; color:var(--body-loud-color); font-size:21px; font-weight:700; letter-spacing:2px; line-height:1.1; }
+.login-brand { display:flex; align-items:center; gap:10px; min-width:0; max-width:100%; color:var(--body-loud-color); font-size:21px; font-weight:700; letter-spacing:2px; line-height:1.4; }
+.login-brand [data-brand-name] { min-width:0; overflow-wrap:anywhere; }
+.login-brand-mark { flex-shrink:0; }
 .login-brand-mark { display:grid; place-items:center; width:32px; height:32px; border-radius:9px; background:var(--button-bg); color:var(--button-fg); font-size:23px; transform:rotate(-5deg); }
 .login-demo-notice { margin:0 0 23px; color:var(--body-quiet-color); font-size:12px; line-height:1.6; }
 .login-password { position:relative; }

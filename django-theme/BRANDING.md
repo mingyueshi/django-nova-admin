@@ -53,8 +53,37 @@ body.nova-admin {
 
 ## 声明式品牌设置
 
+### 后台名称与自动 Logo
+
+不提供图片 Logo 时，页头与登录页装饰会从后台名称自动取标识：英文取大写首字母，中文保留首个汉字，数字开头取首个数字，跳过空白和标点；全部为符号的名称显示 `?`。例如 `Atlas Admin` → `A`、`星河管理后台` → `星`，不需要为每个项目制作图片，也不会固定显示 `N`。
+
+最小配置只有名称：
+
+```python
+NOVA_ADMIN_BRANDING = {"name": "星河管理后台"}
+```
+
+`name` 统一当前 Nova 外观的页头名称、浏览器站点标题和自动 Logo。配置了有效 `logo` 图片时，页头优先显示图片；图片路径校验不通过时回退到自动标识。`favicon` 和 `login_background` 仍是独立的可选图片设置，不自动生成。
+
+未设置 `name` 时，直接使用**当前 AdminSite** 的 `site_header`；它为空时再回退到 `site_title` 或 Django 的默认管理名称。不会把其他 AdminSite 的名称带过来，也不会修改已有 site 实例。要让恢复原生外观后也使用同一名称，优先使用 Django 原有配置：
+
+```python
+from django.contrib import admin
+
+admin.site.site_header = "星河管理后台"
+admin.site.site_title = "星河管理后台"
+# 不配置 logo 即自动生成“星”。已有自定义 AdminSite 在自己的实例上设置。
+```
+
+名称是纯文本；即使传入 `mark_safe()` 字符串，也不会作为 HTML 解释。字母标识在页头对辅助技术隐藏，相邻名称链接提供完整名称，避免重复朗读。原生模式、关闭主题或省略主题 context processor 时，仍恢复项目自己的 Django 品牌内容。
+
+本地静态预览可在“设置 → 后台与工作空间 → 后台名称”中保存名称；侧栏和登录页共用此浏览器偏好。已打开的登录页会随同源其他窗口的更改更新名称，不清空正在填写的账号、密码或验证码。此设置只影响预览，不写入真实 Django 配置。
+
+### 图片与其他品牌资源
+
 ```python
 NOVA_ADMIN_BRANDING = {
+    "name": "Example 管理后台",  # 可选；省略时沿用当前 AdminSite.site_header
     "logo": "project/brand.svg",
     "logo_alt": "",  # 相邻站点标题已表达品牌；必要时再填写不同的信息
     "favicon": "project/favicon.svg",
@@ -63,7 +92,7 @@ NOVA_ADMIN_BRANDING = {
 }
 ```
 
-所有字段可省略。`site_header`、`site_title` 继续设置在已有 `AdminSite` 上；Logo 不替换这些原生文字。图片应放在宿主自己控制的 static 目录，并经过正常的 `collectstatic` 流程：
+所有字段可省略。`site_header`、`site_title` 仍可设置在已有 `AdminSite` 上；`name` 只是 Nova 展示层的统一覆盖，图片 Logo 不替换名称文字。图片应放在宿主自己控制的 static 目录，并经过正常的 `collectstatic` 流程：
 
 - `logo`：页头图片，最大 160×36px，保留纵横比，与原生站点标题链接一起显示
 - `logo_alt`：纯文本替代文字，默认空值避免与相邻标题重复朗读
@@ -86,7 +115,7 @@ Django 的 static storage 负责生成最终 URL，支持普通本地 static 与
 | `nova_styles` | `admin/base.html` | Nova 两个 CSS 链接；增加项目样式通常用标准 `extrastyle` + `block.super` |
 | `nova_favicon` | `admin/base.html` | 图标链接 |
 | `nova_footer` | `admin/base.html` | 品牌页脚，默认包含 `nova_admin/brand_footer.html` |
-| `nova_branding` | `admin/base_site.html` | 页头品牌；没有 Logo 时保留上游 `branding` 内容 |
+| `nova_branding` | `admin/base_site.html` | 页头名称与图片／自动首字标识；原生模式恢复上游内容 |
 | `nova_login_content` | `admin/login.html` | 登录内容包装；替换时必须保留原生认证表单、错误、CSRF 与 next 字段 |
 | `nova_login_art` | `nova_admin/login_brand.html` | 左侧装饰区域；通过覆盖/继承这个被 include 的模板修改 |
 
@@ -104,6 +133,6 @@ Django 的 static storage 负责生成最终 URL，支持普通本地 static 与
 
 运行时直接发布手写 CSS，没有 Sass、Tailwind、CSS-in-JS、Node 或前端构建依赖。CSS token 变更只需项目正常的静态资源发布与缓存更新。当前仓库仍保留可读源文件，不提供没有源码映射的压缩副本。宿主确实需要 minify 时，应同时生成并发布对应 sourcemap，保留 `sourceMappingURL` 和原始源码，不允许把无 sourcemap 的压缩 CSS 当作唯一维护源。
 
-本次变更完成时，通用包 CSS 的原始体积合计为 71,385 bytes；分别 gzip（mtime=0）后合计 14,941 bytes。组成：`theme.css` 58,854 / 11,232、`tokens.css` 3,263 / 793、`login.css` 7,382 / 2,160、`captcha.css` 1,886 / 756（原始 / gzip bytes）。前两项用于普通后台；login 与 CAPTCHA 只在相应页面按需加载。这是源码基线，不包含 Django 自带样式、项目企业蓝覆盖或图片，后续修改应重测并说明差异。
+以下为早期交付的历史体积基线；当前体积和预算见仓库 `ci/css-budget.json`。该历史基线中，通用包 CSS 的原始体积合计为 71,385 bytes；分别 gzip（mtime=0）后合计 14,941 bytes。组成：`theme.css` 58,854 / 11,232、`tokens.css` 3,263 / 793、`login.css` 7,382 / 2,160、`captcha.css` 1,886 / 756（原始 / gzip bytes）。前两项用于普通后台；login 与 CAPTCHA 只在相应页面按需加载。这是源码基线，不包含 Django 自带样式、项目企业蓝覆盖或图片，后续修改应重测并说明差异。
 
 `tests/test_branding_tokens.py` 覆盖路径与 storage 输出验证、HTML/属性转义、缺失配置回退、native/关闭恢复、登录表单完整性、CSP 链接、自动深色映射和精确默认颜色回退。真实项目仍需浏览器检查长标题、图片比例、手机布局、对比度及所有模式的静态资源加载。

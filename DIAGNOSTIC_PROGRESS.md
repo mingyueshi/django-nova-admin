@@ -69,3 +69,37 @@ CI收集器原有13套件/622项契约已更新为当前18套件/1274项；增�
 本轮三个代码整改单项（R2、R1共享登录CSS、R3b）已独立验收；T2首轮验证因启动超时保留未验收状态。整改验收结束时尚未提交Git，原有本地3个提交保持不变。实施会话已收到本轮收尾指令；未派发F类功能扩展。
 
 2026-10-23，用户随后授权提交本地Git，本次提交收录上述整改、重新导出的样本及诊断文档。提交前已复核7个验收源码哈希与共享登录CSS一致性；本地证据、隔离环境与密钥不纳入Git。未推送、发布或生产部署；T2未验收状态保持不变。
+
+---
+
+## 2026-10-24 复诊记录
+
+### 台账整改落地独立复核
+
+| 项 | 复核结果 | 证据 |
+|---|---|---|
+| R1 共享登录 CSS | 已闭环 | `npm run check:login-css` 通过，source/target SHA-256 均为 `957cbcd6…`，逐字节一致；`sync:login-css`/`test:shared-css` 命令在 package.json 中 |
+| R2 模板选择 | 已落地 | `demo/catalog/templatetags/project_admin.py` 采用原生模板完整内容签名选择 |
+| R3b CI 前端摘要契约 | 已落地 | `scripts/ci_support.py` 契约更新，测试数基准同步 |
+| R1/R2/R3b 合入 | 已提交 | 对应 `21a56b9` 及后续提交 |
+
+### 工作区新增未提交改动：品牌名称 + 首字母占位（替代硬编码 "N"）
+
+范围 23 文件：后端 `branding.py`（`name` 字段 + `brand_initial()`）、`nova_tags.py`（`nova_brand` 标签）、3 个模板、`theme.css`；前端 `dist/js/branding.js`（新）、`app.js`、`login.js`、`login.html`、`styles.css`、`login-preview.css`；测试 `test_branding_tokens.py`（+65 行）、`presentation.cjs`（+13 项）、`login-demo.cjs`、`palettes.cjs`；文档/CI `BRANDING.md`、`README.md`、`CI_CD.md`、`css-budget.json`、`ci_support.py`。
+
+- 质量：实现 + 前后端测试 + 文档 + CI 预算完整闭环，前端测试总数 1284 → 1297。
+- 独立验证：`npm run check` 全通过（含新 `branding.js`）；`test:presentation` 38 项、`test:login` 44 项通过；Python/JS 语法与 lint 无错误。
+- 顺带修复真实缺陷：`base_site.html` 覆盖 `branding` block 时补回 Django 原版的 `{% if user.is_anonymous %}{% include "admin/color_theme_toggle.html" %}{% endif %}`（三版基线均含该模板，5.2/6.0/6.1 均安全）。
+- 发现 3 个小问题（P3，非阻塞）：
+  - N1 品牌名长度前后端不一致：前端 `brandName()` 截断 64 码点，后端 `branding()["name"]` 仅 `.strip()` 无上限且进 `<title>`。
+  - N2 `nova_tags.py` 跨模块导入私有 `_text`（`from nova_admin.branding import brand_initial, _text`），破坏封装。
+  - N3 `base_site.html` title block 用 `{% with site_title=… %}{{ block.super }}{% endwith %}` 覆盖变量，可读性差。
+
+状态：未提交 Git；未运行完整 Django 矩阵（branding 后端新增 `nova_brand`/`name` 字段的 3 版矩阵回归待跑）。
+
+### 仍开放项
+
+- T2 Docker/PostgreSQL：首轮启动 300s 超时，应用连接/迁移/登录未执行，未验收。
+- T3 音频验证码：无 Flite/SoX，未验证。
+- T4 真机 / 屏幕阅读器：未做操作验收。
+- branding 改动的后端三版矩阵回归与提交。

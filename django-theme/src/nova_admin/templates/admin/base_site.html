@@ -1,10 +1,13 @@
 {% extends "admin/base_site.html" %}
 
+{% block title %}{% if nova_admin_active and nova_admin_branding.name %}{% with site_title=nova_admin_branding.name|force_escape %}{{ block.super }}{% endwith %}{% else %}{{ block.super }}{% endif %}{% endblock %}
+
 {% block branding %}
   {% if nova_admin_active %}
     {% with nova_native_branding=block.super %}
       {% block nova_branding %}
-        {% if nova_admin_branding.logo_url %}{% include "nova_admin/brand_header.html" %}{% else %}{{ nova_native_branding }}{% endif %}
+        {% include "nova_admin/brand_header.html" %}
+        {% if user.is_anonymous %}{% include "admin/color_theme_toggle.html" %}{% endif %}
       {% endblock %}
     {% endwith %}
   {% else %}

@@ -43,7 +43,7 @@
 
 <header id="header">
 <div id="branding">
-<div class="nova-custom-brand" id="site-name"><a href="index.html"><img alt="NOVA" class="nova-brand-logo" decoding="async" src="../static/catalog/brand/logo.svg"/><span>Nova · 管理中心</span></a></div>
+<div class="nova-custom-brand" id="site-name"><a href="index.html"><img alt="NOVA" class="nova-brand-logo" decoding="async" src="../static/catalog/brand/logo.svg"/><span class="nova-brand-name">Nova · 管理中心</span></a></div>
 </div>
 <div class="nova-user-tools">
 <div id="user-tools">
@@ -324,6 +324,7 @@
 </form></div>
 <form data-sample-form="inert" id="changelist-form">
 <div></div>
+<details class="nova-sort-demo-help"><summary>排序演示：方向与多列优先级</summary><p>点击「商品名称」「价格」或「状态」表头可排序，再点可切换方向；依次点击不同列可组合排序，数字表示优先级。箭头仅切换该列方向，× 移除该列排序。图片列不可排序；「状态」是按原始状态字段排序的自定义展示列。</p></details>
 <p class="nova-list-edit-help">精选推荐为已保存状态的只读快照；本页面不能修改或保存。真实 Django 中需点击保存才生效。</p>
 <div class="actions">
 <label>动作： <select aria-disabled="true" disabled="disabled">

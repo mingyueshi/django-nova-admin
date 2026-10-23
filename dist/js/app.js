@@ -6,6 +6,7 @@ import {
   paletteSummary,
   syncPaletteCards,
 } from './palette.js';
+import { brandName, brandInitial, defaultBrandName } from './branding.js';
 import { createCollection } from './collection.js';
 import { pagination, submitPageJump } from './pagination.js';
 import { searchShortcut } from './presentation.js';
@@ -147,7 +148,12 @@ const state = {
   selectedRole: '编辑',
   native: false,
   mobile: false,
-  settings: read('nova-settings', { workspace: 'NOVA 工作空间', animations: true, compact: false }),
+  settings: read('nova-settings', {
+    brandName: defaultBrandName,
+    workspace: 'NOVA 工作空间',
+    animations: true,
+    compact: false,
+  }),
 };
 const userCollection = createCollection({
   getRecords: () => state.users,
@@ -241,8 +247,12 @@ function person(u) {
   return `<div class="person">${thumbnail(imageSpec('avatar', u.id, u.name))}<div><strong>${esc(u.name)}</strong><small>${esc(u.email)}</small></div></div>`;
 }
 function layout() {
+  document.title =
+    (nav.find((n) => n[0] === state.view)?.[2] || '控制台') +
+    ' · ' +
+    brandName(state.settings.brandName);
   $('#app').innerHTML =
-    `<div class="shell ${state.mobile ? 'mobile-open' : ''}"><button class="mobile-backdrop" data-action="close-nav" aria-label="关闭导航"></button><aside class="sidebar"><a class="brand" href="#overview" aria-label="NOVA 管理首页"><span class="brand-mark">N</span><span class="brand-name">NOVA</span></a><button class="workspace-select" data-action="workspace"><span class="workspace-icon">${icon('layers')}</span><span class="workspace-copy"><strong>${esc(state.settings.workspace)}</strong></span>${icon('down')}</button><div class="section-label">工作空间</div><nav class="nav-list" aria-label="主导航">${renderNavigation(state, icon, esc, navOpened)}</nav><div class="sidebar-bottom"><div class="sidebar-integration"><span class="integration-mark">${icon('terminal')}</span><div><strong>Django Admin</strong><button data-action="docs">集成与原生恢复说明 ${icon('arrow')}</button></div></div><button class="nav-item" data-action="native">${icon('history')}<span>原生恢复对照</span></button><div class="user-profile"><span class="avatar peach">演</span><div><p>演示管理员</p><small>本地演示 · 无真实账户</small></div></div></div></aside><div class="main-area">${state.native ? '<div class="preview-banner">当前为原生外观模拟。真实 Django 恢复方式见集成说明。</div>' : ''}<header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu" data-action="mobile" aria-label="打开导航">${icon('menu')}</button>${renderBreadcrumb(state, icon, esc, state.view === 'catalog' ? catalogRouteLabel(state.route) : '')}</div><div class="topbar-actions"><span class="prototype">交互原型 · 模拟数据</span><button class="global-search" data-action="search" aria-label="搜索页面或用户（${searchShortcut().spoken}）" aria-keyshortcuts="${searchShortcut().keys}"><span>${icon('search')}</span><span>搜索页面或用户</span><kbd aria-hidden="true">${searchShortcut().label}</kbd>${window.innerWidth < 701 ? icon('search') : ''}</button><button class="icon-button" data-action="theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? '切换浅色主题' : '切换深色主题'}">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><button class="icon-button unread" data-action="notifications" aria-label="查看演示通知">${icon('bell')}</button><span class="topbar-divider"></span><span class="avatar peach">演</span></div></header><main id="main" class="content" tabindex="-1"><div id="view"></div><footer class="footer"><span class="footer-left"><i class="live-dot"></i>NOVA ADMIN <span>·</span> 设计预览 v1.8.0</span><span class="footer-right">所有数据为本地模拟 <span>·</span> <a href="./responsive.html" target="_blank" rel="noopener">多尺寸预览 ↗</a> <span>·</span> <a href="#" data-action="docs">Django 集成说明</a></span></footer></main></div></div>`;
+    `<div class="shell ${state.mobile ? 'mobile-open' : ''}"><button class="mobile-backdrop" data-action="close-nav" aria-label="关闭导航"></button><aside class="sidebar"><a class="brand" href="#overview" aria-label="${esc(brandName(state.settings.brandName))} 管理首页"><span class="brand-mark" aria-hidden="true">${esc(brandInitial(state.settings.brandName))}</span><span class="brand-name">${esc(brandName(state.settings.brandName))}</span></a><button class="workspace-select" data-action="workspace"><span class="workspace-icon">${icon('layers')}</span><span class="workspace-copy"><strong>${esc(state.settings.workspace)}</strong></span>${icon('down')}</button><div class="section-label">工作空间</div><nav class="nav-list" aria-label="主导航">${renderNavigation(state, icon, esc, navOpened)}</nav><div class="sidebar-bottom"><div class="sidebar-integration"><span class="integration-mark">${icon('terminal')}</span><div><strong>Django Admin</strong><button data-action="docs">集成与原生恢复说明 ${icon('arrow')}</button></div></div><button class="nav-item" data-action="native">${icon('history')}<span>原生恢复对照</span></button><div class="user-profile"><span class="avatar peach">演</span><div><p>演示管理员</p><small>本地演示 · 无真实账户</small></div></div></div></aside><div class="main-area">${state.native ? '<div class="preview-banner">当前为原生外观模拟。真实 Django 恢复方式见集成说明。</div>' : ''}<header class="topbar"><div class="breadcrumb"><button class="icon-button mobile-menu" data-action="mobile" aria-label="打开导航">${icon('menu')}</button>${renderBreadcrumb(state, icon, esc, state.view === 'catalog' ? catalogRouteLabel(state.route) : '')}</div><div class="topbar-actions"><span class="prototype">交互原型 · 模拟数据</span><button class="global-search" data-action="search" aria-label="搜索页面或用户（${searchShortcut().spoken}）" aria-keyshortcuts="${searchShortcut().keys}"><span>${icon('search')}</span><span>搜索页面或用户</span><kbd aria-hidden="true">${searchShortcut().label}</kbd>${window.innerWidth < 701 ? icon('search') : ''}</button><button class="icon-button" data-action="theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? '切换浅色主题' : '切换深色主题'}">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><button class="icon-button unread" data-action="notifications" aria-label="查看演示通知">${icon('bell')}</button><span class="topbar-divider"></span><span class="avatar peach">演</span></div></header><main id="main" class="content" tabindex="-1"><div id="view"></div><footer class="footer"><span class="footer-left"><i class="live-dot"></i>NOVA ADMIN <span>·</span> 设计预览 v1.8.0</span><span class="footer-right">所有数据为本地模拟 <span>·</span> <a href="./responsive.html" target="_blank" rel="noopener">多尺寸预览 ↗</a> <span>·</span> <a href="#" data-action="docs">Django 集成说明</a></span></footer></main></div></div>`;
   document.body.classList.toggle('native', state.native);
   document.body.classList.toggle('reduced-motion', !state.settings.animations);
   renderView();
@@ -443,7 +453,7 @@ function settingsView() {
       )
       .join(
         '',
-      )}</select><small>色卡随外观同步切换，跟随系统会自动更新</small></div><div class="field"><label for="palette-mode">配色方案</label><select id="palette-mode" data-palette-select>${paletteOptions(document.documentElement.dataset.palette)}</select><small>也可以从下方色卡直接选择</small></div></div></div><div class="palette-gallery-meta"><p data-palette-current role="status" aria-live="polite">${paletteSummary()}</p><span class="palette-legend">色点顺序：背景 / 侧栏 / 面板 / 强调 / 文字</span></div><div class="palette-grid" role="group" aria-label="16套配色色卡">${renderPaletteCards(document.documentElement.dataset.palette)}</div><div class="palette-gallery-footer"><p>选择会自动保存，登录页与其他窗口同步使用；浅色、深色和配色可分别选择。</p><button type="button" class="btn subtle" data-palette-default>恢复默认配色</button></div></section><div class="settings-layout"><form class="panel" id="settings-form"><div class="panel-head"><h2>工作空间</h2><span class="pill">仅本地保存</span></div><div class="settings-body"><div class="field"><label for="workspace-name">工作空间名称</label><input id="workspace-name" name="workspace" required maxlength="24" value="${esc(state.settings.workspace)}"><small>展示在侧边栏；不修改任何真实组织信息</small></div><button class="toggle" type="button" role="switch" id="motion-toggle" aria-checked="${state.settings.animations}" data-action="motion-toggle"><span>界面动效<small>支持系统“减少动态效果”偏好</small></span><span class="toggle-track"></span></button></div><div class="settings-footer"><button class="btn primary" type="submit">${icon('check')}保存偏好</button></div></form><section class="panel"><div class="panel-head"><h2>外观与原生恢复</h2></div><div class="settings-body"><p class="muted" style="font-size:12px;margin-bottom:18px">NOVA 是可关闭的外观增强。站内提供真实原生模板的只读对照；实际 Django 项目通过主题开关恢复原生样式。</p><div style="display:flex;gap:10px;flex-wrap:wrap">${button('切换深浅主题', 'theme', '', 'sun')}${button('查看原生模板对照', 'native', '', 'history')}${button('集成与恢复说明', 'docs', 'subtle', 'book')}</div></div></section><section class="panel"><div class="panel-head"><h2>重置演示数据</h2></div><div class="settings-body"><p class="muted" style="font-size:12px;margin-bottom:18px">清除当前浏览器里的用户、角色及偏好修改，恢复最初的演示内容。</p>${button('恢复演示初始状态', 'reset-demo', 'danger', 'history')}</div></section></div>`
+      )}</select><small>色卡随外观同步切换，跟随系统会自动更新</small></div><div class="field"><label for="palette-mode">配色方案</label><select id="palette-mode" data-palette-select>${paletteOptions(document.documentElement.dataset.palette)}</select><small>也可以从下方色卡直接选择</small></div></div></div><div class="palette-gallery-meta"><p data-palette-current role="status" aria-live="polite">${paletteSummary()}</p><span class="palette-legend">色点顺序：背景 / 侧栏 / 面板 / 强调 / 文字</span></div><div class="palette-grid" role="group" aria-label="16套配色色卡">${renderPaletteCards(document.documentElement.dataset.palette)}</div><div class="palette-gallery-footer"><p>选择会自动保存，登录页与其他窗口同步使用；浅色、深色和配色可分别选择。</p><button type="button" class="btn subtle" data-palette-default>恢复默认配色</button></div></section><div class="settings-layout"><form class="panel" id="settings-form"><div class="panel-head"><h2>后台与工作空间</h2><span class="pill">仅本地保存</span></div><div class="settings-body"><div class="field"><label for="brand-name">后台名称</label><input id="brand-name" name="brandName" required maxlength="64" value="${esc(brandName(state.settings.brandName))}" aria-describedby="brand-name-help"><small id="brand-name-help">用于侧栏和登录页；Logo 自动取英文首字母或中文首字，仅保存在当前浏览器</small></div><div class="field"><label for="workspace-name">工作空间名称</label><input id="workspace-name" name="workspace" required maxlength="24" value="${esc(state.settings.workspace)}"><small>展示在侧边栏；不修改任何真实组织信息</small></div><button class="toggle" type="button" role="switch" id="motion-toggle" aria-checked="${state.settings.animations}" data-action="motion-toggle"><span>界面动效<small>支持系统“减少动态效果”偏好</small></span><span class="toggle-track"></span></button></div><div class="settings-footer"><button class="btn primary" type="submit">${icon('check')}保存偏好</button></div></form><section class="panel"><div class="panel-head"><h2>外观与原生恢复</h2></div><div class="settings-body"><p class="muted" style="font-size:12px;margin-bottom:18px">NOVA 是可关闭的外观增强。站内提供真实原生模板的只读对照；实际 Django 项目通过主题开关恢复原生样式。</p><div style="display:flex;gap:10px;flex-wrap:wrap">${button('切换深浅主题', 'theme', '', 'sun')}${button('查看原生模板对照', 'native', '', 'history')}${button('集成与恢复说明', 'docs', 'subtle', 'book')}</div></div></section><section class="panel"><div class="panel-head"><h2>重置演示数据</h2></div><div class="settings-body"><p class="muted" style="font-size:12px;margin-bottom:18px">清除当前浏览器里的用户、角色及偏好修改，恢复最初的演示内容。</p>${button('恢复演示初始状态', 'reset-demo', 'danger', 'history')}</div></section></div>`
   );
 }
 function hasUnsavedChanges() {
@@ -470,7 +480,6 @@ function applyRoute(route) {
   layout();
   window.scrollTo({ top: 0 });
   $('#view h1')?.focus({ preventScroll: true });
-  document.title = (nav.find((n) => n[0] === state.view)?.[2] || '控制台') + ' · NOVA Admin';
 }
 function navigate(route) {
   if (!validRoute(route)) return;
@@ -865,7 +874,12 @@ const actions = {
     permissionDraft = null;
     state.users = structuredClone(initialUsers);
     state.permissions = structuredClone(initialPermissions);
-    state.settings = { workspace: 'NOVA 工作空间', animations: true, compact: false };
+    state.settings = {
+      brandName: defaultBrandName,
+      workspace: 'NOVA 工作空间',
+      animations: true,
+      compact: false,
+    };
     ['nova-users', 'nova-permissions', 'nova-settings'].forEach((k) => {
       try {
         localStorage.removeItem(k);
@@ -1076,12 +1090,17 @@ document.addEventListener('submit', (e) => {
   }
   if (e.target.id === 'settings-form') {
     let name = $('#workspace-name').value.trim();
+    if (!$('#brand-name').value.trim()) {
+      $('#brand-name').focus();
+      return;
+    }
     if (!name) {
       $('#workspace-name').focus();
       return;
     }
     const next = {
       ...state.settings,
+      brandName: brandName($('#brand-name').value),
       workspace: name,
       animations: $('#motion-toggle').getAttribute('aria-checked') === 'true',
     };
@@ -1089,7 +1108,7 @@ document.addEventListener('submit', (e) => {
     state.settings = next;
     mainFormDirty = false;
     layout();
-    toast('工作空间偏好已保存');
+    toast('后台偏好已保存');
   }
 });
 document.addEventListener('keydown', (e) => {

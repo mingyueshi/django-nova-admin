@@ -1,5 +1,10 @@
 import { applyPalette, savedPalette, paletteOptions } from './palette.js';
 import './login-slider-demo.js';
+import { savedBrandName, updateLoginBrand } from './branding.js';
+updateLoginBrand(savedBrandName());
+window.addEventListener('storage', (event) => {
+  if (event.key === 'nova-settings' || event.key === null) updateLoginBrand(savedBrandName());
+});
 // Public interaction demo only. No authentication, fetch, cookies or credential storage.
 // The optional Django integration validates its challenge independently on the server.
 const $ = (selector) => document.querySelector(selector);

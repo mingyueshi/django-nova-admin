@@ -20,7 +20,7 @@ async function login(storage = {}, fail = false) {
   const context = dom.getInternalVMContext();
   const module = new vm.SourceTextModule(fs.readFileSync(path.join(root, 'js/login.js'), 'utf8'), { context });
   await module.link(async spec => {
-    assert.ok(['./palette.js', './login-slider-demo.js'].includes(spec));
+    assert.ok(['./palette.js', './login-slider-demo.js', './branding.js'].includes(spec));
     const helper = new vm.SourceTextModule(fs.readFileSync(path.join(root, 'js', spec), 'utf8'), { context });
     await helper.link(() => { throw new Error('Unexpected import'); });
     return helper;

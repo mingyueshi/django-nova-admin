@@ -1,5 +1,6 @@
 """Small declarative branding boundary; settings contain data, never markup."""
 import re
+import unicodedata
 from urllib.parse import unquote, urlsplit
 
 from django.conf import settings
@@ -50,12 +51,19 @@ def _text(value):
     return force_str(value) if isinstance(value, (str, Promise)) else ""
 
 
+def brand_initial(name):
+    """One readable letter/number; keep Chinese characters, uppercase Latin."""
+    text = unicodedata.normalize("NFKC", _text(name))
+    return next((char.upper()[0] for char in text if char.isalnum()), "?")
+
+
 def branding():
     """Return independent, validated values without changing project settings."""
     config = getattr(settings, "NOVA_ADMIN_BRANDING", {})
     if not isinstance(config, dict):
         config = {}
     return {
+        "name": _text(config.get("name", "")).strip(),
         "logo_url": local_static_url(config.get("logo")),
         "logo_alt": _text(config.get("logo_alt", "")),
         "favicon_url": local_static_url(config.get("favicon"), favicon=True),

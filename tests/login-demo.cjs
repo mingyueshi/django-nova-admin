@@ -69,6 +69,7 @@ async function createDemo(options = {}) {
     system.matches = value;
     mediaListeners.forEach((handler) => handler({ matches: value, media: system.media }));
   };
+  if (options.savedSettings !== undefined) w.localStorage.setItem('nova-settings', options.savedSettings);
   if (options.savedTheme !== undefined) w.localStorage.setItem('nova-theme', options.savedTheme);
   const realGetItem = w.Storage.prototype.getItem;
   const realSetItem = w.Storage.prototype.setItem;
@@ -101,7 +102,7 @@ async function createDemo(options = {}) {
   w.HTMLImageElement.prototype.decode = async function () {};
   w.eval(fs.readFileSync(path.join(project, 'dist/vendor/nova-slider-captcha/slider.js'), 'utf8'));
   await module.link(async (specifier) => {
-    assert.ok(['./palette.js', './login-slider-demo.js'].includes(specifier), 'Only local presentation helpers');
+    assert.ok(['./palette.js', './login-slider-demo.js', './branding.js'].includes(specifier), 'Only local presentation helpers');
     const dependency = new vm.SourceTextModule(fs.readFileSync(path.join(project, 'dist/js', specifier), 'utf8'), { context: dom.getInternalVMContext() });
     await dependency.link(() => { throw new Error('Unexpected nested dependency'); });
     return dependency;
@@ -157,7 +158,7 @@ async function createDemo(options = {}) {
       assert.equal(entry.key, 'nova-theme', 'Theme is the only allowed persisted data');
       assert.ok(['light', 'dark', 'auto'].includes(entry.value));
     }
-    for (let i = 0; i < w.localStorage.length; i++) assert.equal(w.localStorage.key(i), 'nova-theme');
+    for (let i = 0; i < w.localStorage.length; i++) assert.ok(['nova-theme','nova-settings'].includes(w.localStorage.key(i)));
   };
   return { w, d, q, click, input, change, code, answer, submit, noSuccess, idle, advance,
     timerHistory, pendingCallback, systemDark, storageWrites, safe, close: () => dom.window.close() };
@@ -641,6 +642,37 @@ test('vendored slider bytes match the declared MIT source manifest', () => {
   for (const [name, digest] of Object.entries(manifest.files))
     assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(base, name))).digest('hex'), digest);
 });
+
+test('login and decorative initial read the same configured name as the dashboard', (ui) => {
+  assert.equal(ui.q('[data-brand-name]').textContent,'星河后台');
+  for(const badge of ui.d.querySelectorAll('[data-brand-initial]')) assert.equal(badge.textContent,'星');
+  assert.equal(ui.d.title,'登录页预览 · 星河后台');
+}, {savedSettings:JSON.stringify({brandName:'星河后台',workspace:'Example',animations:true})});
+
+test('cross-tab brand update preserves entered credentials and current CAPTCHA', (ui) => {
+  const code=ui.answer();ui.input('#demo-username','unfinished-user');
+  // Populate shared storage without recording a user-originated demo write.
+  const next=JSON.stringify({brandName:'Atlas Admin',workspace:'Example',animations:true});
+  ui.w.localStorage.setItem('nova-settings',next);
+  ui.storageWrites.pop();
+  ui.w.dispatchEvent(new ui.w.StorageEvent('storage',{key:'nova-settings',newValue:next}));
+  assert.equal(ui.q('[data-brand-name]').textContent,'Atlas Admin');
+  assert.equal(ui.q('[data-brand-initial]').textContent,'A');
+  assert.equal(ui.q('#demo-username').value,'unfinished-user');
+  assert.equal(ui.q('#demo-captcha').value,code);
+});
+
+test('malformed stored identity falls back without writing storage', (ui) => {
+  assert.equal(ui.q('[data-brand-name]').textContent,'NOVA');
+  assert.equal(ui.q('[data-brand-initial]').textContent,'N');
+  assert.deepEqual(ui.storageWrites,[]);
+  const partial = JSON.stringify({brandName:'Partial invalid settings'});
+  ui.w.localStorage.setItem('nova-settings',partial);
+  ui.storageWrites.pop();
+  ui.w.dispatchEvent(new ui.w.StorageEvent('storage',{key:'nova-settings',newValue:partial}));
+  assert.equal(ui.q('[data-brand-name]').textContent,'NOVA');
+  assert.deepEqual(ui.storageWrites,[]);
+}, {savedSettings:'invalid-json'});
 
 async function main() {
   assert.equal(typeof vm.SourceTextModule, 'function', 'Use node --experimental-vm-modules');

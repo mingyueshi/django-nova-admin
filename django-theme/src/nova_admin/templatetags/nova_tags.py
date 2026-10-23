@@ -9,6 +9,18 @@ from django.utils.translation import pgettext
 register = template.Library()
 
 
+@register.simple_tag(takes_context=True)
+def nova_brand(context):
+    """Resolve this AdminSite's identity without mutating the site instance."""
+    from nova_admin.branding import brand_initial, _text
+    from django.utils.translation import gettext
+
+    config = context.get("nova_admin_branding") or {}
+    name = (config.get("name") or _text(context.get("site_header")).strip()
+            or _text(context.get("site_title")).strip() or gettext("Django administration"))
+    return {"name": name, "initial": brand_initial(name)}
+
+
 @register.simple_tag
 def nova_icon(name, size=20, label='', stroke_width=None):
     """Render a bundled namespaced SVG, with an optional accessible label."""

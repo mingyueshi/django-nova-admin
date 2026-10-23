@@ -32,7 +32,21 @@
 
 <header id="header">
 <div id="branding">
-<div class="nova-custom-brand" id="site-name"><a href="index.html"><img alt="NOVA" class="nova-brand-logo" decoding="async" src="../static/catalog/brand/logo.svg"/><span>Nova · 管理中心</span></a></div>
+<div class="nova-custom-brand" id="site-name"><a href="index.html"><img alt="NOVA" class="nova-brand-logo" decoding="async" src="../static/catalog/brand/logo.svg"/><span class="nova-brand-name">Nova · 管理中心</span></a></div>
+<button aria-disabled="true" class="theme-toggle" disabled="disabled" type="button">
+<span class="visually-hidden theme-label-when-auto">切换主题（当前主题：自动）</span>
+<span class="visually-hidden theme-label-when-light">切换主题（当前主题：浅色）</span>
+<span class="visually-hidden theme-label-when-dark">切换主题（当前主题：深色）</span>
+<svg aria-hidden="true" class="theme-icon-when-auto">
+<use xlink:href="#icon-auto"></use>
+</svg>
+<svg aria-hidden="true" class="theme-icon-when-dark">
+<use xlink:href="#icon-moon"></use>
+</svg>
+<svg aria-hidden="true" class="theme-icon-when-light">
+<use xlink:href="#icon-sun"></use>
+</svg>
+</button>
 </div>
 </header>
 

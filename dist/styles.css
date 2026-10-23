@@ -254,3 +254,8 @@ select option{background:var(--panel);color:var(--text)}
 .icon-library-card button>.pill{grid-column:2;grid-row:1;justify-self:end}
 .icon-library-card{display:flex;flex-direction:column}
 .icon-library-card>a{margin-top:auto}
+
+/* Configurable project names can wrap in the fixed-width sidebar. */
+.brand { min-width:0; }
+.brand-mark { flex-shrink:0; }
+.brand-name { min-width:0; overflow-wrap:anywhere; letter-spacing:.02em; font-size:18px; line-height:1.4; }

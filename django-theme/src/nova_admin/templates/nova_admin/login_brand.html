@@ -1,8 +1,10 @@
 {# Desktop-only brand sculpture; purely decorative, never authentication content. #}
+{% load nova_tags %}
 {% block nova_login_art %}
 {% if nova_admin_branding.login_background_url %}
 <div class="nova-login-art nova-login-art--image" aria-hidden="true"><img class="nova-login-background" src="{{ nova_admin_branding.login_background_url|force_escape }}" alt="" decoding="async"></div>
 {% else %}
-<div class="nova-login-art" aria-hidden="true"><i></i><i></i><span class="nova-login-glyph">{{ site_title|first|default:'N' }}</span></div>
+{% nova_brand as brand %}
+<div class="nova-login-art" aria-hidden="true"><i></i><i></i><span class="nova-login-glyph">{{ brand.initial|force_escape }}</span></div>
 {% endif %}
 {% endblock %}

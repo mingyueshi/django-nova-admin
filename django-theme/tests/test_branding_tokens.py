@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy
 
-from nova_admin.branding import branding, local_static_url
+from nova_admin.branding import branding, brand_initial, local_static_url
 from nova_admin.context_processors import theme
 from nova_admin.preferences import SESSION_KEY
 
@@ -23,6 +23,20 @@ BRAND = {"logo": "project/brand.svg", "logo_alt": "Example brand", "favicon": "p
 
 
 class BrandingBoundaryTests(SimpleTestCase):
+    def test_initial_supports_chinese_latin_numbers_and_unicode(self):
+        for name, initial in (("星河后台", "星"), (" atlas", "A"), ("-- orbit", "O"),
+                              ("2026 Admin", "2"), ("équipe", "É"), ("Ａtlas", "A"),
+                              ("𠮷野后台", "𠮷"), ("***", "?"), (None, "?")):
+            with self.subTest(name=name):
+                self.assertEqual(brand_initial(name), initial)
+
+    def test_name_is_optional_plain_text_without_mutating_settings(self):
+        for name, expected in (("  星河管理  ", "星河管理"), (gettext_lazy("Atlas"), "Atlas"),
+                               (None, ""), (True, ""), ({"name": "bad"}, "")):
+            config = {"name": name}
+            with self.subTest(name=name), override_settings(NOVA_ADMIN_BRANDING=config):
+                self.assertEqual(branding()["name"], expected)
+                self.assertEqual(config, {"name": name})
     @override_settings(STATIC_URL="/static/")
     def test_relative_images_use_django_static_and_manifest_names(self):
         self.assertEqual(local_static_url("project/logo.svg"), "/static/project/logo.svg")
@@ -88,6 +102,56 @@ class BrandingBoundaryTests(SimpleTestCase):
 
 @override_settings(NOVA_ADMIN_BRANDING=BRAND, STATIC_URL="/static/")
 class BrandingRenderingTests(TestCase):
+    def test_configured_name_updates_header_title_and_login_decoration(self):
+        for name, initial in (("星河后台", "星"), ("Atlas Admin", "A"), ("-- orbit", "O")):
+            with self.subTest(name=name), override_settings(NOVA_ADMIN_BRANDING={"name": name}):
+                soup = BeautifulSoup(self.page().content, "html.parser")
+                self.assertEqual(soup.select_one('.nova-brand-name').get_text(), name)
+                self.assertEqual(soup.select_one('.nova-brand-initial').get_text(), initial)
+                self.assertEqual(soup.select_one('.nova-brand-initial')['aria-hidden'], 'true')
+                self.assertEqual(soup.select_one('.nova-login-glyph').get_text(), initial)
+                self.assertTrue(soup.title.get_text().endswith(' | ' + name))
+                self.assertEqual(len(soup.select('#site-name')), 1)
+                self.assertEqual(len(soup.select('#login-form')), 1)
+
+    @override_settings(NOVA_ADMIN_BRANDING={})
+    def test_existing_adminsite_header_drives_initial_without_global_mutation(self):
+        from django.contrib import admin
+        original = admin.site.site_header
+        for name, initial in (("Warehouse", "W"), ("志途谱后台", "志")):
+            # Patch the initialized site's actual attributes, not LazyObject's
+            # proxy __dict__, so unittest.mock restores instance overrides.
+            with self.subTest(name=name), patch.object(admin.site._wrapped, 'site_header', name), patch.object(admin.site._wrapped, 'site_title', 'Different tab title'):
+                soup = BeautifulSoup(self.page().content, "html.parser")
+                self.assertEqual(soup.select_one('.nova-brand-initial').get_text(), initial)
+                self.assertEqual(soup.select_one('.nova-login-glyph').get_text(), initial)
+                self.assertEqual(soup.select_one('.nova-brand-name').get_text(), name)
+                self.assertIn('Different tab title', soup.title.get_text())
+        self.assertEqual(admin.site.site_header, original)
+
+    def test_explicit_picture_logo_takes_precedence_over_generated_initial(self):
+        with override_settings(NOVA_ADMIN_BRANDING={**BRAND, 'name': 'Atlas'}):
+            soup = BeautifulSoup(self.page().content, 'html.parser')
+        self.assertEqual(soup.select_one('.nova-brand-name').get_text(), 'Atlas')
+        self.assertEqual(len(soup.select('.nova-brand-logo')), 1)
+        self.assertIsNone(soup.select_one('.nova-brand-initial'))
+
+    def test_even_marked_safe_name_cannot_insert_markup(self):
+        name = mark_safe('<img src=x onerror="bad()"><script>bad()</script>')
+        with override_settings(NOVA_ADMIN_BRANDING={'name': name}):
+            soup = BeautifulSoup(self.page().content, 'html.parser')
+        self.assertEqual(soup.select_one('.nova-brand-name').get_text(), name)
+        self.assertIn(name, soup.title.get_text())
+        self.assertIsNone(soup.select_one('.nova-brand-name img, .nova-brand-name script, [onerror]'))
+
+    @override_settings(NOVA_ADMIN_BRANDING={'name': 'Configured brand'})
+    def test_native_and_disabled_ignore_name_and_generated_badge(self):
+        for enabled, mode in ((True, 'native'), (False, 'dark')):
+            with override_settings(NOVA_ADMIN_ENABLED=enabled):
+                response = self.page(mode)
+                self.assertNotContains(response, 'Configured brand')
+                self.assertNotContains(response, 'nova-brand-initial')
+
     def page(self, mode="light"):
         session = self.client.session
         session[SESSION_KEY] = mode

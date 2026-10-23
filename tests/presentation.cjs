@@ -47,6 +47,54 @@ const wait = () => new Promise(r => setTimeout(r, 25));
       assert.equal(input.value,'299');assert.equal(input.type,'number');assert.equal(input.step,'0.01');
     });
   } finally { app.close(); }
+  for (const [name, initial] of [['Atlas Admin','A'], ['星河后台','星'], ['  -- orbit Portal  ','O'], ['2026后台','2'], ['★★★','?']]) {
+    const app = await createApp({storage:{'nova-settings':JSON.stringify({workspace:'Existing workspace',animations:true,brandName:name})}});
+    try {
+      check(`Configured brand ${name} drives sidebar, initial, title and accessible name`, () => {
+        assert.equal(app.d.querySelector('.brand-name').textContent,name.trim());
+        assert.equal(app.d.querySelector('.brand-mark').textContent,initial);
+        assert.equal(app.d.querySelector('.brand-mark').getAttribute('aria-hidden'),'true');
+        assert.equal(app.d.querySelector('.brand').getAttribute('aria-label'),name.trim()+' 管理首页');
+        assert.ok(app.d.title.endsWith(' · '+name.trim()));
+      });
+    } finally {app.close();}
+  }
+  const brandApp = await createApp({url:'https://example.test/#settings'});
+  try {
+    const q = selector => brandApp.d.querySelector(selector);
+    const setName = value => {q('#brand-name').value=value;q('#brand-name').dispatchEvent(new brandApp.w.Event('input',{bubbles:true}));};
+    const submit = () => q('#settings-form').dispatchEvent(new brandApp.w.Event('submit',{bubbles:true,cancelable:true}));
+    check('Settings save backend name and immediately update sidebar independently of workspace', () => {
+      setName('星河运营');submit();
+      assert.equal(JSON.parse(brandApp.w.localStorage.getItem('nova-settings')).brandName,'星河运营');
+      assert.equal(q('.brand-name').textContent,'星河运营');assert.equal(q('.brand-mark').textContent,'星');
+      assert.equal(q('.workspace-copy strong').textContent,'NOVA 工作空间');
+    });
+    check('Blank backend name retains the saved brand and focuses its input', () => {
+      setName('   ');submit();
+      assert.equal(q('.brand-name').textContent,'星河运营');
+      assert.equal(brandApp.d.activeElement,q('#brand-name'));
+    });
+    check('Unsafe backend names display as text without executable nodes', () => {
+      const name='<img src=x onerror=bad()>后台';setName(name);submit();
+      assert.equal(q('.brand-name').textContent,name);
+      assert.equal(q('.brand-name img'),null);assert.equal(q('[onerror]'),null);
+    });
+    check('Failed settings persistence preserves draft and keeps the saved brand', () => {
+      setName('New unsaved brand');
+      brandApp.w.Storage.prototype.setItem = () => {throw new Error('storage unavailable');};
+      submit();
+      assert.equal(q('#brand-name').value,'New unsaved brand');
+      assert.equal(q('.brand-name').textContent,'<img src=x onerror=bad()>后台');
+      assert.ok(q('#storage-warning'));
+    });
+  } finally {brandApp.close();}
+  const legacyBrand = await createApp({storage:{'nova-settings':JSON.stringify({workspace:'Legacy workspace',animations:true})}});
+  try {check('Existing saved workspace preferences receive the default brand safely', () => {
+    assert.equal(legacyBrand.d.querySelector('.brand-name').textContent,'NOVA');
+    assert.equal(legacyBrand.d.querySelector('.brand-mark').textContent,'N');
+    assert.equal(legacyBrand.d.querySelector('.workspace-copy strong').textContent,'Legacy workspace');
+  });} finally {legacyBrand.close();}
   const read=(name)=>fs.readFileSync(path.join(__dirname,'../dist',name),'utf8');
   check('All preview Chinese stacks include the same available local fallbacks', () => {
     for (const file of ['styles.css','login-preview.css']) for(const font of ['Noto Sans SC','Source Han Sans SC','HarmonyOS Sans SC','Microsoft YaHei']) assert.ok(read(file).includes(`"${font}"`));

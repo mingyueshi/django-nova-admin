@@ -262,7 +262,7 @@ body.nova-admin { --nova-shadow: 0 8px 28px #0508160a; }
 body.nova-admin #header { min-height: 64px; box-sizing: border-box; }
 body.nova-admin #branding { margin-inline-end: auto; }
 body.nova-admin #site-name a { display: inline-flex; align-items: center; gap: 10px; }
-body.nova-admin #site-name a::before { content: 'N'; display: grid; place-items: center; width: 31px; height: 31px; border-radius: var(--nova-login-radius, 9px); background: var(--button-bg); color: var(--button-fg); font-size: 17px; }
+body.nova-admin .nova-brand-initial { display:grid; place-items:center; flex:0 0 31px; width:31px; height:31px; border-radius:var(--nova-login-radius,9px); background:var(--button-bg); color:var(--button-fg); font-size:17px; line-height:1; font-weight:650; }
 body.nova-admin .breadcrumbs { margin: 0; font-size: 12px; line-height: 1.6; }
 body.nova-admin ol.breadcrumbs { list-style: none; }
 body.nova-admin #content { max-width: none; box-sizing: border-box; }
