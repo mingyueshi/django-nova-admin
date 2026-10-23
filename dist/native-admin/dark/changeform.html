@@ -12,9 +12,11 @@
 <link href="../static/nova_admin/theme.css" rel="stylesheet"/>
 <link href="../static/nova_admin/tokens.css" rel="stylesheet"/>
 <link href="../static/nova_admin/presets.css" rel="stylesheet"/>
+<link href="../static/nova_admin/command-palette.css" rel="stylesheet"/>
 <link href="../static/catalog/enterprise.css" rel="stylesheet"/>
 <link href="../static/admin/css/widgets.css" rel="stylesheet"/>
 <link href="../static/admin/css/forms.css" rel="stylesheet"/>
+
 
 
 
@@ -83,6 +85,21 @@
 </svg>
 </button>
 </div>
+<button aria-controls="nova-command-palette" aria-disabled="true" aria-haspopup="dialog" class="nova-command-open" disabled="disabled" hidden="" type="button">
+  搜索导航 <kbd aria-hidden="true">Ctrl+K</kbd>
+</button>
+<dialog aria-labelledby="nova-command-title" class="nova-command-palette" hidden="" id="nova-command-palette">
+<div class="nova-command-header">
+<h2 id="nova-command-title">搜索导航</h2>
+<button aria-disabled="true" disabled="disabled" type="button">关闭</button>
+</div>
+<label for="nova-command-query">应用或模型名称</label>
+<input aria-controls="nova-command-results" aria-describedby="nova-command-help" aria-disabled="true" disabled="disabled" id="nova-command-query" maxlength="200" type="search"/>
+<p class="nova-command-help" id="nova-command-help">仅搜索已授权导航。使用方向键选择、Enter 打开、Escape 关闭。</p>
+<p aria-atomic="true" aria-live="polite" class="nova-command-status" role="status"></p>
+<ul class="nova-command-results" id="nova-command-results"></ul>
+<p class="nova-command-empty" hidden="">没有匹配的导航项。</p>
+</dialog>
 <form aria-label="后台外观" class="nova-theme-switcher" data-sample-form="inert">
 
 

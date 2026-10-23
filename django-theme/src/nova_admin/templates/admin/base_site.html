@@ -1,6 +1,8 @@
 {% extends "admin/base_site.html" %}
 
-{% block title %}{% if nova_admin_active and nova_admin_branding.name %}{% with site_title=nova_admin_branding.name|force_escape %}{{ block.super }}{% endwith %}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block title %}{% if nova_admin_active and nova_admin_branding.name %}
+  {% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ nova_admin_branding.name|force_escape }}
+{% else %}{{ block.super }}{% endif %}{% endblock %}
 
 {% block branding %}
   {% if nova_admin_active %}

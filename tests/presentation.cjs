@@ -95,6 +95,11 @@ const wait = () => new Promise(r => setTimeout(r, 25));
     assert.equal(legacyBrand.d.querySelector('.brand-mark').textContent,'N');
     assert.equal(legacyBrand.d.querySelector('.workspace-copy strong').textContent,'Legacy workspace');
   });} finally {legacyBrand.close();}
+  const {brandName} = await import('../dist/js/branding.js');
+  check('Brand name codepoint limit matches shared backend cases', () => {
+    const cases=JSON.parse(fs.readFileSync(path.join(__dirname,'../django-theme/tests/fixtures/brand-names.json'),'utf8'));
+    for(const fixture of cases) assert.equal(brandName(fixture.value),fixture.normalized || 'NOVA',fixture.case);
+  });
   const read=(name)=>fs.readFileSync(path.join(__dirname,'../dist',name),'utf8');
   check('All preview Chinese stacks include the same available local fallbacks', () => {
     for (const file of ['styles.css','login-preview.css']) for(const font of ['Noto Sans SC','Source Han Sans SC','HarmonyOS Sans SC','Microsoft YaHei']) assert.ok(read(file).includes(`"${font}"`));

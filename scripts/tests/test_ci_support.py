@@ -63,7 +63,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':127,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':152,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -114,7 +114,7 @@ class FrontendContractTests(unittest.TestCase):
         names = support.frontend_contract()
         self.assertEqual(len(names), 18)
         self.assertEqual(names[-5:], ['icons', 'analytics', 'chart-libraries', 'analysis-lab', 'shared-css'])
-        self.assertEqual(support.FRONTEND_TOTAL, 1297)
+        self.assertEqual(support.FRONTEND_TOTAL, 1298)
 
     def altered_package(self, mutation):
         with tempfile.TemporaryDirectory() as tmp:
@@ -154,7 +154,7 @@ TOTAL 13 enterprise preview tests passed
 TOTAL 68 refactor boundary checks passed (Node/jsdom)
 TOTAL 7 catalog bulk publish checks passed (Node/jsdom)
 TOTAL 44 passed, 0 failed (Node/jsdom static login demo)
-TOTAL 38 presentation checks passed
+TOTAL 39 presentation checks passed
 TOTAL 254 pagination checks passed (Node/jsdom)
 TOTAL 5 extensions guide tests passed
 TOTAL 165 palette checks passed
@@ -166,7 +166,7 @@ TOTAL 4 shared login CSS checks passed
 """
     GROUP_LOGS = {
         'frontend': FRONTEND_LOG,
-        'navigation': '78 navigation DOM scenarios passed (3 Django script versions).\n',
+        'navigation': '78 navigation DOM scenarios passed (3 Django script versions).\n25 command palette DOM scenarios passed.\n',
         'enhancements': 'TOTAL 38 changelist enhancement tests passed\n',
         'captcha': 'TOTAL 11 CAPTCHA enhancement tests passed\n',
     }
@@ -190,16 +190,16 @@ TOTAL 4 shared login CSS checks passed
     def collect(self, root):
         return support.collect_node(root / 'logs', root / 'output', COMMIT, '24.21.0', '11.19.0')
 
-    def test_current_log_fixture_records_all_1297_checks_in_eighteen_suites(self):
+    def test_current_log_fixture_records_all_1298_checks_in_eighteen_suites(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.logs(root)
             result = self.collect(root)
-            self.assertEqual(result['frontend'], 1297)
-            self.assertEqual(result['theme_js'], 127)
+            self.assertEqual(result['frontend'], 1298)
+            self.assertEqual(result['theme_js'], 152)
             self.assertEqual(len(result['frontend_suites']), 18)
             self.assertEqual(result['frontend_suites']['palettes'], 165)
-            self.assertEqual(sum(result['frontend_suites'].values()), 1297)
+            self.assertEqual(sum(result['frontend_suites'].values()), 1298)
             self.assertEqual(json.loads((root / 'output/report.json').read_text()), result)
 
     def test_every_frontend_suite_requires_exactly_one_success_summary(self):
@@ -217,7 +217,7 @@ TOTAL 4 shared login CSS checks passed
                     self.assertFalse((root / 'output').exists())
 
     def test_same_total_cannot_hide_an_absent_suite(self):
-        # Omit the 165 palette checks but add those 165 to pagination: still 1297.
+        # Omit the 165 palette checks but add those 165 to pagination: still 1298.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             logs = self.logs(root)
@@ -272,6 +272,20 @@ TOTAL 4 shared login CSS checks passed
                 (logs / (group + '.log')).write_text('FAIL example assertion\n' + self.GROUP_LOGS[group])
                 with self.assertRaises(ValueError): self.collect(root)
 
+    def test_navigation_requires_both_original_and_command_palette_summaries(self):
+        lines = self.GROUP_LOGS['navigation'].splitlines(keepends=True)
+        for index in range(2):
+            for change in ('missing', 'duplicate', 'wrong-count'):
+                with self.subTest(index=index, change=change), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    logs = self.logs(root)
+                    line = lines[index]
+                    altered = {'missing': '', 'duplicate': line * 2,
+                               'wrong-count': line.replace(line.split()[0], '0', 1)}[change]
+                    (logs / 'navigation.log').write_text(''.join(lines).replace(line, altered))
+                    with self.assertRaisesRegex(ValueError, 'Node test evidence: navigation'):
+                        self.collect(root)
+
     def test_stale_enhancement_count_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -322,7 +336,7 @@ TOTAL 4 shared login CSS checks passed
                 (logs / name).unlink()
             result = support.check_node_summaries(logs)
             self.assertEqual(result['kind'], 'node-suite-contract')
-            self.assertEqual(result['frontend'], 1297)
+            self.assertEqual(result['frontend'], 1298)
             self.assertIn('no install, runtime, step', result['boundary'])
             self.assertNotIn('commit', result)
             self.assertNotIn('node', result)

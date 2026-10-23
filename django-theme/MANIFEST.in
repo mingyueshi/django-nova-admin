@@ -2,6 +2,6 @@ recursive-include src/nova_admin/templates *.html
 recursive-include src/nova_admin/static *.css *.js
 recursive-include src/nova_admin/locale *.po *.mo
 recursive-include demo *.py *.html *.css *.webp *.svg *.json *.po *.mo *.txt
-recursive-include tests *.py
+recursive-include tests *.py *.json
 recursive-include scripts *.py *.sh *.mjs *.json
 include *.md LICENSE requirements-test.txt

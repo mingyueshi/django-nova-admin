@@ -26,7 +26,7 @@ FRONTEND_SUMMARIES = {
     'boundaries': 'TOTAL 68 refactor boundary checks passed (Node/jsdom)',
     'bulk-publish': 'TOTAL 7 catalog bulk publish checks passed (Node/jsdom)',
     'login': 'TOTAL 44 passed, 0 failed (Node/jsdom static login demo)',
-    'presentation': 'TOTAL 38 presentation checks passed',
+    'presentation': 'TOTAL 39 presentation checks passed',
     'pagination': 'TOTAL 254 pagination checks passed (Node/jsdom)',
     'extensions': 'TOTAL 5 extensions guide tests passed',
     'palettes': 'TOTAL 165 palette checks passed',
@@ -39,7 +39,8 @@ FRONTEND_SUMMARIES = {
 FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_SUMMARIES.items()}
 FRONTEND_TOTAL = sum(FRONTEND_COUNTS.values())
 ENHANCEMENT_TOTAL = 38
-THEME_JS_TOTAL = 78 + ENHANCEMENT_TOTAL + 11
+COMMAND_PALETTE_TOTAL = 25
+THEME_JS_TOTAL = 78 + COMMAND_PALETTE_TOTAL + ENHANCEMENT_TOTAL + 11
 
 def read(path):
     return json.loads(Path(path).read_text())
@@ -68,7 +69,10 @@ def check_node_summaries(logs):
     logs = Path(logs)
     for name, pattern, summaries in [
         ('frontend', r'^TOTAL\b.*$', list(FRONTEND_SUMMARIES.values())),
-        ('navigation', r'^\d+ navigation DOM scenarios .+$', ['78 navigation DOM scenarios passed (3 Django script versions).']),
+        ('navigation', r'^\d+ (?:navigation|command palette) DOM scenarios .+$', [
+            '78 navigation DOM scenarios passed (3 Django script versions).',
+            f'{COMMAND_PALETTE_TOTAL} command palette DOM scenarios passed.',
+        ]),
         ('enhancements', r'^TOTAL\b.*$', [f'TOTAL {ENHANCEMENT_TOTAL} changelist enhancement tests passed']),
         ('captcha', r'^TOTAL\b.*$', ['TOTAL 11 CAPTCHA enhancement tests passed']),
     ]:

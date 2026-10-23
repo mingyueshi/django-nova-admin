@@ -12,12 +12,14 @@ register = template.Library()
 @register.simple_tag(takes_context=True)
 def nova_brand(context):
     """Resolve this AdminSite's identity without mutating the site instance."""
-    from nova_admin.branding import brand_initial, _text
+    from nova_admin.branding import brand_initial, normalize_brand_name
     from django.utils.translation import gettext
 
     config = context.get("nova_admin_branding") or {}
-    name = (config.get("name") or _text(context.get("site_header")).strip()
-            or _text(context.get("site_title")).strip() or gettext("Django administration"))
+    name = (normalize_brand_name(config.get("name"))
+            or normalize_brand_name(context.get("site_header"))
+            or normalize_brand_name(context.get("site_title"))
+            or gettext("Django administration"))
     return {"name": name, "initial": brand_initial(name)}
 
 

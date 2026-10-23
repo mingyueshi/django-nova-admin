@@ -1,0 +1,21 @@
+/* Optional navigation only. Hidden entry/dialog stay inert without JavaScript. */
+body.nova-admin .nova-command-open[hidden], body.nova-admin .nova-command-palette[hidden],
+body.nova-admin .nova-command-empty[hidden] { display:none; }
+body.nova-admin .nova-command-open { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:6px 10px; border:1px solid var(--border-color); border-radius:var(--nova-control-radius,7px); color:var(--body-fg); background:var(--nova-panel,var(--body-bg)); font:inherit; font-size:12px; cursor:pointer; text-transform:none; }
+.nova-command-open kbd { font:inherit; font-size:11px; color:var(--body-quiet-color); }
+body.nova-admin .nova-command-palette { box-sizing:border-box; width:min(580px,calc(100vw - 24px)); max-width:calc(100vw - 24px); max-height:calc(100dvh - 32px); padding:20px; border:1px solid var(--border-color); border-radius:var(--nova-radius,12px); background:var(--nova-panel,var(--body-bg)); color:var(--body-fg); box-shadow:0 20px 70px #0005; overflow:auto; text-align:start; }
+.nova-command-palette::backdrop { background:#0b102080; }
+.nova-command-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+body.nova-admin .nova-command-header h2 { margin:0; padding:0; background:none; color:var(--body-loud-color); font-size:18px; line-height:1.5; text-transform:none; letter-spacing:normal; }
+.nova-command-header button { min-height:44px; flex-shrink:0; padding:7px 10px; border:1px solid var(--border-color); border-radius:7px; background:var(--darkened-bg); color:var(--body-fg); font:inherit; cursor:pointer; }
+.nova-command-palette label { display:block; margin-bottom:8px; font-size:13px; }
+body.nova-admin .nova-command-palette input[type=search] { box-sizing:border-box; width:100%; min-width:0; min-height:44px; padding:10px 12px; border:1px solid var(--border-color); border-radius:7px; background:var(--darkened-bg); color:var(--body-fg); font:inherit; font-size:16px; }
+.nova-command-help, .nova-command-status, .nova-command-empty { font-size:12px; line-height:1.7; padding:0; margin:10px 0; color:var(--body-quiet-color); }
+body.nova-admin .nova-command-results { list-style:none; padding:0; margin:0; max-height:min(48vh,360px); overflow:auto; }
+.nova-command-results li { list-style:none; padding:0; margin:4px 0; }
+.nova-command-results a { display:flex; flex-direction:column; gap:3px; min-height:44px; box-sizing:border-box; padding:10px 12px; border:1px solid transparent; border-radius:7px; overflow-wrap:anywhere; color:var(--link-fg); text-decoration:none; }
+.nova-command-results a[data-active] { background:var(--darkened-bg); border-color:var(--border-color); }
+.nova-command-results small { color:var(--body-quiet-color); font-size:12px; }
+.nova-command-palette :is(a,button,input):focus-visible, .nova-command-open:focus-visible { outline:2px solid var(--link-fg); outline-offset:2px; }
+@media(max-width:600px) { body.nova-admin .nova-command-palette { padding:14px; } .nova-command-open kbd { display:none; } }
+@media(forced-colors:active) { .nova-command-palette::backdrop { background:Canvas; opacity:.7; } .nova-command-results a[data-active] { outline:1px solid Highlight; } }

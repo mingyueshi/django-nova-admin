@@ -11,6 +11,7 @@ from django.utils.functional import Promise
 
 _STATIC_PATH = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]*\Z")
 _IMAGE_SUFFIXES = {"svg", "png", "jpg", "jpeg", "gif", "webp", "avif"}
+BRAND_NAME_MAX_LENGTH = 64
 
 
 def local_static_url(path, *, favicon=False):
@@ -51,6 +52,11 @@ def _text(value):
     return force_str(value) if isinstance(value, (str, Promise)) else ""
 
 
+def normalize_brand_name(value):
+    """Trim and limit a plain-text name to 64 Unicode code points."""
+    return _text(value).strip()[:BRAND_NAME_MAX_LENGTH]
+
+
 def brand_initial(name):
     """One readable letter/number; keep Chinese characters, uppercase Latin."""
     text = unicodedata.normalize("NFKC", _text(name))
@@ -63,7 +69,7 @@ def branding():
     if not isinstance(config, dict):
         config = {}
     return {
-        "name": _text(config.get("name", "")).strip(),
+        "name": normalize_brand_name(config.get("name", "")),
         "logo_url": local_static_url(config.get("logo")),
         "logo_alt": _text(config.get("logo_alt", "")),
         "favicon_url": local_static_url(config.get("favicon"), favicon=True),

@@ -1,4 +1,5 @@
 """Declarative branding security, native rollback, and semantic token contracts."""
+import json
 import re
 from copy import deepcopy
 from pathlib import Path
@@ -14,7 +15,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy
 
-from nova_admin.branding import branding, brand_initial, local_static_url
+from nova_admin.branding import branding, brand_initial, local_static_url, normalize_brand_name
 from nova_admin.context_processors import theme
 from nova_admin.preferences import SESSION_KEY
 
@@ -23,6 +24,13 @@ BRAND = {"logo": "project/brand.svg", "logo_alt": "Example brand", "favicon": "p
 
 
 class BrandingBoundaryTests(SimpleTestCase):
+    def test_brand_name_codepoint_limit_matches_shared_frontend_cases(self):
+        cases = json.loads((Path(__file__).parent / 'fixtures' / 'brand-names.json').read_text())
+        for case in cases:
+            with self.subTest(case=case['case']), override_settings(NOVA_ADMIN_BRANDING={'name': case['value']}):
+                self.assertEqual(normalize_brand_name(case['value']), case['normalized'])
+                self.assertEqual(branding()['name'], case['normalized'])
+
     def test_initial_supports_chinese_latin_numbers_and_unicode(self):
         for name, initial in (("星河后台", "星"), (" atlas", "A"), ("-- orbit", "O"),
                               ("2026 Admin", "2"), ("équipe", "É"), ("Ａtlas", "A"),
@@ -110,9 +118,29 @@ class BrandingRenderingTests(TestCase):
                 self.assertEqual(soup.select_one('.nova-brand-initial').get_text(), initial)
                 self.assertEqual(soup.select_one('.nova-brand-initial')['aria-hidden'], 'true')
                 self.assertEqual(soup.select_one('.nova-login-glyph').get_text(), initial)
-                self.assertTrue(soup.title.get_text().endswith(' | ' + name))
+                self.assertTrue(soup.title.get_text(strip=True).endswith(' | ' + name))
                 self.assertEqual(len(soup.select('#site-name')), 1)
                 self.assertEqual(len(soup.select('#login-form')), 1)
+
+    def test_long_name_is_bounded_in_header_and_title_without_splitting_codepoints(self):
+        name = '𠮷' * 63 + '星' + 'discarded'
+        with override_settings(NOVA_ADMIN_BRANDING={'name': name}):
+            soup = BeautifulSoup(self.page().content, 'html.parser')
+        self.assertEqual(soup.select_one('.nova-brand-name').get_text(), name[:64])
+        self.assertTrue(soup.title.get_text(strip=True).endswith(' | ' + name[:64]))
+        self.assertNotIn('discarded', soup.title.get_text())
+
+    def test_explicit_title_preserves_subtitle_order_escaping_and_native_fallback(self):
+        name = mark_safe('A & <em>brand</em>')
+        for active, expected in ((True, 'Detail | Edit | ' + name), (False, 'Detail | Edit | Original')):
+            with self.subTest(active=active):
+                html = render_to_string('admin/base_site.html', {
+                    'nova_admin_active': active, 'nova_admin_branding': {'name': name},
+                    'subtitle': 'Detail', 'title': 'Edit', 'site_title': 'Original',
+                })
+                soup = BeautifulSoup(html, 'html.parser')
+                self.assertEqual(' '.join(soup.title.get_text().split()), expected)
+                self.assertIsNone(soup.title.find('em'))
 
     @override_settings(NOVA_ADMIN_BRANDING={})
     def test_existing_adminsite_header_drives_initial_without_global_mutation(self):

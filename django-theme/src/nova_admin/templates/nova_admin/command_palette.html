@@ -1,0 +1,18 @@
+{% load i18n %}
+<button type="button" class="nova-command-open" data-nova-command-open aria-haspopup="dialog" aria-controls="nova-command-palette" hidden>
+  {% translate 'Search navigation' context 'Nova Admin' %} <kbd aria-hidden="true" data-nova-command-shortcut>Ctrl+K</kbd>
+</button>
+<dialog id="nova-command-palette" class="nova-command-palette" aria-labelledby="nova-command-title" hidden
+        data-count-message="{% translate 'Results: {count}' context 'Nova Admin' %}">
+  <div class="nova-command-header">
+    <h2 id="nova-command-title">{% translate 'Search navigation' context 'Nova Admin' %}</h2>
+    <button type="button" data-nova-command-close>{% translate 'Close' context 'Nova Admin' %}</button>
+  </div>
+  <label for="nova-command-query">{% translate 'Application or model name' context 'Nova Admin' %}</label>
+  <input id="nova-command-query" type="search" maxlength="200" autocomplete="off" spellcheck="false"
+         aria-controls="nova-command-results" aria-describedby="nova-command-help" data-nova-command-query>
+  <p id="nova-command-help" class="nova-command-help">{% translate 'Search permitted navigation only. Use arrow keys to select, Enter to open, Escape to close.' context 'Nova Admin' %}</p>
+  <p class="nova-command-status" role="status" aria-live="polite" aria-atomic="true" data-nova-command-status></p>
+  <ul id="nova-command-results" class="nova-command-results" data-nova-command-results></ul>
+  <p class="nova-command-empty" data-nova-command-empty hidden>{% translate 'No matching navigation items.' context 'Nova Admin' %}</p>
+</dialog>

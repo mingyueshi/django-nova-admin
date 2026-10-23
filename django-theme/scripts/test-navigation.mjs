@@ -503,3 +503,4 @@ for (const path of paths) {
   console.log(`Navigation DOM: passed with ${path}`);
 }
 console.log(`${count} navigation DOM scenarios passed (${paths.length} Django script versions).`);
+await import('./test-command-palette.mjs');

@@ -127,6 +127,15 @@
         "bytes": 548,
         "gzip_bytes": 281
       }
+    },
+    "django-theme/src/nova_admin/static/nova_admin/command-palette.css": {
+      "bytes": 3259,
+      "gzip_bytes": 1012,
+      "sha256": "3a0a145a1ab9f3fcff9467d564590b27a16323a58087b9e9edb6b25388c9d7db",
+      "limits": {
+        "bytes": 3585,
+        "gzip_bytes": 1114
+      }
     }
   }
 }

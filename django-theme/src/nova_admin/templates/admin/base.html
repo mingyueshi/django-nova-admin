@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="{% static 'nova_admin/tokens.css' %}" {% nova_nonce %}>
     <link rel="stylesheet" href="{% static 'nova_admin/presets.css' %}" {% nova_nonce %}>
     {% endblock %}
+    {% if nova_admin_navigation and has_permission and not is_popup %}
+      <link rel="stylesheet" href="{% static 'nova_admin/command-palette.css' %}" {% nova_nonce %}>
+    {% endif %}
   {% endif %}
 {% endblock %}
 
@@ -21,6 +24,9 @@
   {% if nova_admin_active and nova_admin_navigation %}
     <script src="{% static 'nova_admin/navigation.js' %}" defer {% nova_nonce %}></script>
   {% endif %}
+  {% if nova_admin_active and nova_admin_navigation and has_permission and not is_popup %}
+    <script src="{% static 'nova_admin/command-palette.js' %}" defer {% nova_nonce %}></script>
+  {% endif %}
 {% endblock %}
 
 {% block footer %}{{ block.super }}{% if nova_admin_active %}{% block nova_footer %}{% include "nova_admin/brand_footer.html" %}{% endblock %}{% endif %}{% endblock %}
@@ -30,6 +36,9 @@
 {% block usertools %}
   {% if nova_admin_active and nova_admin_navigation and has_permission and not is_popup %}<div class="nova-user-tools">{% endif %}
   {{ block.super }}
+  {% if nova_admin_active and nova_admin_navigation and has_permission and not is_popup %}
+    {% include "nova_admin/command_palette.html" %}
+  {% endif %}
   {% if nova_admin_enabled and nova_admin_preference_url and has_permission and not is_popup %}
     {% include "nova_admin/theme_switcher.html" %}
   {% endif %}

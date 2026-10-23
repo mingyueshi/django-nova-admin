@@ -326,3 +326,27 @@ msgstr "此图形验证需要启用 JavaScript。请使用本站提供的同等�
 msgctxt "Nova Admin"
 msgid "Security verification is missing, expired, or already used. Please try again."
 msgstr "安全验证缺失、已过期或已使用，请重试。"
+
+msgctxt "Nova Admin"
+msgid "Search navigation"
+msgstr "搜索导航"
+
+msgctxt "Nova Admin"
+msgid "Close"
+msgstr "关闭"
+
+msgctxt "Nova Admin"
+msgid "Application or model name"
+msgstr "应用或模型名称"
+
+msgctxt "Nova Admin"
+msgid "Search permitted navigation only. Use arrow keys to select, Enter to open, Escape to close."
+msgstr "仅搜索已授权导航。使用方向键选择、Enter 打开、Escape 关闭。"
+
+msgctxt "Nova Admin"
+msgid "No matching navigation items."
+msgstr "没有匹配的导航项。"
+
+msgctxt "Nova Admin"
+msgid "Results: {count}"
+msgstr "结果：{count} 项"

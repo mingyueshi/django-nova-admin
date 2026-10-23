@@ -63,6 +63,8 @@ body.nova-admin {
 NOVA_ADMIN_BRANDING = {"name": "星河管理后台"}
 ```
 
+`name` 品牌字段在前后端均先去除首尾空白，再保留最多 64 个 Unicode 码点（不是 UTF-16 代码单元或字节）；中文和扩展平面字符遵循同一上限。
+
 `name` 统一当前 Nova 外观的页头名称、浏览器站点标题和自动 Logo。配置了有效 `logo` 图片时，页头优先显示图片；图片路径校验不通过时回退到自动标识。`favicon` 和 `login_background` 仍是独立的可选图片设置，不自动生成。
 
 未设置 `name` 时，直接使用**当前 AdminSite** 的 `site_header`；它为空时再回退到 `site_title` 或 Django 的默认管理名称。不会把其他 AdminSite 的名称带过来，也不会修改已有 site 实例。要让恢复原生外观后也使用同一名称，优先使用 Django 原有配置：

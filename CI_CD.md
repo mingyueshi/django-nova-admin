@@ -19,7 +19,7 @@
 - Python3.11.17 / Django5.2.17：核心源码与wheel
 - Python3.12.15 / Django6.0.8：核心源码与wheel
 - Python3.14.8 / Django6.1.1：核心源码、核心wheel、可选验证码源码、可选验证码wheel
-- Node24.21.0 / npm11.19.0：当前18套件、1297项前端检查，以及127项主题JS检查（导航78、changelist增强38、CAPTCHA增强11）
+- Node24.21.0 / npm11.19.0：当前18套件、1298项前端检查，以及152项主题JS检查（导航78、导航命令面板25、changelist增强38、CAPTCHA增强11）
 
 共8个Python隔离运行，不等同完整28个。稳定汇总检查名为`Nova CI gate`；将其设为必需检查前，先在实际GitHub仓库确认显示名称。它会对失败、跳过、取消和缺报告作失败处理，不会因为汇总job被跳过而误放行。
 
