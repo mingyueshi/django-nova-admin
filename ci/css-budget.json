@@ -57,12 +57,12 @@
       }
     },
     "dist/login.css": {
-      "bytes": 6089,
-      "gzip_bytes": 1753,
-      "sha256": "59b475d03e6ee680daf4f49834eadc32d082e6a0be8ff2111641b7117cbb4b63",
+      "bytes": 7382,
+      "gzip_bytes": 2160,
+      "sha256": "957cbcd6af3b036d9f5ec1aa968affedd9fe21a22f081d216a85368dea9d2189",
       "limits": {
-        "bytes": 6698,
-        "gzip_bytes": 1929
+        "bytes": 8121,
+        "gzip_bytes": 2376
       }
     },
     "dist/styles.css": {

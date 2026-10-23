@@ -19,7 +19,7 @@
 - Python3.11.17 / Django5.2.17：核心源码与wheel
 - Python3.12.15 / Django6.0.8：核心源码与wheel
 - Python3.14.8 / Django6.1.1：核心源码、核心wheel、可选验证码源码、可选验证码wheel
-- Node24.21.0 / npm11.19.0：完整540项前端DOM及97项主题JS检查
+- Node24.21.0 / npm11.19.0：当前18套件、1274项前端检查，以及121项主题JS检查（导航78、changelist增强32、CAPTCHA增强11）
 
 共8个Python隔离运行，不等同完整28个。稳定汇总检查名为`Nova CI gate`；将其设为必需检查前，先在实际GitHub仓库确认显示名称。它会对失败、跳过、取消和缺报告作失败处理，不会因为汇总job被跳过而误放行。
 
@@ -102,6 +102,16 @@ python scripts/ci_artifacts.py verify --directory /path/to/new-artifact --commit
 Python隔离矩阵沿用[运行时说明](django-theme/COMPATIBILITY.md)中的test-matrix.py入口，传入上一步同一wheel。Node入口为`node scripts/ci_node.mjs --node 24.21.0 --npm 11.19.0 --logs /path/to/new-node-logs --sidebars /path/to/verified-sidebars`；sidebars先用`ci_support.py sidebars`从固定官方Django wheel生成。工作流文件保留各命令的完整顺序，供接入时核对。
 
 维护时在ci/matrix.json和既有Python矩阵中同步精确版本；新增或删减前端测试时，同步ci_support.py中的测试数量契约，避免完整套件被意外少跑。不要仅放宽断言来掩盖缺失的分组。
+
+`ci_support.py` 按套件身份、精确数量和执行顺序核对18条成功摘要；总PASS数相同不能补偿缺套件、挪动数量、重复、失败、未知摘要或顺序变化。脚本适配器回归同时检查 `package.json` 的 `test` 链必须依次执行 `format:check`、`check` 及契约登记的 `test:*` 脚本，且脚本定义存在；新增测试未登记会使检查失败。完整Node收集仍要求真实运行时、所有必需步骤成功和当前package/lock输入哈希，专项摘要校验不会替代这些条件。
+
+仅需要复核已有真实日志时，可将完整输出保留为 `frontend.log`、`navigation.log`、`enhancements.log`、`captcha.log`，执行只读专项：
+
+```bash
+python scripts/ci_support.py check-node-summaries --logs /path/to/real-suite-logs
+```
+
+它与完整 `collect-node` 复用同一严格摘要检查，返回 `kind=node-suite-contract` 并明确声明不证明安装、运行时或CI步骤；该种记录不能被 `verify-reports` 当作完整Node报告接纳。不得为让 `collect-node` 通过而编造未执行的 `install`、`runtime.json` 或 `steps.json`。本地专项通过也不表示线上CI已经重跑。
 
 本轮验证不代表GitHub线上Actions、权限、环境审批、账单额度或第三方生产目标已测试。当前在线站点仅补充接入说明，不显示虚构的绿色CI徽章。
 

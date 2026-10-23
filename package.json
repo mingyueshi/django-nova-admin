@@ -6,12 +6,12 @@
   "description": "NOVA Chinese Django Admin theme concept preview",
   "scripts": {
     "dev": "python -m http.server 4173 --bind 127.0.0.1 --directory dist",
-    "check": "node --check dist/js/app.js && node --check dist/js/data.js && node --check dist/js/icons.js && node --check dist/js/scenarios.js && node --check dist/js/catalog.js && node --check dist/js/navigation.js && node --check dist/js/native-samples.js && node --check dist/js/controls.js && node --check dist/js/media.js && node --check dist/js/news.js && node --check dist/js/collection.js && node --check dist/js/login.js && node --check dist/js/pagination.js && node --check dist/js/presentation.js && node --check dist/js/extensions-guide.js && node --check dist/js/palette.js && node --check dist/js/preferences-init.js && node --check dist/js/icon-demo.js && node --check dist/js/open-icons.js && node --check dist/js/analytics.js && node --check dist/js/analytics-data.js && node --check dist/js/chart-lab.js && node --check dist/js/chart-lab-data.js && node --check dist/js/chart-lab-options.js && node scripts/check-chart-assets.cjs && node --check dist/js/analysis-lab.js && node --check dist/js/analysis-lab-data.js && node --check dist/js/analysis-lab-options.js",
+    "check": "node --check dist/js/app.js && node --check dist/js/data.js && node --check dist/js/icons.js && node --check dist/js/scenarios.js && node --check dist/js/catalog.js && node --check dist/js/navigation.js && node --check dist/js/native-samples.js && node --check dist/js/controls.js && node --check dist/js/media.js && node --check dist/js/news.js && node --check dist/js/collection.js && node --check dist/js/login.js && node --check dist/js/pagination.js && node --check dist/js/presentation.js && node --check dist/js/extensions-guide.js && node --check dist/js/palette.js && node --check dist/js/preferences-init.js && node --check dist/js/icon-demo.js && node --check dist/js/open-icons.js && node --check dist/js/analytics.js && node --check dist/js/analytics-data.js && node --check dist/js/chart-lab.js && node --check dist/js/chart-lab-data.js && node --check dist/js/chart-lab-options.js && node scripts/check-chart-assets.cjs && node --check dist/js/analysis-lab.js && node --check dist/js/analysis-lab-data.js && node --check dist/js/analysis-lab-options.js && npm run check:login-css",
     "test:dom": "node --experimental-vm-modules tests/interactions.cjs",
     "test:workflows": "node --experimental-vm-modules tests/workflows.cjs",
     "test:controls": "node --experimental-vm-modules tests/controls.cjs",
     "test:media": "node --experimental-vm-modules tests/media-news.cjs",
-    "test": "npm run format:check && npm run check && npm run test:dom && npm run test:workflows && npm run test:controls && npm run test:media && npm run test:recovery && npm run test:enterprise && npm run test:boundaries && npm run test:bulk-publish && npm run test:login && npm run test:presentation && npm run test:pagination && npm run test:extensions && npm run test:palettes && npm run test:icons && npm run test:analytics && npm run test:chart-libraries && npm run test:analysis-lab",
+    "test": "npm run format:check && npm run check && npm run test:dom && npm run test:workflows && npm run test:controls && npm run test:media && npm run test:recovery && npm run test:enterprise && npm run test:boundaries && npm run test:bulk-publish && npm run test:login && npm run test:presentation && npm run test:pagination && npm run test:extensions && npm run test:palettes && npm run test:icons && npm run test:analytics && npm run test:chart-libraries && npm run test:analysis-lab && npm run test:shared-css",
     "test:recovery": "node --experimental-vm-modules tests/recovery-edges.cjs",
     "test:enterprise": "node --experimental-vm-modules tests/enterprise.cjs",
     "format": "prettier \"dist/js/*.js\" --write",
@@ -26,7 +26,10 @@
     "test:icons": "node --experimental-vm-modules tests/icons.cjs",
     "test:analytics": "node --experimental-vm-modules tests/analytics.cjs",
     "test:chart-libraries": "node --experimental-vm-modules tests/chart-libraries.cjs",
-    "test:analysis-lab": "node --experimental-vm-modules tests/analysis-lab.cjs"
+    "test:analysis-lab": "node --experimental-vm-modules tests/analysis-lab.cjs",
+    "sync:login-css": "node scripts/sync-login-css.cjs",
+    "check:login-css": "node scripts/sync-login-css.cjs --check",
+    "test:shared-css": "node tests/shared-login-css.cjs"
   },
   "devDependencies": {
     "jsdom": "26.1.0",

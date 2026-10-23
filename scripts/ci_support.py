@@ -29,7 +29,12 @@ FRONTEND_SUMMARIES = {
     'presentation': 'TOTAL 28 presentation checks passed',
     'pagination': 'TOTAL 254 pagination checks passed (Node/jsdom)',
     'extensions': 'TOTAL 5 extensions guide tests passed',
-    'palettes': 'TOTAL 82 palette checks passed',
+    'palettes': 'TOTAL 165 palette checks passed',
+    'icons': 'TOTAL 361 icon checks passed',
+    'analytics': 'TOTAL 64 analytics checks passed',
+    'chart-libraries': 'TOTAL 77 chart library checks passed',
+    'analysis-lab': 'TOTAL 63 analysis lab checks passed',
+    'shared-css': 'TOTAL 4 shared login CSS checks passed',
 }
 FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_SUMMARIES.items()}
 FRONTEND_TOTAL = sum(FRONTEND_COUNTS.values())
@@ -41,6 +46,39 @@ def read(path):
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def frontend_contract(root=ROOT):
+    """Require the npm test command to execute exactly the registered suites."""
+    scripts = read(Path(root) / 'package.json').get('scripts', {})
+    if not isinstance(scripts, dict) or not isinstance(scripts.get('test'), str):
+        raise ValueError('Missing npm test script for frontend suite contract')
+    names = ['format:check', 'check', *('test:' + name for name in FRONTEND_SUMMARIES)]
+    commands = [part.strip() for part in scripts['test'].split('&&')]
+    if commands != ['npm run ' + name for name in names]:
+        raise ValueError('npm test script sequence differs from frontend suite contract')
+    if any(not isinstance(scripts.get(name), str) or not scripts[name].strip() for name in names):
+        raise ValueError('Missing npm script definition for frontend suite contract')
+    return list(FRONTEND_SUMMARIES)
+
+
+def check_node_summaries(logs):
+    """Read the exact suite contract only; this is not a complete CI receipt."""
+    frontend_contract()
+    logs = Path(logs)
+    for name, pattern, summaries in [
+        ('frontend', r'^TOTAL\b.*$', list(FRONTEND_SUMMARIES.values())),
+        ('navigation', r'^\d+ navigation DOM scenarios .+$', ['78 navigation DOM scenarios passed (3 Django script versions).']),
+        ('enhancements', r'^TOTAL\b.*$', [f'TOTAL {ENHANCEMENT_TOTAL} changelist enhancement tests passed']),
+        ('captcha', r'^TOTAL\b.*$', ['TOTAL 11 CAPTCHA enhancement tests passed']),
+    ]:
+        content = (logs / (name + '.log')).read_text()
+        if re.findall(pattern, content, re.M) != summaries or re.search(r'^(?:FAIL|FAILED|not ok)\b', content, re.M):
+            raise ValueError('Missing, duplicate, or failed Node test evidence: ' + name)
+    return {'kind': 'node-suite-contract', 'status': 'passed', 'frontend': FRONTEND_TOTAL,
+            'frontend_suites': dict(FRONTEND_COUNTS), 'theme_js': THEME_JS_TOTAL,
+            'boundary': 'Suite summaries only; no install, runtime, step, or complete CI evidence.'}
+
 
 def plan(scope, root=ROOT):
     if scope not in ('quick', 'full'):
@@ -159,15 +197,7 @@ def collect_node(logs, output, commit, node, npm):
     inputs = read(logs / 'inputs.json')
     if inputs != {name:digest(ROOT / name) for name in ['package.json','package-lock.json']}:
         raise ValueError('Node test inputs differ from checkout')
-    for name, pattern, summaries in [
-        ('frontend', r'^TOTAL .+$', list(FRONTEND_SUMMARIES.values())),
-        ('navigation', r'^\d+ navigation DOM scenarios .+$', ['78 navigation DOM scenarios passed (3 Django script versions).']),
-        ('enhancements', r'^TOTAL .+$', [f'TOTAL {ENHANCEMENT_TOTAL} changelist enhancement tests passed']),
-        ('captcha', r'^TOTAL .+$', ['TOTAL 11 CAPTCHA enhancement tests passed']),
-    ]:
-        content = (logs / (name + '.log')).read_text()
-        if re.findall(pattern, content, re.M) != summaries or re.search(r'^(?:FAIL|FAILED|not ok)\b', content, re.M):
-            raise ValueError('Missing, duplicate, or failed Node test evidence: ' + name)
+    check_node_summaries(logs)
     output = safe_new_directory(output)
     for name in ['frontend.log', 'navigation.log', 'enhancements.log', 'captcha.log', 'runtime.json', 'dependency-tree.json']:
         (output / name).write_bytes((logs / name).read_bytes())
@@ -177,6 +207,7 @@ def collect_node(logs, output, commit, node, npm):
     return result
 
 def verify_reports(reports, scope, commit, wheel_sha):
+    frontend_contract()
     wanted = plan(scope)
     python = {f"{x['python']}/{x['django']}": x for x in wanted['python']['include']}
     nodes = {x['node']: x for x in wanted['node']['include']}
@@ -221,6 +252,7 @@ def main():
     p = sub.add_parser('ranged-wheel');p.add_argument('--output', type=Path, required=True);p.add_argument('--sdist', type=Path)
     p = sub.add_parser('collect-python');p.add_argument('--run-root', type=Path, required=True);p.add_argument('--output', type=Path, required=True);p.add_argument('--commit', required=True);p.add_argument('--cell', required=True);p.add_argument('--captcha', choices=['true','false'], required=True)
     p = sub.add_parser('collect-node');p.add_argument('--logs', type=Path, required=True);p.add_argument('--output', type=Path, required=True);p.add_argument('--commit', required=True);p.add_argument('--node', required=True);p.add_argument('--npm', required=True)
+    p = sub.add_parser('check-node-summaries');p.add_argument('--logs', type=Path, required=True)
     p = sub.add_parser('verify-reports');p.add_argument('--reports', type=Path, required=True);p.add_argument('--scope', choices=['quick','full'], required=True);p.add_argument('--commit', required=True);p.add_argument('--wheel', type=Path, required=True)
     args = parser.parse_args()
     if args.command == 'plan':
@@ -231,6 +263,7 @@ def main():
     elif args.command == 'ranged-wheel': result = ranged_wheel(args.output,args.sdist)
     elif args.command == 'collect-python': result = collect_python(args.run_root,args.output,args.commit,args.cell,args.captcha=='true')
     elif args.command == 'collect-node': result = collect_node(args.logs,args.output,args.commit,args.node,args.npm)
+    elif args.command == 'check-node-summaries': result = check_node_summaries(args.logs)
     else: result = verify_reports(args.reports,args.scope,args.commit,digest(args.wheel))
     print(json.dumps(result,indent=2))
 

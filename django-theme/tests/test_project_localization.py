@@ -1,6 +1,8 @@
 """The demo's explicit project policy, separate from reusable Nova behavior."""
 import gettext as stdlib_gettext
+from hashlib import sha256
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from bs4 import BeautifulSoup
@@ -11,7 +13,7 @@ from django.contrib import admin
 from django.contrib.admin.helpers import AdminReadonlyField
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
-from django.template import Context
+from django.template import Context, Template, TemplateSyntaxError
 from django.test import Client, SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 from django.utils.translation import gettext, override, pgettext
@@ -19,7 +21,7 @@ from django.utils.translation import gettext, override, pgettext
 from catalog.admin import VariantInline
 from catalog.forms import ProjectAdminFormRenderer
 from catalog.models import Product, ProductVariant
-from catalog.templatetags.project_admin import project_label_tag, project_nonce
+from catalog.templatetags.project_admin import project_admin_template, project_label_tag, project_nonce
 from nova_admin.preferences import SESSION_KEY
 
 PROJECT_LOCALE = Path(__file__).resolve().parents[1] / "demo/locale"
@@ -105,17 +107,108 @@ class ProjectCatalogTests(SimpleTestCase):
         # Detect an upstream accessibility/error/formset change before upgrading.
         source = Path(admin.__file__).parent / "templates/admin"
         target = Path(settings.BASE_DIR) / "templates/project_admin"
-        suffix = {(5, 2): "52", (6, 0): "60", (6, 1): "61"}[django.VERSION[:2]]
         native = (source / "includes/fieldset.html").read_text()
         expected = "{% load project_admin %}\n" + native.replace("{{ field.label_tag }}", "{% project_label_tag field %}")
-        self.assertEqual((target / f"fieldset_{suffix}.html").read_text(), expected)
+        self.assertEqual((target.parent / project_admin_template("fieldset")).read_text(), expected)
         native = (source / "edit_inline/tabular.html").read_text()
         expected = native.replace("{% load i18n admin_urls static admin_modify %}", "{% load i18n admin_urls static admin_modify project_admin %}").replace("{{ field.label|capfirst }}", "{{ field.label|capfirst|project_label }}")
-        self.assertEqual((target / f"tabular_{'52' if suffix == '52' else '60'}.html").read_text(), expected)
+        self.assertEqual((target.parent / project_admin_template("tabular")).read_text(), expected)
 
     def test_project_nonce_is_escaped_and_optional(self):
         self.assertEqual(project_nonce(Context({})), "")
         self.assertEqual(project_nonce(Context({"csp_nonce": 'nonce"&<>'})), 'nonce="nonce&quot;&amp;&lt;&gt;"')
+
+
+class ProjectAdminTemplateSelectionTests(SimpleTestCase):
+    reviewed = (
+        ("fieldset", "project_admin/fieldset_52.html"),
+        ("fieldset", "project_admin/fieldset_60.html"),
+        ("fieldset", "project_admin/fieldset_61.html"),
+        ("tabular", "project_admin/tabular_52.html"),
+        ("tabular", "project_admin/tabular_60.html"),
+    )
+
+    def native_fragment(self, kind, adapter):
+        # Restore the upstream text from our checked-in, minimally adapted copy.
+        # This also works in the isolated source/wheel matrix test harness.
+        text = (Path(settings.BASE_DIR) / "templates" / adapter).read_text(encoding="utf-8")
+        if kind == "fieldset":
+            self.assertTrue(text.startswith("{% load project_admin %}\n"))
+            return text.removeprefix("{% load project_admin %}\n").replace("{% project_label_tag field %}", "{{ field.label_tag }}")
+        return text.replace("{% load i18n admin_urls static admin_modify project_admin %}", "{% load i18n admin_urls static admin_modify %}").replace("{{ field.label|capfirst|project_label }}", "{{ field.label|capfirst }}")
+
+    def test_all_reviewed_native_templates_select_their_exact_adapters(self):
+        for kind, adapter in self.reviewed:
+            with self.subTest(kind=kind, adapter=adapter), patch(
+                "catalog.templatetags.project_admin._native_admin_template",
+                return_value=(self.native_fragment(kind, adapter), "reviewed-native-fixture"),
+            ):
+                self.assertEqual(project_admin_template(kind), adapter)
+
+    def test_future_version_metadata_still_renders_every_reviewed_native_template(self):
+        # This is deliberately a metadata simulation, not a Django 6.2 runtime.
+        for kind, adapter in self.reviewed:
+            with self.subTest(kind=kind, adapter=adapter), patch.object(django, "VERSION", (6, 2, 0, "alpha", 0)), patch(
+                "catalog.templatetags.project_admin._native_admin_template",
+                return_value=(self.native_fragment(kind, adapter), "reviewed-native-fixture"),
+            ):
+                self.assertEqual(project_admin_template(kind), adapter)
+                rendered = Template('{% load project_admin %}{% project_admin_template kind as adapted %}{% include adapted %}').render(Context({"kind": kind}))
+                self.assertIn("<fieldset", rendered)
+                self.assertNotIn("{%", rendered)
+
+    def test_drifted_native_templates_fail_with_origin_and_actual_signature(self):
+        for kind, adapter in self.reviewed:
+            native = self.native_fragment(kind, adapter)
+            for changed in (native + "<!-- upstream change -->\n", native.replace("aria-labelledby", "data-upstream-heading")):
+                with self.subTest(kind=kind, adapter=adapter, signature=sha256(changed.encode()).hexdigest()), patch(
+                    "catalog.templatetags.project_admin._native_admin_template",
+                    return_value=(changed, "/installed/django/changed-template.html"),
+                ):
+                    with self.assertRaises(TemplateSyntaxError) as failure:
+                        project_admin_template(kind)
+                    message = str(failure.exception)
+                    self.assertIn("Unreviewed native Django admin template admin/", message)
+                    self.assertIn("/installed/django/changed-template.html", message)
+                    self.assertIn("sha256=" + sha256(changed.encode()).hexdigest(), message)
+                    self.assertIn("UPSTREAM_DRIFT.md", message)
+
+    def test_reviewed_template_for_a_different_kind_is_rejected(self):
+        native = self.native_fragment("tabular", "project_admin/tabular_60.html")
+        with patch("catalog.templatetags.project_admin._native_admin_template", return_value=(native, "wrong-kind")):
+            with self.assertRaisesMessage(TemplateSyntaxError, "admin/includes/fieldset.html"):
+                project_admin_template("fieldset")
+
+    def test_unknown_kinds_fail_before_any_native_template_read(self):
+        for kind in (None, [], {}, "stacked", "../includes/fieldset.html"):
+            with self.subTest(kind=kind), patch("catalog.templatetags.project_admin._native_admin_template") as read:
+                with self.assertRaisesMessage(TemplateSyntaxError, "Unknown project admin template kind"):
+                    project_admin_template(kind)
+                read.assert_not_called()
+
+    def test_missing_or_unreadable_native_templates_have_a_diagnostic_error(self):
+        for error in (FileNotFoundError("missing template"), UnicodeError("invalid UTF-8")):
+            with self.subTest(error=type(error).__name__), patch("catalog.templatetags.project_admin.files") as package:
+                source = package.return_value.joinpath.return_value
+                source.__str__.return_value = "/installed/django/unreadable-template.html"
+                source.read_text.side_effect = error
+                with self.assertRaisesMessage(TemplateSyntaxError, "Cannot inspect native Django admin template admin/includes/fieldset.html") as failure:
+                    project_admin_template("fieldset")
+                self.assertIn("/installed/django/unreadable-template.html", str(failure.exception))
+                self.assertIs(failure.exception.__cause__, error)
+
+    def test_native_template_drift_after_a_successful_lookup_is_not_cached(self):
+        with TemporaryDirectory() as temporary, patch(
+            "catalog.templatetags.project_admin.files", return_value=Path(temporary)
+        ):
+            source = Path(temporary) / "templates/admin/includes/fieldset.html"
+            source.parent.mkdir(parents=True)
+            native = self.native_fragment("fieldset", "project_admin/fieldset_61.html")
+            source.write_text(native, encoding="utf-8")
+            self.assertEqual(project_admin_template("fieldset"), "project_admin/fieldset_61.html")
+            source.write_text(native + "<!-- drift after first lookup -->\n", encoding="utf-8")
+            with self.assertRaisesMessage(TemplateSyntaxError, "Unreviewed native Django admin template"):
+                project_admin_template("fieldset")
 
 
 @override_settings(LANGUAGE_CODE="en", LOCALE_PATHS=[PROJECT_LOCALE], NOVA_ADMIN_ENABLED=True, NOVA_ADMIN_NAVIGATION=True)
@@ -160,6 +253,25 @@ class ProjectChineseRenderedTests(TestCase):
         self.assertIsNotNone(soup.select_one('input[name="variants-TOTAL_FORMS"]'))
         self.assertIsNotNone(soup.select_one('input[name="csrfmiddlewaretoken"]'))
         self.assertNotIn("：：", soup.get_text())
+
+    def test_future_version_metadata_keeps_real_form_inline_csrf_and_native_mode(self):
+        # Render using this environment's installed Django and actual templates.
+        # Changing VERSION alone must not block an otherwise reviewed template.
+        for mode in ("light", "native"):
+            with self.subTest(mode=mode), override("zh-hans"), patch.object(django, "VERSION", (6, 2, 0, "alpha", 0)):
+                session = self.client.session
+                session[SESSION_KEY] = mode
+                session.save()
+                response = self.client.get(reverse("admin:catalog_product_change", args=[self.product.pk]))
+                self.assertEqual(response.status_code, 200)
+                soup = BeautifulSoup(response.content, "html.parser")
+                self.assertEqual(soup.select_one("label[for=id_name]").get_text(strip=True), "商品名称：")
+                self.assertEqual(soup.select_one("th.column-name").get_text(strip=True), "规格：")
+                self.assertIsNotNone(soup.select_one('input[name="csrfmiddlewaretoken"]'))
+                self.assertIsNotNone(soup.select_one('input[name="variants-TOTAL_FORMS"]'))
+                self.assertIsNotNone(soup.select_one('fieldset[aria-labelledby]'))
+                if mode == "native":
+                    self.assertNotContains(response, "nova_admin/theme.css")
 
     def test_stacked_inline_and_readonly_inline_keep_native_forms(self):
         with override("zh-hans"), patch.object(VariantInline, "template", "admin/edit_inline/stacked.html"), patch.object(VariantInline, "readonly_fields", ["value"]):

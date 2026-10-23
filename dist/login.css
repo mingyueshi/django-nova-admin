@@ -11,8 +11,14 @@ body.nova-admin.login #container {
   min-height: max(580px, calc(100vh - 124px)); margin: 16px auto 32px;
   border: 0; border-radius: 0; overflow: visible; background: transparent; box-shadow: none;
 }
-body.nova-admin.login #header { position: absolute; top: 24px; left: 0; padding: 0; min-height: 0; justify-content: flex-start; background: transparent; border: 0; }
-body.nova-admin.login #branding { margin: 0; }
+body.nova-admin.login #header { position: absolute; top: 24px; left: 0; width: 100%; padding: 0; min-height: 0; justify-content: flex-start; background: transparent; border: 0; }
+/* Give the absolute header a definite width before sizing its flex children.
+   Otherwise the logo's percentage cap participates in shrink-to-fit sizing and
+   wraps even a short title. Long brands still shrink and wrap within the page. */
+body.nova-admin.login #branding { width: 100%; min-width: 0; max-width: 100%; margin: 0; }
+body.nova-admin.login #site-name.nova-custom-brand { min-width: 0; max-width: 100%; margin-inline: 0; }
+body.nova-admin.login #site-name.nova-custom-brand a { width: max-content; max-width: 100%; }
+body.nova-admin.login #site-name.nova-custom-brand span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 body.nova-admin.login #header h1 { font-size: 19px; line-height: 1.4; margin: 0; }
 body.nova-admin.login #container > :is(#content, #main) { grid-column: 2; width: 100%; min-width: 0; margin: 80px 0 30px; }
 body.nova-admin.login #main > .content { width: 100%; min-width: 0; }
@@ -30,14 +36,14 @@ body.nova-admin.login #content > br.clear, body.nova-admin.login #footer:empty {
 .nova-login-visually-hidden { position: absolute!important; width: 1px!important; height: 1px!important; padding: 0!important; margin: -1px!important; overflow: hidden!important; clip: rect(0,0,0,0)!important; white-space: nowrap!important; border: 0!important; }
 body.nova-admin.login .form-row { padding: 0; margin: 0 0 20px; }
 body.nova-admin.login .form-row label { display: block; padding: 0; margin: 0 0 7px; font-size: 14px; line-height: 1.6; color: var(--body-fg); }
-body.nova-admin.login .form-row :is(input[type=text], input[type=password], input[type=email], input[type=number]) { width: 100%; min-width: 0; min-height: 48px; padding: 11px 13px; border: 1px solid var(--border-color); border-radius: 9px; background: var(--darkened-bg); color: var(--body-fg); font: inherit; font-size: 16px; box-sizing: border-box; }
+body.nova-admin.login .form-row :is(input[type=text], input[type=password], input[type=email], input[type=number]) { width: 100%; min-width: 0; min-height: 48px; padding: 11px 13px; border: 1px solid var(--border-color); border-radius: var(--nova-login-radius, 9px); background: var(--darkened-bg); color: var(--body-fg); font: inherit; font-size: 16px; box-sizing: border-box; }
 body.nova-admin.login :is(input, button, a, summary, select):focus-visible { outline: 2px solid var(--link-fg); outline-offset: 3px; }
 body.nova-admin.login .form-row input[aria-invalid=true] { border-color: var(--error-fg); }
 body.nova-admin.login .submit-row { display: flex; padding: 3px 0 0; border: 0; margin: 0; background: transparent; box-shadow: none; }
-body.nova-admin.login .submit-row :is(input, button) { width: 100%; min-height: 48px; padding: 12px; margin: 0; border-radius: 9px; background: var(--button-bg); color: var(--button-fg); border: 1px solid transparent; font: inherit; font-weight: 600; font-size: 15px; cursor: pointer; }
+body.nova-admin.login .submit-row :is(input, button) { width: 100%; min-height: 48px; padding: 12px; margin: 0; border-radius: var(--nova-login-radius, 9px); background: var(--button-bg); color: var(--button-fg); border: 1px solid transparent; font: inherit; font-weight: 600; font-size: 15px; cursor: pointer; }
 body.nova-admin.login .submit-row :is(input, button):hover { background: var(--button-hover-bg); }
 body.nova-admin.login .submit-row :is(input, button):disabled { opacity: .65; cursor: wait; }
-body.nova-admin.login .errornote { margin: 0 0 18px; padding: 12px 14px; border-radius: 9px; line-height: 1.65; font-size: 14px; }
+body.nova-admin.login .errornote { margin: 0 0 18px; padding: 12px 14px; border-radius: var(--nova-login-radius, 9px); line-height: 1.65; font-size: 14px; }
 body.nova-admin.login .errorlist { margin: 0 0 6px; padding: 0; list-style: none; color: var(--error-fg); }
 body.nova-admin.login .help { color: var(--body-quiet-color); font-size: 13px; line-height: 1.7; }
 body.nova-admin.login .password-reset-link { margin: -3px 0 12px; font-size: 14px; }
@@ -56,3 +62,11 @@ body.nova-admin.login:lang(zh-hans) h1 { letter-spacing: normal; }
 @media (forced-colors: active) {
   .nova-login-art { display: none; }
 }
+
+/* A configured image occupies the decorative desktop area only. The form
+   keeps a readable surface; the established borderless mobile layout stays. */
+body.nova-admin.login .nova-login-art--image::before,
+body.nova-admin.login .nova-login-art--image::after { content: none; }
+body.nova-admin.login .nova-login-background { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: var(--nova-radius); }
+body.nova-admin.login #footer:has(.nova-brand-footer) { grid-column: 1 / -1; width: 100%; align-self: end; }
+body.nova-admin.login .nova-brand-footer { padding: 16px 0 0; }

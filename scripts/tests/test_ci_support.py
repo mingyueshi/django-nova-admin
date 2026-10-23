@@ -63,7 +63,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':622,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':121,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':121,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -109,6 +109,40 @@ class MatrixTests(unittest.TestCase):
             with self.assertRaises(ValueError):support.sidebars(wheelhouse,root/'sidebars')
 
 
+class FrontendContractTests(unittest.TestCase):
+    def test_checkout_npm_test_sequence_matches_the_registered_contract(self):
+        names = support.frontend_contract()
+        self.assertEqual(len(names), 18)
+        self.assertEqual(names[-5:], ['icons', 'analytics', 'chart-libraries', 'analysis-lab', 'shared-css'])
+        self.assertEqual(support.FRONTEND_TOTAL, 1274)
+
+    def altered_package(self, mutation):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            package = support.read(ROOT / 'package.json')
+            mutation(package['scripts'])
+            (root / 'package.json').write_text(json.dumps(package))
+            with self.assertRaisesRegex(ValueError, 'frontend suite contract'):
+                support.frontend_contract(root)
+
+    def test_missing_duplicate_reordered_and_unregistered_suite_commands_fail(self):
+        changes = {
+            'missing': lambda s: s.update(test=s['test'].replace(' && npm run test:icons', '')),
+            'duplicate': lambda s: s.update(test=s['test'] + ' && npm run test:icons'),
+            'reordered': lambda s: s.update(test=s['test'].replace('npm run test:icons && npm run test:analytics', 'npm run test:analytics && npm run test:icons')),
+            'unregistered': lambda s: s.update(test=s['test'] + ' && npm run test:new', **{'test:new': 'node tests/new.cjs'}),
+            'compound': lambda s: s.update(test=s['test'].replace('npm run test:icons', 'npm run test:icons; true')),
+        }
+        for name, change in changes.items():
+            with self.subTest(change=name): self.altered_package(change)
+
+    def test_missing_or_empty_npm_script_definitions_fail(self):
+        for name in ('format:check', 'check', 'test:icons', 'test:shared-css'):
+            for missing in (True, False):
+                with self.subTest(name=name, missing=missing):
+                    self.altered_package(lambda s: s.pop(name) if missing else s.update({name: ''}))
+
+
 class NodeEvidenceTests(unittest.TestCase):
     # Copied summaries from the current successful npm/frontend and theme JS logs.
     FRONTEND_LOG = """TOTAL 31 passed
@@ -123,7 +157,12 @@ TOTAL 31 passed, 0 failed (Node/jsdom static login demo)
 TOTAL 28 presentation checks passed
 TOTAL 254 pagination checks passed (Node/jsdom)
 TOTAL 5 extensions guide tests passed
-TOTAL 82 palette checks passed
+TOTAL 165 palette checks passed
+TOTAL 361 icon checks passed
+TOTAL 64 analytics checks passed
+TOTAL 77 chart library checks passed
+TOTAL 63 analysis lab checks passed
+TOTAL 4 shared login CSS checks passed
 """
     GROUP_LOGS = {
         'frontend': FRONTEND_LOG,
@@ -151,16 +190,16 @@ TOTAL 82 palette checks passed
     def collect(self, root):
         return support.collect_node(root / 'logs', root / 'output', COMMIT, '24.21.0', '11.19.0')
 
-    def test_current_logs_record_all_622_checks_including_palettes(self):
+    def test_current_log_fixture_records_all_1274_checks_in_eighteen_suites(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.logs(root)
             result = self.collect(root)
-            self.assertEqual(result['frontend'], 622)
+            self.assertEqual(result['frontend'], 1274)
             self.assertEqual(result['theme_js'], 121)
-            self.assertEqual(len(result['frontend_suites']), 13)
-            self.assertEqual(result['frontend_suites']['palettes'], 82)
-            self.assertEqual(sum(result['frontend_suites'].values()), 622)
+            self.assertEqual(len(result['frontend_suites']), 18)
+            self.assertEqual(result['frontend_suites']['palettes'], 165)
+            self.assertEqual(sum(result['frontend_suites'].values()), 1274)
             self.assertEqual(json.loads((root / 'output/report.json').read_text()), result)
 
     def test_every_frontend_suite_requires_exactly_one_success_summary(self):
@@ -178,31 +217,50 @@ TOTAL 82 palette checks passed
                     self.assertFalse((root / 'output').exists())
 
     def test_same_total_cannot_hide_an_absent_suite(self):
-        # Omit the 82 palette checks but add those 82 to pagination: still 622.
+        # Omit the 165 palette checks but add those 165 to pagination: still 1274.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             logs = self.logs(root)
-            content = self.FRONTEND_LOG.replace('TOTAL 82 palette checks passed\n', '').replace('TOTAL 254', 'TOTAL 336')
+            content = self.FRONTEND_LOG.replace('TOTAL 165 palette checks passed\n', '').replace('TOTAL 254', 'TOTAL 419')
             (logs / 'frontend.log').write_text(content)
             with self.assertRaises(ValueError): self.collect(root)
 
+    def test_same_total_cannot_hide_redistributed_suite_counts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            logs = self.logs(root)
+            content = self.FRONTEND_LOG.replace('TOTAL 165 palette', 'TOTAL 164 palette').replace('TOTAL 361 icon', 'TOTAL 362 icon')
+            (logs / 'frontend.log').write_text(content)
+            with self.assertRaisesRegex(ValueError, 'Node test evidence: frontend'): self.collect(root)
+
+    def test_unknown_and_reordered_success_summaries_are_rejected(self):
+        lines = self.FRONTEND_LOG.splitlines()
+        changed_order = [lines[1], lines[0], *lines[2:]]
+        for content in (self.FRONTEND_LOG + 'TOTAL 1 unknown suite passed\n', self.FRONTEND_LOG + 'TOTAL\t1 malformed summary\n', self.FRONTEND_LOG + 'TOTAL\n', '\n'.join(changed_order) + '\n'):
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                logs = self.logs(root)
+                (logs / 'frontend.log').write_text(content)
+                with self.assertRaisesRegex(ValueError, 'Node test evidence: frontend'): self.collect(root)
+
     def test_prior_palette_suite_counts_are_rejected(self):
-        for prior_count in (50, 66):
+        for prior_count in (50, 66, 82):
             with self.subTest(prior_count=prior_count), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 logs = self.logs(root)
-                (logs / 'frontend.log').write_text(self.FRONTEND_LOG.replace('TOTAL 82 palette', f'TOTAL {prior_count} palette'))
+                (logs / 'frontend.log').write_text(self.FRONTEND_LOG.replace('TOTAL 165 palette', f'TOTAL {prior_count} palette'))
                 with self.assertRaises(ValueError): self.collect(root)
 
     def test_every_theme_js_group_rejects_missing_duplicate_or_failed_summary(self):
         for group in ('navigation', 'enhancements', 'captcha'):
-            for change in ('missing', 'duplicate', 'failed'):
+            for change in ('missing', 'duplicate', 'failed', 'wrong-count'):
                 with self.subTest(group=group, change=change), tempfile.TemporaryDirectory() as tmp:
                     root = Path(tmp)
                     logs = self.logs(root)
                     content = self.GROUP_LOGS[group]
                     content = {'missing': '', 'duplicate': content * 2,
-                               'failed': content.replace('passed', 'failed')}[change]
+                               'failed': content.replace('passed', 'failed'),
+                               'wrong-count': content.replace(content.split()[1] if content.startswith('TOTAL') else content.split()[0], '0', 1)}[change]
                     (logs / (group + '.log')).write_text(content)
                     with self.assertRaisesRegex(ValueError, 'Node test evidence: ' + group): self.collect(root)
 
@@ -215,17 +273,59 @@ TOTAL 82 palette checks passed
                 with self.assertRaises(ValueError): self.collect(root)
 
     def test_nonzero_command_is_rejected_despite_success_summaries(self):
+        for index in range(7):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                logs = self.logs(root)
+                steps = support.read(logs / 'steps.json')
+                steps[index]['exitCode'] = 1
+                (logs / 'steps.json').write_text(json.dumps(steps))
+                with self.assertRaisesRegex(ValueError, 'Incomplete Node commands'): self.collect(root)
+
+    def test_stale_package_and_lock_input_hashes_are_rejected(self):
+        for name in ('package.json', 'package-lock.json'):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                logs = self.logs(root)
+                inputs = support.read(logs / 'inputs.json')
+                inputs[name] = '0' * 64
+                (logs / 'inputs.json').write_text(json.dumps(inputs))
+                with self.assertRaisesRegex(ValueError, 'Node test inputs differ from checkout'): self.collect(root)
+                self.assertFalse((root / 'output').exists())
+
+    def test_missing_duplicate_signalled_and_errored_steps_are_rejected(self):
+        changes = [lambda rows: rows.pop(), lambda rows: rows.append(dict(rows[0])),
+                   lambda rows: rows[0].update(signal='SIGTERM'), lambda rows: rows[0].update(error='spawn failed')]
+        for change in changes:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                logs = self.logs(root)
+                steps = support.read(logs / 'steps.json')
+                change(steps)
+                (logs / 'steps.json').write_text(json.dumps(steps))
+                with self.assertRaisesRegex(ValueError, 'Incomplete Node commands'): self.collect(root)
+
+    def test_summary_only_collection_has_a_distinct_kind_and_cannot_pass_the_ci_gate(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             logs = self.logs(root)
-            steps = support.read(logs / 'steps.json')
-            steps[-1]['exitCode'] = 1
-            (logs / 'steps.json').write_text(json.dumps(steps))
-            with self.assertRaisesRegex(ValueError, 'Incomplete Node commands'): self.collect(root)
+            # The local summary check needs only real suite logs, no fabricated steps.
+            for name in ('runtime.json', 'steps.json', 'inputs.json', 'dependency-tree.json'):
+                (logs / name).unlink()
+            result = support.check_node_summaries(logs)
+            self.assertEqual(result['kind'], 'node-suite-contract')
+            self.assertEqual(result['frontend'], 1274)
+            self.assertIn('no install, runtime, step', result['boundary'])
+            self.assertNotIn('commit', result)
+            self.assertNotIn('node', result)
+            # Even adding a commit cannot turn this limited record into a Node report.
+            (root / 'report.json').write_text(json.dumps({**result, 'commit': COMMIT}))
+            with self.assertRaisesRegex(ValueError, 'Unknown report kind'):
+                support.verify_reports(root, 'quick', COMMIT, WHEEL_SHA)
 
     def test_gate_rejects_stale_or_incomplete_frontend_counts(self):
         changes = [lambda x: x.update(theme_js=97), lambda x: x.update(frontend=540), lambda x: x.update(frontend=590),
-                   lambda x: x.update(frontend=606),
+                   lambda x: x.update(frontend=606), lambda x: x.update(frontend=622), lambda x: x.update(frontend=1270),
                    lambda x: x.pop('frontend_suites'),
                    lambda x: x['frontend_suites'].pop('palettes'),
                    lambda x: x['frontend_suites'].update(palettes=50),

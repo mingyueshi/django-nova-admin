@@ -14,7 +14,7 @@
 | `django-theme/src/nova_admin/` | 可安装、可恢复原生的 Django Admin 主题 | 使用原来的 AdminSite、ModelAdmin、认证、权限、CSRF、表单和动作 |
 | `django-theme/demo/` | 可运行 Django 项目与图片列示例 | 本地 SQLite，由你创建管理员；真实增删改及关系字段流程 |
 | `dist/native-admin/` | 真实 Django 6.1.1 渲染的 56 页＋96 个配色代表页＋入口 | 明暗/自动、标准/紧凑与原生外观，完全只读；脚本、认证及提交能力已经移除 |
-| `tests/` | 交互预览的 1270 项前端检查 | jsdom，不代表浏览器视觉或真机认证 |
+| `tests/` | 交互预览的 1274 项前端检查 | Node/jsdom，不代表浏览器视觉或真机认证 |
 | `django-theme/tests/` | 核心、可选验证码和 Axes 独立测试 | 精确补丁版本测试，详情见验证报告 |
 
 `dist/` 就是前端源码，**不存在缺失的 React/Vue 工程或构建步骤**。本包没有 Python/Node 环境或依赖缓存；首次安装依赖需要访问官方 PyPI/npm。原始 PNG 图集、截图、数据库、浏览器数据、日志和发布配置没有打包。三份约 694 KB 的 WebP 是各演示入口的本地资源，不依赖外链。
@@ -214,6 +214,17 @@ python demo/manage.py runserver 127.0.0.1:8000 --settings=config.captcha_setting
 ## 1.6.2 / 0.4.2 双端登录布局
 
 桌面采用宽幅开放构图：纯视觉品牌图形与适中宽度表单互相平衡，取消小浮卡，不增加宣传文案。900px及以下使用独立单列布局，删除外层边框、圆角、面板背景和阴影，表单直接融入页面；输入控件边界与触控间距保留。Django真实模板和公开mock使用同一登录样式，验证码、认证与CSRF逻辑未变。
+
+共享登录布局 CSS 以 `django-theme/src/nova_admin/static/nova_admin/login.css` 为唯一来源；`dist/login.css` 是其逐字节副本，修改来源文件后运行：
+
+```sh
+npm run sync:login-css
+npm run check:login-css
+```
+
+同步命令只在有差异时更新副本。`--check`（即 `node scripts/sync-login-css.cjs --check`）只读取并比较字节，副本缺失或漂移时非零退出，不创建或改写文件。现有 `npm check`、`npm test` 和调用它们的前端 CI 都执行该检查，CI 不自动修复漂移。`npm run test:shared-css` 在临时目录注入漂移，验证检查不写入、显式同步和缺失副本等行为；没有新增依赖。
+
+共享 CSS 不要求两种页面具有相同 DOM 或相同功能：`login-preview.css` 提供 mock 的基础变量、预览工具及演示控件，浏览器内的模拟校验不能代表真实认证；真实 Django 仍保留原生表单、权限与 CSRF。`dist/native-admin/*/login.html` 来自真实模板渲染后经过安全净化的只读样本，输入/提交均禁用，只能检查布局、品牌与仍可聚焦的链接/摘要，不能用来验收登录或输入框键盘行为。它们通过现有导出器重新生成，不能手工改写来源清单中的 SHA。
 
 
 ## 1.7.0 / 0.5.0 中文呈现与分页
