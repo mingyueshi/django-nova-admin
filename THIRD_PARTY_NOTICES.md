@@ -30,3 +30,26 @@ jsdom 26.1.0（MIT）及其依赖通过 `package-lock.json` 锁定并由 npm 安
 
 
 登录模板内容部分改编自Django原生admin/login.html，BSD 3-Clause完整许可随主题运行包置于nova_admin/LICENSE-DJANGO.txt。可选验证码依赖django-simple-captcha0.7.0（MIT）/Pillow12.2.0；依赖由官方PyPI安装，不把其库源代码、字体或系统音频工具打入本包。静态验证码图片由隔离合成数据库在本地生成，无真实账号、服务令牌或第三方请求。
+
+## 开源图标精选集
+
+本项目收录320个上游原始SVG：Lucide（lucide-static 1.61.0，64个，ISC及Feather派生部分的MIT）、Tabler Icons（@tabler/icons 3.49.0，64个，MIT）、Heroicons（heroicons 2.2.0，64个24px轮廓图标，MIT）、Iconoir（iconoir 7.12.1，64个regular轮廓图标，MIT）、Bootstrap Icons（bootstrap-icons 1.13.2，64个16px原生填充路径图标，MIT）。这些图标不属于NOVA原创路径，依照各自的许可分发。
+
+- Lucide与Feather完整原始许可：`dist/assets/icons/lucide/LICENSE.txt`、`nova_admin/licenses/lucide.txt`。
+- Tabler原始许可：`dist/assets/icons/tabler/LICENSE.txt`、`nova_admin/licenses/tabler.txt`。
+- Heroicons原始许可：`dist/assets/icons/heroicons/LICENSE.txt`、`nova_admin/licenses/heroicons.txt`。
+- [Iconoir原始许可](https://github.com/iconoir-icons/iconoir/blob/main/LICENSE)：`dist/assets/icons/iconoir/LICENSE.txt`、`nova_admin/licenses/iconoir.txt`。
+- [Bootstrap Icons原始许可](https://github.com/twbs/icons/blob/main/LICENSE)：`dist/assets/icons/bootstrap/LICENSE.txt`、`nova_admin/licenses/bootstrap.txt`。
+
+原始来源、固定版本、发布包完整性与逐SVG文件SHA-256见 `dist/assets/icons/manifest.json`；SVG几何仅转成受控本地注册表。静态演示和Django使用同一精选集，运行时不访问CDN或远程图标服务。只读Django导出同时保留 `ICON-LICENSES/`。使用与重建说明见 [图标指南](django-theme/ICONS.md)。
+
+
+## 开源图表运行库
+
+`dist/vendor/charts/` 保留以下官方npm发布文件及未修改的许可文本，按当前场景选择在本地加载：
+
+- [Apache ECharts](https://github.com/apache/echarts) 6.1.0：Apache-2.0，完整 `echarts/LICENSE`、`echarts/NOTICE`、d3的 `echarts/LICENSE-d3`；内嵌zrender 6.1.0的BSD 3-Clause许可见 `echarts/LICENSE-zrender.txt`，tslib 2.3.0的许可与版权见 `echarts/LICENSE-tslib.txt`、`echarts/tslib-CopyrightNotice.txt`。
+- [Chart.js](https://github.com/chartjs/Chart.js) 4.6.1：MIT，见 `chartjs/LICENSE.md`；其UMD文件标明内嵌@kurkle/color 0.3.2，对应原始MIT许可见 `chartjs/LICENSE-color.md`。
+- [uPlot](https://github.com/leeoniya/uPlot) 1.6.32：MIT，见 `uplot/LICENSE`。原始JS和CSS一起保留。
+
+固定版本的发布包URL、SHA-512完整性及逐文件SHA-256见 `dist/vendor/charts/manifest.json`，可用 `node scripts/check-chart-assets.cjs` 离线校验。没有修改上游运行库、重新压缩它们或向通用Django主题运行包自动注入图表依赖。NOVA编写的适配器和合成数据仍按项目MIT许可提供；第三方图表库按上述各自许可分发。

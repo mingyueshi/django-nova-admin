@@ -62,7 +62,7 @@ protection.
 ## Icons and one bulk badge provider
 
 Supported icon names are `box`, `users`, `tag`, `folder`, `file`, `chart`, `home`,
-`star`, and `settings`. They select fixed, package-owned SVG paths. Icon values
+`star`, and `settings`. The bundled 320-icon Lucide/Tabler/Heroicons/Iconoir/Bootstrap subset also supports namespaced identifiers such as `lucide:search`, `tabler:folder`, and `heroicons:document-text`; see [ICONS.md](ICONS.md) for the reviewed inventory, versions, licensing and template usage. These identifiers select fixed, package-owned SVG paths. Icon values
 cannot inject HTML, template paths, CSS, links, or remote assets. Unknown values
 are ignored. Icons are decorative; native labels remain the accessible names.
 

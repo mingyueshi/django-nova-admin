@@ -53,6 +53,33 @@ async function login(storage = {}, fail = false) {
     assert.equal(app.w.localStorage.getItem('nova-theme'), 'dark');
     assert.equal(app.w.localStorage.getItem('other-business'), 'keep');
   });
+  check('gallery presents 16 named preset buttons outside the workspace form', () => {
+    const cards = [...app.d.querySelectorAll('[data-palette-card]')];
+    assert.deepEqual(cards.map(card => card.dataset.paletteCard), keys.slice(1));
+    assert.ok(cards.every(card => card.type === 'button' && card.closest('form') === null));
+    assert.equal(app.d.querySelector('[data-palette-current]').getAttribute('role'), 'status');
+  });
+  for (const key of keys.slice(1)) {
+    const card = app.d.querySelector(`[data-palette-card="${key}"]`);
+    card.focus(); card.querySelector('.palette-mini').click();
+    check(`${key}: card applies and persists without losing focus or appearance`, () => {
+      assert.equal(app.d.documentElement.dataset.palette, key);
+      assert.equal(app.d.querySelector('#palette-mode').value, key);
+      assert.equal(app.w.localStorage.getItem('nova-palette'), key);
+      assert.equal(app.w.localStorage.getItem('nova-theme'), 'dark');
+      assert.equal(app.d.querySelectorAll('[data-palette-card][aria-pressed="true"]').length, 1);
+      assert.equal(card.getAttribute('aria-pressed'), 'true');
+      assert.equal(card.querySelector('.palette-card-state').textContent, '使用中');
+      assert.equal(app.d.activeElement, card);
+    });
+  }
+  app.d.querySelector('[data-palette-default]').click();
+  check('default restoration clears active cards and preserves independent data', () => {
+    assert.equal(app.d.querySelectorAll('[data-palette-card][aria-pressed="true"]').length, 0);
+    assert.equal(app.d.querySelector('#palette-mode').value, 'default');
+    assert.match(app.d.querySelector('[data-palette-current]').textContent, /默认配色.*深色/);
+    assert.equal(app.w.localStorage.getItem('other-business'), 'keep');
+  });
   for (const key of [...keys, ...keys].reverse()) {
     const select = app.d.querySelector('#palette-mode'); select.value = key;
     select.dispatchEvent(new app.w.Event('change', { bubbles: true }));
@@ -92,6 +119,7 @@ async function login(storage = {}, fail = false) {
     assert.equal(app.d.documentElement.dataset.palette, 'violet');
     assert.equal(app.d.querySelector('#palette-mode').value, 'violet');
     assert.equal(app.w.localStorage.getItem('nova-theme'), 'dark');
+    assert.equal(app.d.querySelector('[data-palette-card="violet"]').getAttribute('aria-pressed'), 'true');
   });
   app.w.dispatchEvent(new app.w.StorageEvent('storage', { key: 'unrelated', newValue: 'teal' }));
   check('unrelated storage events leave palette alone', () => assert.equal(app.d.documentElement.dataset.palette, 'violet'));
@@ -105,6 +133,12 @@ async function login(storage = {}, fail = false) {
   const select = app.d.querySelector('#palette-mode'); select.value = 'teal'; select.dispatchEvent(new app.w.Event('change', { bubbles: true }));
   check('storage failure applies current-page palette and explains persistence', () => {
     assert.equal(app.d.documentElement.dataset.palette, 'teal');
+    assert.match(app.d.querySelector('#toast-root').textContent, /浏览器未能保存偏好/);
+  });
+  app.d.querySelector('[data-palette-card="ink"]').click();
+  check('card selection remains usable when preference storage fails', () => {
+    assert.equal(app.d.documentElement.dataset.palette, 'ink');
+    assert.equal(app.d.querySelector('[data-palette-card="ink"]').getAttribute('aria-pressed'), 'true');
     assert.match(app.d.querySelector('#toast-root').textContent, /浏览器未能保存偏好/);
   }); app.close();
   const blocked = await login({}, true);

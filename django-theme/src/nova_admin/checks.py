@@ -3,7 +3,7 @@ from django.conf import settings
 from django.core.checks import Tags, Warning, register
 from django.urls import NoReverseMatch, get_resolver, reverse
 
-from .navigation import ICON_PATHS, MAX_SHORTCUTS, resolve_provider
+from .navigation import ICON_NAMES, MAX_SHORTCUTS, resolve_provider
 
 
 def _site_paths(resolver, site, prefix=""):
@@ -82,9 +82,9 @@ def navigation_settings_check(app_configs, **kwargs):
         problems.append("NOVA_ADMIN_NAV_COMMON_MODELS must contain at most 50 'app_label.model_name' strings.")
     icons = getattr(settings, "NOVA_ADMIN_NAV_ICONS", {})
     if (not isinstance(icons, dict) or any(
-            not isinstance(key, str) or not key or not isinstance(icon, str) or icon not in ICON_PATHS
+            not isinstance(key, str) or not key or not isinstance(icon, str) or icon not in ICON_NAMES
             for key, icon in icons.items())):
-        problems.append("NOVA_ADMIN_NAV_ICONS must map app/model keys to a supported built-in icon name.")
+        problems.append("NOVA_ADMIN_NAV_ICONS must map app/model keys to a supported built-in or namespaced icon name.")
     for name in ("NOVA_ADMIN_NAV_ICON_PROVIDER", "NOVA_ADMIN_NAV_BADGE_PROVIDER"):
         value = getattr(settings, name, None)
         if value is not None and resolve_provider(value) is None:

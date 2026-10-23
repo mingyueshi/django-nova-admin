@@ -1,0 +1,5 @@
+# Preserve reviewed upstream distributions and notices byte for byte.
+dist/vendor/charts/** -text
+# These unchanged upstream notices use CRLF and retain their final blank line.
+dist/vendor/charts/echarts/LICENSE-tslib.txt whitespace=cr-at-eol,-blank-at-eof
+dist/vendor/charts/echarts/tslib-CopyrightNotice.txt whitespace=cr-at-eol,-blank-at-eof

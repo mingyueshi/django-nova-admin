@@ -1,3 +1,4 @@
+import { openIconData } from './open-icons.js';
 const paths = {
   grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   users:
@@ -34,5 +35,32 @@ const paths = {
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/>',
   cloud: '<path d="M7 18a5 5 0 1 1 0-10 7 7 0 0 1 13 3 3.5 3.5 0 0 1-1 7Z"/>',
 };
-export const icon = (name, cls = '') =>
-  `<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.grid}</svg>`;
+export const openIcons = Object.freeze(openIconData.icons);
+export const iconLibraries = Object.freeze(openIconData.libraries);
+const escapeAttribute = (value) =>
+  String(value).replace(
+    /[&<>"']/g,
+    (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char],
+  );
+export function icon(name, cls = '', options = {}) {
+  const entry = typeof name === 'string' && Object.hasOwn(openIcons, name) ? openIcons[name] : null;
+  const legacy = typeof name === 'string' && Object.hasOwn(paths, name) ? paths[name] : paths.grid;
+  const settings = options && typeof options === 'object' ? options : {};
+  const size = [16, 20, 24, 32, 48].includes(Number(settings.size))
+    ? Number(settings.size)
+    : entry
+      ? 24
+      : null;
+  const stroke = Number(settings.strokeWidth);
+  const strokeWidth =
+    Number.isFinite(stroke) && stroke >= 1 && stroke <= 3
+      ? stroke
+      : entry
+        ? entry.strokeWidth
+        : 1.65;
+  const label = typeof settings.label === 'string' ? settings.label : '';
+  const accessibility = label
+    ? `role="img" aria-label="${escapeAttribute(label)}"`
+    : 'aria-hidden="true"';
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="icon ${escapeAttribute(cls)}${size ? ` icon-size-${size}` : ''}"${size ? ` width="${size}" height="${size}"` : ''} viewBox="${entry?.viewBox || '0 0 24 24'}" fill="${entry?.fill || 'none'}" stroke="${entry?.stroke || 'currentColor'}" stroke-width="${entry?.stroke === 'none' ? 0 : strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${accessibility} focusable="false">${entry ? entry.body : legacy}</svg>`;
+}

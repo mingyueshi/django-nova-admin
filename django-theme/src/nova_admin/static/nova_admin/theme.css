@@ -1225,3 +1225,6 @@ body.nova-admin .nova-results-scrollbar::-moz-range-thumb { width: 44px; height:
 body.nova-admin .nova-results-scroll-button { flex: 0 0 auto; min-width: 36px; padding: 2px 10px; font-size: 22px; line-height: 1; }
 body.nova-admin .nova-results-scroll-button:disabled { opacity: .4; cursor: default; }
 body.nova-admin .nova-results-scrollbar:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* Bundled SVGs keep their requested dimensions; navigation requests 16px. */
+body.nova-admin .nova-icon { display: inline-block; flex: none; vertical-align: -.2em; }

@@ -23,6 +23,16 @@ License: MIT; full unchanged license in
 static/admin/css/vendor/select2/LICENSE-SELECT2.md.
 No Select2, jQuery or other third-party JavaScript is redistributed by this export.
 
+OPEN-SOURCE ICON SUBSETS
+Lucide 1.61.0 (ISC + MIT (Feather-derived icons)); 64 curated icons.
+Tabler Icons 3.49.0 (MIT); 64 curated icons.
+Heroicons 2.2.0 (MIT); 64 curated icons.
+Iconoir 7.12.1 (MIT); 64 curated icons.
+Bootstrap Icons 1.13.2 (MIT); 64 curated icons.
+Full unchanged license texts are in ICON-LICENSES/.
+Package-owned namespaced SVGs may appear when selected by the host configuration.
+Exact reviewed SVG sources and hashes: the accompanying dist/assets/icons/manifest.json.
+
 SVG ICON ATTRIBUTION
 The following upstream copyright/license notices are retained in the original SVG
 files in static/admin/img/. Asset contents have not been modified by the exporter.

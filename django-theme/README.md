@@ -269,3 +269,7 @@ Use dark or system-following appearance to enable those surfaces. See
 CSS override order, and tests.
 
 中文接入、验证边界和人工验收重点见 [PALETTE_PRESETS_ZH.md](PALETTE_PRESETS_ZH.md)。
+
+## 开源SVG图标
+
+随包提供Lucide、Tabler、Heroicons、Iconoir、Bootstrap Icons各64个常用图标，共320个，涵盖订单支付、库存物流、审批工单、数据报表、运维等11类场景，可用 `nova_icon` 模板标签及现有导航配置按固定名称选择，保持服务器渲染与权限过滤。旧内置名称继续可用；许可文本随包保留，运行时不访问第三方图标服务。预览、版本、完整用法和添加资源步骤见 [ICONS.md](ICONS.md)。

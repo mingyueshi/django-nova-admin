@@ -1,6 +1,16 @@
+/* Cards inherit each preset's authored tokens; neutral surfaces are local fallbacks. */
+:where(.palette-card) {
+  --nova-surface-dark-bg: #0c101a;
+  --nova-surface-dark-sidebar: #101520;
+  --nova-surface-dark-panel: #151b28;
+  --nova-surface-dark-panel2: #1a2232;
+  --nova-surface-dark-text: #eef0f6;
+  --nova-surface-dark-muted: #9ba8c2;
+  --nova-surface-dark-line: #273043;
+}
 /* Optional industry-inspired palettes, not industry standards. Default is untouched.
    Hand-written tokens only; status colors and existing SVG currentColor stay semantic. */
-:root:where([data-palette="teal"]) {
+:root:where([data-palette="teal"]), .palette-card:where([data-palette-card="teal"]) {
   --nova-brand-light: #0f766e;
   --nova-brand-light-hover: #115e59;
   --nova-brand-dark: #5eead4;
@@ -10,7 +20,7 @@
   --nova-brand-selection-dark: #123b38;
   --nova-brand-row-dark: #102e2e;
 }
-:root:where([data-palette="indigo"]) {
+:root:where([data-palette="indigo"]), .palette-card:where([data-palette-card="indigo"]) {
   --nova-brand-light: #4338ca;
   --nova-brand-light-hover: #3730a3;
   --nova-brand-dark: #a5b4fc;
@@ -20,7 +30,7 @@
   --nova-brand-selection-dark: #282e54;
   --nova-brand-row-dark: #202641;
 }
-:root:where([data-palette="violet"]) {
+:root:where([data-palette="violet"]), .palette-card:where([data-palette-card="violet"]) {
   --nova-brand-light: #6d28d9;
   --nova-brand-light-hover: #5b21b6;
   --nova-brand-dark: #c4b5fd;
@@ -30,7 +40,7 @@
   --nova-brand-selection-dark: #34254f;
   --nova-brand-row-dark: #29203d;
 }
-:root:where([data-palette="terracotta"]) {
+:root:where([data-palette="terracotta"]), .palette-card:where([data-palette-card="terracotta"]) {
   --nova-brand-light: #9a3412;
   --nova-brand-light-hover: #7c2d12;
   --nova-brand-dark: #fdba74;
@@ -41,7 +51,7 @@
   --nova-brand-row-dark: #30231f;
 }
 /* Surface palettes also provide dark backgrounds; light appearance stays independent. */
-:root:where([data-palette="graphite"]) {
+:root:where([data-palette="graphite"]), .palette-card:where([data-palette-card="graphite"]) {
   --nova-brand-light: #3f3f46;
   --nova-brand-light-hover: #27272a;
   --nova-brand-dark: #d4d4d8;
@@ -62,7 +72,7 @@
   --nova-surface-dark-tool: #3f3f46;
   --nova-surface-dark-tool-hover: #52525b;
 }
-:root:where([data-palette="midnight"]) {
+:root:where([data-palette="midnight"]), .palette-card:where([data-palette-card="midnight"]) {
   --nova-brand-light: #1e40af;
   --nova-brand-light-hover: #1e3a8a;
   --nova-brand-dark: #b5b8ff;
@@ -83,7 +93,7 @@
   --nova-surface-dark-tool: #343965;
   --nova-surface-dark-tool-hover: #454d83;
 }
-:root:where([data-palette="forest"]) {
+:root:where([data-palette="forest"]), .palette-card:where([data-palette-card="forest"]) {
   --nova-brand-light: #24613b;
   --nova-brand-light-hover: #194a2b;
   --nova-brand-dark: #a6e3b1;
@@ -104,7 +114,7 @@
   --nova-surface-dark-tool: #34533d;
   --nova-surface-dark-tool-hover: #46694f;
 }
-:root:where([data-palette="amber"]) {
+:root:where([data-palette="amber"]), .palette-card:where([data-palette-card="amber"]) {
   --nova-brand-light: #8a4b0f;
   --nova-brand-light-hover: #693606;
   --nova-brand-dark: #f7c77f;
@@ -126,7 +136,7 @@
   --nova-surface-dark-tool-hover: #785b36;
 }
 /* 监控运维：深海蓝绿底色与冰青强调色 */
-:root:where([data-palette="ocean"]) {
+:root:where([data-palette="ocean"]), .palette-card:where([data-palette-card="ocean"]) {
   --nova-brand-light: #0e647c;
   --nova-brand-light-hover: #084c61;
   --nova-brand-dark: #7dd3e8;
@@ -148,7 +158,7 @@
   --nova-surface-dark-tool-hover: #326070;
 }
 /* 密集表格：低饱和冷灰底色，突出数据层级 */
-:root:where([data-palette="slate"]) {
+:root:where([data-palette="slate"]), .palette-card:where([data-palette-card="slate"]) {
   --nova-brand-light: #475569;
   --nova-brand-light-hover: #334155;
   --nova-brand-dark: #cbd5e1;
@@ -170,7 +180,7 @@
   --nova-surface-dark-tool-hover: #4b5f76;
 }
 /* 内容审稿：灰梅紫底色与柔和藕紫强调色 */
-:root:where([data-palette="plum"]) {
+:root:where([data-palette="plum"]), .palette-card:where([data-palette-card="plum"]) {
   --nova-brand-light: #803e73;
   --nova-brand-light-hover: #632e59;
   --nova-brand-dark: #e4b7dc;
@@ -192,7 +202,7 @@
   --nova-surface-dark-tool-hover: #6c4c6e;
 }
 /* 夜间阅读：低饱和咖棕底色与奶咖强调色 */
-:root:where([data-palette="coffee"]) {
+:root:where([data-palette="coffee"]), .palette-card:where([data-palette-card="coffee"]) {
   --nova-brand-light: #73513e;
   --nova-brand-light-hover: #573b2d;
   --nova-brand-dark: #dfc3a8;
@@ -214,7 +224,7 @@
   --nova-surface-dark-tool-hover: #655244;
 }
 /* 科技工作台：冰蓝强调色与清晰的钢蓝层次 */
-:root:where([data-palette="glacier"]) {
+:root:where([data-palette="glacier"]), .palette-card:where([data-palette-card="glacier"]) {
   --nova-brand-light: #245aa8;
   --nova-brand-light-hover: #1b4380;
   --nova-brand-dark: #a7cdf7;
@@ -236,7 +246,7 @@
   --nova-surface-dark-tool-hover: #45617f;
 }
 /* 品牌运营：酒红底色与柔和玫瑰强调色 */
-:root:where([data-palette="rose"]) {
+:root:where([data-palette="rose"]), .palette-card:where([data-palette-card="rose"]) {
   --nova-brand-light: #9b3658;
   --nova-brand-light-hover: #782640;
   --nova-brand-dark: #f4b5cb;
@@ -258,7 +268,7 @@
   --nova-surface-dark-tool-hover: #75475e;
 }
 /* 项目管理：橄榄绿背景与浅苔绿强调色 */
-:root:where([data-palette="olive"]) {
+:root:where([data-palette="olive"]), .palette-card:where([data-palette-card="olive"]) {
   --nova-brand-light: #536722;
   --nova-brand-light-hover: #3e4d18;
   --nova-brand-dark: #c9db96;
@@ -280,7 +290,7 @@
   --nova-surface-dark-tool-hover: #596943;
 }
 /* 低干扰办公：近黑背景与冷银灰强调色 */
-:root:where([data-palette="ink"]) {
+:root:where([data-palette="ink"]), .palette-card:where([data-palette-card="ink"]) {
   --nova-brand-light: #465064;
   --nova-brand-light-hover: #30394c;
   --nova-brand-dark: #bdc7dc;

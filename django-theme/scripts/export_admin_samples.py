@@ -345,6 +345,7 @@ def copy_static(output: Path):
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(resolved, destination)
     shutil.copyfile(ROOT / "LICENSE", output / "NOVA-LICENSE.txt")
+    shutil.copytree(ROOT / "src/nova_admin/licenses", output / "ICON-LICENSES", dirs_exist_ok=True)
     svg_notices = set()
     for source in sorted(django_static.rglob("*.svg")):
         for comment in re.findall(r"<!--(.*?)-->", source.read_text(encoding="utf-8"), flags=re.S):
@@ -352,6 +353,9 @@ def copy_static(output: Path):
                 svg_notices.add(" ".join(comment.strip().lstrip("!").split()))
     project_urls = distribution.metadata.get_all("Project-URL") or []
     django_source = next((entry.split(",", 1)[1].strip() for entry in project_urls if entry.startswith("Source,")), "https://github.com/django/django")
+    icon_data = json.loads((ROOT / "src/nova_admin/icons.json").read_text(encoding="utf-8"))
+    icon_notices = "\n".join(f"{entry['name']} {entry['version']} ({entry['license']}); {entry['count']} curated icons."
+                             for entry in icon_data['libraries'])
     notices = f"""THIRD-PARTY NOTICES — SYNTHETIC DJANGO ADMIN SAMPLES
 
 Django {distribution.version}
@@ -376,6 +380,12 @@ Copyright (c) 2012-2017 Kevin Brown, Igor Vaynberg, and Select2 contributors.
 License: MIT; full unchanged license in
 static/admin/css/vendor/select2/LICENSE-SELECT2.md.
 No Select2, jQuery or other third-party JavaScript is redistributed by this export.
+
+OPEN-SOURCE ICON SUBSETS
+{icon_notices}
+Full unchanged license texts are in ICON-LICENSES/.
+Package-owned namespaced SVGs may appear when selected by the host configuration.
+Exact reviewed SVG sources and hashes: the accompanying dist/assets/icons/manifest.json.
 
 SVG ICON ATTRIBUTION
 The following upstream copyright/license notices are retained in the original SVG
@@ -681,7 +691,7 @@ def export(output: Path, with_captcha=False, with_extensions=False, with_palette
     from django.db import connection
     from django.test import Client
     from catalog.models import Product, ProductVariant
-    runtime_suffixes = {".py", ".html", ".css", ".js", ".po", ".mo", ".webp", ".svg", ".txt"}
+    runtime_suffixes = {".py", ".html", ".css", ".js", ".json", ".po", ".mo", ".webp", ".svg", ".txt"}
     sources = sorted({path for directory in (ROOT / "src", ROOT / "demo") for path in directory.rglob("*") if path.is_file() and path.suffix.lower() in runtime_suffixes and "__pycache__" not in path.parts})
     sources += [ROOT / "pyproject.toml", Path(__file__).resolve(), ROOT / "scripts" / "test_export_safety.py"]
     before_hashes = {p.relative_to(ROOT).as_posix(): sha256(p) for p in sources}

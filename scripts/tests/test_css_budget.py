@@ -59,5 +59,14 @@ class CSSBudgetTests(unittest.TestCase):
             self.assertIn('django-theme/src/nova_admin/static/nova_admin/new/component.css', current)
 
 
+    def test_pinned_vendor_styles_are_not_authored_css(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'dist/vendor/charts').mkdir(parents=True)
+            (root / 'dist/vendor/charts/upstream.min.css').write_text('.vendor{display:block}')
+            (root / 'dist/site.css').write_text('body { color: blue; }')
+            self.assertEqual(set(budget.measurements(root)), {'dist/site.css'})
+
+
 if __name__ == '__main__':
     unittest.main()

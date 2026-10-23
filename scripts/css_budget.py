@@ -15,7 +15,7 @@ BASELINE = ROOT / 'ci/css-budget.json'
 def measurements(root):
     paths = sorted((root / 'django-theme/src/nova_admin/static/nova_admin').rglob('*.css'))
     paths += sorted(path for path in (root / 'dist').rglob('*.css')
-                    if path.relative_to(root / 'dist').parts[0] not in {'native-admin', 'navigation-lab'})
+                    if path.relative_to(root / 'dist').parts[0] not in {'native-admin', 'navigation-lab', 'vendor'})
     results = {}
     for path in paths:
         data = path.read_bytes()

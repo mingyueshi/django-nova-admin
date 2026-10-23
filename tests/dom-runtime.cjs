@@ -9,8 +9,9 @@ async function createApp(options={}){
  let mediaListener;const media={matches:!!options.systemDark,addEventListener(name,listener){if(name==='change')mediaListener=listener;}};
  w.matchMedia=()=>media;
  const context=dom.getInternalVMContext(),modules=new Map();
- async function load(file){if(modules.has(file))return modules.get(file);const m=new vm.SourceTextModule(fs.readFileSync(file,'utf8'),{context,identifier:file});modules.set(file,m);await m.link(spec=>load(path.resolve(path.dirname(file),spec)));return m;}
- await(await load(path.join(base,'js/app.js'))).evaluate();
+ // Let the VM link the complete graph, including shared transitive dependencies.
+ function load(file){if(modules.has(file))return modules.get(file);const m=new vm.SourceTextModule(fs.readFileSync(file,'utf8'),{context,identifier:file});modules.set(file,m);return m;}
+ const entry=load(path.join(base,'js/app.js'));await entry.link((spec,parent)=>load(path.resolve(path.dirname(parent.identifier),spec)));await entry.evaluate();
  return {dom,w,d:w.document,setSystemDark(value){media.matches=value;mediaListener?.({matches:value});},close:()=>w.close()};
 }
 module.exports={createApp};

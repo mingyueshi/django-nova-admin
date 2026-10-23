@@ -159,6 +159,13 @@ def sdist_check(sdist, source):
         raise ValueError('Inconsistent sdist metadata')
     return {'name': project['name'], 'version': project['version'], 'source_files': len(expected)}
 
+# Preserve unchanged upstream notice filenames, only at reviewed vendor paths.
+STATIC_VENDOR_NOTICES = frozenset({
+    'vendor/charts/echarts/LICENSE', 'vendor/charts/echarts/NOTICE',
+    'vendor/charts/echarts/LICENSE-d3', 'vendor/charts/uplot/LICENSE',
+})
+
+
 def static_files(source):
     result = {}
     for path in sorted((source / 'dist').rglob('*')):
@@ -170,7 +177,7 @@ def static_files(source):
         safe_name(name)
         if name == STATIC_MARKER and path.read_bytes() != MARKER_CONTENT:
             raise ValueError('Unexpected export marker content')
-        if name != STATIC_MARKER and path.suffix.lower() not in STATIC_EXTENSIONS:
+        if name not in {STATIC_MARKER, *STATIC_VENDOR_NOTICES} and path.suffix.lower() not in STATIC_EXTENSIONS:
             raise ValueError('Unexpected static file type: ' + name)
         result[name] = path.read_bytes()
     if 'index.html' not in result:
@@ -190,7 +197,7 @@ def read_static(target):
     with tarfile.open(target, 'r:gz') as archive:
         for item in archive:
             safe_name(item.name)
-            if not item.isfile() or item.name in result or (item.name != STATIC_MARKER and PurePosixPath(item.name).suffix.lower() not in STATIC_EXTENSIONS):
+            if not item.isfile() or item.name in result or (item.name not in {STATIC_MARKER, *STATIC_VENDOR_NOTICES} and PurePosixPath(item.name).suffix.lower() not in STATIC_EXTENSIONS):
                 raise ValueError('Unexpected static archive member')
             result[item.name] = archive.extractfile(item).read()
     return result

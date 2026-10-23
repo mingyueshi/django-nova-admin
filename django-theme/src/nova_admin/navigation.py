@@ -5,6 +5,8 @@ import logging
 from django.conf import settings
 from django.utils.module_loading import import_string
 
+from .icons import icon_names
+
 logger = logging.getLogger(__name__)
 MAX_SHORTCUTS = 50
 # SVG path data is package-owned. Configuration selects a name, never HTML,
@@ -21,6 +23,8 @@ ICON_PATHS = {
     "settings": "M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2M18 12a6 6 0 1 1-12 0 6 6 0 0 1 12 0M14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0",
 }
 
+
+ICON_NAMES = frozenset(ICON_PATHS) | icon_names()
 
 def resolve_provider(value):
     """Resolve an explicit host-project hook without ever calling it here."""
@@ -65,7 +69,8 @@ def extend_navigation(groups, request=None):
         for app in group["apps"]:
             app_key = app["app_label"]
             icon = provided_icons.get(app_key, icons.get(app_key))
-            copied_app = {**app, "nova_icon_path": ICON_PATHS.get(icon) if isinstance(icon, str) else None}
+            copied_app = {**app, "nova_icon_path": ICON_PATHS.get(icon) if isinstance(icon, str) else None,
+                          "nova_icon_name": icon if isinstance(icon, str) and icon in icon_names() else None}
             copied_models = []
             for model in app["models"]:
                 if not isinstance(model, dict):
@@ -76,6 +81,7 @@ def extend_navigation(groups, request=None):
                 badge = badges.get(key)
                 copied = {**model, "nova_key": key,
                           "nova_icon_path": ICON_PATHS.get(icon) if isinstance(icon, str) else None,
+                          "nova_icon_name": icon if isinstance(icon, str) and icon in icon_names() else None,
                           "nova_badge": None}
                 # Add-only models have no list destination and gain no count.
                 if key and model.get("admin_url"):

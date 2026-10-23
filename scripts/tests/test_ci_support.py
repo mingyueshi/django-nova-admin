@@ -280,6 +280,21 @@ class ArtifactTests(unittest.TestCase):
                 root=Path(tmp);(root/'dist').mkdir();(root/'dist/index.html').write_text('ok');(root/'dist'/name).write_text('bad')
                 with self.subTest(name=name),self.assertRaises(ValueError):artifacts.static_files(root)
 
+    def test_exact_vendor_notice_paths_survive_static_round_trip(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);(root/'dist').mkdir();(root/'dist/index.html').write_text('ok')
+            for name in artifacts.STATIC_VENDOR_NOTICES:
+                target=root/'dist'/name;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(b'Unchanged upstream notice')
+            files=artifacts.static_files(root);archive=root/'static.tar.gz'
+            artifacts.pack_static(files,archive,1)
+            self.assertEqual(artifacts.read_static(archive),files)
+
+    def test_arbitrary_extensionless_vendor_files_still_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);(root/'dist/vendor/charts').mkdir(parents=True)
+            (root/'dist/index.html').write_text('ok');(root/'dist/vendor/charts/OTHER').write_text('bad')
+            with self.assertRaises(ValueError):artifacts.static_files(root)
+
     def test_known_export_marker_is_retained(self):
         files=artifacts.static_files(ROOT)
         self.assertEqual(files[artifacts.STATIC_MARKER],artifacts.MARKER_CONTENT)

@@ -1,4 +1,4 @@
 {% load i18n %}
 <li data-nova-shortcut-model="{{ model.nova_key }}"{% if favorite %} data-nova-favorite-shortcut hidden{% endif %}>
-  <a href="{{ model.admin_url }}">{% include "nova_admin/navigation_icon.html" with icon_path=model.nova_icon_path %}<span class="nova-nav-model-label">{{ model.name }}</span>{% if model.nova_badge != None %}<span class="nova-nav-badge"><span class="visually-hidden">{% translate 'Count' context 'Nova Admin' %}: </span>{{ model.nova_badge }}</span>{% endif %}</a>
+  <a href="{{ model.admin_url }}">{% include "nova_admin/navigation_icon.html" with icon_path=model.nova_icon_path icon_name=model.nova_icon_name %}<span class="nova-nav-model-label">{{ model.name }}</span>{% if model.nova_badge != None %}<span class="nova-nav-badge"><span class="visually-hidden">{% translate 'Count' context 'Nova Admin' %}: </span>{{ model.nova_badge }}</span>{% endif %}</a>
 </li>

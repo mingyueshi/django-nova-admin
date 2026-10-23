@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "libraries": [
+    {
+      "id": "echarts",
+      "name": "echarts",
+      "version": "6.1.0",
+      "archive": {
+        "url": "https://registry.npmjs.org/echarts/-/echarts-6.1.0.tgz",
+        "integrity": "sha512-q0yaFPggC9FUdsWH4blavRWFmxdrIodbkoKNAjJudAI6CA9gNPxHtV2RcZNEepZVlk4yvBYkOkbk6HIVpIyHZA==",
+        "sha256": "681aff88cc1038c3fa941a3a53d1b177a52250b05335efc607d6105ae13be481"
+      },
+      "files": [
+        {
+          "path": "echarts/echarts.min.js",
+          "source": "package/dist/echarts.min.js",
+          "sha256": "b66b25aeb4df84e33199dc21694014d336d222cbd9deb0e5a7c14bd6aa0d0fd0",
+          "bytes": 1121883
+        },
+        {
+          "path": "echarts/LICENSE",
+          "source": "package/LICENSE",
+          "sha256": "634293835b43a6dd2094fa39182a3d9a6b9ca43b7fdb9ac354e8037af2a3093a",
+          "bytes": 11990
+        },
+        {
+          "path": "echarts/NOTICE",
+          "source": "package/NOTICE",
+          "sha256": "d491d358344f842685c1b1585970999db65fe30ecf7ef3867af8814f4016c016",
+          "bytes": 168
+        },
+        {
+          "path": "echarts/LICENSE-d3",
+          "source": "package/licenses/LICENSE-d3",
+          "sha256": "e1211892da0b0e0585b7aebe8f98c1274fba15bafe47fa1f4ee8a7a502c06304",
+          "bytes": 1475
+        }
+      ]
+    },
+    {
+      "id": "chartjs",
+      "name": "chart.js",
+      "version": "4.6.1",
+      "archive": {
+        "url": "https://registry.npmjs.org/chart.js/-/chart.js-4.6.1.tgz",
+        "integrity": "sha512-hJyniucsFmq//EvXYvJ6c6mahPoI3kaxdjVH8awTaJ/fDNWeSqqqArixMJWkWNN6fcYvPU3HneSANFNYtRi61g==",
+        "sha256": "9345dacdf4bb4c5d40321f4b9aafab6fe676d37a534fc0bc2d17c4c4e29c4f00"
+      },
+      "files": [
+        {
+          "path": "chartjs/chart.umd.min.js",
+          "source": "package/dist/chart.umd.min.js",
+          "sha256": "87364cc2b2a76a6684929e7d6b80b18a897794db38400caff1fcf1791c6925d2",
+          "bytes": 210082
+        },
+        {
+          "path": "chartjs/LICENSE.md",
+          "source": "package/LICENSE.md",
+          "sha256": "41a84aa2caba645f966a18d9c2056b73e6d3a81d80bc0046bc0011a2634d4cce",
+          "bytes": 1093
+        }
+      ]
+    },
+    {
+      "id": "uplot",
+      "name": "uplot",
+      "version": "1.6.32",
+      "archive": {
+        "url": "https://registry.npmjs.org/uplot/-/uplot-1.6.32.tgz",
+        "integrity": "sha512-KIMVnG68zvu5XXUbC4LQEPnhwOxBuLyW1AHtpm6IKTXImkbLgkMy+jabjLgSLMasNuGGzQm/ep3tOkyTxpiQIw==",
+        "sha256": "4b8a8191e425658e3ea8c8c1314b0fc679c861ee3a1af2b20c7b16ba50b5133d"
+      },
+      "files": [
+        {
+          "path": "uplot/uPlot.iife.min.js",
+          "source": "package/dist/uPlot.iife.min.js",
+          "sha256": "19c8d4c6ad88929a79f4ae49d6f7161566dfd0ba3d15cc495e974f787eb78f1f",
+          "bytes": 51081
+        },
+        {
+          "path": "uplot/uPlot.min.css",
+          "source": "package/dist/uPlot.min.css",
+          "sha256": "df630c6a8d6f8eeaff264b50f73ce5b114f646ffd9a0bb74f049b0a00135fa04",
+          "bytes": 1857
+        },
+        {
+          "path": "uplot/LICENSE",
+          "source": "package/LICENSE",
+          "sha256": "8f989229699b4fe2f1a0432d0e9edc338a8a911e250e2d1b01ecd770a5f5b1bd",
+          "bytes": 1078
+        }
+      ]
+    },
+    {
+      "id": "color",
+      "name": "@kurkle/color",
+      "version": "0.3.2",
+      "archive": {
+        "url": "https://registry.npmjs.org/@kurkle/color/-/color-0.3.2.tgz",
+        "integrity": "sha512-fuscdXJ9G1qb7W8VdHi+IwRqij3lBkosAm4ydQtEmbY58OzHXqQhvlxqEkoz0yssNVn38bcpRWgA9PP+OGoisw==",
+        "sha256": "af9eaac0ecbb472fe2093d2a4525629f96541f4e6422c031d9c86d4dc8fc7511"
+      },
+      "files": [
+        {
+          "path": "chartjs/LICENSE-color.md",
+          "source": "package/LICENSE.md",
+          "sha256": "2859c50313bad2ba77b081410c477beaf92b60ca13a77a248d89859a6dd6ac81",
+          "bytes": 1085
+        }
+      ]
+    },
+    {
+      "id": "zrender",
+      "name": "zrender",
+      "version": "6.1.0",
+      "archive": {
+        "url": "https://registry.npmjs.org/zrender/-/zrender-6.1.0.tgz",
+        "integrity": "sha512-oEGMDB6pOP2S6OwRR4PdVv610zrjnA3Bh+JnSG12fYJlBKjtNAoEb5fSUoCOOINlH96I2fU38/A2UpRKs67xYQ==",
+        "sha256": "38f2fb722a638be016ca0175b139c40c886ef47fc2afdb741b2e7e7ae9683f9c"
+      },
+      "files": [
+        {
+          "path": "echarts/LICENSE-zrender.txt",
+          "source": "package/LICENSE",
+          "sha256": "a681e9d183c72b4af4856935893805eb48c08f0f5a3f260203db7444c20fb98a",
+          "bytes": 1509
+        }
+      ]
+    },
+    {
+      "id": "tslib",
+      "name": "tslib",
+      "version": "2.3.0",
+      "archive": {
+        "url": "https://registry.npmjs.org/tslib/-/tslib-2.3.0.tgz",
+        "integrity": "sha512-N82ooyxVNm6h1riLCoyS9e3fuJ3AMG2zIZs2Gd1ATcSFjSA23Q0fzjjZeh0jbJvWVDZ0cJT8yaNNaaXHzueNjg==",
+        "sha256": "ae285639feff7e3c39de4626352181a5d73b815725e42639b411c43848abffdb"
+      },
+      "files": [
+        {
+          "path": "echarts/LICENSE-tslib.txt",
+          "source": "package/LICENSE.txt",
+          "sha256": "210b19e543130388c68654b7497e967119ce17145f66ab7d85688fbd70f08751",
+          "bytes": 655
+        },
+        {
+          "path": "echarts/tslib-CopyrightNotice.txt",
+          "source": "package/CopyrightNotice.txt",
+          "sha256": "dd835e67a9a297da32f9467d7677a5d02c8e50e10f15da43b810147c79c04b9b",
+          "bytes": 824
+        }
+      ]
+    }
+  ]
+}

@@ -9,6 +9,14 @@ from django.utils.translation import pgettext
 register = template.Library()
 
 
+@register.simple_tag
+def nova_icon(name, size=20, label='', stroke_width=None):
+    """Render a bundled namespaced SVG, with an optional accessible label."""
+    from nova_admin.icons import render_icon
+
+    return render_icon(name, size=size, label=label, stroke_width=stroke_width)
+
+
 @register.simple_tag(takes_context=True)
 def nova_navigation_extensions(context):
     """Call optional bulk hooks once for this permission-filtered sidebar."""

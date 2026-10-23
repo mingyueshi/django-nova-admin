@@ -1,6 +1,8 @@
 // Route labels and the entire navigation hierarchy share one definition.
 export const navigationTree = [
   { id: 'overview', label: '工作概览', icon: 'grid' },
+  { id: 'analytics', label: '统计分析', icon: 'lucide:chart-column' },
+  { id: 'analysis', label: '联动分析', icon: 'activity' },
   {
     key: 'business',
     label: '业务管理',
@@ -33,6 +35,8 @@ export const navigationTree = [
     icon: 'terminal',
     children: [
       { id: 'components', label: '组件预览', icon: 'layers' },
+      { id: 'icons', label: '图标演示', icon: 'grid' },
+      { id: 'charts', label: '开源图表', icon: 'lucide:chart-column' },
       { id: 'native-samples', label: '原生模板样本', icon: 'book' },
       { id: 'login-preview', label: '登录页预览', icon: 'shield' },
     ],

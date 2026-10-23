@@ -13,6 +13,7 @@ qa/
 !.env.example
 !.env.sample
 .local/
+.playwright-cli/
 .openai/
 *.py[cod]
 *.egg-info/

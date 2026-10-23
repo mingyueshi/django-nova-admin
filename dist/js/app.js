@@ -1,4 +1,11 @@
-import { applyPalette, savedPalette, paletteOptions } from './palette.js';
+import {
+  applyPalette,
+  savedPalette,
+  paletteOptions,
+  renderPaletteCards,
+  paletteSummary,
+  syncPaletteCards,
+} from './palette.js';
 import { createCollection } from './collection.js';
 import { pagination, submitPageJump } from './pagination.js';
 import { searchShortcut } from './presentation.js';
@@ -26,6 +33,15 @@ import {
   syncCatalogSelection,
 } from './catalog.js';
 import { icon } from './icons.js';
+import { initIconDemo, renderIconDemo } from './icon-demo.js';
+import { initAnalytics, renderAnalytics } from './analytics.js';
+import {
+  initAnalysisLab,
+  renderAnalysisLab,
+  mountAnalysisLab,
+  disposeAnalysisLab,
+} from './analysis-lab.js';
+import { initChartLab, renderChartLab, mountChartLab, disposeChartLab } from './chart-lab.js';
 import {
   renderComponentLab,
   renderAudit,
@@ -82,10 +98,14 @@ const routeView = (route) => route.split('/')[0].split('?')[0];
 const validRoute = (route) =>
   [
     'overview',
+    'analytics',
+    'analysis',
+    'charts',
     'users',
     'roles',
     'audit',
     'components',
+    'icons',
     'settings',
     'catalog',
     'native-samples',
@@ -167,6 +187,11 @@ const navOpened = {
   developer: false,
   ...read('nova-nav-open', {}),
 };
+navigationTrail(state.view)
+  .filter((node) => node.key)
+  .forEach((node) => {
+    navOpened[node.key] = true;
+  });
 let overlayStack = [];
 let appearanceMode = 'light';
 try {
@@ -193,6 +218,7 @@ function applyAppearance(mode, persist = false) {
   });
   const select = $('#appearance-mode');
   if (select) select.value = mode;
+  syncPaletteCards();
 }
 appearanceMedia?.addEventListener?.('change', () => {
   if (appearanceMode === 'auto') applyAppearance('auto');
@@ -226,11 +252,22 @@ function intro(title, subtitle, actions, cls = '') {
   return `<div class="page-intro ${cls}"><div><h1>${title}</h1><p>${subtitle}</p></div><div class="page-actions">${actions}</div></div>`;
 }
 function renderView() {
+  disposeChartLab();
+  disposeAnalysisLab();
   const view = {
     overview: overview,
+    analytics: renderAnalytics,
+    analysis: renderAnalysisLab,
+    charts: renderChartLab,
     users: usersView,
     roles: rolesView,
     components: componentsView,
+    icons: () =>
+      intro(
+        '图标与开源图标',
+        '挑选合适的图形，让操作更直观。五套开源图标，覆盖更多后台业务场景。',
+        '',
+      ) + renderIconDemo(),
     audit: auditView,
     settings: settingsView,
     catalog: () => renderCatalog(state.route),
@@ -242,6 +279,8 @@ function renderView() {
   const h = $('#view h1');
   if (h) h.setAttribute('tabindex', '-1');
   enhanceControls();
+  if (state.view === 'charts') void mountChartLab();
+  if (state.view === 'analysis') void mountAnalysisLab();
   if (state.view === 'users') syncUserSelection();
   if (state.view === 'catalog') syncCatalogSelection();
   if (state.view === 'news') syncNewsSelection();
@@ -264,7 +303,7 @@ function overview() {
     intro(
       '工作概览',
       '欢迎回来，开始今天的工作吧。',
-      `<select id="period" class="date-select" aria-label="概览时间范围">${[7, 30, 90].map((n) => `<option value="${n}" ${n === state.period ? 'selected' : ''}>最近 ${n} 天</option>`).join('')}</select>${button('导出报告', 'report', '', 'download')}`,
+      `<select id="period" class="date-select" aria-label="概览时间范围">${[7, 30, 90].map((n) => `<option value="${n}" ${n === state.period ? 'selected' : ''}>最近 ${n} 天</option>`).join('')}</select><a class="btn" href="#analytics">${icon('lucide:chart-column')}统计分析</a>${button('导出报告', 'report', '', 'download')}`,
     ) +
     `<section class="metrics" aria-label="关键指标">${[
       ['总用户数', m[0].toLocaleString(), '+12.8%', 'users'],
@@ -374,7 +413,7 @@ function componentsView() {
     intro(
       '组件预览',
       '覆盖常见后台场景，让每一步都有清楚的状态和反馈。',
-      button('查看设计说明', 'docs', '', 'book'),
+      `<div class="icon-component-links">${button('查看设计说明', 'docs', '', 'book')}<a class="btn" href="#icons">${icon('grid')}图标演示</a></div>`,
     ) + renderComponentLab()
   );
 }
@@ -393,7 +432,7 @@ function nativeSamplesView() {
 function settingsView() {
   return (
     intro('系统设置', '在熟悉的工作方式里，留一点自己的偏好。', '') +
-    `<div class="settings-layout"><form class="panel" id="settings-form"><div class="panel-head"><h2>工作空间</h2><span class="pill">仅本地保存</span></div><div class="settings-body"><div class="field"><label for="workspace-name">工作空间名称</label><input id="workspace-name" name="workspace" required maxlength="24" value="${esc(state.settings.workspace)}"><small>展示在侧边栏；不修改任何真实组织信息</small></div><button class="toggle" type="button" role="switch" id="motion-toggle" aria-checked="${state.settings.animations}" data-action="motion-toggle"><span>界面动效<small>支持系统“减少动态效果”偏好</small></span><span class="toggle-track"></span></button></div><div class="settings-footer"><button class="btn primary" type="submit">${icon('check')}保存偏好</button></div></form><section class="panel"><div class="panel-head"><h2>主题与恢复</h2></div><div class="settings-body"><p class="muted" style="font-size:12px;margin-bottom:18px">NOVA 是可关闭的外观增强。站内提供真实原生模板的只读对照；实际 Django 项目通过主题开关恢复原生样式。</p><div class="field"><label for="appearance-mode">外观偏好</label><select id="appearance-mode">${[
+    `<section class="panel palette-gallery" aria-labelledby="palette-gallery-title"><div class="palette-gallery-header"><div><span class="palette-eyebrow">NOVA / APPEARANCE</span><h2 id="palette-gallery-title">找到适合你的工作色彩 <span>16 套配色</span></h2><p>先看效果，再选配色。点击任意色卡，立即应用到整个工作台。</p></div><div class="palette-gallery-controls"><div class="field"><label for="appearance-mode">外观偏好</label><select id="appearance-mode">${[
       ['light', '企业浅色'],
       ['dark', '深色'],
       ['auto', '跟随系统'],
@@ -404,7 +443,7 @@ function settingsView() {
       )
       .join(
         '',
-      )}</select><small>立即应用；首次访问默认浅色，保留你已保存的选择</small></div><div class="field"><label for="palette-mode">配色方案</label><select id="palette-mode" data-palette-select>${paletteOptions(document.documentElement.dataset.palette)}</select><small>深海青：监控运维；雾岩灰：密集表格；暮梅紫：内容审稿；摩卡棕：夜间阅读。冰川蓝：科技工作台；胭脂红：品牌运营；苔原绿：项目管理；极夜黑：低干扰办公。暗色方案在深色外观下同步调整背景与面板，浅色时使用对应强调色；配色和外观可分别选择。</small></div><div style="display:flex;gap:10px;flex-wrap:wrap">${button('切换深浅主题', 'theme', '', 'sun')}${button('查看原生模板对照', 'native', '', 'history')}${button('集成与恢复说明', 'docs', 'subtle', 'book')}</div></div></section><section class="panel"><div class="panel-head"><h2>重置演示数据</h2></div><div class="settings-body"><p class="muted" style="font-size:12px;margin-bottom:18px">清除当前浏览器里的用户、角色及偏好修改，恢复最初的演示内容。</p>${button('恢复演示初始状态', 'reset-demo', 'danger', 'history')}</div></section></div>`
+      )}</select><small>色卡随外观同步切换，跟随系统会自动更新</small></div><div class="field"><label for="palette-mode">配色方案</label><select id="palette-mode" data-palette-select>${paletteOptions(document.documentElement.dataset.palette)}</select><small>也可以从下方色卡直接选择</small></div></div></div><div class="palette-gallery-meta"><p data-palette-current role="status" aria-live="polite">${paletteSummary()}</p><span class="palette-legend">色点顺序：背景 / 侧栏 / 面板 / 强调 / 文字</span></div><div class="palette-grid" role="group" aria-label="16套配色色卡">${renderPaletteCards(document.documentElement.dataset.palette)}</div><div class="palette-gallery-footer"><p>选择会自动保存，登录页与其他窗口同步使用；浅色、深色和配色可分别选择。</p><button type="button" class="btn subtle" data-palette-default>恢复默认配色</button></div></section><div class="settings-layout"><form class="panel" id="settings-form"><div class="panel-head"><h2>工作空间</h2><span class="pill">仅本地保存</span></div><div class="settings-body"><div class="field"><label for="workspace-name">工作空间名称</label><input id="workspace-name" name="workspace" required maxlength="24" value="${esc(state.settings.workspace)}"><small>展示在侧边栏；不修改任何真实组织信息</small></div><button class="toggle" type="button" role="switch" id="motion-toggle" aria-checked="${state.settings.animations}" data-action="motion-toggle"><span>界面动效<small>支持系统“减少动态效果”偏好</small></span><span class="toggle-track"></span></button></div><div class="settings-footer"><button class="btn primary" type="submit">${icon('check')}保存偏好</button></div></form><section class="panel"><div class="panel-head"><h2>外观与原生恢复</h2></div><div class="settings-body"><p class="muted" style="font-size:12px;margin-bottom:18px">NOVA 是可关闭的外观增强。站内提供真实原生模板的只读对照；实际 Django 项目通过主题开关恢复原生样式。</p><div style="display:flex;gap:10px;flex-wrap:wrap">${button('切换深浅主题', 'theme', '', 'sun')}${button('查看原生模板对照', 'native', '', 'history')}${button('集成与恢复说明', 'docs', 'subtle', 'book')}</div></div></section><section class="panel"><div class="panel-head"><h2>重置演示数据</h2></div><div class="settings-body"><p class="muted" style="font-size:12px;margin-bottom:18px">清除当前浏览器里的用户、角色及偏好修改，恢复最初的演示内容。</p>${button('恢复演示初始状态', 'reset-demo', 'danger', 'history')}</div></section></div>`
   );
 }
 function hasUnsavedChanges() {
@@ -841,6 +880,13 @@ const actions = {
   },
 };
 document.addEventListener('click', (e) => {
+  const paletteCard = e.target.closest('[data-palette-card], [data-palette-default]');
+  if (paletteCard) {
+    if (!applyPalette(paletteCard.dataset.paletteCard || 'default', true)) {
+      toast('配色已在当前页应用，浏览器未能保存偏好', 'error');
+    }
+    return;
+  }
   const group = e.target.closest('[data-nav-group]');
   if (group) {
     const key = group.dataset.navGroup,
@@ -1118,6 +1164,10 @@ initCatalog({
   saveRecords: (records) => save('nova-catalog', records),
   recordAudit: addAuditEvent,
 });
+initIconDemo({ esc, toast, getView: () => state.view });
+initAnalytics({ intro, esc, toast, getView: () => state.view });
+initChartLab({ intro, esc, toast, renderView, getView: () => state.view });
+initAnalysisLab({ intro, esc, toast, renderView, getView: () => state.view });
 initNativeSamples({ icon, intro });
 initMedia({ icon, openOverlay, closeOverlay });
 initNews({

@@ -66,12 +66,12 @@
       }
     },
     "dist/styles.css": {
-      "bytes": 74456,
-      "gzip_bytes": 15185,
-      "sha256": "491e04646a86c273c4d58cc0b8d0236981ccb754489eaac989c934c6377b59d1",
+      "bytes": 82321,
+      "gzip_bytes": 16658,
+      "sha256": "20ba40e82d0c0b41bb6ed3fb69ac3952e10f72de1ce23b7fd736441b3f6fb7ef",
       "limits": {
-        "bytes": 81902,
-        "gzip_bytes": 16704
+        "bytes": 90554,
+        "gzip_bytes": 18324
       }
     },
     "dist/presets.css": {
@@ -90,6 +90,33 @@
       "limits": {
         "bytes": 18546,
         "gzip_bytes": 3321
+      }
+    },
+    "dist/analytics.css": {
+      "bytes": 9788,
+      "gzip_bytes": 2386,
+      "sha256": "118be1336cd995b324a6fe9fa99b3e3b4e1d67e330ba32b3eec0145a14b3733b",
+      "limits": {
+        "bytes": 10767,
+        "gzip_bytes": 2625
+      }
+    },
+    "dist/chart-lab.css": {
+      "bytes": 7780,
+      "gzip_bytes": 1927,
+      "sha256": "7a1a561beb0b33ba2c56cc0ea5b29429e3efb6341ace4a4e5f6647e547dbaffd",
+      "limits": {
+        "bytes": 8558,
+        "gzip_bytes": 2120
+      }
+    },
+    "dist/analysis-lab.css": {
+      "bytes": 7228,
+      "gzip_bytes": 1740,
+      "sha256": "88f67eb3c7ba5cc594b417db5dc95e751b2a405ae7deb39889512858bff26774",
+      "limits": {
+        "bytes": 7951,
+        "gzip_bytes": 1914
       }
     }
   }
