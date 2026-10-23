@@ -13,6 +13,10 @@ export const palettes = Object.freeze([
   ['slate', '雾岩灰'],
   ['plum', '暮梅紫'],
   ['coffee', '摩卡棕'],
+  ['glacier', '冰川蓝'],
+  ['rose', '胭脂红'],
+  ['olive', '苔原绿'],
+  ['ink', '极夜黑'],
 ]);
 export function normalizePalette(value) {
   return palettes.some(([key]) => key === value) ? value : 'default';

@@ -24,6 +24,10 @@
         'slate',
         'plum',
         'coffee',
+        'glacier',
+        'rose',
+        'olive',
+        'ink',
       ].includes(value)
     )
       palette = value;

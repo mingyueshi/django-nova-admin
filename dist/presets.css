@@ -213,6 +213,94 @@
   --nova-surface-dark-tool: #514237;
   --nova-surface-dark-tool-hover: #655244;
 }
+/* 科技工作台：冰蓝强调色与清晰的钢蓝层次 */
+:root:where([data-palette="glacier"]) {
+  --nova-brand-light: #245aa8;
+  --nova-brand-light-hover: #1b4380;
+  --nova-brand-dark: #a7cdf7;
+  --nova-brand-dark-hover: #d0e6ff;
+  --nova-brand-selection-light: #dceafb;
+  --nova-brand-row-light: #f2f7fd;
+  --nova-brand-selection-dark: #29415f;
+  --nova-brand-row-dark: #20344e;
+  --nova-surface-dark-bg: #101c2b;
+  --nova-surface-dark-sidebar: #152539;
+  --nova-surface-dark-panel: #1d3047;
+  --nova-surface-dark-panel2: #273d55;
+  --nova-surface-dark-text: #f0f7ff;
+  --nova-surface-dark-muted: #b7c9df;
+  --nova-surface-dark-medium: #d2e3f7;
+  --nova-surface-dark-line: #3f5870;
+  --nova-surface-dark-border: #819fbe;
+  --nova-surface-dark-tool: #344e69;
+  --nova-surface-dark-tool-hover: #45617f;
+}
+/* 品牌运营：酒红底色与柔和玫瑰强调色 */
+:root:where([data-palette="rose"]) {
+  --nova-brand-light: #9b3658;
+  --nova-brand-light-hover: #782640;
+  --nova-brand-dark: #f4b5cb;
+  --nova-brand-dark-hover: #fbd5e2;
+  --nova-brand-selection-light: #fbe1eb;
+  --nova-brand-row-light: #fff5f8;
+  --nova-brand-selection-dark: #542b3e;
+  --nova-brand-row-dark: #3e2330;
+  --nova-surface-dark-bg: #25121b;
+  --nova-surface-dark-sidebar: #2e1923;
+  --nova-surface-dark-panel: #3a2430;
+  --nova-surface-dark-panel2: #482e3c;
+  --nova-surface-dark-text: #fff1f6;
+  --nova-surface-dark-muted: #dbb6c7;
+  --nova-surface-dark-medium: #f0d1df;
+  --nova-surface-dark-line: #634152;
+  --nova-surface-dark-border: #b4839b;
+  --nova-surface-dark-tool: #5d394b;
+  --nova-surface-dark-tool-hover: #75475e;
+}
+/* 项目管理：橄榄绿背景与浅苔绿强调色 */
+:root:where([data-palette="olive"]) {
+  --nova-brand-light: #536722;
+  --nova-brand-light-hover: #3e4d18;
+  --nova-brand-dark: #c9db96;
+  --nova-brand-dark-hover: #e2edc3;
+  --nova-brand-selection-light: #e8efcf;
+  --nova-brand-row-light: #f7faef;
+  --nova-brand-selection-dark: #3d4825;
+  --nova-brand-row-dark: #2e371d;
+  --nova-surface-dark-bg: #191e10;
+  --nova-surface-dark-sidebar: #222918;
+  --nova-surface-dark-panel: #2c3520;
+  --nova-surface-dark-panel2: #384329;
+  --nova-surface-dark-text: #f4f8e9;
+  --nova-surface-dark-muted: #c1ccaa;
+  --nova-surface-dark-medium: #dce5ca;
+  --nova-surface-dark-line: #4b5837;
+  --nova-surface-dark-border: #91a573;
+  --nova-surface-dark-tool: #465433;
+  --nova-surface-dark-tool-hover: #596943;
+}
+/* 低干扰办公：近黑背景与冷银灰强调色 */
+:root:where([data-palette="ink"]) {
+  --nova-brand-light: #465064;
+  --nova-brand-light-hover: #30394c;
+  --nova-brand-dark: #bdc7dc;
+  --nova-brand-dark-hover: #e0e5f0;
+  --nova-brand-selection-light: #e4e8f0;
+  --nova-brand-row-light: #f6f7fa;
+  --nova-brand-selection-dark: #293142;
+  --nova-brand-row-dark: #1c2331;
+  --nova-surface-dark-bg: #080a10;
+  --nova-surface-dark-sidebar: #0e121b;
+  --nova-surface-dark-panel: #151b27;
+  --nova-surface-dark-panel2: #1e2735;
+  --nova-surface-dark-text: #edf0f7;
+  --nova-surface-dark-muted: #abb6cc;
+  --nova-surface-dark-medium: #d0d8e7;
+  --nova-surface-dark-line: #303c50;
+  --nova-surface-dark-border: #7587a4;
+  --nova-surface-dark-tool: #2e3a50;
+  --nova-surface-dark-tool-hover: #404e67;
+}
 /* :where keeps host styles with ordinary :root specificity able to override. */
 :root[data-theme="dark"]:where([data-palette]:not([data-palette="default"])) {
   --muted: #9ba8c2;
@@ -247,7 +335,7 @@
   background: var(--button-hover-bg);
 }
 /* Shared dark surfaces for the workspace and static login preview. */
-:root[data-theme="dark"]:where([data-palette="graphite"], [data-palette="midnight"], [data-palette="forest"], [data-palette="amber"], [data-palette="ocean"], [data-palette="slate"], [data-palette="plum"], [data-palette="coffee"]) {
+:root[data-theme="dark"]:where([data-palette="graphite"], [data-palette="midnight"], [data-palette="forest"], [data-palette="amber"], [data-palette="ocean"], [data-palette="slate"], [data-palette="plum"], [data-palette="coffee"], [data-palette="glacier"], [data-palette="rose"], [data-palette="olive"], [data-palette="ink"]) {
   --bg: var(--nova-surface-dark-bg);
   --sidebar: var(--nova-surface-dark-sidebar);
   --panel: var(--nova-surface-dark-panel);
@@ -265,7 +353,7 @@
   --darkened-bg: var(--nova-surface-dark-sidebar);
   --button-fg: var(--nova-surface-dark-bg);
 }
-:where(:root[data-theme="dark"][data-palette="graphite"], :root[data-theme="dark"][data-palette="midnight"], :root[data-theme="dark"][data-palette="forest"], :root[data-theme="dark"][data-palette="amber"], :root[data-theme="dark"][data-palette="ocean"], :root[data-theme="dark"][data-palette="slate"], :root[data-theme="dark"][data-palette="plum"], :root[data-theme="dark"][data-palette="coffee"]) :is(input, select, textarea) {
+:where(:root[data-theme="dark"][data-palette="graphite"], :root[data-theme="dark"][data-palette="midnight"], :root[data-theme="dark"][data-palette="forest"], :root[data-theme="dark"][data-palette="amber"], :root[data-theme="dark"][data-palette="ocean"], :root[data-theme="dark"][data-palette="slate"], :root[data-theme="dark"][data-palette="plum"], :root[data-theme="dark"][data-palette="coffee"], :root[data-theme="dark"][data-palette="glacier"], :root[data-theme="dark"][data-palette="rose"], :root[data-theme="dark"][data-palette="olive"], :root[data-theme="dark"][data-palette="ink"]) :is(input, select, textarea) {
   border-color: var(--nova-surface-dark-border);
 }
 /* Compact palette control wraps instead of overflowing mobile login. */

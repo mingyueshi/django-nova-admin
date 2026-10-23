@@ -209,8 +209,8 @@ class InertFormSafetyTests(unittest.TestCase):
         self.assertEqual(sum(len(pages) for _, _, _, pages in base) + 1, 57)
         self.assertEqual(expanded[:len(base)], base)
         representatives = expanded[len(base):]
-        self.assertEqual(sum(len(pages) for _, _, _, pages in representatives), 72)
-        self.assertEqual(sum(len(pages) for _, _, _, pages in expanded) + 1, 129)
+        self.assertEqual(sum(len(pages) for _, _, _, pages in representatives), 96)
+        self.assertEqual(sum(len(pages) for _, _, _, pages in expanded) + 1, 153)
         self.assertEqual({palette for _, _, palette, _ in representatives}, set(exporter.PALETTES))
         for directory, mode, palette, pages in representatives:
             self.assertEqual(directory, f"palette-{palette}-{mode}")

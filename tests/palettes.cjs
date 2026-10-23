@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const { JSDOM } = require('jsdom');
 const { createApp } = require('./dom-runtime.cjs');
 const root = path.join(__dirname, '../dist');
-const keys = ['default', 'teal', 'indigo', 'violet', 'terracotta', 'graphite', 'midnight', 'forest', 'amber', 'ocean', 'slate', 'plum', 'coffee'];
+const keys = ['default', 'teal', 'indigo', 'violet', 'terracotta', 'graphite', 'midnight', 'forest', 'amber', 'ocean', 'slate', 'plum', 'coffee', 'glacier', 'rose', 'olive', 'ink'];
 let count = 0;
 function check(name, run) { run(); console.log('PASS', name); count++; }
 const wait = () => new Promise(resolve => setTimeout(resolve, 10));

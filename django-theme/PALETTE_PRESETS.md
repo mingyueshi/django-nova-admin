@@ -3,7 +3,7 @@
 The appearance form has two independent, translated selects:
 
 - Mode: `dark`, `light`, `auto`, `native` (existing behavior).
-- Palette: `default`, `teal` (医疗青), `indigo` (专业靛), `violet` (文教紫), `terracotta` (零售陶), `graphite` (石墨黑), `midnight` (午夜蓝), `forest` (松林绿), `amber` (暖琥珀), `ocean` (深海青), `slate` (雾岩灰), `plum` (暮梅紫), `coffee` (摩卡棕).
+- Palette: `default`, `teal` (医疗青), `indigo` (专业靛), `violet` (文教紫), `terracotta` (零售陶), `graphite` (石墨黑), `midnight` (午夜蓝), `forest` (松林绿), `amber` (暖琥珀), `ocean` (深海青), `slate` (雾岩灰), `plum` (暮梅紫), `coffee` (摩卡棕), `glacier` (冰川蓝), `rose` (胭脂红), `olive` (苔原绿), `ink` (极夜黑).
 
 These industry-oriented names describe demonstration positioning only, not
 industry standards or a requirement for a particular kind of organization.
@@ -11,15 +11,15 @@ industry standards or a requirement for a particular kind of organization.
 Graphite black uses neutral charcoal surfaces; Midnight blue uses deep indigo
 surfaces and a pale periwinkle accent, with clearer panel separation than the default dark palette.
 Forest green uses forest-green surfaces with a mint accent; Warm amber uses warm
-brown surfaces with an amber accent. Deep ocean uses blue-green surfaces for monitoring; Slate gray uses cool neutrals for dense tables; Dusk plum uses muted purple for editorial review; Mocha brown uses desaturated brown for reading and long forms. These are scenario suggestions. Select any of these eight surface palettes together
-with `dark`, or use `auto` to follow the system. All eight also have light accent
+brown surfaces with an amber accent. Deep ocean uses blue-green surfaces for monitoring; Slate gray uses cool neutrals for dense tables; Dusk plum uses muted purple for editorial review; Mocha brown uses desaturated brown for reading and long forms. These are scenario suggestions. Glacier blue uses steel-blue surfaces for technical workspaces; Rose red uses wine-red surfaces for brand operations; Tundra olive uses olive surfaces for project management; Polar night uses near-black surfaces with cool silver accents for quiet workspaces. Select any of these twelve surface palettes together
+with `dark`, or use `auto` to follow the system. All twelve also have light accent
 counterparts: selecting a palette never
 changes the appearance preference. Their dark backgrounds cover the workspace,
 sidebar, cards, form controls and login page.
 
-The optional exported gallery includes 72 palette representatives: twelve
+The optional exported gallery includes 96 palette representatives: sixteen
 palettes × light/dark × dashboard/product list/login, plus 57 default/native
-pages, for 129 HTML files in total. Palette representatives use standard density;
+pages, for 153 HTML files in total. Palette representatives use standard density;
 they do not provide separate auto or compact snapshots.
 
 `NOVA_ADMIN_DEFAULT_PALETTE = "default"` is optional. A valid saved session
@@ -50,7 +50,7 @@ Django's `--selected-bg`, `--selected-row` and Nova's `--nova-hover`. `auto` fol
 the OS with the existing media-query model. Semantic error, warning, success and
 destructive-action colors remain unchanged.
 
-Graphite, Midnight, Forest, Amber, Ocean, Slate, Plum and Coffee define `--nova-surface-dark-*` tokens for
+Graphite, Midnight, Forest, Amber, Ocean, Slate, Plum, Coffee, Glacier, Rose, Olive and Ink define `--nova-surface-dark-*` tokens for
 background, sidebar, panel, raised panel, text, secondary text, border and tool
 roles. Their mappings apply only in `dark` and `auto` with a dark system
 preference. Later host mode rules can override these mappings just like the
@@ -83,6 +83,18 @@ python -m venv /tmp/nova-palette-venv
 /tmp/nova-palette-venv/bin/pip install Django==5.2.17 beautifulsoup4==4.15.0
 PYTHONPATH=src:demo:. /tmp/nova-palette-venv/bin/python demo/manage.py test tests --noinput
 ```
+
+The Glacier/Rose/Olive/Ink local revision on 2026-10-23 passed 686 frontend
+checks (146 palette checks), 335 Django tests (333 passing, two expected skips),
+90 script tests, 23 export-safety tests with no skips across 153 HTML pages,
+and 2908 opaque color-role checks. The initial local preview connection resets
+were resolved by restarting the preview server with a larger request queue.
+The subsequent Chromium runs passed 39 static-preview checks and 48 rendered
+Django page/mode/viewport combinations plus a resource-error check. The missing
+favicon is excluded from resource checks. Desktop and mobile screenshots were
+inspected. Only the two preset sheets received updated size budgets, retaining
+10% headroom. These results do not cover the full runtime matrix, live Django
+login interaction, third-party hosts, or production deployment.
 
 The Ocean/Slate/Plum/Coffee local revision on 2026-10-23 passed 654 frontend
 checks (114 palette checks), 335 Django tests (333 passing, two expected skips),
