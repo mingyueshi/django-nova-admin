@@ -1,5 +1,6 @@
 {% extends "project_admin/pagination_change_list.html" %}
 {% block result_list %}
+  <details class="nova-sort-demo-help"><summary>排序演示：方向与多列优先级</summary><p>点击「商品名称」「价格」或「状态」表头可排序，再点可切换方向；依次点击不同列可组合排序，数字表示优先级。箭头仅切换该列方向，× 移除该列排序。图片列不可排序；「状态」是按原始状态字段排序的自定义展示列。</p></details>
   {% if cl.formset %}
     <p class="nova-list-edit-help">精选推荐开关仅更改待保存状态，请点击「保存」后生效。</p>
   {% endif %}

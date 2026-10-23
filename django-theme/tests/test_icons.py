@@ -1,5 +1,5 @@
 """Open-source SVGs retain fixed identifiers, escaping and native permissions."""
-from pathlib import Path
+from importlib import resources
 from django.template import Template, Context
 from django.test import SimpleTestCase, override_settings
 from nova_admin.icons import icon_names, icon_registry, render_icon
@@ -41,10 +41,10 @@ class OpenIconTests(SimpleTestCase):
         self.assertEqual(template.render(Context()), render_icon('tabler:search',24,'搜索',2))
 
     def test_licensed_package_data_is_present(self):
-        root = Path(__file__).parents[1] / 'src/nova_admin'
-        self.assertTrue((root/'icons.json').is_file())
+        root = resources.files('nova_admin')
+        self.assertTrue(root.joinpath('icons.json').is_file())
         for provider in ('lucide', 'tabler', 'heroicons', 'iconoir', 'bootstrap'):
-            text = (root/'licenses'/f'{provider}.txt').read_text()
+            text = root.joinpath('licenses', f'{provider}.txt').read_text(encoding='utf-8')
             self.assertIn('Copyright', text)
             self.assertIn('Permission', text)
 

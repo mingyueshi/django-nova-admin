@@ -19,7 +19,7 @@
 - Python3.11.17 / Django5.2.17：核心源码与wheel
 - Python3.12.15 / Django6.0.8：核心源码与wheel
 - Python3.14.8 / Django6.1.1：核心源码、核心wheel、可选验证码源码、可选验证码wheel
-- Node24.21.0 / npm11.19.0：当前18套件、1284项前端检查，以及121项主题JS检查（导航78、changelist增强32、CAPTCHA增强11）
+- Node24.21.0 / npm11.19.0：当前18套件、1284项前端检查，以及127项主题JS检查（导航78、changelist增强38、CAPTCHA增强11）
 
 共8个Python隔离运行，不等同完整28个。稳定汇总检查名为`Nova CI gate`；将其设为必需检查前，先在实际GitHub仓库确认显示名称。它会对失败、跳过、取消和缺报告作失败处理，不会因为汇总job被跳过而误放行。
 
@@ -73,7 +73,7 @@ Actions自身目前使用Node24运行时，这与被测试的Node22/24/26无关�
 3. 需要候选交付时，先创建`nova-candidate`环境，配置内置required reviewers、避免自行审批的规则和允许的`theme-v*`标签；确认你的GitHub套餐支持并且规则生效
 4. 环境使用`deployment: false`，保留内置审批/等待规则而不创建部署记录。自定义GitHub App部署保护规则不适用于该选项。仅在YAML中写环境名不会自动配置审批；不要把默认新建的无保护环境当作已安全配置
 5. 审批环境核实后，显式将仓库变量`NOVA_ENABLE_RELEASE_CANDIDATE`设为字符串`true`
-6. 由维护者创建与主题版本完全相符的标签，例如当前`theme-v0.6.0`，在该真实标签ref上手动dispatch候选工作流。它核验GITHUB_REF与主题版本，不接收可代替真实ref的任意标签输入
+6. 由维护者创建与主题版本完全相符的标签，例如当前`theme-v0.6.1`，在该真实标签ref上手动dispatch候选工作流。它核验GITHUB_REF与主题版本，不接收可代替真实ref的任意标签输入
 7. 完整CI通过并完成审批后，下载`nova-approved-candidate-<commit>-<attempt>`。其中`candidate/`包含原始已测产物，旁边的`validation.json`说明完整覆盖范围；没有重建未经验证的新wheel
 
 如将来要发布PyPI、GitHub Release、对象存储或生产服务器，先明确目标、权限、凭据管理和回滚策略，再增加独立受审批发布job。现有流程停在候选交付边界，没有占位的真实发布命令，也不会更改本演示站分享权限。

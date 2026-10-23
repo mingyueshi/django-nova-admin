@@ -1,8 +1,8 @@
 # NOVA Admin
 
-版本：交互预览 **1.8.0** / 原生 Django 主题 **0.6.0** · 2026-10-03
+版本：交互预览 **1.8.0** / 原生 Django 主题 **0.6.1** · 2026-10-23
 
-本轮新增设计令牌与品牌配置、权限内的收藏/常用模型/图标/计数、自检警告、上游漂移预警、隔离 Compose 示例和可选 Axes 接入。入口见 [品牌指南](django-theme/BRANDING.md)、[导航扩展](django-theme/NAVIGATION_EXTENSIONS.md)、[模板漂移](django-theme/UPSTREAM_DRIFT.md)、[Compose](examples/compose/README.md)、[验证码与安全工具](django-theme/CAPTCHA_INTEGRATION.md)。公开演示只承载合成预览与只读样本。2026-10-05 应要求交付最新版完整源码包，并同步至 [GitHub 仓库](https://github.com/mingyueshi/nova-admin)。本次交付校验和验证范围见 [DELIVERY.md](DELIVERY.md)。
+本轮新增设计令牌与品牌配置、权限内的收藏/常用模型/图标/计数、自检警告、上游漂移预警、隔离 Compose 示例和可选 Axes 接入。入口见 [品牌指南](django-theme/BRANDING.md)、[导航扩展](django-theme/NAVIGATION_EXTENSIONS.md)、[模板漂移](django-theme/UPSTREAM_DRIFT.md)、[Compose](examples/compose/README.md)、[验证码与安全工具](django-theme/CAPTCHA_INTEGRATION.md)。公开演示只承载合成预览与只读样本。官方源码见 [GitHub 仓库](https://github.com/mingyueshi/django-nova-admin)。历史源码包交付记录见 [DELIVERY.md](DELIVERY.md)，当前版本与验证范围见 [发行验证](django-theme/RELEASE_VALIDATION.md) 和 [CI 说明](CI_CD.md)。
 
 既有 7 组 Python/Django 精确组合和 3 组 Node 工具链继续保留，新增验证与未实测边界见 [本轮报告](django-theme/TEST_REPORT.md)。Docker/PostgreSQL 运行、音频、旧 admin-honeypot 仍未实测。GitHub 工作流配置随源码提供，实际运行状态以仓库 Actions 为准，生产部署与候选发布开关未自动启用。
 
@@ -274,3 +274,9 @@ GitHub Actions 包含 PR/主分支快速矩阵、手动完整矩阵、源码绑�
 新增“开源图表实验室”（`/#charts`），实际接入Apache ECharts 6.1.0、Chart.js 4.6.1和uPlot 1.6.32，覆盖17类后台统计场景、28组库与场景组合。支持本地按需加载、筛选、原生图例/提示/缩放、运维模拟回放、PNG/CSV导出和JavaScript/Django用法。完整资源来源、许可、范围及宿主接入方式见 [开源图表指南](CHART_LIBRARIES.md)。
 
 新增“联动分析工作台”（`/#analysis`），提供经营收入、用户转化、服务监控三类场景。排行点击联动图表/指标/明细，双击或按钮逐层下钻，时间滑块联动统计区间；支持3/5/10秒模拟刷新、暂停、失败重试、保留最后成功快照、CSV完整范围导出。数据均为独立模拟样本，未新增真实统计API。数据口径、生命周期、源码与接入结构见 [联动分析指南](ANALYSIS_LAB.md)。
+
+## 原生列表排序
+
+运行 Django Demo 后进入「商品」列表，展开排序说明。列名链接按 Django 规则排序并提升为首要排序，箭头只切换该列方向，× 移除该列；数字表示多列优先级。搜索、筛选及分页容量参数由原生链接保留，图片列和选择框列不添加排序控件。关闭 JavaScript 或切换为 Django 原生外观后仍可使用原生排序链接。
+
+本次复用 `codex/changelist-sorting-ui-20261015` 中 `2dde2c6`、`fe99ecf` 的排序增强和回归测试，以最小差异适配当前 main，未整合旧分支中的其他文件。`dist/native-admin` 仍是既有只读快照，完整排序交互请在运行中的 Demo 核验。

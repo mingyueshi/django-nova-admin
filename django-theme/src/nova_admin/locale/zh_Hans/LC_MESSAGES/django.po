@@ -287,3 +287,42 @@ msgstr "向左滚动表格"
 msgctxt "Nova Admin"
 msgid "Scroll table right"
 msgstr "向右滚动表格"
+
+msgctxt "Nova Admin"
+msgid "Sort ascending"
+msgstr "按升序排列"
+
+msgctxt "Nova Admin"
+msgid "Sort descending"
+msgstr "按降序排列"
+
+msgctxt "Nova Admin"
+msgid "Ascending"
+msgstr "升序"
+
+msgctxt "Nova Admin"
+msgid "Descending"
+msgstr "降序"
+
+msgctxt "Nova Admin"
+msgid "Make primary sort"
+msgstr "设为首要排序"
+
+msgctxt "Nova Admin"
+msgid "Remove from sorting"
+msgstr "移除排序"
+
+#: templates/nova_admin/slider_widget.html
+msgctxt "Nova Admin"
+msgid "Security verification"
+msgstr "安全验证"
+
+#: templates/nova_admin/slider_widget.html
+msgctxt "Nova Admin"
+msgid "JavaScript is required for this visual challenge. Use the site's equivalent secure nonvisual verification route or contact support."
+msgstr "此图形验证需要启用 JavaScript。请使用本站提供的同等安全的非视觉验证方式，或联系支持人员。"
+
+#: slider.py
+msgctxt "Nova Admin"
+msgid "Security verification is missing, expired, or already used. Please try again."
+msgstr "安全验证缺失、已过期或已使用，请重试。"

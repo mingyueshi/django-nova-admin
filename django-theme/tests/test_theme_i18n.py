@@ -81,12 +81,25 @@ class NovaCatalogTests(SimpleTestCase):
                 self.assertIn('value="native" selected', html)
                 self.assertIn('method="post"', html)
 
+    def test_slider_template_translates_without_importing_optional_provider(self):
+        for language, label, notice in (
+            ('en', 'Security verification', 'JavaScript is required for this visual challenge.'),
+            ('zh-hans', '安全验证', '此图形验证需要启用 JavaScript。'),
+            ('fr', 'Security verification', 'JavaScript is required for this visual challenge.'),
+        ):
+            with self.subTest(language=language), override(language):
+                html = render_to_string('nova_admin/slider_widget.html', {
+                    'widget': {'endpoint': '/captcha/', 'locale': language, 'attrs': {'id': 'proof'}},
+                })
+                self.assertIn(f'aria-label="{label}"', html)
+                self.assertIn(notice, html)
+
     def test_enhancement_script_preserves_nonce_escaping(self):
         labels = {
-            "en": ("Search records…", "Show filters", "Hide filters", "Scroll table horizontally", "Scroll table left", "Scroll table right"),
-            "zh-hans": ("搜索记录…", "显示过滤器", "隐藏过滤器", "横向滚动表格", "向左滚动表格", "向右滚动表格"),
+            "en": ("Search records…", "Show filters", "Hide filters", "Scroll table horizontally", "Scroll table left", "Scroll table right", "Sort ascending", "Sort descending", "Ascending", "Descending", "Make primary sort", "Remove from sorting"),
+            "zh-hans": ("搜索记录…", "显示过滤器", "隐藏过滤器", "横向滚动表格", "向左滚动表格", "向右滚动表格", "按升序排列", "按降序排列", "升序", "降序", "设为首要排序", "移除排序"),
         }
-        names = ("search-placeholder", "show-filters", "hide-filters", "scroll-table", "scroll-left", "scroll-right")
+        names = ("search-placeholder", "show-filters", "hide-filters", "scroll-table", "scroll-left", "scroll-right", "sort-ascending", "sort-descending", "ascending", "descending", "sort-primary", "sort-remove")
         for language, texts in labels.items():
             with self.subTest(language=language), override(language):
                 html = render_to_string("admin/base.html", {

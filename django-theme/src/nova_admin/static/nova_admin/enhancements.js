@@ -14,6 +14,51 @@
     const changelist = document.getElementById('changelist');
     if (!changelist || changelist.dataset.novaEnhanced) return;
     changelist.dataset.novaEnhanced = 'true';
+
+    // Use Django's own links and state. In particular, primary and toggle have
+    // different meanings for a secondary sort; never synthesize an `o` value.
+    const sortedHeaders = changelist.querySelectorAll('#result_list thead th.sortable.sorted');
+    changelist.querySelectorAll('#result_list thead th.sortable').forEach(header => {
+        const text = header.querySelector('.text');
+        const primary = text?.querySelector('a[href]');
+        if (!primary) return;
+        const options = header.querySelector('.sortoptions');
+        const toggle = options?.querySelector('a.toggle');
+        const remove = options?.querySelector('a.sortremove');
+        const priority = options?.querySelector('.sortpriority');
+        const column = primary.textContent.trim();
+        const sorted = header.classList.contains('sorted');
+        const ascending = header.classList.contains('ascending');
+        const next = sorted && ascending
+            ? label('novaSortDescending', 'Sort descending')
+            : label('novaSortAscending', 'Sort ascending');
+        const state = sorted ? [
+            ascending ? label('novaAscending', 'Ascending') : label('novaDescending', 'Descending'),
+            priority?.getAttribute('title'),
+        ].filter(Boolean).join('; ') : '';
+        const describe = (link, action) => {
+            if (!link) return;
+            const description = [column, state, action].filter(Boolean).join('. ');
+            if (!link.hasAttribute('aria-label')) link.setAttribute('aria-label', description);
+            if (!link.hasAttribute('title')) link.title = description;
+        };
+        describe(primary, `${next}. ${label('novaSortPrimary', 'Make primary sort')}`);
+        describe(toggle, next);
+        describe(remove, remove?.title || label('novaSortRemove', 'Remove from sorting'));
+        // aria-sort describes one primary column; secondary directions and
+        // priorities remain available in the links' accessible names.
+        if (sorted && (priority ? priority.textContent.trim() === '1' : sortedHeaders.length === 1)
+            && !header.hasAttribute('aria-sort')) {
+            header.setAttribute('aria-sort', ascending ? 'ascending' : 'descending');
+        }
+        const heading = document.createElement('div');
+        heading.className = 'nova-sort-heading';
+        if (column.length > 20) heading.classList.add('nova-sort-heading--long');
+        text.before(heading);
+        heading.append(text);
+        if (options) heading.append(options);
+    });
+
     const refreshScrollbars = [];
     const filter = changelist.querySelector('#changelist-filter');
     if (filter) {

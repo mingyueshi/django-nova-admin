@@ -38,7 +38,7 @@ FRONTEND_SUMMARIES = {
 }
 FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_SUMMARIES.items()}
 FRONTEND_TOTAL = sum(FRONTEND_COUNTS.values())
-ENHANCEMENT_TOTAL = 32
+ENHANCEMENT_TOTAL = 38
 THEME_JS_TOTAL = 78 + ENHANCEMENT_TOTAL + 11
 
 def read(path):

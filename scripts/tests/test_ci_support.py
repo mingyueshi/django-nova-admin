@@ -63,7 +63,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':121,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':127,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -167,7 +167,7 @@ TOTAL 4 shared login CSS checks passed
     GROUP_LOGS = {
         'frontend': FRONTEND_LOG,
         'navigation': '78 navigation DOM scenarios passed (3 Django script versions).\n',
-        'enhancements': 'TOTAL 32 changelist enhancement tests passed\n',
+        'enhancements': 'TOTAL 38 changelist enhancement tests passed\n',
         'captcha': 'TOTAL 11 CAPTCHA enhancement tests passed\n',
     }
 
@@ -196,7 +196,7 @@ TOTAL 4 shared login CSS checks passed
             self.logs(root)
             result = self.collect(root)
             self.assertEqual(result['frontend'], 1284)
-            self.assertEqual(result['theme_js'], 121)
+            self.assertEqual(result['theme_js'], 127)
             self.assertEqual(len(result['frontend_suites']), 18)
             self.assertEqual(result['frontend_suites']['palettes'], 165)
             self.assertEqual(sum(result['frontend_suites'].values()), 1284)
@@ -272,6 +272,14 @@ TOTAL 4 shared login CSS checks passed
                 (logs / (group + '.log')).write_text('FAIL example assertion\n' + self.GROUP_LOGS[group])
                 with self.assertRaises(ValueError): self.collect(root)
 
+    def test_stale_enhancement_count_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            logs = self.logs(root)
+            (logs / 'enhancements.log').write_text('TOTAL 32 changelist enhancement tests passed\n')
+            with self.assertRaisesRegex(ValueError, 'Node test evidence: enhancements'):
+                self.collect(root)
+
     def test_nonzero_command_is_rejected_despite_success_summaries(self):
         for index in range(7):
             with self.subTest(index=index), tempfile.TemporaryDirectory() as tmp:
@@ -324,7 +332,7 @@ TOTAL 4 shared login CSS checks passed
                 support.verify_reports(root, 'quick', COMMIT, WHEEL_SHA)
 
     def test_gate_rejects_stale_or_incomplete_frontend_counts(self):
-        changes = [lambda x: x.update(theme_js=97), lambda x: x.update(frontend=540), lambda x: x.update(frontend=590),
+        changes = [lambda x: x.update(theme_js=97), lambda x: x.update(theme_js=121), lambda x: x.update(frontend=540), lambda x: x.update(frontend=590),
                    lambda x: x.update(frontend=606), lambda x: x.update(frontend=622), lambda x: x.update(frontend=1270),
                    lambda x: x.pop('frontend_suites'),
                    lambda x: x['frontend_suites'].pop('palettes'),

@@ -8,6 +8,7 @@ from django.core.cache import cache
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import override
 from django.template.loader import render_to_string
 from nova_slider_captcha.models import Challenge
 from nova_slider_captcha.services import issue, verify
@@ -66,6 +67,39 @@ class SliderLoginTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertTrue(response.context['form'].errors)
                 auth.assert_not_called()
+
+    @override_settings(LOCALE_PATHS=())
+    def test_login_widget_renders_localized_accessible_name_and_noscript(self):
+        messages = {
+            'en': ('Security verification', 'JavaScript is required for this visual challenge.'),
+            'zh-hans': ('安全验证', '此图形验证需要启用 JavaScript。'),
+            'fr': ('Security verification', 'JavaScript is required for this visual challenge.'),
+        }
+        for language, (label, notice) in messages.items():
+            with self.subTest(language=language), override(language):
+                _, soup = self.page()
+                self.assertEqual(soup.select_one('nova-slider')['aria-label'], label)
+                self.assertIn(notice, soup.select_one('noscript').get_text())
+
+    @override_settings(LOCALE_PATHS=())
+    def test_missing_and_expired_proof_render_localized_errors_before_authentication(self):
+        for language, message in (
+            ('en', 'Security verification is missing, expired, or already used. Please try again.'),
+            ('zh-hans', '安全验证缺失、已过期或已使用，请重试。'),
+        ):
+            with self.subTest(language=language), override(language):
+                expired, _ = self.proof()
+                Challenge.objects.filter(token_consumed=False).update(token_expires_at=timezone.now() - timedelta(seconds=1))
+                for token in ('x' * 43, expired):
+                    with self.subTest(expired=token == expired), patch('django.contrib.auth.forms.authenticate') as auth:
+                        response = self.client.post(reverse('admin:login'), self.data(token))
+                        self.assertContains(response, message)
+                        form = response.context['form']
+                        self.assertEqual(form.errors.as_data()['nova_slider_token'][0].code, 'captcha_invalid')
+                        soup = BeautifulSoup(response.content, 'html.parser')
+                        self.assertEqual(soup.select_one('nova-slider')['aria-invalid'], 'true')
+                        self.assertEqual(soup.select_one('nova-slider')['aria-describedby'], 'id_nova_slider_token_error')
+                        auth.assert_not_called()
 
     def test_real_solve_login_and_replay_rejection(self):
         token, _ = self.proof()

@@ -7,7 +7,7 @@ from copy import deepcopy
 
 from django.contrib.admin.forms import AdminAuthenticationForm
 from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 from nova_slider_captcha.forms import SliderAdminAuthenticationForm, SliderCaptchaWidget
 from nova_slider_captcha.services import consume
 
@@ -38,6 +38,6 @@ class SliderCaptchaAdminAuthenticationForm(CaptchaPolicyMixin, AdminAuthenticati
     def clean_nova_slider_token(self):
         token = self.cleaned_data["nova_slider_token"]
         if self.request is None or not consume(token, self.request, purpose="login"):
-            raise ValidationError(_("Security verification is missing, expired, or already used. Please try again."), code="captcha_invalid")
+            raise ValidationError(pgettext_lazy("Nova Admin", "Security verification is missing, expired, or already used. Please try again."), code="captcha_invalid")
         # Keep proof out of cleaned_data after one-time consumption.
         return ""
