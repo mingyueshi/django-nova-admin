@@ -233,6 +233,22 @@ msgid "Warm amber"
 msgstr "暖琥珀"
 
 msgctxt "Nova Admin"
+msgid "Deep ocean"
+msgstr "深海青"
+
+msgctxt "Nova Admin"
+msgid "Slate gray"
+msgstr "雾岩灰"
+
+msgctxt "Nova Admin"
+msgid "Dusk plum"
+msgstr "暮梅紫"
+
+msgctxt "Nova Admin"
+msgid "Mocha brown"
+msgstr "摩卡棕"
+
+msgctxt "Nova Admin"
 msgid "Unknown color palette"
 msgstr "未知配色"
 

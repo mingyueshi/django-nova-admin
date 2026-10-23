@@ -51,6 +51,7 @@ PAGES = {
 PALETTES = {
     "teal": "医疗青", "indigo": "专业靛", "violet": "文教紫", "terracotta": "零售陶",
     "graphite": "石墨黑", "midnight": "午夜蓝", "forest": "松林绿", "amber": "暖琥珀",
+    "ocean": "深海青", "slate": "雾岩灰", "plum": "暮梅紫", "coffee": "摩卡棕",
 }
 PALETTE_PAGES = ("index", "changelist", "login")
 
@@ -773,7 +774,7 @@ def main():
     parser.add_argument("--check", type=Path, metavar="EXPORT_DIR", help="Validate an existing export without touching Django or any database")
     parser.add_argument("--with-captcha", action="store_true", help="Render optional CAPTCHA with synthetic local PNGs; requires the captcha extra")
     parser.add_argument("--with-extensions", action="store_true", help="Render the explicit local branding/navigation configuration; all exported controls remain inert")
-    parser.add_argument("--with-palettes", action="store_true", help="Add 48 light/dark standard-density palette representatives (dashboard/list/login); preserve all 57 default/native pages")
+    parser.add_argument("--with-palettes", action="store_true", help="Add 72 light/dark standard-density palette representatives (dashboard/list/login); preserve all 57 default/native pages")
     args = parser.parse_args()
     if args.check:
         sanitizer_self_test()

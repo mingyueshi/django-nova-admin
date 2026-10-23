@@ -125,6 +125,94 @@
   --nova-surface-dark-tool: #61492c;
   --nova-surface-dark-tool-hover: #785b36;
 }
+/* 监控运维：深海蓝绿底色与冰青强调色 */
+:root:where([data-palette="ocean"]) {
+  --nova-brand-light: #0e647c;
+  --nova-brand-light-hover: #084c61;
+  --nova-brand-dark: #7dd3e8;
+  --nova-brand-dark-hover: #b6edf8;
+  --nova-brand-selection-light: #d9f2f7;
+  --nova-brand-row-light: #f0fafc;
+  --nova-brand-selection-dark: #164553;
+  --nova-brand-row-dark: #123440;
+  --nova-surface-dark-bg: #081c26;
+  --nova-surface-dark-sidebar: #0e2733;
+  --nova-surface-dark-panel: #14323f;
+  --nova-surface-dark-panel2: #1b3d4b;
+  --nova-surface-dark-text: #edfaff;
+  --nova-surface-dark-muted: #accbd5;
+  --nova-surface-dark-medium: #cce6ee;
+  --nova-surface-dark-line: #315564;
+  --nova-surface-dark-border: #749eae;
+  --nova-surface-dark-tool: #254c5b;
+  --nova-surface-dark-tool-hover: #326070;
+}
+/* 密集表格：低饱和冷灰底色，突出数据层级 */
+:root:where([data-palette="slate"]) {
+  --nova-brand-light: #475569;
+  --nova-brand-light-hover: #334155;
+  --nova-brand-dark: #cbd5e1;
+  --nova-brand-dark-hover: #e2e8f0;
+  --nova-brand-selection-light: #e2e8f0;
+  --nova-brand-row-light: #f8fafc;
+  --nova-brand-selection-dark: #334155;
+  --nova-brand-row-dark: #293647;
+  --nova-surface-dark-bg: #151b24;
+  --nova-surface-dark-sidebar: #1c2430;
+  --nova-surface-dark-panel: #232e3c;
+  --nova-surface-dark-panel2: #2d3a4a;
+  --nova-surface-dark-text: #f1f5f9;
+  --nova-surface-dark-muted: #b6c4d6;
+  --nova-surface-dark-medium: #d7e0eb;
+  --nova-surface-dark-line: #435266;
+  --nova-surface-dark-border: #8193aa;
+  --nova-surface-dark-tool: #3c4d62;
+  --nova-surface-dark-tool-hover: #4b5f76;
+}
+/* 内容审稿：灰梅紫底色与柔和藕紫强调色 */
+:root:where([data-palette="plum"]) {
+  --nova-brand-light: #803e73;
+  --nova-brand-light-hover: #632e59;
+  --nova-brand-dark: #e4b7dc;
+  --nova-brand-dark-hover: #f3d7ee;
+  --nova-brand-selection-light: #f5e3f1;
+  --nova-brand-row-light: #fcf5fa;
+  --nova-brand-selection-dark: #4b2d49;
+  --nova-brand-row-dark: #392239;
+  --nova-surface-dark-bg: #201421;
+  --nova-surface-dark-sidebar: #291c2b;
+  --nova-surface-dark-panel: #342437;
+  --nova-surface-dark-panel2: #402d44;
+  --nova-surface-dark-text: #fff1fc;
+  --nova-surface-dark-muted: #d2b6cf;
+  --nova-surface-dark-medium: #ebd2e7;
+  --nova-surface-dark-line: #5b405e;
+  --nova-surface-dark-border: #a483a5;
+  --nova-surface-dark-tool: #573b59;
+  --nova-surface-dark-tool-hover: #6c4c6e;
+}
+/* 夜间阅读：低饱和咖棕底色与奶咖强调色 */
+:root:where([data-palette="coffee"]) {
+  --nova-brand-light: #73513e;
+  --nova-brand-light-hover: #573b2d;
+  --nova-brand-dark: #dfc3a8;
+  --nova-brand-dark-hover: #f2dfcb;
+  --nova-brand-selection-light: #f1e6dc;
+  --nova-brand-row-light: #faf6f1;
+  --nova-brand-selection-dark: #493b30;
+  --nova-brand-row-dark: #382d26;
+  --nova-surface-dark-bg: #1c1714;
+  --nova-surface-dark-sidebar: #251f1b;
+  --nova-surface-dark-panel: #302822;
+  --nova-surface-dark-panel2: #3b322b;
+  --nova-surface-dark-text: #faf3eb;
+  --nova-surface-dark-muted: #cbbcaf;
+  --nova-surface-dark-medium: #e4d5c8;
+  --nova-surface-dark-line: #55483e;
+  --nova-surface-dark-border: #a18e7e;
+  --nova-surface-dark-tool: #514237;
+  --nova-surface-dark-tool-hover: #655244;
+}
 /* :where keeps host styles with ordinary :root specificity able to override. */
 :root[data-theme="dark"]:where([data-palette]:not([data-palette="default"])) {
   --muted: #9ba8c2;
@@ -159,7 +247,7 @@
   background: var(--button-hover-bg);
 }
 /* Shared dark surfaces for the workspace and static login preview. */
-:root[data-theme="dark"]:where([data-palette="graphite"], [data-palette="midnight"], [data-palette="forest"], [data-palette="amber"]) {
+:root[data-theme="dark"]:where([data-palette="graphite"], [data-palette="midnight"], [data-palette="forest"], [data-palette="amber"], [data-palette="ocean"], [data-palette="slate"], [data-palette="plum"], [data-palette="coffee"]) {
   --bg: var(--nova-surface-dark-bg);
   --sidebar: var(--nova-surface-dark-sidebar);
   --panel: var(--nova-surface-dark-panel);
@@ -177,7 +265,7 @@
   --darkened-bg: var(--nova-surface-dark-sidebar);
   --button-fg: var(--nova-surface-dark-bg);
 }
-:where(:root[data-theme="dark"][data-palette="graphite"], :root[data-theme="dark"][data-palette="midnight"], :root[data-theme="dark"][data-palette="forest"], :root[data-theme="dark"][data-palette="amber"]) :is(input, select, textarea) {
+:where(:root[data-theme="dark"][data-palette="graphite"], :root[data-theme="dark"][data-palette="midnight"], :root[data-theme="dark"][data-palette="forest"], :root[data-theme="dark"][data-palette="amber"], :root[data-theme="dark"][data-palette="ocean"], :root[data-theme="dark"][data-palette="slate"], :root[data-theme="dark"][data-palette="plum"], :root[data-theme="dark"][data-palette="coffee"]) :is(input, select, textarea) {
   border-color: var(--nova-surface-dark-border);
 }
 /* Compact palette control wraps instead of overflowing mobile login. */

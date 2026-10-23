@@ -6,7 +6,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 
 SESSION_KEY = "nova_admin_mode"
 PALETTE_SESSION_KEY = "nova_admin_palette"
-PALETTES = frozenset({"default", "teal", "indigo", "violet", "terracotta", "graphite", "midnight", "forest", "amber"})
+PALETTES = frozenset({"default", "teal", "indigo", "violet", "terracotta", "graphite", "midnight", "forest", "amber", "ocean", "slate", "plum", "coffee"})
 MODES = frozenset({"dark", "light", "auto", "native"})
 
 

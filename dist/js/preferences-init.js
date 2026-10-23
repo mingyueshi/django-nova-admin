@@ -20,6 +20,10 @@
         'midnight',
         'forest',
         'amber',
+        'ocean',
+        'slate',
+        'plum',
+        'coffee',
       ].includes(value)
     )
       palette = value;
