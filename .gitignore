@@ -14,6 +14,7 @@ qa/
 !.env.sample
 .local/
 .playwright-cli/
+output/playwright/
 .openai/
 *.py[cod]
 *.egg-info/

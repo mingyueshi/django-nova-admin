@@ -16,11 +16,12 @@ async function login(storage = {}, fail = false) {
   for (const [key, value] of Object.entries(storage)) w.localStorage.setItem(key, value);
   if (fail) w.Storage.prototype.getItem = () => { throw new Error('Denied'); };
   w.eval(fs.readFileSync(path.join(root, 'js/preferences-init.js'), 'utf8'));
+  w.eval(fs.readFileSync(path.join(root, 'vendor/nova-slider-captcha/slider.js'), 'utf8'));
   const context = dom.getInternalVMContext();
   const module = new vm.SourceTextModule(fs.readFileSync(path.join(root, 'js/login.js'), 'utf8'), { context });
   await module.link(async spec => {
-    assert.equal(spec, './palette.js');
-    const helper = new vm.SourceTextModule(fs.readFileSync(path.join(root, 'js/palette.js'), 'utf8'), { context });
+    assert.ok(['./palette.js', './login-slider-demo.js'].includes(spec));
+    const helper = new vm.SourceTextModule(fs.readFileSync(path.join(root, 'js', spec), 'utf8'), { context });
     await helper.link(() => { throw new Error('Unexpected import'); });
     return helper;
   });

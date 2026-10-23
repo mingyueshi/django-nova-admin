@@ -3,12 +3,12 @@
   "policy": "Hand-written, unminified CSS; no compiler or CSS dependency. Gzip is measurement only. Reviewed 10% size headroom; third-party and generated duplicate CSS excluded.",
   "files": {
     "django-theme/src/nova_admin/static/nova_admin/captcha.css": {
-      "bytes": 1886,
-      "gzip_bytes": 756,
-      "sha256": "da9f380496e4a931f6d1046c4d96a84dae16997326ef3ed11d22e92497c14bf9",
+      "bytes": 1860,
+      "gzip_bytes": 750,
+      "sha256": "113933e4195647bd38a975b1a2aa583bbf4b8ef22864b8eb81c357a779fd456d",
       "limits": {
-        "bytes": 2075,
-        "gzip_bytes": 832
+        "bytes": 2046,
+        "gzip_bytes": 825
       }
     },
     "django-theme/src/nova_admin/static/nova_admin/login.css": {
@@ -48,12 +48,12 @@
       }
     },
     "dist/login-preview.css": {
-      "bytes": 5979,
-      "gzip_bytes": 1831,
-      "sha256": "accb31a4754db5816f0fbc46d22f435e3adb06159c82b49a745a30e774eb965d",
+      "bytes": 7217,
+      "gzip_bytes": 2064,
+      "sha256": "aa8a73845531fa5afb42aab380091738b1570660531764b9c66d1349569c2b35",
       "limits": {
-        "bytes": 6577,
-        "gzip_bytes": 2015
+        "bytes": 7939,
+        "gzip_bytes": 2271
       }
     },
     "dist/login.css": {
@@ -117,6 +117,15 @@
       "limits": {
         "bytes": 7951,
         "gzip_bytes": 1914
+      }
+    },
+    "django-theme/src/nova_admin/static/nova_admin/slider.css": {
+      "bytes": 498,
+      "gzip_bytes": 255,
+      "sha256": "9fa7336769b09c6a12c2b5453fdd90ec2302debe6c09a99c71808b99f5c24529",
+      "limits": {
+        "bytes": 548,
+        "gzip_bytes": 281
       }
     }
   }

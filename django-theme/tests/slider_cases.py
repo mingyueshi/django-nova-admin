@@ -1,0 +1,126 @@
+import json
+from datetime import timedelta
+from unittest.mock import patch
+from bs4 import BeautifulSoup
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from django.test import Client, TestCase, override_settings
+from django.urls import reverse
+from django.utils import timezone
+from django.template.loader import render_to_string
+from nova_slider_captcha.models import Challenge
+from nova_slider_captcha.services import issue, verify
+from nova_admin.slider import SliderCaptchaAdminAuthenticationForm
+from nova_admin.preferences import SESSION_KEY
+
+
+@override_settings(ROOT_URLCONF='config.slider_urls', LANGUAGE_CODE='en')
+class SliderLoginTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user('slider-staff', password='synthetic-slider-only', is_staff=True)
+
+    def setUp(self):
+        cache.clear()
+
+    def page(self, client=None):
+        response = (client or self.client).get(reverse('admin:login'))
+        self.assertEqual(response.status_code, 200)
+        return response, BeautifulSoup(response.content, 'html.parser')
+
+    def proof(self, client=None, purpose='login'):
+        client = client or self.client
+        init = client.get(reverse('nova_slider_captcha:init'))
+        csrf = init.json()['csrfToken']
+        issued = client.post(reverse('nova_slider_captcha:challenge'), json.dumps({'purpose': purpose}), content_type='application/json', HTTP_X_CSRFTOKEN=csrf)
+        self.assertEqual(issued.status_code, 200)
+        data = issued.json()
+        # Only the isolated test inspects a server-side synthetic answer.
+        x = Challenge.objects.get(pk=data['challengeId']).target_x
+        solved = client.post(reverse('nova_slider_captcha:verify'), json.dumps({'challengeId': data['challengeId'], 'x': x}), content_type='application/json', HTTP_X_CSRFTOKEN=csrf)
+        self.assertTrue(solved.json()['ok'])
+        return solved.json()['token'], csrf
+
+    def data(self, token='', **extra):
+        return {'username': self.user.username, 'password': 'synthetic-slider-only', 'nova_slider_token': token, **extra}
+
+    def test_component_single_field_native_disabled_and_dark(self):
+        for mode in ('light', 'dark', 'native'):
+            session = self.client.session
+            session[SESSION_KEY] = mode
+            session.save()
+            response, soup = self.page()
+            self.assertEqual(len(soup.select('nova-slider')), 1)
+            self.assertEqual(soup.select_one('nova-slider')['purpose'], 'login')
+            # Component owns the only hidden field at runtime.
+            self.assertFalse(soup.select('input[name="nova_slider_token"]'))
+            self.assertContains(response, 'nova_slider_captcha/slider.js')
+        with override_settings(NOVA_ADMIN_ENABLED=False):
+            self.assertEqual(len(self.page()[1].select('nova-slider')), 1)
+
+    def test_missing_and_invalid_token_never_call_authentication(self):
+        for token in ('', 'invalid', 'x' * 43):
+            with self.subTest(token=token), patch('django.contrib.auth.forms.authenticate') as auth:
+                response = self.client.post(reverse('admin:login'), self.data(token))
+                self.assertEqual(response.status_code, 200)
+                self.assertTrue(response.context['form'].errors)
+                auth.assert_not_called()
+
+    def test_real_solve_login_and_replay_rejection(self):
+        token, _ = self.proof()
+        result = self.client.post(reverse('admin:login'), self.data(token, next='/admin/auth/user/'))
+        self.assertEqual(result.status_code, 302)
+        self.assertEqual(result.url, '/admin/auth/user/')
+        self.assertEqual(self.client.session['_auth_user_id'], str(self.user.pk))
+        with patch('django.contrib.auth.forms.authenticate') as auth:
+            self.client.post(reverse('admin:login'), self.data(token))
+            auth.assert_not_called()
+
+    def test_wrong_password_consumes_proof_before_retry(self):
+        token, _ = self.proof()
+        result = self.client.post(reverse('admin:login'), self.data(token, password='wrong'))
+        self.assertEqual(result.status_code, 200)
+        with patch('django.contrib.auth.forms.authenticate') as auth:
+            self.client.post(reverse('admin:login'), self.data(token))
+            auth.assert_not_called()
+
+    def test_cross_session_wrong_purpose_and_expired_tokens_rejected(self):
+        other = Client()
+        for purpose, client in [('login', other), ('demo', self.client), ('login', self.client)]:
+            token, _ = self.proof(client, purpose=purpose)
+            if client is self.client and purpose == 'login':
+                Challenge.objects.filter(token_consumed=False).update(token_expires_at=timezone.now() - timedelta(seconds=1))
+            with self.subTest(purpose=purpose, other=client is other), patch('django.contrib.auth.forms.authenticate') as auth:
+                response = self.client.post(reverse('admin:login'), self.data(token))
+                self.assertEqual(response.status_code, 200)
+                auth.assert_not_called()
+
+    def test_login_and_slider_api_require_csrf(self):
+        client = Client(enforce_csrf_checks=True)
+        self.page(client)
+        self.assertEqual(client.post(reverse('admin:login'), self.data()).status_code, 403)
+        self.assertEqual(client.post(reverse('nova_slider_captcha:challenge'), '{}', content_type='application/json').status_code, 403)
+        token, csrf = self.proof(client)
+        self.assertEqual(client.post(reverse('admin:login'), self.data(token, csrfmiddlewaretoken=csrf)).status_code, 302)
+
+    @override_settings(NOVA_ADMIN_CAPTCHA_POLICY='progressive')
+    def test_progressive_http_flow_cannot_skip_required_slider(self):
+        self.assertIsNone(self.page()[1].select_one('nova-slider'))
+        for _ in range(2):
+            response = self.client.post(reverse('admin:login'), self.data(password='wrong'))
+        self.assertIsNotNone(BeautifulSoup(response.content, 'html.parser').select_one('nova-slider'))
+        with patch('django.contrib.auth.forms.authenticate') as auth:
+            self.client.post(reverse('admin:login'), self.data())
+            auth.assert_not_called()
+        token, _ = self.proof()
+        self.assertEqual(self.client.post(reverse('admin:login'), self.data(token)).status_code, 302)
+
+    def test_nonce_on_assets_and_one_login_form(self):
+        form = SliderCaptchaAdminAuthenticationForm()
+        html = render_to_string('nova_admin/slider_login.html', {'form': form, 'nova_admin_active': False, 'csp_nonce': 'synthetic-slider-nonce'})
+        soup = BeautifulSoup(html, 'html.parser')
+        for selector in ('script[src$="nova_slider_captcha/slider.js"]', 'link[href$="nova_slider_captcha/slider.css"]', 'link[href$="nova_admin/slider.css"]'):
+            self.assertEqual(soup.select_one(selector).get('nonce'), 'synthetic-slider-nonce')
+        self.assertEqual(len(soup.select('#login-form')), 1)
+        self.assertEqual(len(soup.select('script[src$="nova_slider_captcha/slider.js"]')), 1)

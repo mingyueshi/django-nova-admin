@@ -114,7 +114,7 @@ class FrontendContractTests(unittest.TestCase):
         names = support.frontend_contract()
         self.assertEqual(len(names), 18)
         self.assertEqual(names[-5:], ['icons', 'analytics', 'chart-libraries', 'analysis-lab', 'shared-css'])
-        self.assertEqual(support.FRONTEND_TOTAL, 1274)
+        self.assertEqual(support.FRONTEND_TOTAL, 1284)
 
     def altered_package(self, mutation):
         with tempfile.TemporaryDirectory() as tmp:
@@ -153,7 +153,7 @@ TOTAL 36 recovery edge tests passed (Node/jsdom)
 TOTAL 13 enterprise preview tests passed
 TOTAL 68 refactor boundary checks passed (Node/jsdom)
 TOTAL 7 catalog bulk publish checks passed (Node/jsdom)
-TOTAL 31 passed, 0 failed (Node/jsdom static login demo)
+TOTAL 41 passed, 0 failed (Node/jsdom static login demo)
 TOTAL 28 presentation checks passed
 TOTAL 254 pagination checks passed (Node/jsdom)
 TOTAL 5 extensions guide tests passed
@@ -190,16 +190,16 @@ TOTAL 4 shared login CSS checks passed
     def collect(self, root):
         return support.collect_node(root / 'logs', root / 'output', COMMIT, '24.21.0', '11.19.0')
 
-    def test_current_log_fixture_records_all_1274_checks_in_eighteen_suites(self):
+    def test_current_log_fixture_records_all_1284_checks_in_eighteen_suites(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.logs(root)
             result = self.collect(root)
-            self.assertEqual(result['frontend'], 1274)
+            self.assertEqual(result['frontend'], 1284)
             self.assertEqual(result['theme_js'], 121)
             self.assertEqual(len(result['frontend_suites']), 18)
             self.assertEqual(result['frontend_suites']['palettes'], 165)
-            self.assertEqual(sum(result['frontend_suites'].values()), 1274)
+            self.assertEqual(sum(result['frontend_suites'].values()), 1284)
             self.assertEqual(json.loads((root / 'output/report.json').read_text()), result)
 
     def test_every_frontend_suite_requires_exactly_one_success_summary(self):
@@ -217,7 +217,7 @@ TOTAL 4 shared login CSS checks passed
                     self.assertFalse((root / 'output').exists())
 
     def test_same_total_cannot_hide_an_absent_suite(self):
-        # Omit the 165 palette checks but add those 165 to pagination: still 1274.
+        # Omit the 165 palette checks but add those 165 to pagination: still 1284.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             logs = self.logs(root)
@@ -314,7 +314,7 @@ TOTAL 4 shared login CSS checks passed
                 (logs / name).unlink()
             result = support.check_node_summaries(logs)
             self.assertEqual(result['kind'], 'node-suite-contract')
-            self.assertEqual(result['frontend'], 1274)
+            self.assertEqual(result['frontend'], 1284)
             self.assertIn('no install, runtime, step', result['boundary'])
             self.assertNotIn('commit', result)
             self.assertNotIn('node', result)

@@ -23,6 +23,8 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
 
+from .captcha_policy import CaptchaPolicyMixin
+
 
 _TOKEN_SALT = "nova_admin.login-captcha.v1"
 _KEY_RE = re.compile(r"\A[a-f0-9]{40}\Z")
@@ -129,15 +131,8 @@ class SingleUseCaptchaField(CaptchaField):
         return [value[0], ""]
 
 
-class CaptchaAdminAuthenticationForm(AdminAuthenticationForm):
+class CaptchaAdminAuthenticationForm(CaptchaPolicyMixin, AdminAuthenticationForm):
     captcha = SingleUseCaptchaField()
-
-    def clean(self):
-        # AuthenticationForm.clean executes even with field errors. Never call
-        # an authentication backend until this CAPTCHA has passed validation.
-        if "captcha" in self.errors:
-            return self.cleaned_data
-        return super().clean()
 
 
 @never_cache

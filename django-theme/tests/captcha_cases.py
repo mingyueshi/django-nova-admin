@@ -92,6 +92,31 @@ class CaptchaValidationTests(TestCase):
 
 @override_settings(ROOT_URLCONF="config.captcha_urls", LANGUAGE_CODE="en")
 class CaptchaLoginTests(TestCase):
+    @override_settings(NOVA_ADMIN_CAPTCHA_POLICY="progressive", NOVA_ADMIN_CAPTCHA_FAILURE_LIMIT=2)
+    def test_progressive_image_escalates_and_cannot_be_skipped(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.assertNotContains(self.client.get(reverse("admin:login")), 'name="captcha_1"')
+        for _ in range(2):
+            response = self.client.post(reverse("admin:login"), {"username": self.staff.username, "password": "wrong"})
+        soup = BeautifulSoup(response.content, "html.parser")
+        self.assertIsNotNone(soup.select_one('[name="captcha_1"]'))
+        with patch("django.contrib.auth.forms.authenticate") as auth:
+            self.client.post(reverse("admin:login"), {"username": self.staff.username, "password": "synthetic-test-only"})
+            auth.assert_not_called()
+        _, _, token, row = self.read_form()
+        self.assertEqual(self.client.post(reverse("admin:login"), self.login_data(token, row.response)).status_code, 302)
+        self.client.logout()
+        self.assertNotContains(self.client.get(reverse("admin:login")), 'name="captcha_1"')
+        cache.clear()
+
+    def test_long_image_answers_have_no_four_character_limit(self):
+        for answer in ("abcde", "abcdef", "abcdefghijk"):
+            with self.subTest(length=len(answer)), patch.object(captcha_settings, "CAPTCHA_CHALLENGE_FUNCT", lambda: (answer.upper(), answer)):
+                _, soup, token, row = self.read_form()
+                self.assertIsNone(soup.select_one('[name="captcha_1"]').get("maxlength"))
+                self.assertEqual(SingleUseCaptchaField().clean([token, answer]), [token, ""])
+
     @classmethod
     def setUpTestData(cls):
         User = get_user_model()

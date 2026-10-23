@@ -1,5 +1,78 @@
 # 登录页与可选验证码接入
 
+## 独立行布局与渐进式验证
+
+图片与答案输入框各占一行，图片按原比例显示、宽度最多为容器宽度，答案输入框没有 4 位长度限制。`CAPTCHA_LENGTH = 6` 可配置上游随机字符生成器的长度；自定义生成器也可返回 5 位、8 位或更长的答案。
+
+现有接入默认保持 `always`（每次验证）。图片表单与下方滑块表单均可显式启用同一套服务端策略：
+
+```python
+NOVA_ADMIN_CAPTCHA_POLICY = "progressive"  # 或 "always"
+NOVA_ADMIN_CAPTCHA_FAILURE_LIMIT = 2      # 同一连接 IP 的失败提交次数
+NOVA_ADMIN_CAPTCHA_WINDOW = 900           # 从首次失败开始计时，单位秒
+NOVA_ADMIN_CAPTCHA_CACHE = "default"      # Django CACHES 中的别名
+# 可选：项目自己的服务端异常检测，不能直接信任客户端参数。
+NOVA_ADMIN_CAPTCHA_RISK_CHECK = lambda request: False
+```
+
+正常请求不渲染验证码字段，也不生成挑战。第二次失败的响应就会显示验证码；之后缺失、错误、过期的验证码先于密码认证被拒绝。正确验证码配合错误密码仍保留验证要求，成功登录清除该 IP 的失败计数；未成功时计数随窗口过期。初始触发的失败包括必填字段、密码、staff 检查及验证码失败。计数不按用户名区分，不通过验证码显隐暴露账号是否存在。换浏览器或改前端隐藏字段不会清除同一 IP 的服务端计数。
+
+这是验证码升级策略，不是密码尝试限流。多进程／多实例必须把选定缓存配置为共享、支持原子 `add`/`incr` 的后端（例如项目已有的 Redis）；默认 LocMem 只适合单进程本地演示，进程重启会清除计数。缓存、风险回调错误会传播并拒绝本次登录，不回退到免验证。默认使用连接 `REMOTE_ADDR`，忽略转发头；共享出口可能影响多名用户，可信代理/IP 解析、独立限流、MFA、SSO 和真实替代登录仍由宿主项目配置。不要把验证码当作认证后端或锁号策略。
+
+本地图形渐进式演示使用 `config.progressive_captcha_settings`，数据库和原图片演示相同。把下方图片演示命令的 `--settings` 替换为此配置即可；它使用 6 位字符，未创建任何预设管理员。
+
+## Nova Slider CAPTCHA 接入
+
+滑块复用独立的 `nova-slider-captcha` **0.2.0** 包及原生 Web Component。核心主题不自动导入该包，也不强制安装图片验证码。当前源代码工作区可从 `django-nova-admin` 仓库根目录安装兄弟项目：
+
+```bash
+python -m pip install -e ./django-theme
+python -m pip install -e ../django-nova-slider-captcha
+cd django-theme
+python demo/manage.py migrate --settings=config.slider_settings
+python demo/manage.py createsuperuser --settings=config.slider_settings
+python demo/manage.py runserver 127.0.0.1:8000 --settings=config.slider_settings
+```
+
+`config.slider_settings` 使用独立 `demo/slider-demo.sqlite3`，没有预设账号，默认两次失败后显示滑块。切换到每次验证可在自己的设置里使用 `NOVA_ADMIN_CAPTCHA_POLICY = "always"`。这是本机开发配置；不要直接作为生产设置。
+
+已有项目保留自己的认证后端、中间件、AdminSite 与模型注册，只显式接入表单、模板、接口和迁移：
+
+```python
+# settings.py: 加入 nova_slider_captcha，保留 nova_admin 和原项目 apps。
+INSTALLED_APPS += ["nova_slider_captcha"]
+
+# urls.py: 挂载在现有 admin catch-all 路由之前。
+from django.contrib import admin
+from django.urls import include, path
+from nova_admin.slider import SliderCaptchaAdminAuthenticationForm
+
+admin.site.login_form = SliderCaptchaAdminAuthenticationForm
+admin.site.login_template = "nova_admin/slider_login.html"
+urlpatterns = [
+    path("admin/_slider/", include("nova_slider_captcha.urls")),
+    path("admin/", admin.site.urls),
+]
+```
+
+执行宿主项目的 `migrate` 和 `collectstatic`。这不需要外部服务或 API 密钥；安装包提供图片生成、数据库表、同源 CSRF 接口及资源。模板保留 Nova 品牌、深浅色及原生模式，组件支持拖动、触屏、方向键与 Enter。滑块需要 JavaScript，无脚本提示只引导到项目自己的替代验证渠道，不会绕过服务端要求。
+
+`nova_slider_token` 隐藏字段由组件创建，模板不重复输出。表单用固定 `purpose="login"` 调用包的 `consume()`，先原子消费绑定当前会话、未过期的一次性凭证，再执行 Django 原生密码、active/staff 和安全 next 检查。密码错误也需要重新拼图。凭证过期、跨会话、跨用途、重用及接口 CSRF 失败均不能登录。不要把前端 `verified` 事件当作服务端授权；不要把消费校验放入之后可能回滚的外层事务。接口限流和清理沿用独立包的配置与 `prune_slider_captcha` 命令，需按项目实际数据库和部署方式验收。
+
+已有 MFA/SSO／Axes 自定义表单需要组合现有逻辑，不直接替换；本适配器没有宣称自动提供滑块与 Axes 的补报联动。自定义 URL namespace 可继承 `NovaSliderWidget.get_context()` 改用自己接口的反向解析。组件只声明简体中文与英语文案；真实无障碍替代认证、生产数据库并发和负载需分别验收。
+
+公开 `dist/login.html` 默认展示渐进式预览，并可切换图形／滑块、每次／异常时验证及 5／6／8 位字符。预览复用原组件的交互代码，通过不同名称的本地演示子类替换网络传输，只使用合成 PNG、公开演示位置和临时模拟凭证；不发送验证或登录请求，不建立真实会话。MIT 原文件、许可证和 SHA256 位于 `dist/vendor/nova-slider-captcha/`。Django 适配器直接使用安装包，不使用这份 mock 子类。
+
+验证命令（`django-theme` 目录）：
+
+```bash
+PYTHONPATH=src:demo:. python demo/manage.py test tests.test_captcha_policy --noinput
+PYTHONPATH=src:demo:. python demo/manage.py test tests.test_captcha --settings=tests.captcha_settings --noinput
+PYTHONPATH=src:demo:. python demo/manage.py test tests.test_slider --settings=tests.slider_settings --noinput
+```
+
+以下保留原图片验证码和 Axes 的接入细节及历史验证记录。
+
 核心主题仍只依赖Django。验证码是项目显式选择的独立接入，使用本机 `django-simple-captcha==0.7.0`、`Pillow==12.2.0`，不调用第三方验证码服务。公开登录演示为客户端mock，不是真实认证。
 
 ## 本地试运行（独立Demo数据库）

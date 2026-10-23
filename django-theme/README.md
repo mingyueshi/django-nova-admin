@@ -4,7 +4,7 @@
 
 本轮增加可选品牌/令牌/导航扩展、自检与上游漂移工具；核心仍无额外依赖。新的 Axes 登录桥接只在项目显式选择 security extra 与对应登录表单后启用。入口见 [BRANDING.md](BRANDING.md)、[NAVIGATION_EXTENSIONS.md](NAVIGATION_EXTENSIONS.md)、[UPSTREAM_DRIFT.md](UPSTREAM_DRIFT.md)。维护范围与本轮实际验证分别见 [COMPATIBILITY.md](COMPATIBILITY.md) 和 [TEST_REPORT.md](TEST_REPORT.md)。
 
-核心安装仍只依赖Django。启用验证码需显式安装extra、挂载接口并迁移其独立表，见 [CAPTCHA_INTEGRATION.md](CAPTCHA_INTEGRATION.md)。原生外观/主题关闭后，已启用的验证码继续要求验证；完全卸载主题时，也要先处理已配置的login_form/login_template及可选刷新URL。
+核心安装仍只依赖Django。图片验证码使用可选extra，拼图滑块使用独立的 `nova-slider-captcha` 包；两者均需显式挂载接口、迁移独立表，并可选择每次验证或服务端渐进式验证，见 [CAPTCHA_INTEGRATION.md](CAPTCHA_INTEGRATION.md)。原生外观/主题关闭后，已启用的验证码策略继续生效；完全卸载主题时，也要先处理已配置的login_form/login_template及可选刷新URL。
 
 # Nova · 原生 Django Admin 可逆主题
 

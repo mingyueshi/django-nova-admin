@@ -6,6 +6,8 @@
 <title>登录页预览 · NOVA Admin</title>
 <script src="./js/preferences-init.js"></script>
 <link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./login.css"><link rel="stylesheet" href="./login-preview.css"><link rel="stylesheet" href="./presets.css">
+<link rel="stylesheet" href="./vendor/nova-slider-captcha/slider.css">
+<script defer src="./vendor/nova-slider-captcha/slider.js"></script>
 <script type="module" src="./js/login.js"></script>
 </head>
 <body class="nova-admin login nova-login-demo">
@@ -17,17 +19,24 @@
 <div class="nova-login-art" aria-hidden="true"><i></i><i></i><span class="nova-login-glyph">N</span></div>
 <section class="nova-login-panel" aria-labelledby="demo-login-title"><h1 class="login-visually-hidden" id="demo-login-title" tabindex="-1">登录</h1>
 <p class="login-demo-notice">虚构账号演示，不要输入真实密码</p>
+<div class="login-verification-controls" aria-label="验证码演示设置">
+<label for="captcha-provider">验证方式<select id="captcha-provider"><option value="image">图形验证码</option><option value="slider">拼图滑块</option></select></label>
+<label for="captcha-policy">显示策略<select id="captcha-policy"><option value="progressive">异常时验证</option><option value="always">每次验证</option></select></label>
+<label for="captcha-length" id="captcha-length-control">字符长度<select id="captcha-length"><option value="5">5 位</option><option value="6" selected>6 位</option><option value="8">8 位</option></select></label>
+</div>
+<p class="login-risk-status" id="login-risk-status" role="status" aria-live="polite"></p>
 <form id="demo-login-form" novalidate autocomplete="off">
 <div id="login-feedback" class="login-feedback" role="alert" tabindex="-1" hidden></div>
 <div class="form-row"><label for="demo-username">用户名</label><input type="text" id="demo-username" name="demo_username" value="demo_admin" autocomplete="off" spellcheck="false" required aria-describedby="username-error"><span class="login-field-error" id="username-error"></span></div>
 <div class="form-row"><label for="demo-password">密码</label><div class="login-password"><input id="demo-password" name="demo_password" type="password" value="NovaPreview123" autocomplete="off" required aria-describedby="password-error"><button type="button" id="password-visible" aria-label="显示演示密码" aria-pressed="false">显示</button></div><span class="login-field-error" id="password-error"></span></div>
-<div class="form-row"><div class="captcha-label-row"><label for="demo-captcha">验证码</label><span id="captcha-expiry" class="login-visually-hidden">2 分钟内有效</span></div><div class="login-captcha-row"><input type="text" id="demo-captcha" name="demo_captcha" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="captcha-help captcha-error" required placeholder="4 位字符"><div class="login-captcha-image" id="captcha-graphic" role="img" aria-label="4位图形验证码，可刷新或改用文字验证"></div></div><div id="captcha-text" class="captcha-text" hidden></div><div class="captcha-actions"><button type="button" id="refresh-captcha">↻ 换一张</button><button type="button" id="captcha-alternative" aria-expanded="false" aria-controls="captcha-text">文字验证</button></div><p id="captcha-help" class="login-visually-hidden">不区分大小写。文字替代仅用于本地演示。</p><span class="login-field-error" id="captcha-error"></span><span id="captcha-announcement" class="login-visually-hidden" role="status" aria-live="polite"></span></div>
+<div class="form-row" id="image-captcha-section" hidden><div class="captcha-label-row"><label for="demo-captcha">验证码</label><span id="captcha-expiry" class="login-visually-hidden">2 分钟内有效</span></div><div class="login-captcha-row"><div class="login-captcha-image" id="captcha-graphic" role="img" aria-label="图形验证码，可刷新或改用文字验证"></div><div id="captcha-text" class="captcha-text" hidden></div><input type="text" id="demo-captcha" name="demo_captcha" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="captcha-help captcha-error" placeholder="输入图中字符" disabled></div><div class="captcha-actions"><button type="button" id="refresh-captcha">↻ 换一张</button><button type="button" id="captcha-alternative" aria-expanded="false" aria-controls="captcha-text">文字验证</button></div><p id="captcha-help" class="login-visually-hidden">不区分大小写。文字替代仅用于本地演示。</p><span class="login-field-error" id="captcha-error"></span><span id="captcha-announcement" class="login-visually-hidden" role="status" aria-live="polite"></span></div>
+<div class="form-row" id="slider-captcha-section" hidden><span class="login-slider-label" id="slider-captcha-label">安全验证</span><div id="slider-captcha-mount" aria-labelledby="slider-captcha-label"></div><span class="login-field-error" id="slider-error" role="alert"></span></div>
 <div class="submit-row"><button type="submit" id="login-submit">登录</button></div>
 </form>
 <section id="login-success" class="login-success" hidden aria-labelledby="login-success-title"><div aria-hidden="true" class="login-success-mark">✓</div><h2 id="login-success-title" tabindex="-1">演示验证通过</h2><p>这是本地交互结果，没有建立真实登录会话。</p><a class="login-primary-link" href="./#overview">进入演示工作台</a><button type="button" id="login-again">再次体验</button></section>
-<details class="login-demo-tools"><summary>帮助与演示</summary><p>用户名：demo_admin<br>密码：NovaPreview123</p><div><button type="button" id="expire-captcha">使当前验证码过期</button><label><input type="checkbox" id="fail-login">模拟下一次提交失败</label></div><p>图形与文字验证码都在浏览器中生成，不提供防机器人保护。真实Django可选集成在服务端校验，需独立配置。</p><a href="./#native-samples">真实 Django 模板样本</a><span class="login-demo-version"> · 预览 1.7.0</span></details>
+<details class="login-demo-tools"><summary>帮助与演示</summary><p>用户名：demo_admin<br>密码：NovaPreview123</p><div><button type="button" id="trigger-risk">模拟异常，显示验证码</button><button type="button" id="reset-risk">恢复正常登录状态</button><button type="button" id="expire-captcha">使当前验证码过期</button><label><input type="checkbox" id="fail-login">模拟下一次提交失败</label></div><p>图形与滑块均为本地交互演示，不提供防机器人保护。滑块复用 Nova Slider CAPTCHA 0.2.0 原组件，预览不发送验证请求；真实 Django 接入由服务端校验并一次性消费凭证。</p><a href="./#native-samples">真实 Django 模板样本</a><span class="login-demo-version"> · 预览 1.7.0</span></details>
 
 </section></div></div></main>
 
-<noscript><p class="login-noscript">此交互预览需要JavaScript。真实Django登录与验证码接入支持服务端提交及无脚本刷新。</p></noscript>
+<noscript><p class="login-noscript">此交互预览需要JavaScript。真实 Django 图片验证码支持无脚本提交与重载；拼图滑块需要 JavaScript。</p></noscript>
 </body></html>

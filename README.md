@@ -14,7 +14,7 @@
 | `django-theme/src/nova_admin/` | 可安装、可恢复原生的 Django Admin 主题 | 使用原来的 AdminSite、ModelAdmin、认证、权限、CSRF、表单和动作 |
 | `django-theme/demo/` | 可运行 Django 项目与图片列示例 | 本地 SQLite，由你创建管理员；真实增删改及关系字段流程 |
 | `dist/native-admin/` | 真实 Django 6.1.1 渲染的 56 页＋96 个配色代表页＋入口 | 明暗/自动、标准/紧凑与原生外观，完全只读；脚本、认证及提交能力已经移除 |
-| `tests/` | 交互预览的 1274 项前端检查 | Node/jsdom，不代表浏览器视觉或真机认证 |
+| `tests/` | 交互预览的 1284 项前端检查 | Node/jsdom，不代表浏览器视觉或真机认证 |
 | `django-theme/tests/` | 核心、可选验证码和 Axes 独立测试 | 精确补丁版本测试，详情见验证报告 |
 
 `dist/` 就是前端源码，**不存在缺失的 React/Vue 工程或构建步骤**。本包没有 Python/Node 环境或依赖缓存；首次安装依赖需要访问官方 PyPI/npm。原始 PNG 图集、截图、数据库、浏览器数据、日志和发布配置没有打包。三份约 694 KB 的 WebP 是各演示入口的本地资源，不依赖外链。
@@ -186,6 +186,8 @@ npm run format
 
 
 ## 1.6.0 / 0.4.0 登录页与可选验证码
+
+当前登录演示已支持图形／拼图滑块、每次验证／异常后验证，以及 5／6／8 位字符对比。图片与输入框各占一行；真实 Django 表单支持服务端失败升级策略，滑块接入独立 `nova-slider-captcha` 0.2.0 包并先消费一次性凭证再认证。预览仍为本地 mock。配置与兄弟项目安装方法见 [登录验证码接入](django-theme/CAPTCHA_INTEGRATION.md)。
 
 - `dist/login.html`：独立登录交互演示，企业浅蓝/深色/自动、几何背景、手机单栏。只使用预填的虚构账号，不输入真实密码
 - `#login-preview` 和 `#native-samples` 提供入口，`responsive.html` 可检查不同宽度

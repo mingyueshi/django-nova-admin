@@ -1,4 +1,5 @@
 import { applyPalette, savedPalette, paletteOptions } from './palette.js';
+import './login-slider-demo.js';
 // Public interaction demo only. No authentication, fetch, cookies or credential storage.
 // The optional Django integration validates its challenge independently on the server.
 const $ = (selector) => document.querySelector(selector);
@@ -12,6 +13,71 @@ let challenge = '',
   pending = false,
   alternative = false;
 let submitTimer, expiryTimer;
+let failures = 0,
+  forcedRisk = false,
+  slider = null;
+const requiresCaptcha = () =>
+  $('#captcha-policy').value === 'always' || failures >= 2 || forcedRisk;
+const usesImage = () => $('#captcha-provider').value === 'image';
+
+function updateVerification({ renew = true } = {}) {
+  const required = requiresCaptcha();
+  $('#image-captcha-section').hidden = !required || !usesImage();
+  $('#slider-captcha-section').hidden = !required || usesImage();
+  $('#demo-captcha').disabled = !required || !usesImage();
+  $('#demo-captcha').required = required && usesImage();
+  $('#captcha-length-control').hidden = !usesImage();
+  $('#expire-captcha').disabled = !required;
+  $('#login-risk-status').textContent = required
+    ? $('#captcha-policy').value === 'always'
+      ? '每次登录前完成安全验证。'
+      : '检测到异常尝试，请先完成安全验证。'
+    : `当前无需验证码；连续 2 次失败后将显示安全验证。${failures ? ' 已失败 1 次。' : ''}`;
+  if (!required || usesImage()) {
+    slider?.remove();
+    slider = null;
+  }
+  if (required && usesImage()) {
+    if (renew || !challenge) refreshChallenge({ announceChange: false });
+  } else {
+    clearTimeout(expiryTimer);
+    challenge = '';
+    $('#demo-captcha').value = '';
+    if (required && !slider) {
+      slider = document.createElement('nova-slider-demo');
+      slider.setAttribute('endpoint', './demo-only/');
+      slider.setAttribute('purpose', 'login');
+      slider.setAttribute('role', 'group');
+      slider.setAttribute('aria-label', '演示拼图滑块验证');
+      slider.setAttribute('aria-describedby', 'slider-error');
+      $('#slider-captcha-mount').append(slider);
+    } else if (required && renew) slider.refresh();
+  }
+}
+function recordFailure() {
+  failures++;
+  updateVerification({ renew: false });
+}
+for (const id of ['captcha-policy', 'captcha-provider', 'captcha-length']) {
+  $('#' + id).addEventListener('change', () => {
+    cancelPending();
+    clearErrors();
+    updateVerification();
+  });
+}
+$('#trigger-risk').addEventListener('click', () => {
+  cancelPending();
+  clearErrors();
+  forcedRisk = true;
+  updateVerification();
+});
+$('#reset-risk').addEventListener('click', () => {
+  cancelPending();
+  clearErrors();
+  failures = 0;
+  forcedRisk = false;
+  updateVerification();
+});
 
 let appearance = 'light';
 try {
@@ -46,7 +112,7 @@ $('#login-palette').addEventListener('change', (event) => {
 });
 
 function randomCode() {
-  const values = new Uint32Array(4);
+  const values = new Uint32Array(Number($('#captcha-length').value) || 6);
   if (window.crypto?.getRandomValues) window.crypto.getRandomValues(values);
   else
     values.forEach((_, index) => {
@@ -72,6 +138,7 @@ function cancelPending() {
   setPending(false);
 }
 function clearErrors() {
+  $('#slider-error').textContent = '';
   $('#login-feedback').hidden = true;
   $('#login-feedback').textContent = '';
   for (const name of ['username', 'password', 'captcha']) {
@@ -119,11 +186,11 @@ function refreshChallenge({ focus = false, announceChange = true } = {}) {
   const glyphs = Array.from(challenge)
     .map(
       (letter, index) =>
-        `<text x="${21 + index * 30}" y="33" transform="rotate(${[-12, 9, -7, 12][index]} ${21 + index * 30} 27)" fill="${['#27447b', '#436098', '#1b557a', '#345491'][index]}" font-family="ui-monospace,monospace" font-weight="700" font-size="26" text-anchor="middle">${letter}</text>`,
+        `<text x="${24 + index * 30}" y="39" transform="rotate(${[-12, 9, -7, 12][index % 4]} ${24 + index * 30} 32)" fill="${['#27447b', '#436098', '#1b557a', '#345491'][index % 4]}" font-family="ui-monospace,monospace" font-weight="700" font-size="30" text-anchor="middle">${letter}</text>`,
     )
     .join('');
   $('#captcha-graphic').innerHTML =
-    `<svg viewBox="0 0 136 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="136" height="48" fill="#eaf0ff"/><path d="M-3 17Q37 39 72 15T139 26M-5 38Q40 7 77 31T139 14" fill="none" stroke="#728ab6" stroke-width="1.2" opacity=".65"/>${glyphs}<path d="M8 10L126 39M22 42L112 6" stroke="#557db4" opacity=".25"/></svg>`;
+    `<svg viewBox="0 0 ${challenge.length * 30 + 18} 58" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="100%" height="58" fill="#eaf0ff"/><path d="M0 20Q60 50 130 20T280 35M0 44Q80 10 160 35T280 15" fill="none" stroke="#728ab6" stroke-width="1.2" opacity=".65"/>${glyphs}<path d="M8 10L260 49M22 52L222 6" stroke="#557db4" opacity=".25"/></svg>`;
   renderTextAlternative();
   expiryTimer = setTimeout(updateExpiry, lifetime + 20);
   if (announceChange) announce('验证码已更新，有效期2分钟。');
@@ -140,6 +207,15 @@ $('#captcha-alternative').addEventListener('click', () => {
 });
 $('#expire-captcha').addEventListener('click', () => {
   cancelPending();
+  if (!usesImage()) {
+    if (slider) {
+      clearTimeout(slider.timer);
+      slider.demoExpires = slider.demoProofExpires = 0;
+      slider.field.value = '';
+      slider.setState('expired', 'expired');
+    }
+    return;
+  }
   expiresAt = 0;
   clearTimeout(expiryTimer);
   updateExpiry();
@@ -159,25 +235,36 @@ form.addEventListener('submit', (event) => {
   clearErrors();
   const username = $('#demo-username').value.trim();
   const password = $('#demo-password').value;
+  const required = requiresCaptcha();
+  const imageRequired = required && usesImage();
   const answer = $('#demo-captcha').value.trim().toUpperCase();
   if (!username) fieldError('username', '请输入演示用户名');
   if (!password) fieldError('password', '请输入演示密码');
-  if (!answer) fieldError('captcha', '请输入验证码');
+  if (imageRequired && !answer) fieldError('captcha', '请输入验证码');
   const invalid = form.querySelector('[aria-invalid="true"]');
   if (invalid) {
+    recordFailure();
     invalid.focus();
     return;
   }
-  if (Date.now() >= expiresAt) {
+  if (imageRequired && Date.now() >= expiresAt) {
+    recordFailure();
     fieldError('captcha', '验证码已过期，请换一张后重试');
     announce('验证码已过期，尚未进行演示登录。');
     $('#demo-captcha').focus();
     return;
   }
-  if (answer !== challenge) {
+  if (imageRequired && answer !== challenge) {
+    recordFailure();
     refreshChallenge({ focus: true, announceChange: false });
     fieldError('captcha', '验证码不正确，已更新，请重新输入');
     announce('验证码不正确，已生成新的验证码。');
+    return;
+  }
+  if (required && !usesImage() && !slider?.getToken()) {
+    recordFailure();
+    $('#slider-error').textContent = '请先完成拼图滑块验证';
+    slider?.range?.focus();
     return;
   }
   const attempt = ++generation;
@@ -187,17 +274,23 @@ form.addEventListener('submit', (event) => {
   submitTimer = setTimeout(() => {
     if (attempt !== generation) return;
     setPending(false);
-    if (Date.now() >= expiresAt) {
+    if (imageRequired && Date.now() >= expiresAt) {
       updateExpiry();
       fieldError('captcha', '验证码已过期，请换一张后重试');
       $('#demo-captcha').focus();
       return;
     }
+    if (required && !usesImage() && !slider?.consumeDemoToken()) {
+      $('#slider-error').textContent = '验证凭证已过期或已使用，请重新完成拼图';
+      slider?.refresh();
+      return;
+    }
     if (fail || username !== 'demo_admin' || password !== 'NovaPreview123') {
-      refreshChallenge({ announceChange: false });
+      recordFailure();
+      updateVerification();
       feedback(
         fail
-          ? '请求失败（模拟）。请输入新验证码后重试。'
+          ? '请求失败（模拟）。请重试并完成当前要求的安全验证。'
           : '演示用户名或密码不正确，请使用页面提供的测试账号。',
       );
       $('#login-feedback').focus();
@@ -206,6 +299,10 @@ form.addEventListener('submit', (event) => {
     challenge = '';
     expiresAt = 0;
     clearTimeout(expiryTimer);
+    slider?.remove();
+    slider = null;
+    failures = 0;
+    forcedRisk = false;
     fields.forEach((field) => {
       field.value = '';
     });
@@ -224,12 +321,20 @@ $('#login-again').addEventListener('click', () => {
   $('#password-visible').setAttribute('aria-pressed', 'false');
   form.hidden = false;
   $('#login-success').hidden = true;
-  refreshChallenge();
+  updateVerification();
   fields[0].focus();
 });
 window.addEventListener('pagehide', () => {
   cancelPending();
   clearTimeout(expiryTimer);
   fields[1].value = '';
+  slider?.remove();
+  slider = null;
 });
-refreshChallenge({ announceChange: false });
+updateVerification();
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    cancelPending();
+    updateVerification();
+  }
+});

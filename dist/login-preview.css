@@ -23,8 +23,8 @@ body.nova-admin.login .login-password input { padding-right:64px; }
 .login-field-error:empty { display:none; }
 .captcha-label-row { display:flex; justify-content:space-between; gap:10px; align-items:baseline; }
 .captcha-label-row>span { color:var(--body-quiet-color); font-size:12px; }
-.login-captcha-row { display:grid; grid-template-columns:minmax(0,1fr) 112px; gap:10px; }
-.login-captcha-image { min-width:0; height:48px; border:1px solid var(--border-color); border-radius:9px; overflow:hidden; background:#eaf0ff; }
+.login-captcha-row { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
+.login-captcha-image { min-width:0; width:100%; height:64px; border:1px solid var(--border-color); border-radius:9px; overflow:hidden; background:#eaf0ff; }
 .login-captcha-image svg { width:100%; height:100%; display:block; }
 .captcha-actions { display:flex; gap:14px; flex-wrap:wrap; margin-top:3px; justify-content:space-between; }
 .captcha-actions button, #login-again { border:0; background:transparent; color:var(--link-fg); min-height:40px; padding:3px 0; font-size:13px; }
@@ -48,6 +48,15 @@ body.nova-admin.login .login-password input { padding-right:64px; }
 .login-skip:focus { top:12px; }
 .login-noscript { max-width:600px; margin:20px auto; padding:20px; }
 .login-demo-version { color:var(--body-quiet-color); font-size:11px; }
+.login-verification-controls { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:12px; border:1px solid var(--hairline-color); border-radius:10px; background:var(--darkened-bg); }
+.login-verification-controls label { display:grid; gap:4px; min-width:0; font-size:12px; color:var(--body-quiet-color); }
+.login-verification-controls select { min-width:0; max-width:100%; width:100%; padding:7px 5px; min-height:40px; background:var(--nova-panel); color:var(--body-fg); border:1px solid var(--border-color); border-radius:6px; }
+.login-risk-status { margin:12px 0 20px; color:var(--body-quiet-color); font-size:12px; line-height:1.7; }
+.login-slider-label { display:block; margin-bottom:10px; font-size:14px; font-weight:600; }
+nova-slider-demo { display:block; min-width:0; width:100%; --nsc-accent:var(--link-fg); --nsc-muted:var(--body-quiet-color); --nsc-panel:var(--darkened-bg); --nsc-line:var(--border-color); --nsc-text:var(--body-fg); }
+body.nova-admin.login nova-slider-demo .nsc-range { width:100%; height:100%; min-height:0; margin:0; padding:0; border:0; border-radius:0; box-shadow:none; }
+body.nova-admin.login nova-slider-demo .nsc-keyboard { margin:0; }
+nova-slider-demo .nsc-refresh { min-height:44px; }
 @media(max-width:900px) {
   .login-preview-toolbar { width:min(480px,calc(100% - 48px)); margin-top:20px; }
   .login-preview-toolbar select { min-height:40px; }

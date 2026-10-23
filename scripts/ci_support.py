@@ -25,7 +25,7 @@ FRONTEND_SUMMARIES = {
     'enterprise': 'TOTAL 13 enterprise preview tests passed',
     'boundaries': 'TOTAL 68 refactor boundary checks passed (Node/jsdom)',
     'bulk-publish': 'TOTAL 7 catalog bulk publish checks passed (Node/jsdom)',
-    'login': 'TOTAL 31 passed, 0 failed (Node/jsdom static login demo)',
+    'login': 'TOTAL 41 passed, 0 failed (Node/jsdom static login demo)',
     'presentation': 'TOTAL 28 presentation checks passed',
     'pagination': 'TOTAL 254 pagination checks passed (Node/jsdom)',
     'extensions': 'TOTAL 5 extensions guide tests passed',

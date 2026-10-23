@@ -1,0 +1,6 @@
+/* Preserve the upstream component's responsive and keyboard controls. */
+.nova-slider-form-widget { clear:both; min-width:0; width:100%; }
+body.login .nova-slider-form-widget .nsc-range { width:100%; height:100%; margin:0; padding:0; border:0; }
+body.login .nova-slider-form-widget .nsc-refresh { min-height:44px; line-height:1.6; }
+body.login .nova-slider-form-widget .nsc-keyboard { padding:0; margin:0; }
+body.login .nova-slider-form-widget nova-slider { --nsc-accent:var(--link-fg,#417690); }

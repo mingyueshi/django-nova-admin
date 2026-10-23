@@ -98,9 +98,11 @@ async function createDemo(options = {}) {
   const module = new vm.SourceTextModule(script, {
     context: dom.getInternalVMContext(), identifier: path.join(project, 'dist/js/login.js'),
   });
+  w.HTMLImageElement.prototype.decode = async function () {};
+  w.eval(fs.readFileSync(path.join(project, 'dist/vendor/nova-slider-captcha/slider.js'), 'utf8'));
   await module.link(async (specifier) => {
-    assert.equal(specifier, './palette.js', 'Login only imports local presentation helpers');
-    const dependency = new vm.SourceTextModule(fs.readFileSync(path.join(project, 'dist/js/palette.js'), 'utf8'), { context: dom.getInternalVMContext() });
+    assert.ok(['./palette.js', './login-slider-demo.js'].includes(specifier), 'Only local presentation helpers');
+    const dependency = new vm.SourceTextModule(fs.readFileSync(path.join(project, 'dist/js', specifier), 'utf8'), { context: dom.getInternalVMContext() });
     await dependency.link(() => { throw new Error('Unexpected nested dependency'); });
     return dependency;
   });
@@ -120,7 +122,7 @@ async function createDemo(options = {}) {
     if (q('#captcha-text').hidden) click('#captcha-alternative');
     assert.equal(q('#captcha-text').hidden, false, 'Read only the visible demo alternative');
     const value = q('#captcha-text strong').textContent.trim();
-    assert.match(value, /^[A-HJ-NP-Z2-9]{4}$/);
+    assert.match(value, /^[A-HJ-NP-Z2-9]{5,8}$/);
     return value;
   };
   const answer = () => { const value = code(); input('#demo-captcha', value); return value; };
@@ -129,6 +131,7 @@ async function createDemo(options = {}) {
     q('#demo-login-form').dispatchEvent(event);
     assert.equal(event.defaultPrevented, true, 'Every submit must prevent native navigation');
   };
+  if (options.policy !== 'progressive') change('#captcha-policy', 'always');
   const noSuccess = () => {
     assert.equal(q('#login-success').hidden, true);
     assert.equal(q('#demo-login-form').hidden, false);
@@ -196,7 +199,7 @@ test('public mock entry has local assets, no auth endpoint, CSP and visible disc
   const csp = q('meta[http-equiv="Content-Security-Policy"]').content;
   assert.match(csp, /(?:^|;)\s*connect-src 'none'(?:;|$)/);
   assert.match(csp, /(?:^|;)\s*form-action 'none'(?:;|$)/);
-  assert.deepEqual([...d.querySelectorAll('script')].map((node) => [node.type, node.getAttribute('src')]), [['', './js/preferences-init.js'], ['module', './js/login.js']]);
+  assert.deepEqual([...d.querySelectorAll('script')].map((node) => [node.type, node.getAttribute('src')]), [['', './js/preferences-init.js'], ['', './vendor/nova-slider-captcha/slider.js'], ['module', './js/login.js']]);
   for (const element of d.querySelectorAll('[src],link[href]')) {
     const value = element.getAttribute('src') || element.getAttribute('href');
     assert.ok(value.startsWith('./'), `Only same-directory assets expected: ${value}`);
@@ -531,6 +534,113 @@ test('unavailable storage never prevents theme changes or fake login', (ui) => {
   ui.advance(350);
   assert.equal(ui.q('#login-success').hidden, false);
 }, { storageUnavailable: true });
+
+
+for (const length of [5, 6, 8]) {
+  test(`image supports ${length} characters without input truncation`, (ui) => {
+    ui.change('#captcha-length', String(length));
+    assert.equal(ui.code().length, length);
+    assert.equal(ui.q('#demo-captcha').hasAttribute('maxlength'), false);
+    ui.answer(); ui.submit(); ui.advance(350);
+    assert.equal(ui.q('#login-success').hidden, false);
+  });
+}
+
+test('progressive default has no challenge and permits a normal demo login', (ui) => {
+  assert.equal(ui.q('#image-captcha-section').hidden, true);
+  assert.equal(ui.q('#demo-captcha').disabled, true);
+  assert.equal(ui.q('#demo-captcha').required, false);
+  ui.submit(); ui.advance(350);
+  assert.equal(ui.q('#login-success').hidden, false);
+}, { policy: 'progressive' });
+
+test('two failures escalate immediately and hidden input cannot bypass required challenge', (ui) => {
+  ui.input('#demo-password', 'wrong');
+  ui.submit(); ui.advance(350);
+  assert.equal(ui.q('#image-captcha-section').hidden, true);
+  ui.submit(); ui.advance(350);
+  assert.equal(ui.q('#image-captcha-section').hidden, false);
+  ui.input('#demo-password', 'NovaPreview123');
+  ui.submit(); ui.advance(350); ui.noSuccess();
+  assert.match(ui.q('#captcha-error').textContent, /请输入/);
+  ui.answer(); ui.submit(); ui.advance(350);
+  assert.equal(ui.q('#login-success').hidden, false);
+  ui.click('#login-again');
+  assert.equal(ui.q('#image-captcha-section').hidden, true);
+}, { policy: 'progressive' });
+
+test('trusted anomaly simulation escalates either provider; reset clears local risk', (ui) => {
+  ui.click('#trigger-risk');
+  assert.equal(ui.q('#image-captcha-section').hidden, false);
+  ui.click('#reset-risk');
+  assert.equal(ui.q('#image-captcha-section').hidden, true);
+  ui.change('#captcha-provider', 'slider'); ui.click('#trigger-risk');
+  assert.equal(ui.q('#slider-captcha-section').hidden, false);
+  assert.ok(ui.q('nova-slider-demo'));
+  ui.click('#reset-risk');
+  assert.equal(ui.d.querySelector('nova-slider-demo'), null);
+}, { policy: 'progressive' });
+
+const settleSlider = async () => { for (let i = 0; i < 12; i++) await Promise.resolve(); };
+async function solveSlider(ui) {
+  await settleSlider();
+  const slider = ui.q('nova-slider-demo');
+  assert.equal(slider.state, 'ready');
+  slider.move(slider.demoPuzzle.x); // Public synthetic answer; not a security test.
+  slider.range.dispatchEvent(new ui.w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await settleSlider();
+  assert.equal(slider.state, 'success');
+  return slider;
+}
+
+test('original slider component keyboard solve and one-time demo consumption', async (ui) => {
+  ui.change('#captcha-provider', 'slider');
+  ui.submit(); ui.noSuccess();
+  assert.match(ui.q('#slider-error').textContent, /请先完成/);
+  const slider = await solveSlider(ui);
+  assert.equal(ui.d.querySelectorAll('[name="nova_slider_token"]').length, 1);
+  ui.submit(); ui.submit(); ui.advance(350);
+  assert.equal(ui.q('#login-success').hidden, false);
+  assert.equal(slider.consumeDemoToken(), false);
+  assert.equal(slider.live, false);
+});
+
+test('slider proof expiry, refresh and wrong password require a fresh solution', async (ui) => {
+  ui.change('#captcha-provider', 'slider');
+  await solveSlider(ui); ui.advance(60001);
+  ui.submit(); ui.noSuccess();
+  await ui.q('nova-slider-demo').refresh();
+  await solveSlider(ui);
+  ui.input('#demo-password', 'wrong'); ui.submit(); ui.advance(350);
+  ui.noSuccess(); await settleSlider();
+  assert.equal(ui.q('nova-slider-demo').getToken(), '');
+  ui.input('#demo-password', 'NovaPreview123');
+  ui.submit(); ui.noSuccess();
+  await solveSlider(ui); ui.submit(); ui.advance(350);
+  assert.equal(ui.q('#login-success').hidden, false);
+});
+
+test('provider change cancels a pending attempt and disconnects old slider', async (ui) => {
+  ui.change('#captcha-provider', 'slider');
+  const slider = await solveSlider(ui);
+  ui.submit(); const stale = ui.pendingCallback();
+  ui.change('#captcha-provider', 'image'); stale(); ui.advance(350);
+  ui.noSuccess();
+  assert.equal(slider.live, false);
+  assert.equal(slider.getToken(), '');
+  ui.answer(); ui.submit(); ui.advance(350);
+  assert.equal(ui.q('#login-success').hidden, false);
+});
+
+test('vendored slider bytes match the declared MIT source manifest', () => {
+  const crypto = require('node:crypto');
+  const base = path.join(project, 'dist/vendor/nova-slider-captcha');
+  const manifest = JSON.parse(fs.readFileSync(path.join(base, 'manifest.json')));
+  assert.equal(manifest.version, '0.2.0');
+  assert.equal(manifest.license, 'MIT');
+  for (const [name, digest] of Object.entries(manifest.files))
+    assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(base, name))).digest('hex'), digest);
+});
 
 async function main() {
   assert.equal(typeof vm.SourceTextModule, 'function', 'Use node --experimental-vm-modules');
