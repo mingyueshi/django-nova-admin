@@ -1,5 +1,11 @@
 {% load i18n %}
-<form class="nova-theme-switcher" method="post" action="{{ nova_admin_preference_url }}" aria-label="{% translate 'Admin appearance' context 'Nova Admin' %}">
+{% if nova_admin_active %}
+<details class="nova-appearance">
+  <summary>{% translate 'Appearance settings' context 'Nova Admin' %}<span class="nova-appearance-chevron" aria-hidden="true">⌄</span></summary>
+  <div class="nova-appearance-panel">
+    <p id="nova-appearance-help">{% translate 'Changes take effect only after Apply.' context 'Nova Admin' %}</p>
+{% endif %}
+<form class="nova-theme-switcher" method="post" action="{{ nova_admin_preference_url }}" aria-label="{% translate 'Admin appearance' context 'Nova Admin' %}"{% if nova_admin_active %} aria-describedby="nova-appearance-help"{% endif %}>
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ request.get_full_path }}">
   <label for="nova-admin-mode">{% translate 'Appearance' context 'Nova Admin' %}</label>
@@ -31,3 +37,7 @@
   </select>
   <button type="submit">{% translate 'Apply' context 'Nova Admin' %}</button>
 </form>
+{% if nova_admin_active %}
+  </div>
+</details>
+{% endif %}

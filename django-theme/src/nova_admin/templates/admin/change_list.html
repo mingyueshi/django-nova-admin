@@ -1,0 +1,32 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static nova_tags %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  {% if nova_admin_active and has_permission and not is_popup %}
+    <link rel="stylesheet" href="{% static 'nova_admin/print.css' %}" {% nova_nonce %}>
+  {% endif %}
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {% if nova_admin_active and has_permission and not is_popup %}
+    <script src="{% static 'nova_admin/print.js' %}" defer {% nova_nonce %}></script>
+  {% endif %}
+{% endblock %}
+
+{% block object-tools-items %}
+  {{ block.super }}
+  {% if nova_admin_active and has_permission and not is_popup %}
+    <li class="nova-print-tool" hidden data-nova-print-tool>
+      <button type="button" class="nova-print-button" data-nova-print hidden
+              data-title="{% translate 'Current page displayed content' context 'Nova Admin' %}"
+              data-scope="{% translate 'Only the rows displayed on this page are included. Other pages are not included.' context 'Nova Admin' %}"
+              data-page="{{ cl.page_num }}" data-range="{% translate 'Page {page}; displayed rows: {count}.' context 'Nova Admin' %}"
+              data-empty="{% translate 'No printable rows on this page.' context 'Nova Admin' %}"
+              data-editable="{% if cl.formset %}true{% endif %}"
+              data-unsaved="{% translate 'Visible editable values may be unsaved. Printing does not save changes.' context 'Nova Admin' %}"
+              data-yes="{% translate 'Yes' %}" data-no="{% translate 'No' %}">{% translate 'Print current page' context 'Nova Admin' %}</button>
+    </li>
+  {% endif %}
+{% endblock %}

@@ -9,6 +9,12 @@
     <link rel="stylesheet" href="{% static 'nova_admin/tokens.css' %}" {% nova_nonce %}>
     <link rel="stylesheet" href="{% static 'nova_admin/presets.css' %}" {% nova_nonce %}>
     {% endblock %}
+    {% if nova_admin_preference_url and has_permission and not is_popup %}
+      <link rel="stylesheet" href="{% static 'nova_admin/appearance.css' %}" {% nova_nonce %}>
+    {% endif %}
+    {% if has_permission and not is_popup %}
+      <link rel="stylesheet" href="{% static 'nova_admin/messages.css' %}" {% nova_nonce %}>
+    {% endif %}
     {% if nova_admin_navigation and has_permission and not is_popup %}
       <link rel="stylesheet" href="{% static 'nova_admin/command-palette.css' %}" {% nova_nonce %}>
     {% endif %}
@@ -27,6 +33,19 @@
   {% if nova_admin_active and nova_admin_navigation and has_permission and not is_popup %}
     <script src="{% static 'nova_admin/command-palette.js' %}" defer {% nova_nonce %}></script>
   {% endif %}
+  {% if nova_admin_active and has_permission and not is_popup %}
+    <script src="{% static 'nova_admin/messages.js' %}" defer {% nova_nonce %}></script>
+  {% endif %}
+  {% if nova_admin_active and nova_admin_preference_url and has_permission and not is_popup %}
+    <script src="{% static 'nova_admin/appearance.js' %}" defer {% nova_nonce %}></script>
+  {% endif %}
+{% endblock %}
+
+{% block messages %}
+  {% if nova_admin_active and has_permission and not is_popup %}
+    {% nova_message_groups messages as nova_groups %}
+    {% if nova_groups %}{% include "nova_admin/messages.html" %}{% endif %}
+  {% else %}{{ block.super }}{% endif %}
 {% endblock %}
 
 {% block footer %}{{ block.super }}{% if nova_admin_active %}{% block nova_footer %}{% include "nova_admin/brand_footer.html" %}{% endblock %}{% endif %}{% endblock %}

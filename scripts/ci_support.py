@@ -40,7 +40,10 @@ FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_S
 FRONTEND_TOTAL = sum(FRONTEND_COUNTS.values())
 ENHANCEMENT_TOTAL = 38
 COMMAND_PALETTE_TOTAL = 25
-THEME_JS_TOTAL = 78 + COMMAND_PALETTE_TOTAL + ENHANCEMENT_TOTAL + 11
+PRINT_TOTAL = 24
+MESSAGE_TOTAL = 26
+APPEARANCE_TOTAL = 24
+THEME_JS_TOTAL = 78 + COMMAND_PALETTE_TOTAL + APPEARANCE_TOTAL + ENHANCEMENT_TOTAL + PRINT_TOTAL + MESSAGE_TOTAL + 11
 
 def read(path):
     return json.loads(Path(path).read_text())
@@ -69,11 +72,16 @@ def check_node_summaries(logs):
     logs = Path(logs)
     for name, pattern, summaries in [
         ('frontend', r'^TOTAL\b.*$', list(FRONTEND_SUMMARIES.values())),
-        ('navigation', r'^\d+ (?:navigation|command palette) DOM scenarios .+$', [
+        ('navigation', r'^\d+ (?:navigation|command palette|appearance) DOM scenarios .+$', [
             '78 navigation DOM scenarios passed (3 Django script versions).',
             f'{COMMAND_PALETTE_TOTAL} command palette DOM scenarios passed.',
+            f'{APPEARANCE_TOTAL} appearance DOM scenarios passed (3 Django script versions).',
         ]),
-        ('enhancements', r'^TOTAL\b.*$', [f'TOTAL {ENHANCEMENT_TOTAL} changelist enhancement tests passed']),
+        ('enhancements', r'^(?:TOTAL\b.*|\d+ (?:print|message) DOM scenarios .+)$', [
+            f'TOTAL {ENHANCEMENT_TOTAL} changelist enhancement tests passed',
+            f'{PRINT_TOTAL} print DOM scenarios passed.',
+            f'{MESSAGE_TOTAL} message DOM scenarios passed.',
+        ]),
         ('captcha', r'^TOTAL\b.*$', ['TOTAL 11 CAPTCHA enhancement tests passed']),
     ]:
         content = (logs / (name + '.log')).read_text()
@@ -127,9 +135,13 @@ def sidebars(wheelhouse, output):
             if len(names) != 1 or BytesParser().parsebytes(archive.read(names[0]))['Version'] != version:
                 raise ValueError('Django wheel version mismatch')
             content = archive.read('django/contrib/admin/static/admin/js/nav_sidebar.js')
+            filters = archive.read('django/contrib/admin/static/admin/js/filters.js')
         dest = output / ('django-' + version + '.js')
         dest.write_bytes(content)
-        rows.append({'django': version, 'wheel_sha256': digest(wheel), 'file': dest.name, 'sha256': digest(dest)})
+        filter_dest = output / ('django-' + version + '-filters.js')
+        filter_dest.write_bytes(filters)
+        rows.append({'django': version, 'wheel_sha256': digest(wheel), 'file': dest.name, 'sha256': digest(dest),
+                     'filters_file': filter_dest.name, 'filters_sha256': digest(filter_dest)})
     (output / 'provenance.json').write_text(json.dumps(rows, indent=2) + '\n')
     return rows
 

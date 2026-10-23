@@ -1,0 +1,23 @@
+{% load i18n %}
+<section class="nova-messages" data-nova-messages aria-labelledby="nova-messages-title"
+         data-collapse-label="{% translate 'Collapse messages' context 'Nova Admin' %}"
+         data-expand-label="{% translate 'Expand messages' context 'Nova Admin' %}">
+  <h2 id="nova-messages-title">{% translate 'Messages on this page' context 'Nova Admin' %}</h2>
+  {% for group in nova_groups %}
+    <section class="nova-message-group" data-nova-message-group="{{ group.key }}" aria-labelledby="nova-message-heading-{{ group.key }}">
+      <div class="nova-message-heading">
+        <h3 id="nova-message-heading-{{ group.key }}"><span data-nova-message-level>{{ group.label }}</span> (<span data-nova-message-count>{{ group.messages|length }}</span>)</h3>
+        <button type="button" hidden data-nova-message-toggle aria-expanded="true" aria-controls="nova-message-list-{{ group.key }}"
+                aria-label="{% translate 'Collapse messages' context 'Nova Admin' %}: {{ group.label }}">{% translate 'Collapse messages' context 'Nova Admin' %}</button>
+      </div>
+      <ul class="messagelist nova-message-list" id="nova-message-list-{{ group.key }}" data-nova-message-list>
+        {% for message in group.messages %}
+          <li class="nova-message-item{% if group.key != 'other' %} {{ group.key }}{% endif %}" data-nova-message-item>
+            <div class="nova-message-content">{{ message|capfirst }}</div>
+            <button type="button" hidden data-nova-message-dismiss aria-label="{% translate 'Dismiss message' context 'Nova Admin' %}: {{ group.label }} {{ forloop.counter }}">{% translate 'Dismiss' context 'Nova Admin' %}</button>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endfor %}
+</section>

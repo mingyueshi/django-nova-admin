@@ -12,8 +12,12 @@
 <link href="../static/nova_admin/theme.css" rel="stylesheet"/>
 <link href="../static/nova_admin/tokens.css" rel="stylesheet"/>
 <link href="../static/nova_admin/presets.css" rel="stylesheet"/>
+<link href="../static/nova_admin/appearance.css" rel="stylesheet"/>
+<link href="../static/nova_admin/messages.css" rel="stylesheet"/>
 <link href="../static/nova_admin/command-palette.css" rel="stylesheet"/>
 <link href="../static/catalog/enterprise.css" rel="stylesheet"/>
+
+
 
 
 
@@ -90,7 +94,11 @@
 <ul class="nova-command-results" id="nova-command-results"></ul>
 <p class="nova-command-empty" hidden="">没有匹配的导航项。</p>
 </dialog>
-<form aria-label="后台外观" class="nova-theme-switcher" data-sample-form="inert">
+<details class="nova-appearance">
+<summary>外观设置<span aria-hidden="true" class="nova-appearance-chevron">⌄</span></summary>
+<div class="nova-appearance-panel">
+<p id="nova-appearance-help">更改仅在点击“应用”后生效。</p>
+<form aria-describedby="nova-appearance-help" aria-label="后台外观" class="nova-theme-switcher" data-sample-form="inert">
 
 
 <label for="nova-admin-mode">外观</label>
@@ -122,6 +130,8 @@
 </select>
 <button aria-disabled="true" disabled="disabled" type="button">应用</button>
 </form>
+</div>
+</details>
 </div>
 </header>
 

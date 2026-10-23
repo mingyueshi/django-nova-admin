@@ -1,0 +1,14 @@
+/* Current-response messages only. No live region or automatic dismissal. */
+body.nova-admin .nova-messages { --nova-messages-available:1; margin:18px 32px 0; }
+body.nova-admin .nova-messages h2 { margin:0 0 12px; padding:0; color:var(--body-loud-color); background:none; font-size:17px; line-height:1.5; }
+body.nova-admin .nova-message-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:12px 0 8px; }
+body.nova-admin .nova-message-heading h3 { margin:0; padding:0; color:var(--body-fg); font-size:13px; }
+body.nova-admin .nova-messages button { flex-shrink:0; min-height:44px; padding:7px 10px; border:1px solid var(--border-color); border-radius:7px; background:var(--darkened-bg); color:var(--body-fg); font:inherit; font-size:12px; cursor:pointer; }
+body.nova-admin .nova-messages button[hidden], body.nova-admin .nova-message-list[hidden] { display:none; }
+body.nova-admin .nova-messages button:focus-visible { outline:2px solid var(--link-fg); outline-offset:2px; }
+body.nova-admin .nova-messages ul.messagelist { margin:0; padding:0; }
+body.nova-admin .nova-messages .nova-message-item { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding-block:12px; margin:0 0 8px; color:var(--body-fg); }
+body.nova-admin .nova-message-content { min-width:0; overflow-wrap:anywhere; line-height:1.7; }
+body.nova-admin .nova-message-content a { color:var(--link-fg); text-decoration:underline; text-underline-offset:2px; }
+body.nova-admin [data-nova-message-group=other] .nova-message-item { background-color:var(--darkened-bg); background-image:none; padding-inline:16px; }
+@media(max-width:767px) { body.nova-admin .nova-messages { margin:16px; } body.nova-admin .nova-message-item { flex-wrap:wrap; } body.nova-admin .nova-message-item > button { margin-inline-start:auto; } }

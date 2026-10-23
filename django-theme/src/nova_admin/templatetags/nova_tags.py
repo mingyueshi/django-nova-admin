@@ -9,6 +9,29 @@ from django.utils.translation import pgettext
 register = template.Library()
 
 
+@register.simple_tag
+def nova_message_groups(messages):
+    """Consume current-response messages once, grouping by the real level only."""
+    from django.contrib.messages import constants
+
+    labels = {
+        constants.DEBUG: ('debug', pgettext('Nova Admin', 'Debug')),
+        constants.INFO: ('info', pgettext('Nova Admin', 'Information')),
+        constants.SUCCESS: ('success', pgettext('Nova Admin', 'Success')),
+        constants.WARNING: ('warning', pgettext('Nova Admin', 'Warning')),
+        constants.ERROR: ('error', pgettext('Nova Admin', 'Error')),
+    }
+    groups = {}
+    if messages is not None:
+        for message in messages:
+            level = getattr(message, 'level', None)
+            key, label = labels.get(level, ('other', pgettext('Nova Admin', 'Message')))
+            if key not in groups:
+                groups[key] = {'key': key, 'label': label, 'messages': []}
+            groups[key]['messages'].append(message)
+    return list(groups.values())
+
+
 @register.simple_tag(takes_context=True)
 def nova_brand(context):
     """Resolve this AdminSite's identity without mutating the site instance."""

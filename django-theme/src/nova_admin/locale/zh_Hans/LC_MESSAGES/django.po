@@ -350,3 +350,79 @@ msgstr "没有匹配的导航项。"
 msgctxt "Nova Admin"
 msgid "Results: {count}"
 msgstr "结果：{count} 项"
+
+msgctxt "Nova Admin"
+msgid "Print current page"
+msgstr "打印当前页"
+
+msgctxt "Nova Admin"
+msgid "Current page displayed content"
+msgstr "当前页显示内容"
+
+msgctxt "Nova Admin"
+msgid "Only the rows displayed on this page are included. Other pages are not included."
+msgstr "仅包含本页已显示的行，不包含其他页面。"
+
+msgctxt "Nova Admin"
+msgid "Page {page}; displayed rows: {count}."
+msgstr "第 {page} 页；显示行数：{count}。"
+
+msgctxt "Nova Admin"
+msgid "No printable rows on this page."
+msgstr "本页没有可打印的行。"
+
+msgctxt "Nova Admin"
+msgid "Visible editable values may be unsaved. Printing does not save changes."
+msgstr "当前可见的编辑值可能尚未保存；打印不会保存更改。"
+
+msgctxt "Nova Admin"
+msgid "Debug"
+msgstr "调试"
+
+msgctxt "Nova Admin"
+msgid "Information"
+msgstr "提示"
+
+msgctxt "Nova Admin"
+msgid "Success"
+msgstr "成功"
+
+msgctxt "Nova Admin"
+msgid "Warning"
+msgstr "警告"
+
+msgctxt "Nova Admin"
+msgid "Error"
+msgstr "错误"
+
+msgctxt "Nova Admin"
+msgid "Message"
+msgstr "消息"
+
+msgctxt "Nova Admin"
+msgid "Messages on this page"
+msgstr "本页消息"
+
+msgctxt "Nova Admin"
+msgid "Collapse messages"
+msgstr "折叠消息"
+
+msgctxt "Nova Admin"
+msgid "Expand messages"
+msgstr "展开消息"
+
+msgctxt "Nova Admin"
+msgid "Dismiss message"
+msgstr "关闭消息"
+
+msgctxt "Nova Admin"
+msgid "Dismiss"
+msgstr "关闭"
+
+msgctxt "Nova Admin"
+msgid "Appearance settings"
+msgstr "外观设置"
+
+msgctxt "Nova Admin"
+msgid "Changes take effect only after Apply."
+msgstr "更改仅在点击“应用”后生效。"

@@ -7,6 +7,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+import zipfile
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -63,7 +64,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':152,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':226,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -107,6 +108,24 @@ class MatrixTests(unittest.TestCase):
             filename=next(iter(support.read(ROOT/'ci/matrix.json')['django_wheels'].values()))['filename']
             (wheelhouse/filename).write_bytes(b'wrong wheel')
             with self.assertRaises(ValueError):support.sidebars(wheelhouse,root/'sidebars')
+
+    def test_sidebar_and_filter_scripts_come_from_the_same_verified_wheel(self):
+        for missing_filter in (False, True):
+            with self.subTest(missing_filter=missing_filter), tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp);wheelhouse=root/'wheels';wheelhouse.mkdir();wheel=wheelhouse/'django-test.whl'
+                with zipfile.ZipFile(wheel,'w') as archive:
+                    archive.writestr('django-5.2.17.dist-info/METADATA','Version: 5.2.17\n')
+                    archive.writestr('django/contrib/admin/static/admin/js/nav_sidebar.js','native sidebar')
+                    if not missing_filter:archive.writestr('django/contrib/admin/static/admin/js/filters.js','native filters')
+                config={'django_wheels':{'5.2.17':{'filename':wheel.name,'sha256':support.digest(wheel)}}}
+                with patch.object(support,'read',return_value=config):
+                    if missing_filter:
+                        with self.assertRaises(KeyError):support.sidebars(wheelhouse,root/'scripts')
+                    else:
+                        rows=support.sidebars(wheelhouse,root/'scripts')
+                        self.assertEqual((root/'scripts'/rows[0]['file']).read_text(),'native sidebar')
+                        self.assertEqual((root/'scripts'/rows[0]['filters_file']).read_text(),'native filters')
+                        self.assertEqual(rows[0]['filters_sha256'],support.digest(root/'scripts'/rows[0]['filters_file']))
 
 
 class FrontendContractTests(unittest.TestCase):
@@ -166,8 +185,8 @@ TOTAL 4 shared login CSS checks passed
 """
     GROUP_LOGS = {
         'frontend': FRONTEND_LOG,
-        'navigation': '78 navigation DOM scenarios passed (3 Django script versions).\n25 command palette DOM scenarios passed.\n',
-        'enhancements': 'TOTAL 38 changelist enhancement tests passed\n',
+        'navigation': '78 navigation DOM scenarios passed (3 Django script versions).\n25 command palette DOM scenarios passed.\n24 appearance DOM scenarios passed (3 Django script versions).\n',
+        'enhancements': 'TOTAL 38 changelist enhancement tests passed\n24 print DOM scenarios passed.\n26 message DOM scenarios passed.\n',
         'captcha': 'TOTAL 11 CAPTCHA enhancement tests passed\n',
     }
 
@@ -196,7 +215,7 @@ TOTAL 4 shared login CSS checks passed
             self.logs(root)
             result = self.collect(root)
             self.assertEqual(result['frontend'], 1298)
-            self.assertEqual(result['theme_js'], 152)
+            self.assertEqual(result['theme_js'], 226)
             self.assertEqual(len(result['frontend_suites']), 18)
             self.assertEqual(result['frontend_suites']['palettes'], 165)
             self.assertEqual(sum(result['frontend_suites'].values()), 1298)
@@ -272,19 +291,21 @@ TOTAL 4 shared login CSS checks passed
                 (logs / (group + '.log')).write_text('FAIL example assertion\n' + self.GROUP_LOGS[group])
                 with self.assertRaises(ValueError): self.collect(root)
 
-    def test_navigation_requires_both_original_and_command_palette_summaries(self):
-        lines = self.GROUP_LOGS['navigation'].splitlines(keepends=True)
-        for index in range(2):
-            for change in ('missing', 'duplicate', 'wrong-count'):
-                with self.subTest(index=index, change=change), tempfile.TemporaryDirectory() as tmp:
-                    root = Path(tmp)
-                    logs = self.logs(root)
-                    line = lines[index]
-                    altered = {'missing': '', 'duplicate': line * 2,
-                               'wrong-count': line.replace(line.split()[0], '0', 1)}[change]
-                    (logs / 'navigation.log').write_text(''.join(lines).replace(line, altered))
-                    with self.assertRaisesRegex(ValueError, 'Node test evidence: navigation'):
-                        self.collect(root)
+    def test_enhancement_scripts_require_original_and_feature_summaries(self):
+        for group in ('navigation', 'enhancements'):
+            lines = self.GROUP_LOGS[group].splitlines(keepends=True)
+            for index in range(len(lines)):
+                for change in ('missing', 'duplicate', 'wrong-count'):
+                    with self.subTest(group=group, index=index, change=change), tempfile.TemporaryDirectory() as tmp:
+                        root = Path(tmp)
+                        logs = self.logs(root)
+                        line = lines[index]
+                        number = line.split()[1] if line.startswith('TOTAL') else line.split()[0]
+                        altered = {'missing': '', 'duplicate': line * 2,
+                                   'wrong-count': line.replace(number, '0', 1)}[change]
+                        (logs / (group + '.log')).write_text(''.join(lines).replace(line, altered))
+                        with self.assertRaisesRegex(ValueError, 'Node test evidence: ' + group):
+                            self.collect(root)
 
     def test_stale_enhancement_count_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:

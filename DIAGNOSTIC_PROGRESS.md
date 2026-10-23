@@ -83,7 +83,9 @@ CI收集器原有13套件/622项契约已更新为当前18套件/1274项；增�
 | R3b CI 前端摘要契约 | 已落地 | `scripts/ci_support.py` 契约更新，测试数基准同步 |
 | R1/R2/R3b 合入 | 已提交 | 对应 `21a56b9` 及后续提交 |
 
-### 工作区新增未提交改动：品牌名称 + 首字母占位（替代硬编码 "N"）
+### 复诊当时的工作区改动：品牌名称 + 首字母占位（替代硬编码 "N"）
+
+以下为当时记录；品牌修复随后已随CP1提交至`4f58b35`。2026-10-24本次Git收口复核确认：N1已统一64码点上限，N2已改用公开的`normalize_brand_name`，N3已改为明确的title模板；不再列为当前未处理项。后续验收记录见`FEATURE_PROGRESS.md`。
 
 范围 23 文件：后端 `branding.py`（`name` 字段 + `brand_initial()`）、`nova_tags.py`（`nova_brand` 标签）、3 个模板、`theme.css`；前端 `dist/js/branding.js`（新）、`app.js`、`login.js`、`login.html`、`styles.css`、`login-preview.css`；测试 `test_branding_tokens.py`（+65 行）、`presentation.cjs`（+13 项）、`login-demo.cjs`、`palettes.cjs`；文档/CI `BRANDING.md`、`README.md`、`CI_CD.md`、`css-budget.json`、`ci_support.py`。
 
@@ -97,9 +99,16 @@ CI收集器原有13套件/622项契约已更新为当前18套件/1274项；增�
 
 状态：未提交 Git；未运行完整 Django 矩阵（branding 后端新增 `nova_brand`/`name` 字段的 3 版矩阵回归待跑）。
 
-### 仍开放项
+### 复诊当时的开放项
 
 - T2 Docker/PostgreSQL：首轮启动 300s 超时，应用连接/迁移/登录未执行，未验收。
 - T3 音频验证码：无 Flite/SoX，未验证。
 - T4 真机 / 屏幕阅读器：未做操作验收。
 - branding 改动的后端三版矩阵回归与提交。
+
+### 2026-10-24 Git收口时的剩余事项
+
+- T2 Docker/PostgreSQL应用连接、迁移、登录等链路仍未验收；保留原隔离输入、卷与密钥，不把构建完成记成应用通过。
+- T3音频验证码、T4物理真机/屏幕阅读器仍未验收。
+- R3真实Django main回归与精确提交的线上CI闭环仍待完成；本轮完整Python/wheel/可选依赖矩阵未运行。
+- 品牌修复与CP1已在`4f58b35`提交；PR1/NM1/PF1本地独立验收完成并纳入本次用户授权的Git提交。其余功能建议仍为后续候选，详见`FEATURE_ROADMAP.md`与`FEATURE_PROGRESS.md`。本次未推送、发布或部署。

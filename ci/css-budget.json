@@ -136,6 +136,33 @@
         "bytes": 3585,
         "gzip_bytes": 1114
       }
+    },
+    "django-theme/src/nova_admin/static/nova_admin/print.css": {
+      "bytes": 2067,
+      "gzip_bytes": 766,
+      "sha256": "cbbae1c767f135f45bb6dbf88138b36c8b2ef1dfbba1e9986f29b5858deb35df",
+      "limits": {
+        "bytes": 2274,
+        "gzip_bytes": 843
+      }
+    },
+    "django-theme/src/nova_admin/static/nova_admin/messages.css": {
+      "bytes": 1848,
+      "gzip_bytes": 651,
+      "sha256": "3999499e3bbf14f4b6c1dd620cff5bd274cb94969cf0cec188b92f39359c2541",
+      "limits": {
+        "bytes": 2033,
+        "gzip_bytes": 717
+      }
+    },
+    "django-theme/src/nova_admin/static/nova_admin/appearance.css": {
+      "bytes": 2463,
+      "gzip_bytes": 823,
+      "sha256": "a64f5c2dd30bb8d8cb18bf7e0eea121e3801bf879bce12763cea70d8b2aa6e32",
+      "limits": {
+        "bytes": 2710,
+        "gzip_bytes": 906
+      }
     }
   }
 }
