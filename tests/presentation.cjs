@@ -22,6 +22,68 @@ const wait = () => new Promise(r => setTimeout(r, 25));
       }
     } finally { app.close(); }
   }
+  for (const mode of ['event flag', 'legacy keyCode', 'composition lifecycle']) {
+    const app = await createApp();
+    try {
+      const trigger = app.d.querySelector('[data-action="search"]');
+      trigger.focus(); trigger.click(); await wait();
+      const input = app.d.querySelector('#command-search');
+      input.value = '商品'; input.dispatchEvent(new app.w.Event('input', { bubbles: true }));
+      if (mode === 'composition lifecycle') input.dispatchEvent(new app.w.CompositionEvent('compositionstart', { bubbles: true }));
+      check(`IME ${mode} preserves search during Escape Enter and shortcuts`, () => {
+        for (const key of ['Escape', 'Enter', 'k']) {
+          const event = new app.w.KeyboardEvent('keydown', {
+            key, ctrlKey: key === 'k', bubbles: true, cancelable: true,
+            isComposing: mode === 'event flag', keyCode: mode === 'legacy keyCode' ? 229 : 0,
+          });
+          input.dispatchEvent(event);
+          assert.equal(event.defaultPrevented, false, key);
+          assert.equal(app.d.querySelector('#command-search'), input, key);
+          assert.equal(input.value, '商品', key);
+          assert.equal(app.w.location.hash, '', key);
+          assert.equal(app.d.querySelectorAll('.command-modal').length, 1, key);
+        }
+      });
+      input.dispatchEvent(new app.w.CompositionEvent('compositionend', { bubbles: true }));
+      check(`IME ${mode} completion restores ordinary Escape and opener focus`, () => {
+        input.dispatchEvent(new app.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        assert.equal(app.d.querySelector('#command-search'), null);
+        assert.equal(app.d.activeElement, trigger);
+      });
+    } finally { app.close(); }
+  }
+  {
+    const app = await createApp();
+    try {
+      const trigger = app.d.querySelector('[data-action="search"]');
+      trigger.click();
+      app.d.querySelector('#command-search').dispatchEvent(new app.w.CompositionEvent('compositionstart', { bubbles: true }));
+      app.d.querySelector('[aria-label="关闭搜索"]').click();
+      trigger.focus(); trigger.click(); await wait();
+      check('Removed composing inputs cannot leave subsequent search keyboard handling blocked', () => {
+        app.d.querySelector('#command-search').dispatchEvent(new app.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        assert.equal(app.d.querySelector('#command-search'), null);
+        assert.equal(app.d.activeElement, trigger);
+      });
+    } finally { app.close(); }
+  }
+  for (const width of [320, 390, 1440]) {
+    const app = await createApp({ beforeLoad(w) { Object.defineProperty(w, 'innerWidth', { value: width }); } });
+    try {
+      const trigger = app.d.querySelector('[data-action="search"]');
+      check(`${width}px search entry has an accessible name and a decorative icon`, () => {
+        assert.match(trigger.getAttribute('aria-label'), /搜索页面或用户/);
+        assert.ok(trigger.querySelector('svg'));
+        assert.equal(app.d.querySelectorAll('[data-action="search"]').length, 1);
+      });
+      trigger.focus(); trigger.click(); await wait();
+      check(`${width}px explicit search entry opens and restores its own focus`, () => {
+        assert.equal(app.d.activeElement, app.d.querySelector('#command-search'));
+        app.d.querySelector('[aria-label="关闭搜索"]').click();
+        assert.equal(app.d.activeElement, trigger);
+      });
+    } finally { app.close(); }
+  }
   const app = await createApp();
   try {
     check('Chinese dashboard units are compact', () => {

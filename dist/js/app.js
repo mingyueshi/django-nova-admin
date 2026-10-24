@@ -1119,7 +1119,13 @@ document.addEventListener('submit', (e) => {
     toast('后台偏好已保存');
   }
 });
+// Track the composing control as well as keyboard flags: some IMEs omit them.
+// Weak references cannot leave a removed search/editor blocking a later overlay.
+const composingTargets = new WeakSet();
+document.addEventListener('compositionstart', (e) => composingTargets.add(e.target));
+document.addEventListener('compositionend', (e) => composingTargets.delete(e.target));
 document.addEventListener('keydown', (e) => {
+  if (e.isComposing || e.keyCode === 229 || composingTargets.has(e.target)) return;
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
     e.preventDefault();
     commandSearch();
