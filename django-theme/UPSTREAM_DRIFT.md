@@ -34,7 +34,7 @@ python scripts/template_drift.py --django-root /tmp/django-main/django \
   --label "main@$revision" --output /tmp/nova-drift-main
 ```
 
-`.github/workflows/upstream-drift.yml` 配置每周一 05:23 UTC 和手动运行，读取官方 Django main 的当次精确 SHA，保存 diff 与源码回归日志；出现变化会使独立预警任务失败，不伪装成已支持分支的失败。它不发布、不修改基线、不创建权限或秘密，也不自动扩大 `Django<6.2` 依赖边界。
+`.github/workflows/upstream-drift.yml` 配置每周一 05:23 UTC 和手动运行，读取官方 Django main 的当次精确 SHA，保存 diff、声明依赖报告与源码回归日志。`scripts/upstream_dependencies.py` 使用固定packaging26.3读取上游`pyproject.toml`，检查Python范围、适用的基础依赖和Django导入来源；asgiref固定为3.13.0，并运行`pip check`。源码经PYTHONPATH使用时，pip不会自动校验其项目声明，故这两项检查都需保留。最终检查模板、依赖、回归三步的`outcome`，任一失败或跳过都会使预警任务失败。它不发布、不修改基线、不创建权限或秘密，也不自动扩大 `Django<6.2` 依赖边界。
 
 2026-10-23 复核已下载的 GitHub 运行元数据及原始工件：远端 `mingyueshi/django-nova-admin` 的该工作流已实际由 `schedule` 触发，见下方2026-10-19记录。这证明调度已有真实执行，不代表告警任务一直健康。维护者仍须查看默认分支工作流、Actions 状态和通知；调度可能延迟，公开仓库长期无活动也可能被停用，不承诺即时响应未来6.2。
 
@@ -45,5 +45,17 @@ python scripts/template_drift.py --django-root /tmp/django-main/django \
 2026-10-23 R2 本地修复将上述两个版本映射改为已审查模板内容匹配，新增已知模板逐一选择、模拟6.2版本元数据、未知模板/未知kind诊断及真实表单回归。这里的6.2测试仅修改版本元数据并保留当前安装的原生模板；没有据此宣称真实6.2支持，也没有重写这两次历史main回归结果。
 
 本次在 macOS ARM64、CPython3.12.14 下分别使用实际安装的 Django5.2.17、6.0.8、6.1.1 运行源码核心回归，每个环境执行351项：349项通过、2项可选CAPTCHA/安全集成跳过，失败和错误均为0；其中每个环境的27项项目本地化测试全部通过。另将3个已审查发行版的6组原生模板与对应片段逐一核对。该结果不是声明矩阵中的Python3.12.15测试、完整wheel/extra矩阵或真实6.2/main重新验收。
+
+## 2026-10-24 固定 main 的本地结果
+
+R3本次固定官方main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`，官方归档SHA256为`fe372e3c84ded7c7601fbb6ad891d6904d3d94321e7c34ac87ae2d5718a1522e`；7089个blob重建Git tree与官方提交匹配。10月23日的源码下载阻塞保留为历史，本次已取得并独立核对完整归档。实施与统筹分别使用自己的输入副本、上游解包和venv完成：
+
+- A：7种上游模板、8个覆盖目标均为reviewed，文本漂移/丢失继承block为0；没有执行`--record-reviewed`，6.1.1参考基线未改。
+- B：原asgiref3.12.1可完成真实Django setup和ASGI/WSGI导入，但不满足官方`asgiref>=3.13`；新门禁对旧pin exit1、3.13.0 exit0，错误来源同样被拒。新旧环境的pip check均通过，说明它不能单独发现PYTHONPATH源码的声明不匹配。新增10项专项和全部95项脚本测试通过。统筹独立运行最终shell的5组outcome，仅全success返回0；actionlint1.7.12对全部3份workflow exit0。
+- C：双方macOS ARM64 / CPython3.12.14实际运行`python demo/manage.py test tests --noinput`，各424项、421通过、3跳过、exit0。3项跳过为未启用CAPTCHA、security、slider集成的占位，不计为可选集成通过。Nova tests优先，Django确实来自固定官方源码，未安装发行版替代或修改版本元数据；输入、上游源码和模板基线前后哈希不变。
+
+本地官方归档放在Nova仓库内部时，设置进程级`GIT_CEILING_DIRECTORIES`为归档源码根目录的父目录，避免Django版本工具向上发现Nova的`.git`而混入其提交日期；上游真实`VERSION`仍为`VersionTuple(6, 2, 0, "alpha", 0)`。这项归档隔离不替代源码SHA和树的核验。
+
+测试在Nova `67e1e5a`加B的3文件候选上执行，内容已逐文件核对与`9707224`一致；未宣称提交后重跑。实施A/B/C回执在`.local/r3-main-20261024/`，独立回执在`.local/r3-main-review-20261024/`；原始核心日志分别是`r3-c-implementation/core-tests.log`与`core-tests.log`。详细顺序见[诊断验收台账](../DIAGNOSTIC_PROGRESS.md)。10月3日/19日失败不重写；工作流Ubuntu24.04/Python3.14.8、远端CI及完整Python/wheel/可选依赖矩阵未跑，`Django<6.2`支持边界保持不变。
 
 参考：[Django 模板覆盖](https://docs.djangoproject.com/en/dev/howto/overriding-templates/)、[Django 发布过程](https://docs.djangoproject.com/en/dev/internals/release-process/)、[GitHub schedule 限制](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)

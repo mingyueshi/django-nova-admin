@@ -4,15 +4,22 @@
 
 `0.6.1` 的构建清单升级为 schema 2：在原 wheel/静态产物之外增加 sdist，并从 sdist 构建 wheel；增加源码/文档、许可证与运行时版本核验。现有下载/复核入口跟随同一源码脚本，不增加发布流程。详见 [发行与升级说明](django-theme/RELEASING.md)。
 
-## 两条流程
+## 流程入口
 
 | 入口 | 范围 | 输出 |
 |---|---|---|
 | PR或main/master分支push | 快速矩阵 | 检查结果、wheel、静态产物与可追溯报告 |
 | 手动运行Nova CI，scope=full | 完整矩阵 | 七组Python/Django与三组Node的精确结果 |
 | 手动运行Nova release candidate | 默认关闭；版本标签、完整CI、审批环境 | 已验证候选产物；不调用软件仓库或生产部署接口 |
+| 每周一05:23 UTC或手动运行Nova upstream warning | 官方Django main当次精确SHA的独立预警 | revision、模板diff、声明依赖报告、核心源码回归日志 |
 
-文件：`.github/workflows/ci.yml`、`.github/workflows/release-candidate.yml`。静态演示本身没有Node构建步骤；这里的静态产物是校验后打包的`dist/`，不会启动Django后台，也不带数据库、环境、源码ZIP或依赖目录。
+文件：`.github/workflows/ci.yml`、`.github/workflows/release-candidate.yml`、`.github/workflows/upstream-drift.yml`。静态演示本身没有Node构建步骤；这里的静态产物是校验后打包的`dist/`，不会启动Django后台，也不带数据库、环境、源码ZIP或依赖目录。
+
+### 主线预警
+
+`Nova upstream warning`使用Ubuntu24.04/Python3.14.8，固定asgiref3.13.0及packaging26.3等核心辅助工具。模板检查后，`scripts/upstream_dependencies.py`核对官方源码`pyproject.toml`中的Python范围、适用基础依赖与实际Django导入来源，保存`dependencies.json`，再运行`pip check`及核心源码回归。PYTHONPATH源码没有安装发行版元数据，pip check不能代替该声明检查。三个实验步骤保留`continue-on-error`以收集证据，最终按它们的`outcome`统一判定：仅全部success通过，失败或跳过都会使独立预警失败；工件在失败时也保留。
+
+2026-10-24固定官方main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`的本地A/B/C已由双方验收：7模板/8覆盖无漂移；依赖门禁及95项脚本测试通过；双方macOS ARM64/Python3.12.14核心各424项、421通过、3可选集成跳过。统筹actionlint1.7.12全部3份workflow通过，最终shell五种outcome验证通过。测试在Nova `67e1e5a`加3文件候选上执行，内容已逐文件核对与`9707224`一致；未宣称提交后重跑、工作流规定运行时、远端CI或完整矩阵通过。历史线上失败与下载阻塞及详细回执见[上游预警记录](django-theme/UPSTREAM_DRIFT.md)。该入口不发布、不接受新基线、不扩大`Django<6.2`支持范围。
 
 ### 快速PR矩阵
 
@@ -129,6 +136,6 @@ python scripts/ci_support.py check-node-summaries --logs /path/to/real-suite-log
 
 - `ci.yml` 构建阶段执行 `scripts/css_budget.py`；各稳定 Django cell 在回归后检查已审查模板基线，失败时上传差异文件
 - 独立 security job 使用 Python3.12.15 的已构建 wheel，快速范围测试 Django6.1.1，完整范围再含5.2.17/6.0.8；Axes 为独立可选安装，不与7组核心/验证码矩阵做笛卡尔扩张。security job 失败/跳过也使最终 gate 失败
-- `upstream-drift.yml` 为每周一05:23 UTC及手动主线预警。固定Actions SHA，只读官方Django main当次SHA、保存差异与实验回归日志；不发布、不接受新基线、不扩大包版本上界
+- `upstream-drift.yml` 为每周一05:23 UTC及手动主线预警。固定Actions SHA，只读官方Django main当次SHA、保存差异/声明依赖报告/实验回归日志，最终按三步outcome拒绝失败或跳过；不发布、不接受新基线、不扩大包版本上界
 - 主线源码的 `tests` 包会与本主题测试目录同名，工作流把本主题目录放在 PYTHONPATH 首位，并在 django-theme 目录执行；输出必须实际运行至少一项测试，不能把零测试当通过
 - 此段最初为源码交付的维护门槛；当前实际仓库与已核实的历史快速 CI 运行见本文开头。Docker/Psycopg/真实 PostgreSQL 不在本次本地发行矩阵中，详见 Compose 示例的明确验收边界

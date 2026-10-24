@@ -8,7 +8,7 @@
 |---|---|---|---|
 | 0 | 报告事实复核 | 已完成首轮 | 已纠正 R3/T1/T4/D3、历史测试混用与功能范围推断；原报告保存于本地证据目录 |
 | 1 | R2 模板选择 | 本地验收通过 | 三版核心各349通过/2跳过；统筹独立重跑6.1.1及6个基线选择检查通过；不声明6.2支持 |
-| 2 | R3 现有告警 | 本地说明已纠正；线上待验证 | 原始失败已定位；官方main源码下载受网络阻塞，本轮没有远端重跑 |
+| 2 | R3 现有告警 | 2026-10-24 A/B/C 本地独立验收通过；线上待验证 | 固定官方main `0e128d5`：7模板/8覆盖无漂移，依赖门禁通过；双方核心424项、421通过/3可选跳过；工作流运行时与远端CI未重跑，历史失败/下载阻塞保留 |
 | 3 | R1 共享登录样式 | 本地验收通过 | 字节一致/只读检查及4项回归、1274项前端、12组合浏览器、153页导出来源检查通过 |
 | 3.1 | R3b CI 前端摘要契约过期 | 本地验收通过 | 真实18套件/1274项及121项主题JS摘要通过；7类独立故障注入均拒绝；82项脚本回归通过 |
 | 4 | T1 当前平台证据 | 已更新 | R2/R1/R3b实际运行于macOS ARM64；不将其拆成两组平台或冒充完整矩阵 |
@@ -258,3 +258,25 @@ T3已由统筹提交为`53f13d905d433aa75ebfa5a14bcbdc1efd125139`（Harden CAPTC
 停机前独立基线 `.local/t4-review-20261024/pre-teardown.json`，执行回执 `.local/t4-20261024/final-down.json`，实施收尾读回 `.local/t4-20261024/closure-readback.json`。统筹随后独立收尾复核通过，证据 `.local/t4-review-20261024/teardown-independent.json`：T4容器/网络和两个4195绑定均关闭，卷身份/三状态文件哈希及0600权限/fixture/固定镜像保留，63源码资源不变；T2/T3继续停止、原卷密钥不变，原`examples/compose/.local`不存在。统筹已正常退出review账号并关闭自有浏览器。
 
 三份文档最终SHA256、相对`53f13d9`的文档差量和最终状态单列于`.local/t4-20261024/T4-final-receipt.json`；不把新文档冒充旧镜像输入。应用/测试/63份资源和本地fixture未改，历史证据保留；当前会话只继续统筹最后的文档核对，本实施会话完成并停止写入。
+
+## 2026-10-24 R3：固定官方 main 的 A/B/C 本地独立验收
+
+本次固定官方 Django main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`，完整官方归档 SHA256 为 `fe372e3c84ded7c7601fbb6ad891d6904d3d94321e7c34ac87ae2d5718a1522e`，7089 个 blob 重建的 Git tree 与官方提交一致。10月23日的下载阻塞属于历史尝试；本次经独立核对官方归档后继续，没有用历史 main 或发行版源码替代。
+
+执行起点为 Nova `67e1e5a4b140e25781e8aec841a2a3a5011c833d` 的990份冻结输入。B只修改预警工作流并新增依赖检查脚本及其测试；C使用含这3份已验收文件的992份副本。实施与统筹使用各自的源码副本和venv，实际运行时均为 macOS ARM64 / CPython3.12.14。
+
+| 阶段 | 实施结果 | 统筹独立结果 |
+|---|---|---|
+| A：源码与模板 | 7种上游模板、8个覆盖目标，reviewed；文本漂移及丢失继承block均为0，exit0 | 官方归档/输入身份核对通过，模板检查同为7/8、reviewed、exit0 |
+| B：声明依赖与来源 | 旧asgiref3.12.1可以完成真实Django setup和ASGI/WSGI导入，但不满足官方`asgiref>=3.13`；门禁旧pin exit1、新3.13.0 exit0，pip check通过；新增专项10项及全部脚本95项通过 | 旧/新pin、错误导入来源、pip check与脚本测试通过；实际工作流最终shell的5组outcome中仅全success返回0，其余4组返回1 |
+| C：核心源码回归 | `python demo/manage.py test tests --noinput`：424运行、421通过、3跳过、exit0，完整日志已保存 | 自有992份输入/官方归档/venv重新运行424项，同为421通过、3跳过、exit0 |
+
+B将asgiref固定为3.13.0，并加入检查工具packaging26.3；其他4个核心辅助依赖保持原pin。新门禁读取源码`pyproject.toml`，核对Python范围、适用的基础依赖及实际Django导入来源。源码通过PYTHONPATH使用时，旧/新环境的`pip check`都可能通过，因此不能用它代替声明检查。工作流最终按模板、依赖、回归三步的`outcome`判定，失败或跳过均不能算通过。统筹另以actionlint1.7.12检查全部3份workflow，exit0。
+
+C的3项跳过分别是未启用的CAPTCHA、security、slider集成占位；它们没有通过本次可选集成验收。Nova的`tests`目录优先于上游同名包，Django实际导入自固定官方源码，没有安装发行版替代或修改`django.VERSION`。本地归档位于外层Nova仓库内，进程设置`GIT_CEILING_DIRECTORIES`避免版本元数据误读外层`.git`；归档真实版本构造仍为`VersionTuple(6, 2, 0, "alpha", 0)`。输入、全部上游blob与已审查模板基线的前后哈希均未改。
+
+实施回执及原始记录在`.local/r3-main-20261024/`：`R3-A-receipt.json`、`R3-B-receipt.json`、`dependency-contract-before-after.json`、`dependency-guard-tests.log`、`R3-C-receipt.json`及`r3-c-implementation/core-tests.log`。统筹证据在`.local/r3-main-review-20261024/`：`templates-independent.json`、`R3-B-independent.json`、`R3-C-independent.json`、`core-tests.log`、`actionlint-independent.json`。准备阶段的网络、安装和辅助脚本失败原样保留，未计为通过。
+
+上述测试发生于`67e1e5a`加3份已验收文件的候选阶段。实施随后误将此前已履行的单次提交指令当作本轮授权，提交为`97072244b9a944b45a57ac38af51173c606f61fe`；该提交包含同一3文件内容，不能表述为提交后重新跑过测试。提交保留，不reset/revert；本次文档差量单列、未再次提交或推送。
+
+R3的固定SHA本地A/B/C现已独立接受。10月3日、19日的失败和23日的下载阻塞仍作为各时点记录保留。支持范围仍为`Django<6.2`；工作流规定的Ubuntu24.04/Python3.14.8、精确候选的远端CI与完整Python/wheel/可选依赖矩阵尚未运行。人工音频听辨已跳过且未验收；本次没有恢复该任务或扩大产品功能。文档交统筹复核后，实施停止写入，当前会话继续统筹更合适。

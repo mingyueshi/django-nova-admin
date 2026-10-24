@@ -106,3 +106,5 @@ PR1当前页打印、NM1当前响应消息、PF1外观入口均已顺序实施�
 路线图中列表/表单扩展、图表数据契约及宿主集成示例仍是后续候选。T2和T3-4/5/6已完成本地独立验收；T3由统筹提交`53f13d905d433aa75ebfa5a14bcbdc1efd125139`、未推送。T4本轮只验收无CAPTCHA的core登录与导航：用户自报iPhone 12 Pro Max、系统27.0.1，在真实Safari及VoiceOver逐项回报登录、错误自动朗读和导航正常；手机Safari build未读取，不是实施/统筹直接操作手机，桌面Chromium和环境检查另列。证据见`DIAGNOSTIC_PROGRESS.md`及`.local/t4-review-20261024/verification.json`。本轮未发现需改产品代码的问题，只有诊断主报告/诊断进度/本页三份验收文档差量，fixture保持本地ignored，新文档不冒充旧镜像输入。人工音频听辨、可选验证码真机、其他设备/浏览器/读屏组合、线上CI和完整矩阵及生产仍未验收；不宣称全站WCAG、整份路线图或所有功能完成。当前会话继续统筹更合适，本轮仅收尾并停止写入，不提交、推送、部署或自行扩展。
 
 此前路线图功能验收收尾时，统筹浏览器及4197测试服务已关闭；当时已独立确认实施用4191也无监听。隔离测试库与证据保留在`.local/`，没有停止原有4173预览或重启T2环境。该历史回执为`.local/roadmap-continue-20261024/verification.json`。本次T4的4195环境收尾另见`.local/t4-20261024/T4-final-receipt.json`，不混用两个时点。
+
+2026-10-24 R3状态补记：固定官方Django main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`的A/B/C已通过本地独立验收，7模板/8覆盖无漂移，依赖门禁及95项脚本测试通过；双方macOS ARM64/Python3.12.14核心各424项、421通过、3可选CAPTCHA/security/slider跳过。测试在`67e1e5a`加3文件候选上执行，内容已逐文件核对与`9707224`一致；未宣称提交后重跑。详细回执与历史失败见`DIAGNOSTIC_PROGRESS.md`及`django-theme/UPSTREAM_DRIFT.md`；本次仅更新文档、未再次提交或推送。R3后续仍需工作流Ubuntu24.04/Python3.14.8、远端CI及完整矩阵验证，`Django<6.2`支持范围不扩张；人工音频听辨仍跳过且未验收。
