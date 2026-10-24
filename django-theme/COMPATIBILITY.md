@@ -2,7 +2,7 @@
 
 发行核查更新于 2026-10-15。本页区分上游允许的组合、历史实际执行的精确组合和本次发行验证；安装元数据不是“所有组合都已通过”的承诺。`0.6.1` 的实际结果与未运行范围见 [RELEASE_VALIDATION.md](RELEASE_VALIDATION.md)。
 
-前端开发/测试的Node矩阵独立维护，见 [Node兼容说明](https://github.com/mingyueshi/django-nova-admin/blob/main/NODE_COMPATIBILITY.md)。它不与以下Python/Django组合做无意义的全笛卡尔乘积；主题运行不依赖Node服务。
+前端开发/测试的Node矩阵独立维护，见 [Node兼容说明](https://github.com/mingyueshi/django-nova-admin/blob/main/docs/NODE_COMPATIBILITY.md)。它不与以下Python/Django组合做无意义的全笛卡尔乘积；主题运行不依赖Node服务。
 
 ## 上游维护范围
 

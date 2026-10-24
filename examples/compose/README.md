@@ -100,7 +100,7 @@ python3 examples/compose/verify.py --captcha   # 另需主题 captcha extra
 
 ### 2026-10-24 本机容器验收
 
-本次运行验收绑定源码 `243effb0569591f2732831a0650cac99c9f8e704` 及其 222 份隔离输入，随后仅补充本文记录。环境为 macOS ARM64 宿主上的 Docker Desktop **Linux ARM64 容器**，web 只绑定 `127.0.0.1:4189`，PostgreSQL 没有宿主端口映射。逐项独立复核与脱敏回执索引见[统筹验收台账](../../DIAGNOSTIC_PROGRESS.md)。
+本次运行验收绑定源码 `243effb0569591f2732831a0650cac99c9f8e704` 及其 222 份隔离输入，随后仅补充本文记录。环境为 macOS ARM64 宿主上的 Docker Desktop **Linux ARM64 容器**，web 只绑定 `127.0.0.1:4189`，PostgreSQL 没有宿主端口映射。逐项独立复核与脱敏回执索引见[统筹验收台账](../../docs/DIAGNOSTIC_PROGRESS.md)。
 
 | 组件 | 实际验证版本 |
 | --- | --- |

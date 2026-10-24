@@ -94,7 +94,7 @@
 - **环境**：容器Python3.12.15 / Django5.2.17 / PG17.11 / psycopg3.3.6 / captcha0.7.0 / Pillow12.2.0，Flite2.2-5、SoX14.4.2+git20190427-3.5。工具只安装在临时镜像层；主机未安装，正式Compose默认音频仍关闭。该临时fixture不是正式交付示例。
 - **证据**：独立Django6.1.1的57项CAPTCHA和16项Axes全通过且无跳过；真实PG/Flite/SoX的过期、四阶段失败/超时、共享预算、创建/复制/构造/清理/流/重查异常、同key并发哨兵及无GC保留响应FD稳定均通过。T3-6冻结227输入、63安装资源；独立回执 `.local/t3-hardening-review-20261024/cleanup-acceptance.json`。首轮短测试预算、Range脚本等失败保留，后续修正后复验，未把失败或跳过计为通过。
 - **历史及宿主边界**：原始upstream过期仍200、无timeout/check、失败SoX残留及ranged-response不转发close等观察保留，不再描述Nova新入口。宿主仍直接挂载 `captcha.urls` 时不自动获得保护，需显式迁移。Flite-only可用但同挑战输出可能重复。只监督直接子进程，不保证任意子孙进程或OS进程创建可中断；持续OS拒删可留下该请求0700目录，大小检查不等于全部并发内存/磁盘绝对上限。
-- **阶段范围与当前边界**：T3接受本机隔离环境内Nova音频入口的上述闭环，默认音频仍关闭；该阶段尚未运行线上CI/完整矩阵，后续固定候选的线上自动化结果见R3。音频的人工听辨继续跳过未验收，物理设备/读屏、其他浏览器组合及生产仍未验收；T4的core登录/导航接受不扩展到音频，也不等于全安全、生产就绪或完整无障碍。详见[整改验收台账](DIAGNOSTIC_PROGRESS.md)及[音频配置与边界](django-theme/CAPTCHA_INTEGRATION.md#accessibility-and-audio)。
+- **阶段范围与当前边界**：T3接受本机隔离环境内Nova音频入口的上述闭环，默认音频仍关闭；该阶段尚未运行线上CI/完整矩阵，后续固定候选的线上自动化结果见R3。音频的人工听辨继续跳过未验收，物理设备/读屏、其他浏览器组合及生产仍未验收；T4的core登录/导航接受不扩展到音频，也不等于全安全、生产就绪或完整无障碍。详见[整改验收台账](DIAGNOSTIC_PROGRESS.md)及[音频配置与边界](../django-theme/CAPTCHA_INTEGRATION.md#accessibility-and-audio)。
 
 #### T4（P2）真实iPhone Safari/VoiceOver最小范围已接受
 

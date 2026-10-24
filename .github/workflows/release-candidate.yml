@@ -33,7 +33,7 @@ jobs:
           import os, tomllib
           from pathlib import Path
           if os.environ.get('ENABLED') != 'true':
-              raise SystemExit('Candidate workflow is disabled; first configure the protected nova-candidate environment, then opt in. See CI_CD.md.')
+              raise SystemExit('Candidate workflow is disabled; first configure the protected nova-candidate environment, then opt in. See docs/CI_CD.md.')
           version = tomllib.loads(Path('django-theme/pyproject.toml').read_text())['project']['version']
           if os.environ['GITHUB_REF'] != 'refs/tags/theme-v' + version:
               raise SystemExit('Dispatch on the actual theme-v<VERSION> tag; an input cannot substitute for the protected ref.')

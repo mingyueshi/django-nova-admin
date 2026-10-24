@@ -2,9 +2,11 @@
 
 版本：交互预览 **1.8.0** / 原生 Django 主题 **0.6.1** · 2026-10-23
 
-本轮新增设计令牌与品牌配置、权限内的收藏/常用模型/图标/计数、自检警告、上游漂移预警、隔离 Compose 示例和可选 Axes 接入。入口见 [品牌指南](django-theme/BRANDING.md)、[导航扩展](django-theme/NAVIGATION_EXTENSIONS.md)、[模板漂移](django-theme/UPSTREAM_DRIFT.md)、[Compose](examples/compose/README.md)、[验证码与安全工具](django-theme/CAPTCHA_INTEGRATION.md)。公开演示只承载合成预览与只读样本。官方源码见 [GitHub 仓库](https://github.com/mingyueshi/django-nova-admin)。历史源码包交付记录见 [DELIVERY.md](DELIVERY.md)，当前版本与验证范围见 [发行验证](django-theme/RELEASE_VALIDATION.md) 和 [CI 说明](CI_CD.md)。
+本轮新增设计令牌与品牌配置、权限内的收藏/常用模型/图标/计数、自检警告、上游漂移预警、隔离 Compose 示例和可选 Axes 接入。入口见 [品牌指南](django-theme/BRANDING.md)、[导航扩展](django-theme/NAVIGATION_EXTENSIONS.md)、[模板漂移](django-theme/UPSTREAM_DRIFT.md)、[Compose](examples/compose/README.md)、[验证码与安全工具](django-theme/CAPTCHA_INTEGRATION.md)。公开演示只承载合成预览与只读样本。官方源码见 [GitHub 仓库](https://github.com/mingyueshi/django-nova-admin)。历史源码包交付记录见 [DELIVERY.md](docs/DELIVERY.md)，当前版本与验证范围见 [发行验证](django-theme/RELEASE_VALIDATION.md) 和 [CI 说明](docs/CI_CD.md)。
 
 既有 7 组 Python/Django 精确组合和 3 组 Node 工具链继续保留，新增验证与未实测边界见 [本轮报告](django-theme/TEST_REPORT.md)。Docker/PostgreSQL 运行、音频、旧 admin-honeypot 仍未实测。GitHub 工作流配置随源码提供，实际运行状态以仓库 Actions 为准，生产部署与候选发布开关未自动启用。
+
+完整文档目录见 [文档索引](docs/README.md)。专题指南、规划与历史验收记录集中在 `docs/`；可独立发行的主题文档仍在 `django-theme/`。
 
 ## 先选择要研究的部分
 
@@ -153,7 +155,7 @@ node scripts/test-navigation.mjs
 
 ## 1.4.1 / 0.2.1 首批整改
 
-主题已修复自有文案国际化、可选URL反解、导航搜索/状态、Inline名称、搜索提示及数字/对比度细节。见 `django-theme/CHANGELOG.md`、`REVIEW_RESPONSE.md` 与 `INTEGRATION_GUIDE.md`。新版是云端基线，不包含或覆盖你本地的研究改动。
+主题已修复自有文案国际化、可选URL反解、导航搜索/状态、Inline名称、搜索提示及数字/对比度细节。见 `django-theme/CHANGELOG.md`、`django-theme/REVIEW_RESPONSE.md` 与 `django-theme/INTEGRATION_GUIDE.md`。新版是云端基线，不包含或覆盖你本地的研究改动。
 
 ## 1.4.2 / 0.2.2 交互恢复与手机导航
 
@@ -161,7 +163,7 @@ node scripts/test-navigation.mjs
 
 交互预览修复了三类列表的地址/筛选状态、列表开关与编辑表单的并发覆盖、重复提交、超出安全整数范围的库存、禁用选项组，以及图片连续失败后的重试和嵌套预览恢复。图片预览内的“图片状态演示”可反复验证失败与恢复，只使用随包本地素材。
 
-新增 36 项前端恢复回归，原有 98 项检查保持不变。该轮更新继续以云端基线为准，未读取或合并你本地的研究改动。具体运行结果与浏览器检查见 `QA.md` 与 `django-theme/TEST_REPORT.md`。
+新增 36 项前端恢复回归，原有 98 项检查保持不变。该轮更新继续以云端基线为准，未读取或合并你本地的研究改动。具体运行结果与浏览器检查见 `docs/QA.md` 与 `django-theme/TEST_REPORT.md`。
 
 ## 1.5.0 / 0.3.0 企业中文预设
 
@@ -172,7 +174,7 @@ node scripts/test-navigation.mjs
 
 ## 1.5.1 / 0.3.0 静态原型技术债治理
 
-本轮只整理前端原型，原生 Django 主题与企业中文预设保持 0.3.0。按顺序完成固定版本 Prettier、三种列表共用 collection 工厂、缩小模块与应用状态/持久化的接口。没有新增业务功能或改变界面设计。具体提交、接口边界、保留的差异与验证方法见 [REFACTOR_NOTES.md](REFACTOR_NOTES.md)。
+本轮只整理前端原型，原生 Django 主题与企业中文预设保持 0.3.0。按顺序完成固定版本 Prettier、三种列表共用 collection 工厂、缩小模块与应用状态/持久化的接口。没有新增业务功能或改变界面设计。具体提交、接口边界、保留的差异与验证方法见 [REFACTOR_NOTES.md](docs/REFACTOR_NOTES.md)。
 
 ```bash
 npm ci
@@ -251,7 +253,7 @@ npm run check:login-css
 
 ## CI/CD
 
-GitHub Actions 包含 PR/主分支快速矩阵、手动完整矩阵、源码绑定的 wheel/sdist/静态产物，以及默认关闭的手动审批候选交付。官方仓库已运行快速 CI；本次发行提交的实际验证单独记录，没有自动包发布或生产部署。配置与边界见 [CI/CD接入说明](CI_CD.md)。
+GitHub Actions 包含 PR/主分支快速矩阵、手动完整矩阵、源码绑定的 wheel/sdist/静态产物，以及默认关闭的手动审批候选交付。官方仓库已运行快速 CI；本次发行提交的实际验证单独记录，没有自动包发布或生产部署。配置与边界见 [CI/CD接入说明](docs/CI_CD.md)。
 
 ## 独立配色预设
 
@@ -270,14 +272,14 @@ GitHub Actions 包含 PR/主分支快速矩阵、手动完整矩阵、源码绑�
 
 ## 统计图表与数据演示
 
-“统计分析”（`/#analytics`）新增趋势折线/面积、订单堆叠/分组柱状、渠道环形/饼图、商品排行、转化漏斗、时段热力图、订单与客单价散点图、目标进度共8类图表。支持7/30/90天和渠道联动筛选、三种趋势指标、上期对比、图例开关、键盘/触摸读数、目标设置、明细表及精确CSV导出，并提供无数据和全零状态。图表使用本地SVG和固定合成数据。功能、口径、源码接入与验证范围见 [CHARTS.md](CHARTS.md)。
+“统计分析”（`/#analytics`）新增趋势折线/面积、订单堆叠/分组柱状、渠道环形/饼图、商品排行、转化漏斗、时段热力图、订单与客单价散点图、目标进度共8类图表。支持7/30/90天和渠道联动筛选、三种趋势指标、上期对比、图例开关、键盘/触摸读数、目标设置、明细表及精确CSV导出，并提供无数据和全零状态。图表使用本地SVG和固定合成数据。功能、口径、源码接入与验证范围见 [CHARTS.md](docs/CHARTS.md)。
 
 
 ## 开源图表库
 
-新增“开源图表实验室”（`/#charts`），实际接入Apache ECharts 6.1.0、Chart.js 4.6.1和uPlot 1.6.32，覆盖17类后台统计场景、28组库与场景组合。支持本地按需加载、筛选、原生图例/提示/缩放、运维模拟回放、PNG/CSV导出和JavaScript/Django用法。完整资源来源、许可、范围及宿主接入方式见 [开源图表指南](CHART_LIBRARIES.md)。
+新增“开源图表实验室”（`/#charts`），实际接入Apache ECharts 6.1.0、Chart.js 4.6.1和uPlot 1.6.32，覆盖17类后台统计场景、28组库与场景组合。支持本地按需加载、筛选、原生图例/提示/缩放、运维模拟回放、PNG/CSV导出和JavaScript/Django用法。完整资源来源、许可、范围及宿主接入方式见 [开源图表指南](docs/CHART_LIBRARIES.md)。
 
-新增“联动分析工作台”（`/#analysis`），提供经营收入、用户转化、服务监控三类场景。排行点击联动图表/指标/明细，双击或按钮逐层下钻，时间滑块联动统计区间；支持3/5/10秒模拟刷新、暂停、失败重试、保留最后成功快照、CSV完整范围导出。数据均为独立模拟样本，未新增真实统计API。数据口径、生命周期、源码与接入结构见 [联动分析指南](ANALYSIS_LAB.md)。
+新增“联动分析工作台”（`/#analysis`），提供经营收入、用户转化、服务监控三类场景。排行点击联动图表/指标/明细，双击或按钮逐层下钻，时间滑块联动统计区间；支持3/5/10秒模拟刷新、暂停、失败重试、保留最后成功快照、CSV完整范围导出。数据均为独立模拟样本，未新增真实统计API。数据口径、生命周期、源码与接入结构见 [联动分析指南](docs/ANALYSIS_LAB.md)。
 
 ## 原生列表排序
 

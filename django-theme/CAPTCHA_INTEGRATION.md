@@ -334,7 +334,7 @@ Python 3.12.15, Django 5.2.17, PostgreSQL 17.11, django-simple-captcha 0.7.0,
 Pillow 12.2.0, Flite 2.2-5 and SoX 14.4.2+git20190427-3.5. Tools were installed
 only in a temporary container layer; the host was not modified. That fixture is
 test infrastructure, not a distributed deployment example. Evidence and scope
-are indexed in the [diagnostic ledger](../DIAGNOSTIC_PROGRESS.md).
+are indexed in the [diagnostic ledger](../docs/DIAGNOSTIC_PROGRESS.md).
 
 Audio remains **disabled by default**, including in the Compose example.
 Projects that provision and verify the executables, Flite voice/libraries and

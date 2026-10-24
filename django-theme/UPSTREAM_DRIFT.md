@@ -62,7 +62,7 @@ R3本次固定官方main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`，官方归�
 
 ## 2026-10-24 特性分支线上验证
 
-原五份R3文档提交`57e19a4`后，首次quick `40074862570`因sdist契约遗漏已打包JSON夹具失败，修复`93fd274`后quick `40075349271`通过；首次full `40075868053`因Node26/JSDOM异常传播测试断言失败，仅harness修复为`ef58c7d`。最终[full 40077039814](https://github.com/mingyueshi/django-nova-admin/actions/runs/40077039814)在该固定候选通过：14 jobs/14 artifacts、7组Python/Django×4=28环境、3 Node和3版Axes。两次失败与两次最小修复分别保留，完整时间线及精确运行时见[CI/CD验收记录](../CI_CD.md)。
+原五份R3文档提交`57e19a4`后，首次quick `40074862570`因sdist契约遗漏已打包JSON夹具失败，修复`93fd274`后quick `40075349271`通过；首次full `40075868053`因Node26/JSDOM异常传播测试断言失败，仅harness修复为`ef58c7d`。最终[full 40077039814](https://github.com/mingyueshi/django-nova-admin/actions/runs/40077039814)在该固定候选通过：14 jobs/14 artifacts、7组Python/Django×4=28环境、3 Node和3版Axes。两次失败与两次最小修复分别保留，完整时间线及精确运行时见[CI/CD验收记录](../docs/CI_CD.md)。
 
 随后仅单次触发[手动上游预警40078003051](https://github.com/mingyueshi/django-nova-admin/actions/runs/40078003051)，Nova候选仍为`ef58c7d7a72ac6e8fd881fc182acc129d3d34f15`。实际运行环境为Ubuntu24.04.5/Python3.14.8；本次检出的官方Django main为`0e128d524d0a7c55a955570d6e5da983ac6ce6c7`，从`revision.txt`及检出日志读回，再独立核对官方commit/tree，未以历史SHA替代。
 

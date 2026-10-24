@@ -4,7 +4,7 @@
 
 2026-10-24 最新验收：已推送的特性分支 `codex/audio-listening-validation`，固定候选 `ef58c7d7a72ac6e8fd881fc182acc129d3d34f15` 的完整矩阵和线上手动上游预警均已由原实施会话执行、统筹会话独立验收。最近核验的远端默认分支仍为 `main@ee532041276d217e1576de12fdb8c821550fe900`；候选尚未合入，不能据此宣称默认分支的定时预警已恢复。本文本次补记属于验收后文档，不是 `ef58c7d` 已运行 CI 的输入。
 
-`0.6.1` 的构建清单升级为 schema 2：在原 wheel/静态产物之外增加 sdist，并从 sdist 构建 wheel；增加源码/文档、许可证与运行时版本核验。现有下载/复核入口跟随同一源码脚本，不增加发布流程。详见 [发行与升级说明](django-theme/RELEASING.md)。
+`0.6.1` 的构建清单升级为 schema 2：在原 wheel/静态产物之外增加 sdist，并从 sdist 构建 wheel；增加源码/文档、许可证与运行时版本核验。现有下载/复核入口跟随同一源码脚本，不增加发布流程。详见 [发行与升级说明](../django-theme/RELEASING.md)。
 
 ## 流程入口
 
@@ -21,7 +21,7 @@
 
 `Nova upstream warning`使用Ubuntu24.04/Python3.14.8，固定asgiref3.13.0及packaging26.3等核心辅助工具。模板检查后，`scripts/upstream_dependencies.py`核对官方源码`pyproject.toml`中的Python范围、适用基础依赖与实际Django导入来源，保存`dependencies.json`，再运行`pip check`及核心源码回归。PYTHONPATH源码没有安装发行版元数据，pip check不能代替该声明检查。三个实验步骤保留`continue-on-error`以收集证据，最终按它们的`outcome`统一判定：仅全部success通过，失败或跳过都会使独立预警失败；工件在失败时也保留。
 
-线上验证前的本地阶段记录：2026-10-24固定官方main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`的A/B/C已由双方验收：7模板/8覆盖无漂移；依赖门禁及95项脚本测试通过；双方macOS ARM64/Python3.12.14核心各424项、421通过、3可选集成跳过。统筹actionlint1.7.12全部3份workflow通过，最终shell五种outcome验证通过。测试在Nova `67e1e5a`加3文件候选上执行，内容已逐文件核对与`9707224`一致；该阶段未宣称提交后重跑、工作流规定运行时、远端CI或完整矩阵通过。后续真实线上结果见下方验收记录；历史失败与下载阻塞保留在[上游预警记录](django-theme/UPSTREAM_DRIFT.md)。该入口不发布、不接受新基线、不扩大`Django<6.2`支持范围。
+线上验证前的本地阶段记录：2026-10-24固定官方main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`的A/B/C已由双方验收：7模板/8覆盖无漂移；依赖门禁及95项脚本测试通过；双方macOS ARM64/Python3.12.14核心各424项、421通过、3可选集成跳过。统筹actionlint1.7.12全部3份workflow通过，最终shell五种outcome验证通过。测试在Nova `67e1e5a`加3文件候选上执行，内容已逐文件核对与`9707224`一致；该阶段未宣称提交后重跑、工作流规定运行时、远端CI或完整矩阵通过。后续真实线上结果见下方验收记录；历史失败与下载阻塞保留在[上游预警记录](../django-theme/UPSTREAM_DRIFT.md)。该入口不发布、不接受新基线、不扩大`Django<6.2`支持范围。
 
 ### 快速PR矩阵
 
@@ -136,7 +136,7 @@ python scripts/ci_artifacts.py build --directory /path/to/new-artifact --commit 
 python scripts/ci_artifacts.py verify --directory /path/to/new-artifact --commit FULL_COMMIT_SHA
 ```
 
-Python隔离矩阵沿用[运行时说明](django-theme/COMPATIBILITY.md)中的test-matrix.py入口，传入上一步同一wheel。Node入口为`node scripts/ci_node.mjs --node 24.21.0 --npm 11.19.0 --logs /path/to/new-node-logs --sidebars /path/to/verified-sidebars`；sidebars先用`ci_support.py sidebars`从固定官方Django wheel生成。工作流文件保留各命令的完整顺序，供接入时核对。
+Python隔离矩阵沿用[运行时说明](../django-theme/COMPATIBILITY.md)中的test-matrix.py入口，传入上一步同一wheel。Node入口为`node scripts/ci_node.mjs --node 24.21.0 --npm 11.19.0 --logs /path/to/new-node-logs --sidebars /path/to/verified-sidebars`；sidebars先用`ci_support.py sidebars`从固定官方Django wheel生成。工作流文件保留各命令的完整顺序，供接入时核对。
 
 维护时在ci/matrix.json和既有Python矩阵中同步精确版本；新增或删减前端测试时，同步ci_support.py中的测试数量契约，避免完整套件被意外少跑。不要仅放宽断言来掩盖缺失的分组。
 
