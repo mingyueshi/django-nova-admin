@@ -133,7 +133,7 @@ class FrontendContractTests(unittest.TestCase):
         names = support.frontend_contract()
         self.assertEqual(len(names), 19)
         self.assertEqual(names[-6:], ['icons', 'analytics', 'chart-libraries', 'analysis-lab', 'shared-css', 'navigation'])
-        self.assertEqual(support.FRONTEND_TOTAL, 1322)
+        self.assertEqual(support.FRONTEND_TOTAL, 1335)
 
     def altered_package(self, mutation):
         with tempfile.TemporaryDirectory() as tmp:
@@ -173,7 +173,7 @@ TOTAL 13 enterprise preview tests passed
 TOTAL 68 refactor boundary checks passed (Node/jsdom)
 TOTAL 7 catalog bulk publish checks passed (Node/jsdom)
 TOTAL 44 passed, 0 failed (Node/jsdom static login demo)
-TOTAL 39 presentation checks passed
+TOTAL 52 presentation checks passed
 TOTAL 254 pagination checks passed (Node/jsdom)
 TOTAL 5 extensions guide tests passed
 TOTAL 165 palette checks passed
@@ -210,16 +210,16 @@ TOTAL 24 preview navigation scenarios passed
     def collect(self, root):
         return support.collect_node(root / 'logs', root / 'output', COMMIT, '24.21.0', '11.19.0')
 
-    def test_current_log_fixture_records_all_1322_checks_in_nineteen_suites(self):
+    def test_current_log_fixture_records_all_1335_checks_in_nineteen_suites(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.logs(root)
             result = self.collect(root)
-            self.assertEqual(result['frontend'], 1322)
+            self.assertEqual(result['frontend'], 1335)
             self.assertEqual(result['theme_js'], 260)
             self.assertEqual(len(result['frontend_suites']), 19)
             self.assertEqual(result['frontend_suites']['palettes'], 165)
-            self.assertEqual(sum(result['frontend_suites'].values()), 1322)
+            self.assertEqual(sum(result['frontend_suites'].values()), 1335)
             self.assertEqual(json.loads((root / 'output/report.json').read_text()), result)
 
     def test_every_frontend_suite_requires_exactly_one_success_summary(self):
@@ -236,8 +236,18 @@ TOTAL 24 preview navigation scenarios passed
                         self.collect(root)
                     self.assertFalse((root / 'output').exists())
 
+    def test_pre_search_fix_presentation_summary_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            logs = self.logs(root)
+            (logs / 'frontend.log').write_text(self.FRONTEND_LOG.replace(
+                'TOTAL 52 presentation checks passed', 'TOTAL 39 presentation checks passed'))
+            with self.assertRaisesRegex(ValueError, 'Node test evidence: frontend'):
+                self.collect(root)
+            self.assertFalse((root / 'output').exists())
+
     def test_same_total_cannot_hide_an_absent_suite(self):
-        # Omit the 165 palette checks but add those 165 to pagination: still 1322.
+        # Omit the 165 palette checks but add those 165 to pagination: still 1335.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             logs = self.logs(root)
@@ -368,7 +378,7 @@ TOTAL 24 preview navigation scenarios passed
                 (logs / name).unlink()
             result = support.check_node_summaries(logs)
             self.assertEqual(result['kind'], 'node-suite-contract')
-            self.assertEqual(result['frontend'], 1322)
+            self.assertEqual(result['frontend'], 1335)
             self.assertIn('no install, runtime, step', result['boundary'])
             self.assertNotIn('commit', result)
             self.assertNotIn('node', result)
@@ -378,7 +388,7 @@ TOTAL 24 preview navigation scenarios passed
                 support.verify_reports(root, 'quick', COMMIT, WHEEL_SHA)
 
     def test_gate_rejects_stale_or_incomplete_frontend_counts(self):
-        changes = [lambda x: x.update(theme_js=230), lambda x: x.update(frontend=1298), lambda x: x.update(theme_js=97), lambda x: x.update(theme_js=121), lambda x: x.update(frontend=540), lambda x: x.update(frontend=590),
+        changes = [lambda x: x.update(frontend=1322), lambda x: x['frontend_suites'].update(presentation=39), lambda x: x.update(theme_js=230), lambda x: x.update(frontend=1298), lambda x: x.update(theme_js=97), lambda x: x.update(theme_js=121), lambda x: x.update(frontend=540), lambda x: x.update(frontend=590),
                    lambda x: x.update(frontend=606), lambda x: x.update(frontend=622), lambda x: x.update(frontend=1270),
                    lambda x: x.pop('frontend_suites'),
                    lambda x: x['frontend_suites'].pop('palettes'),

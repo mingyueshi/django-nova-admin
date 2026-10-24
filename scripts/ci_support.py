@@ -26,7 +26,7 @@ FRONTEND_SUMMARIES = {
     'boundaries': 'TOTAL 68 refactor boundary checks passed (Node/jsdom)',
     'bulk-publish': 'TOTAL 7 catalog bulk publish checks passed (Node/jsdom)',
     'login': 'TOTAL 44 passed, 0 failed (Node/jsdom static login demo)',
-    'presentation': 'TOTAL 39 presentation checks passed',
+    'presentation': 'TOTAL 52 presentation checks passed',
     'pagination': 'TOTAL 254 pagination checks passed (Node/jsdom)',
     'extensions': 'TOTAL 5 extensions guide tests passed',
     'palettes': 'TOTAL 165 palette checks passed',
