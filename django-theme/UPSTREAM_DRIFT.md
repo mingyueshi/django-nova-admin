@@ -2,6 +2,8 @@
 
 Nova 采用同名模板继承。主题覆盖和 Django 原版必然有差异，因此不能把每个 diff 都当作回归，也不能把“无文本差异”当作兼容保证。
 
+最新线上状态（2026-10-24）：已推送特性分支固定Nova候选`ef58c7d7a72ac6e8fd881fc182acc129d3d34f15`的[手动预警40078003051](https://github.com/mingyueshi/django-nova-admin/actions/runs/40078003051)已由原实施执行、统筹独立验收。默认分支尚未合入，不能据此宣称其定时预警已恢复；具体运行和边界见本文末节。
+
 仓库根目录的 `scripts/template_drift.py` 同时输出两份 diff：
 
 - `*.override.diff`：当前 Django 原版与 Nova／项目覆盖的差异，供人工审查改写范围
@@ -46,7 +48,7 @@ python scripts/template_drift.py --django-root /tmp/django-main/django \
 
 本次在 macOS ARM64、CPython3.12.14 下分别使用实际安装的 Django5.2.17、6.0.8、6.1.1 运行源码核心回归，每个环境执行351项：349项通过、2项可选CAPTCHA/安全集成跳过，失败和错误均为0；其中每个环境的27项项目本地化测试全部通过。另将3个已审查发行版的6组原生模板与对应片段逐一核对。该结果不是声明矩阵中的Python3.12.15测试、完整wheel/extra矩阵或真实6.2/main重新验收。
 
-## 2026-10-24 固定 main 的本地结果
+## 2026-10-24 固定 main 的本地结果（线上验收前）
 
 R3本次固定官方main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`，官方归档SHA256为`fe372e3c84ded7c7601fbb6ad891d6904d3d94321e7c34ac87ae2d5718a1522e`；7089个blob重建Git tree与官方提交匹配。10月23日的源码下载阻塞保留为历史，本次已取得并独立核对完整归档。实施与统筹分别使用自己的输入副本、上游解包和venv完成：
 
@@ -56,6 +58,20 @@ R3本次固定官方main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`，官方归�
 
 本地官方归档放在Nova仓库内部时，设置进程级`GIT_CEILING_DIRECTORIES`为归档源码根目录的父目录，避免Django版本工具向上发现Nova的`.git`而混入其提交日期；上游真实`VERSION`仍为`VersionTuple(6, 2, 0, "alpha", 0)`。这项归档隔离不替代源码SHA和树的核验。
 
-测试在Nova `67e1e5a`加B的3文件候选上执行，内容已逐文件核对与`9707224`一致；未宣称提交后重跑。实施A/B/C回执在`.local/r3-main-20261024/`，独立回执在`.local/r3-main-review-20261024/`；原始核心日志分别是`r3-c-implementation/core-tests.log`与`core-tests.log`。详细顺序见[诊断验收台账](../DIAGNOSTIC_PROGRESS.md)。10月3日/19日失败不重写；工作流Ubuntu24.04/Python3.14.8、远端CI及完整Python/wheel/可选依赖矩阵未跑，`Django<6.2`支持边界保持不变。
+该本地阶段的测试在Nova `67e1e5a`加B的3文件候选上执行，核对与`9707224`一致；未宣称提交后重跑。实施A/B/C回执在`.local/r3-main-20261024/`，独立回执在`.local/r3-main-review-20261024/`；原始核心日志分别是`r3-c-implementation/core-tests.log`与`core-tests.log`。当时尚未运行工作流Ubuntu24.04/Python3.14.8、远端CI和完整矩阵，后续真实线上结果见下节。10月3日/19日失败和23日下载阻塞保持历史事实，`Django<6.2`支持边界不变。
+
+## 2026-10-24 特性分支线上验证
+
+原五份R3文档提交`57e19a4`后，首次quick `40074862570`因sdist契约遗漏已打包JSON夹具失败，修复`93fd274`后quick `40075349271`通过；首次full `40075868053`因Node26/JSDOM异常传播测试断言失败，仅harness修复为`ef58c7d`。最终[full 40077039814](https://github.com/mingyueshi/django-nova-admin/actions/runs/40077039814)在该固定候选通过：14 jobs/14 artifacts、7组Python/Django×4=28环境、3 Node和3版Axes。两次失败与两次最小修复分别保留，完整时间线及精确运行时见[CI/CD验收记录](../CI_CD.md)。
+
+随后仅单次触发[手动上游预警40078003051](https://github.com/mingyueshi/django-nova-admin/actions/runs/40078003051)，Nova候选仍为`ef58c7d7a72ac6e8fd881fc182acc129d3d34f15`。实际运行环境为Ubuntu24.04.5/Python3.14.8；本次检出的官方Django main为`0e128d524d0a7c55a955570d6e5da983ac6ce6c7`，从`revision.txt`及检出日志读回，再独立核对官方commit/tree，未以历史SHA替代。
+
+7种模板、8个覆盖目标均为reviewed，文本漂移和丢失继承block均为0；源码声明的Python范围/适用基础依赖满足，Django导入来源为检出的官方源码，pip check通过。原始日志最终环境明确为`DRIFT=success`、`DEPENDENCIES=success`、`SMOKE=success`；核心424运行、421通过、3项可选集成跳过。没有执行`--record-reviewed`或修改模板基线，不把continue-on-error后的conclusion当作实际outcome。
+
+该候选完整矩阵的核心环境各424运行/421通过/3跳过，验证码环境各57项通过无跳过，Axes在Django5.2.17、6.0.8、6.1.1各16项通过无跳过；每个Node版本1298项前端+230项主题JS（验证码15项）通过。历史轮次226/11等数量不被当前统计覆盖。
+
+原实施的完整预警回执为`.local/ci-full-20261024/upstream/CI-3-upstream-final.json`，保存了job日志、原始20文件工件ZIP、摘要及解包文件；完整矩阵回执为同根目录的`full-rerun/CI-2-full-final.json`。统筹独立接受分别为`.local/ci-full-review-20261024/upstream-independent-acceptance.json`、`full-independent-acceptance.json`；双方分别下载并核对工件和原始日志。
+
+成功仅绑定已推送特性分支；最近独立读回的Nova默认main仍为`ee532041276d217e1576de12fdb8c821550fe900`，尚未合入，因此默认分支定时预警恢复仍待核验。`Django<6.2`支持范围不扩张，人工音频听辨继续跳过未验收，真机/读屏及生产范围不扩大。本文新增记录在CI验收后写入，不是`ef58c7d`已跑CI的输入；本次文档收尾没有重新测试、dispatch、提交、推送、启动服务、合并、发布或部署。
 
 参考：[Django 模板覆盖](https://docs.djangoproject.com/en/dev/howto/overriding-templates/)、[Django 发布过程](https://docs.djangoproject.com/en/dev/internals/release-process/)、[GitHub schedule 限制](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)

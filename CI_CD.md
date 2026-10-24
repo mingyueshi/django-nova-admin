@@ -2,6 +2,8 @@
 
 本仓库提供 GitHub Actions 配置和本地可复现的执行入口。以下正文中的云端接入过程保留为最初交付背景；2026-10-15 已核实实际官方仓库为 `mingyueshi/django-nova-admin`，`main@f4f07b8da3ce9ddbfd69819f11705fd9bb8ca610` 的 [快速 CI 运行](https://github.com/mingyueshi/django-nova-admin/actions/runs/38528050393) 已通过。该历史运行不代替新发行提交的验证。未代为配置分支保护、审批环境、凭据或生产发布。
 
+2026-10-24 最新验收：已推送的特性分支 `codex/audio-listening-validation`，固定候选 `ef58c7d7a72ac6e8fd881fc182acc129d3d34f15` 的完整矩阵和线上手动上游预警均已由原实施会话执行、统筹会话独立验收。最近核验的远端默认分支仍为 `main@ee532041276d217e1576de12fdb8c821550fe900`；候选尚未合入，不能据此宣称默认分支的定时预警已恢复。本文本次补记属于验收后文档，不是 `ef58c7d` 已运行 CI 的输入。
+
 `0.6.1` 的构建清单升级为 schema 2：在原 wheel/静态产物之外增加 sdist，并从 sdist 构建 wheel；增加源码/文档、许可证与运行时版本核验。现有下载/复核入口跟随同一源码脚本，不增加发布流程。详见 [发行与升级说明](django-theme/RELEASING.md)。
 
 ## 流程入口
@@ -19,14 +21,14 @@
 
 `Nova upstream warning`使用Ubuntu24.04/Python3.14.8，固定asgiref3.13.0及packaging26.3等核心辅助工具。模板检查后，`scripts/upstream_dependencies.py`核对官方源码`pyproject.toml`中的Python范围、适用基础依赖与实际Django导入来源，保存`dependencies.json`，再运行`pip check`及核心源码回归。PYTHONPATH源码没有安装发行版元数据，pip check不能代替该声明检查。三个实验步骤保留`continue-on-error`以收集证据，最终按它们的`outcome`统一判定：仅全部success通过，失败或跳过都会使独立预警失败；工件在失败时也保留。
 
-2026-10-24固定官方main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`的本地A/B/C已由双方验收：7模板/8覆盖无漂移；依赖门禁及95项脚本测试通过；双方macOS ARM64/Python3.12.14核心各424项、421通过、3可选集成跳过。统筹actionlint1.7.12全部3份workflow通过，最终shell五种outcome验证通过。测试在Nova `67e1e5a`加3文件候选上执行，内容已逐文件核对与`9707224`一致；未宣称提交后重跑、工作流规定运行时、远端CI或完整矩阵通过。历史线上失败与下载阻塞及详细回执见[上游预警记录](django-theme/UPSTREAM_DRIFT.md)。该入口不发布、不接受新基线、不扩大`Django<6.2`支持范围。
+线上验证前的本地阶段记录：2026-10-24固定官方main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`的A/B/C已由双方验收：7模板/8覆盖无漂移；依赖门禁及95项脚本测试通过；双方macOS ARM64/Python3.12.14核心各424项、421通过、3可选集成跳过。统筹actionlint1.7.12全部3份workflow通过，最终shell五种outcome验证通过。测试在Nova `67e1e5a`加3文件候选上执行，内容已逐文件核对与`9707224`一致；该阶段未宣称提交后重跑、工作流规定运行时、远端CI或完整矩阵通过。后续真实线上结果见下方验收记录；历史失败与下载阻塞保留在[上游预警记录](django-theme/UPSTREAM_DRIFT.md)。该入口不发布、不接受新基线、不扩大`Django<6.2`支持范围。
 
 ### 快速PR矩阵
 
 - Python3.11.17 / Django5.2.17：核心源码与wheel
 - Python3.12.15 / Django6.0.8：核心源码与wheel
 - Python3.14.8 / Django6.1.1：核心源码、核心wheel、可选验证码源码、可选验证码wheel
-- Node24.21.0 / npm11.19.0：当前18套件、1298项前端检查，以及226项主题JS检查（导航78、导航命令面板25、外观披露与三版原生筛选脚本24、changelist增强38、当前页打印24、当前响应消息26、CAPTCHA增强11）
+- Node24.21.0 / npm11.19.0：当前18套件、1298项前端检查，以及230项主题JS检查（导航78、导航命令面板25、外观披露与三版原生筛选脚本24、changelist增强38、当前页打印24、当前响应消息26、CAPTCHA增强15）
 
 共8个Python隔离运行，不等同完整28个。稳定汇总检查名为`Nova CI gate`；将其设为必需检查前，先在实际GitHub仓库确认显示名称。它会对失败、跳过、取消和缺报告作失败处理，不会因为汇总job被跳过而误放行。
 
@@ -42,6 +44,34 @@ Python/Django从既有`django-theme/scripts/test-matrix.json`读取以下七组�
 | 3.14.8 | 5.2.17 / 6.1.1 |
 
 Node独立跑22.23.3/npm10.9.9、24.21.0/npm11.19.0、26.10.0/npm11.19.1。Node26在2026-10-03仍是Current，仅表示精确版本已测。没有把Node与Python做全笛卡尔组合。两类矩阵各最多2个并行job；每个Pythonjob内部串行。工作流显式选择bash以启用失败传播；汇总器输出文件与展示分开，失败不会被管道末端的成功状态覆盖。
+
+## 2026-10-24 特性分支线上验收
+
+原五份 R3 本地验收文档已提交为 `57e19a474534e988c5efde11a4668aa743583b84`。随后由原实施会话逐项执行下列线上运行，统筹会话分别独立读取原始日志、下载工件并核对 GitHub 摘要、源码身份及报告；通过一项后再推进下一项。两次失败保留为原始结果。
+
+| 运行 | Nova 候选 | 实际结果及后续处理 |
+|---|---|---|
+| [首次 quick #40074862570](https://github.com/mingyueshi/django-nova-admin/actions/runs/40074862570) | `57e19a4` | 失败：sdist 已包含 JSON 测试夹具，但独立源码契约遗漏该类型。修复与正负回归独立接受后，提交 `93fd274`；保留源码逐字节校验和多余文件拒绝保护。 |
+| [quick #40075349271](https://github.com/mingyueshi/django-nova-admin/actions/runs/40075349271) | `93fd274` | 通过：3组 Python/Django、8个源码/wheel变体、1个Node版本及快速范围Axes集成；统筹独立验收通过。 |
+| [首次 full #40075868053](https://github.com/mingyueshi/django-nova-admin/actions/runs/40075868053) | `93fd274` | 失败：Node26/JSDOM 对受控存储 getter 的异常传播使测试收到 `ReferenceError`，原断言预期 `SecurityError`。仅修测试 harness，保留严格拒绝前置、原生中断及表单/披露检查；独立验证及变异对照通过后提交 `ef58c7d`。 |
+| [最终 full #40077039814](https://github.com/mingyueshi/django-nova-admin/actions/runs/40077039814) | `ef58c7d` | 通过：14个jobs、14份artifacts；7组Python/Django×核心/验证码×源码/wheel，共28环境，3个Node版本及3版Axes集成；最终门禁通过并独立验收。 |
+| [手动上游预警 #40078003051](https://github.com/mingyueshi/django-nova-admin/actions/runs/40078003051) | `ef58c7d` | 通过：实际Ubuntu24.04.5/Python3.14.8，检出官方Django main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`；模板、依赖、源码回归三步的实际outcome均为success，统筹独立验收。 |
+
+最终 full 在同一 `ef58c7d` 上覆盖全部 quick 场景，按统筹派发没有对该提交另行重复 quick。核心14个环境各运行424项，421通过、3项未启用的CAPTCHA/security/slider占位跳过；验证码14个环境各57项全通过、无跳过。Axes在Django5.2.17、6.0.8、6.1.1上各16项通过、无跳过。三个Node/npm精确版本均各通过1298项前端与230项主题JS检查。历史PF1阶段的226项主题JS/验证码11项仍是当时结果；当前230/15不覆盖那些记录。
+
+线上上游预警的7种模板、8个覆盖目标均为reviewed，文本漂移及丢失继承block均为0；声明依赖满足、Django导入来源为检出的官方源码，`pip check`通过。原始日志最终环境值为`DRIFT=success`、`DEPENDENCIES=success`、`SMOKE=success`；源码回归运行424项、421通过、3项可选集成跳过。上游SHA来自本次`revision.txt`和检出日志，并经官方commit/tree核对；没有用历史固定值替代本次观测。
+
+实施证据保存在本地忽略目录 `.local/ci-full-20261024/`，统筹独立证据另存 `.local/ci-full-review-20261024/`：
+
+| 验收项 | 原实施回执（相对实施证据目录） | 统筹独立回执（相对独立证据目录） |
+|---|---|---|
+| quick | `attempt-2/CI-1-quick-final.json` | `quick-independent-acceptance.json` |
+| 最终full | `full-rerun/CI-2-full-final.json` | `full-independent-acceptance.json` |
+| 线上上游预警 | `upstream/CI-3-upstream-final.json` | `upstream-independent-acceptance.json` |
+
+首次quick失败保存在实施目录的`CI-1-failed-run-receipt.json`，首次full失败保存在`full/CI-2-full-first-run-final.json`；两次修复的独立接受记录分别为统筹目录的`CI-1-fix-accepted.json`、`CI-2-fix-accepted.json`。完整日志、工件ZIP、摘要与输入快照随各回执保留，不以最终成功改写失败。
+
+上述成功仅绑定已推送的特性分支固定候选。默认分支尚未合入，定时预警恢复仍待合入后的精确版本核验；`Django<6.2`支持范围不扩张。人工音频听辨继续跳过且未验收，真机/读屏与生产范围不扩大；本轮没有合并、发布或部署。本文新增内容是验收后的记录，不作为已完成CI的输入，也未因此重跑验证。
 
 ## 检查与产物
 
@@ -120,7 +150,7 @@ python scripts/ci_support.py check-node-summaries --logs /path/to/real-suite-log
 
 它与完整 `collect-node` 复用同一严格摘要检查，返回 `kind=node-suite-contract` 并明确声明不证明安装、运行时或CI步骤；该种记录不能被 `verify-reports` 当作完整Node报告接纳。不得为让 `collect-node` 通过而编造未执行的 `install`、`runtime.json` 或 `steps.json`。本地专项通过也不表示线上CI已经重跑。
 
-本轮验证不代表GitHub线上Actions、权限、环境审批、账单额度或第三方生产目标已测试。当前在线站点仅补充接入说明，不显示虚构的绿色CI徽章。
+最初的本地接入验证未覆盖GitHub线上Actions；本轮特性分支的真实线上结果见前述验收记录。分支保护、环境审批、账单额度与第三方生产目标仍未作为本轮验收范围；当前演示站没有新增虚构的绿色CI徽章。
 
 ## 官方参考
 

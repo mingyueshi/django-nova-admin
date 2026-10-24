@@ -1,22 +1,24 @@
 # 诊断整改与独立验收台账
 
-日期：2026-10-23（Asia/Shanghai）。基线：`05c656ad4a07ccad3670bec7f0a691a8f952e132`。
+初始记录日期：2026-10-23（Asia/Shanghai）。初始基线：`05c656ad4a07ccad3670bec7f0a691a8f952e132`。
 
 实施：[增加更多暗色配色方案](codex://threads/01a166ed-0e0f-7253-a9aa-e2d6800617d8)。当前会话负责复核报告、单项派发、代码审查与独立验收。下一项仅在上一项验证通过或明确记录外部阻塞后派发。未经新指令不提交、推送、发布或部署。
+
+最新状态（2026-10-24）：特性分支`codex/audio-listening-validation`的固定候选`ef58c7d7a72ac6e8fd881fc182acc129d3d34f15`已推送，完整矩阵和线上手动上游预警均已独立验收。默认分支尚未合入；人工音频听辨仍跳过且未验收。本页各阶段的“未跑/未推送”等描述保留为当时事实，当前线上状态见下表和末尾CI-4记录；新文档是验收后差量，不属于已跑CI的输入。
 
 | 顺序 | 项目 | 状态 | 验收要求 |
 |---|---|---|---|
 | 0 | 报告事实复核 | 已完成首轮 | 已纠正 R3/T1/T4/D3、历史测试混用与功能范围推断；原报告保存于本地证据目录 |
 | 1 | R2 模板选择 | 本地验收通过 | 三版核心各349通过/2跳过；统筹独立重跑6.1.1及6个基线选择检查通过；不声明6.2支持 |
-| 2 | R3 现有告警 | 2026-10-24 A/B/C 本地独立验收通过；线上待验证 | 固定官方main `0e128d5`：7模板/8覆盖无漂移，依赖门禁通过；双方核心424项、421通过/3可选跳过；工作流运行时与远端CI未重跑，历史失败/下载阻塞保留 |
+| 2 | R3 现有告警 | 特性分支线上独立验收通过；默认分支待合入 | `ef58c7d`完整矩阵14 jobs/14 artifacts、28环境/3 Node/3版Axes通过；手动预警实际Django main `0e128d5`、7模板/8覆盖无漂移，声明依赖和源码回归通过；历史失败保留 |
 | 3 | R1 共享登录样式 | 本地验收通过 | 字节一致/只读检查及4项回归、1274项前端、12组合浏览器、153页导出来源检查通过 |
 | 3.1 | R3b CI 前端摘要契约过期 | 本地验收通过 | 真实18套件/1274项及121项主题JS摘要通过；7类独立故障注入均拒绝；82项脚本回归通过 |
-| 4 | T1 当前平台证据 | 已更新 | R2/R1/R3b实际运行于macOS ARM64；不将其拆成两组平台或冒充完整矩阵 |
+| 4 | T1 当前平台证据 | 已补本地与线上精确证据 | 原R2/R1/R3b本地为macOS ARM64；本轮另有Ubuntu24.04.5/x64完整矩阵，绑定固定`ef58c7d`；不扩大其它平台声明 |
 | 4.1 | T2 容器/PostgreSQL | 2026-10-24 本地已独立验收并清理 | core/CAPTCHA真实构建、PG连接/迁移、双站业务、并发/回滚、完整启动器重复up及原卷down/up通过；历史首次300秒超时保留，收尾见本页末 |
-| 5 | T3 音频验证码 | T3-4/5/6 已依次完成本地独立验收并提交53f13d9，未推送 | 过期门、共享超时/503、显式资源清理与大小限制通过；人工音频听辨/其他组合/线上完整矩阵/生产仍未验收 |
+| 5 | T3 音频验证码 | T3-4/5/6本地已独立验收，已随特性分支推送 | 过期门、共享超时/503、显式资源清理与大小限制通过；后续自动化矩阵见CI-4；人工音频听辨、其他设备组合和生产仍未验收 |
 | 6 | T4 设备及辅助技术 | 无CAPTCHA登录+导航最小范围已接受 | 用户操作并回报真实iPhone Safari/VoiceOver正常；统筹环境/Chromium证据另列；不等于全站WCAG或所有设备/功能完成 |
 
-## 基线复核证据
+## 初始基线复核证据（2026-10-23历史）
 
 - 远端：`https://github.com/mingyueshi/django-nova-admin.git`；本地 main 比跟踪分支多 3 个提交。未执行推送。
 - 本机：macOS 27.0.1 / ARM64；Python 3.12.14、Django 6.1.1 可用；Node 24.21.0。Docker Engine 29.9.2 的 Linux ARM64 daemon 可达，只说明环境可用。
@@ -63,7 +65,7 @@ CI收集器原有13套件/622项契约已更新为当前18套件/1274项；增�
 - 证据：隔离目录上一级的 `input-manifest.json`、`core-up.json`、`core-up.log`；统筹目录中的 `t2-input-independent.json`、`t2-timeout-readback.json`、`t2-cleanup-independent.json`。
 - 收尾独立确认：本项目容器和网络均已移除，4189端口关闭；保留唯一专用PostgreSQL卷及两份0600密钥，原示例状态未变化。未执行全局清理。后续应在当前会话继续统筹、复用同一隔离输入/卷/密钥处理T2，不换项目或秘密绕过未验收状态。
 
-## 验收边界
+## 首轮验收边界（历史）
 
 尚未执行本轮完整 Python/wheel/可选依赖矩阵、生产部署、物理真机、屏幕阅读器及人工听辨。T3正常配置下的本地生成/原生播放已在2026-10-24单独验收，异常路径仍保留。历史发布记录不自动归属于本轮源码。线上闭环需要之后对获准提交/推送的精确 SHA 读取结果，不能用本地通过冒充。
 
@@ -259,7 +261,7 @@ T3已由统筹提交为`53f13d905d433aa75ebfa5a14bcbdc1efd125139`（Harden CAPTC
 
 三份文档最终SHA256、相对`53f13d9`的文档差量和最终状态单列于`.local/t4-20261024/T4-final-receipt.json`；不把新文档冒充旧镜像输入。应用/测试/63份资源和本地fixture未改，历史证据保留；当前会话只继续统筹最后的文档核对，本实施会话完成并停止写入。
 
-## 2026-10-24 R3：固定官方 main 的 A/B/C 本地独立验收
+## 2026-10-24 R3：固定官方 main 的 A/B/C 本地独立验收（线上验证前）
 
 本次固定官方 Django main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`，完整官方归档 SHA256 为 `fe372e3c84ded7c7601fbb6ad891d6904d3d94321e7c34ac87ae2d5718a1522e`，7089 个 blob 重建的 Git tree 与官方提交一致。10月23日的下载阻塞属于历史尝试；本次经独立核对官方归档后继续，没有用历史 main 或发行版源码替代。
 
@@ -279,4 +281,32 @@ C的3项跳过分别是未启用的CAPTCHA、security、slider集成占位；它
 
 上述测试发生于`67e1e5a`加3份已验收文件的候选阶段。实施随后误将此前已履行的单次提交指令当作本轮授权，提交为`97072244b9a944b45a57ac38af51173c606f61fe`；该提交包含同一3文件内容，不能表述为提交后重新跑过测试。提交保留，不reset/revert；本次文档差量单列、未再次提交或推送。
 
-R3的固定SHA本地A/B/C现已独立接受。10月3日、19日的失败和23日的下载阻塞仍作为各时点记录保留。支持范围仍为`Django<6.2`；工作流规定的Ubuntu24.04/Python3.14.8、精确候选的远端CI与完整Python/wheel/可选依赖矩阵尚未运行。人工音频听辨已跳过且未验收；本次没有恢复该任务或扩大产品功能。文档交统筹复核后，实施停止写入，当前会话继续统筹更合适。
+该本地阶段收口时，R3固定SHA的A/B/C已独立接受，Ubuntu24.04/Python3.14.8、精确候选远端CI与完整矩阵当时尚未运行；后续结果见下方CI-4记录。10月3日、19日失败和23日下载阻塞仍保留为各时点事实。`Django<6.2`支持范围未扩张，人工音频听辨继续跳过且未验收。
+
+## 2026-10-24 CI-4：线上验收完成后的文档收尾
+
+原五份R3验收文档已提交为`57e19a474534e988c5efde11a4668aa743583b84`。原实施会话随后逐项执行线上运行，统筹会话分别独立核对原始日志、工件摘要、源码身份和报告；完整时间线与精确运行时见[CI/CD验收记录](CI_CD.md)。
+
+| 阶段 | Nova候选 | 真实结果 |
+|---|---|---|
+| [首次quick 40074862570](https://github.com/mingyueshi/django-nova-admin/actions/runs/40074862570) | `57e19a4` | 失败：已打包的JSON测试夹具未纳入独立源码契约；最小修复独立接受后提交`93fd274` |
+| [quick 40075349271](https://github.com/mingyueshi/django-nova-admin/actions/runs/40075349271) | `93fd274` | 通过并独立验收：3组Python/Django、8变体、1 Node及快速范围Axes |
+| [首次full 40075868053](https://github.com/mingyueshi/django-nova-admin/actions/runs/40075868053) | `93fd274` | 失败：Node26/JSDOM存储getter异常传播造成测试类型断言失真；仅修测试harness，独立验证后提交`ef58c7d` |
+| [最终full 40077039814](https://github.com/mingyueshi/django-nova-admin/actions/runs/40077039814) | `ef58c7d` | 14 jobs和14 artifacts全部通过并独立验收，报告覆盖7组Python/Django×4=28环境、3 Node和3版Axes |
+| [手动上游预警 40078003051](https://github.com/mingyueshi/django-nova-admin/actions/runs/40078003051) | `ef58c7d` | Ubuntu24.04.5/Python3.14.8，实际官方Django main `0e128d524d0a7c55a955570d6e5da983ac6ce6c7`，三步实际outcome均success；独立验收通过 |
+
+最终full包含全部quick场景，没有对`ef58c7d`另行重复quick。核心14个环境各424运行、421通过、3项CAPTCHA/security/slider占位跳过；验证码14个环境各57项全通过、无跳过。Axes在Django5.2.17、6.0.8、6.1.1上各16项通过、无跳过。Node22.23.3/npm10.9.9、24.21.0/npm11.19.0、26.10.0/npm11.19.1各通过1298项前端和230项主题JS检查（验证码15项）；历史阶段226/11等数字保持原记录。
+
+线上预警的7种模板/8个覆盖目标无文本漂移或丢失继承block；声明依赖满足、Django导入命中官方源码、pip check通过。真实最终环境值为`DRIFT=success`、`DEPENDENCIES=success`、`SMOKE=success`；源码424运行、421通过、3可选跳过。上游SHA由本次检出日志和`revision.txt`读回，再与官方commit/tree核对。
+
+| 证据 | 原实施目录 `.local/ci-full-20261024/` | 统筹独立目录 `.local/ci-full-review-20261024/` |
+|---|---|---|
+| quick | `attempt-2/CI-1-quick-final.json` | `quick-independent-acceptance.json` |
+| 最终full | `full-rerun/CI-2-full-final.json` | `full-independent-acceptance.json` |
+| 上游预警 | `upstream/CI-3-upstream-final.json` | `upstream-independent-acceptance.json` |
+
+原实施的`CI-1-failed-run-receipt.json`、`full/CI-2-full-first-run-final.json`及各原始日志/ZIP保留两次失败；统筹的`CI-1-fix-accepted.json`、`CI-2-fix-accepted.json`分别接受两项修复，不把失败改写为通过。
+
+最近独立读回的Nova默认分支仍为`ee532041276d217e1576de12fdb8c821550fe900`，尚未合入特性分支，不能宣称其定时预警已恢复；读回证据为统筹目录的`resume-remote-refs.json`。支持范围仍为`Django<6.2`；人工音频听辨继续跳过未验收，其他设备/读屏及生产边界不扩大。已停止的本地服务未启动，没有合并、发布或部署。
+
+实施交付时状态：CI-4第一批`CI_CD.md`已独立接受，回执为统筹目录的`CI-4-first-independent-acceptance.json`；本批其余四份文档作为线上验收后的记录交付，等待逐份独立复核，后续接受状态以统筹最新回执为准。新文档不是`ef58c7d`已跑CI的输入；本轮文档收尾未提交、推送、重复测试或触发新运行。当前会话继续统筹复核更合适。
