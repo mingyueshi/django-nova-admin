@@ -43,7 +43,8 @@ COMMAND_PALETTE_TOTAL = 25
 PRINT_TOTAL = 24
 MESSAGE_TOTAL = 26
 APPEARANCE_TOTAL = 24
-THEME_JS_TOTAL = 78 + COMMAND_PALETTE_TOTAL + APPEARANCE_TOTAL + ENHANCEMENT_TOTAL + PRINT_TOTAL + MESSAGE_TOTAL + 11
+CAPTCHA_TOTAL = 15
+THEME_JS_TOTAL = 78 + COMMAND_PALETTE_TOTAL + APPEARANCE_TOTAL + ENHANCEMENT_TOTAL + PRINT_TOTAL + MESSAGE_TOTAL + CAPTCHA_TOTAL
 
 def read(path):
     return json.loads(Path(path).read_text())
@@ -82,7 +83,7 @@ def check_node_summaries(logs):
             f'{PRINT_TOTAL} print DOM scenarios passed.',
             f'{MESSAGE_TOTAL} message DOM scenarios passed.',
         ]),
-        ('captcha', r'^TOTAL\b.*$', ['TOTAL 11 CAPTCHA enhancement tests passed']),
+        ('captcha', r'^TOTAL\b.*$', [f'TOTAL {CAPTCHA_TOTAL} CAPTCHA enhancement tests passed']),
     ]:
         content = (logs / (name + '.log')).read_text()
         if re.findall(pattern, content, re.M) != summaries or re.search(r'^(?:FAIL|FAILED|not ok)\b', content, re.M):

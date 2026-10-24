@@ -102,7 +102,7 @@ python demo/manage.py runserver 127.0.0.1:8000 --settings=config.captcha_setting
 ## 无障碍与部署边界
 
 - 可操作标签、错误关联、键盘刷新、状态播报已经实现；图片答案不放在alt/HTML/JavaScript中
-- 本交付**不承诺可用的音频验证码**：环境缺少 Flite/SoX，未安装、未验证生成/播放。保留的上游条件链接只是扩展点，不能作为可用的无障碍替代；项目必须自行验证工具、噪声处理、部署与播放，或保持不配置并提供真实的替代登录流程
+- 历史云环境缺少Flite/SoX，当时仅验证条件链接。2026-10-24已在独立本机容器中验收正常配置的真实音频生成、双站原生控件/键盘及无JS播放，原下载体验缺陷已修复；默认音频仍关闭，主机未安装工具。上游过期音频仍200、工具异常/缺少子进程超时及失败残留等边界未修复，人工听辨、真机/读屏、其他浏览器与线上CI未跑，不能作为生产或无障碍全通过；配置和完整范围见下方[Accessibility and audio](#accessibility-and-audio)
 - 项目仍需提供可用的无障碍认证或支持流程；帮助文字/链接本身不实现替代认证。图形和音频验证码都不能单独作为WCAG 2.2登录合规证明
 - PostgreSQL/MySQL、生产负载、读写路由、外层事务/回滚、限流、MFA/SSO及清理策略需项目单独验收。原有事务回滚可能恢复被删挑战；不要跨请求复用表单校验结果
 - 不公开测试库、动态令牌或提交端点。导出的真实样本只保留合成PNG和禁用表单
@@ -320,15 +320,70 @@ Provide and test a genuinely usable alternative authentication/support flow.
 The guidance does not itself implement such a flow. Image recognition can remain
 a barrier, and these features are **not a WCAG conformance claim**.
 
-Audio is **not a verified operational capability of this delivery**. Upstream audio links are shown only when the project configures
-`CAPTCHA_FLITE_PATH`. Upstream supports `CAPTCHA_SOX_PATH` to add randomized noise;
-its documentation explains why deterministic audio alone has weaknesses. The
-hosting environment must have the configured executables and resources. Flite
-and SoX were absent in this task's cloud environment; none was installed.
-Conditional audio-link rendering was tested, **audio generation/playback was
-not**. Leave audio unconfigured unless the project has tested the full upstream
-Flite/SoX pipeline and provides a usable alternative. No browser speech synthesis is used, and no secret answer is shipped to
-JavaScript or a screen-reader text alternative.
+The earlier cloud validation had no Flite/SoX and checked conditional audio-link
+markup only. On 2026-10-24, normal audio generation and native browser playback
+were independently verified in a separate local Linux ARM64 Docker environment:
+Python 3.12.15, Django 5.2.17, PostgreSQL 17.11, django-simple-captcha 0.7.0,
+Pillow 12.2.0, Flite 2.2-5 and SoX 14.4.2+git20190427-3.5. Tools were installed
+only in a temporary container layer; the host was not modified. That fixture is
+test infrastructure, not a distributed deployment example. Evidence and scope
+are indexed in the [diagnostic ledger](../DIAGNOSTIC_PROGRESS.md).
+
+Audio remains **disabled by default**, including in the Compose example.
+Projects that provision and verify the executables, Flite voice/libraries and
+SoX WAV support can explicitly configure paths such as:
+
+```python
+CAPTCHA_FLITE_PATH = '/usr/bin/flite'
+CAPTCHA_SOX_PATH = '/usr/bin/sox'
+CAPTCHA_TEST_MODE = False
+CAPTCHA_GET_FROM_POOL = False
+```
+
+Debian's `flite`, `sox` and `libsox-fmt-base` packages supplied the tested pipeline.
+SoX synthesizes brown noise during each request; no external noise file is
+required. Flite-only output was byte-identical across repeated requests in the
+tested case, so leaving SoX unconfigured is not the recommended configuration.
+
+When audio is configured, the widget renders a labelled native
+`<audio controls preload="none">` without autoplay and an explicit download
+fallback. Both admin sites were exercised in desktop Chromium with actual
+native controls, including keyboard Space and JavaScript disabled: playback
+advanced through `playing`/`timeupdate` to `ended`. The upstream attachment
+response remains unchanged; the player fetches it as media, while the fallback
+downloads it. No browser speech synthesis or plaintext answer injection is used.
+
+With JavaScript enabled, starting a refresh pauses the player, removes its old
+source and disables the old download link. A successful response exposes the
+new audio only after its replacement image is ready, with the new signed form
+key, image and audio synchronized. It does not resume playback automatically.
+Failure keeps the media cleared and login blocked, including a lost response
+after the server has consumed the old challenge. Without JavaScript, initial
+native playback and the download fallback work; reload for a fresh challenge.
+Listening does not consume a challenge. Form validation and CSRF-protected
+refresh do; a fresh audio request for the consumed key returns 410. Previously
+downloaded or buffered bytes cannot be revoked by deleting a database row.
+
+**Observed upstream boundaries remain unfixed.** Before production enablement,
+address and verify these paths in the project's own audio integration:
+
+- A challenge whose expiration is in the past but whose row still exists can
+  still return audio 200. Form validation rejects and consumes it; subsequent
+  audio requests return 410. Expired-but-stored and already-consumed are
+  different cases.
+- Upstream subprocess calls have no explicit timeout or `check=True`. Missing
+  executable paths and nonzero exits can raise errors or return unusable output;
+  they are not a verified graceful fallback.
+- Missing/failing SoX left one source WAV in the tested private temporary
+  directory before the probe cleaned its own files. Normal named-file cleanup
+  passed in the tested cases; failure/resource cleanup has not been hardened.
+
+This result covers local normal configuration and the playback UI fix, not
+production readiness or complete authentication accessibility. Human listening
+and intelligibility, physical devices, screen readers, other browsers and online
+CI were not exercised. The narrow 320/375px viewport checks do not replace T4
+device/assistive-technology acceptance or a WCAG assessment. Keep a usable
+project-owned alternative sign-in flow.
 
 ## Isolated demo and tests
 

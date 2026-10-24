@@ -64,7 +64,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':226,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':230,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -187,7 +187,7 @@ TOTAL 4 shared login CSS checks passed
         'frontend': FRONTEND_LOG,
         'navigation': '78 navigation DOM scenarios passed (3 Django script versions).\n25 command palette DOM scenarios passed.\n24 appearance DOM scenarios passed (3 Django script versions).\n',
         'enhancements': 'TOTAL 38 changelist enhancement tests passed\n24 print DOM scenarios passed.\n26 message DOM scenarios passed.\n',
-        'captcha': 'TOTAL 11 CAPTCHA enhancement tests passed\n',
+        'captcha': 'TOTAL 15 CAPTCHA enhancement tests passed\n',
     }
 
     def logs(self, root):
@@ -215,7 +215,7 @@ TOTAL 4 shared login CSS checks passed
             self.logs(root)
             result = self.collect(root)
             self.assertEqual(result['frontend'], 1298)
-            self.assertEqual(result['theme_js'], 226)
+            self.assertEqual(result['theme_js'], 230)
             self.assertEqual(len(result['frontend_suites']), 18)
             self.assertEqual(result['frontend_suites']['palettes'], 165)
             self.assertEqual(sum(result['frontend_suites'].values()), 1298)

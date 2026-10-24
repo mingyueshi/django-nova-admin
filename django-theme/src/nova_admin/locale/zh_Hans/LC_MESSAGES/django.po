@@ -163,6 +163,10 @@ msgid "Listen to verification audio"
 msgstr "收听验证码"
 
 msgctxt "Nova Admin"
+msgid "Download verification audio"
+msgstr "下载验证码音频"
+
+msgctxt "Nova Admin"
 msgid "New image"
 msgstr "换一张"
 

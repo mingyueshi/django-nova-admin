@@ -7,6 +7,7 @@
     const answer = root.querySelector('input[type="text"]');
     const image = root.querySelector('[data-captcha-image]');
     const audio = root.querySelector('[data-captcha-audio]');
+    const player = root.querySelector('[data-captcha-player]');
     const button = root.querySelector('[data-captcha-refresh]');
     const status = root.querySelector('[data-captcha-status]');
     if (!form || !token || !answer || !image || !button || !status) return;
@@ -22,6 +23,25 @@
     let blocked = false;
     let generation = 0;
     let controller = null;
+    function clearAudio() {
+      if (player) {
+        if (typeof player.pause === 'function') player.pause();
+        player.removeAttribute('src');
+        if (typeof player.load === 'function') player.load();
+        player.hidden = true;
+      }
+      if (audio) { audio.removeAttribute('href'); audio.hidden = true; }
+    }
+    function replaceAudio(url) {
+      if (player) {
+        player.hidden = !url;
+        if (url) {
+          player.src = url;
+          if (typeof player.load === 'function') player.load();
+        }
+      }
+      if (audio) { audio.hidden = !url; if (url) audio.href = url; }
+    }
     const submitters = Array.from(form.querySelectorAll('[type="submit"]'));
     const disabledBefore = submitters.map(function (item) { return item.disabled; });
     function lock(value) {
@@ -49,6 +69,7 @@
       if (busy) return; // Repeated keyboard/click activation issues one request.
       busy = true;
       blocked = true;
+      clearAudio();
       const current = ++generation;
       button.disabled = true;
       lock(true);
@@ -76,7 +97,6 @@
         // Old key is already consumed. Retain the replacement key even if its
         // image fails so a subsequent refresh can replace that challenge.
         token.value = next.key;
-        if (audio) { audio.hidden = !audioURL; if (audioURL) audio.href = audioURL; }
         await new Promise(function (resolve, reject) {
           const preload = new Image();
           const imageTimer = setTimeout(function () { reject(new Error('image timeout')); }, 15000);
@@ -86,11 +106,13 @@
         });
         if (current !== generation) return;
         image.src = imageURL;
+        replaceAudio(audioURL);
         blocked = false;
         announce(root.dataset.successMessage, 'ready');
         answer.focus();
       } catch (error) {
         if (current !== generation) return;
+        clearAudio();
         announce(root.dataset.errorMessage, 'error');
       } finally {
         clearTimeout(timer);
@@ -103,7 +125,7 @@
         }
       }
     });
-    window.addEventListener('pagehide', function () { generation += 1; if (controller) controller.abort(); });
+    window.addEventListener('pagehide', function () { generation += 1; if (controller) controller.abort(); clearAudio(); });
     window.addEventListener('pageshow', function (event) {
       // A restored one-use form may have been consumed while away.
       if (event.persisted) window.location.reload();

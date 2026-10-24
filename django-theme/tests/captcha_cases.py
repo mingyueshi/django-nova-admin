@@ -144,6 +144,7 @@ class CaptchaLoginTests(TestCase):
         self.assertNotIn(row.response, token.lower())
         self.assertNotIn(row.response, str(soup.select_one('[data-nova-captcha]')).lower())
         self.assertFalse(soup.select('[data-captcha-audio]'))
+        self.assertFalse(soup.select('[data-captcha-player]'))
         self.assertContains(response, settings.NOVA_ADMIN_CAPTCHA_HELP_TEXT)
         help_details = soup.select_one('details.nova-captcha-help')
         self.assertIsNotNone(help_details)
@@ -269,12 +270,28 @@ class CaptchaLoginTests(TestCase):
             authenticate.assert_not_called()
         self.assertNotIn("_auth_user_id", second.session)
 
-    def test_audio_link_only_when_project_configures_upstream_audio(self):
+    def test_native_audio_controls_and_download_only_when_project_configures_audio(self):
         with patch.object(captcha_settings, "CAPTCHA_FLITE_PATH", "/project-configured/flite"):
-            response, soup, _, _ = self.read_form()
-            self.assertTrue(soup.select_one('[data-captcha-audio]'))
-            # Link construction only: absent Flite/SoX are not run in this environment.
-            self.assertContains(response, "Listen to verification audio")
+            for mode in ("light", "native"):
+                session = self.client.session
+                session[SESSION_KEY] = mode
+                session.save()
+                for language, listen, download in (
+                    ("en", "Listen to verification audio", "Download verification audio"),
+                    ("zh-hans", "收听验证码", "下载验证码音频"),
+                ):
+                    with self.subTest(mode=mode, language=language), override_settings(LANGUAGE_CODE=language):
+                        _, soup, _, _ = self.read_form()
+                        player = soup.select_one('audio[data-captcha-player]')
+                        fallback = soup.select_one('a[data-captcha-audio]')
+                        self.assertTrue(player.has_attr("controls"))
+                        self.assertEqual(player["preload"], "none")
+                        self.assertFalse(player.has_attr("autoplay"))
+                        self.assertEqual(player["aria-label"], listen)
+                        self.assertEqual(player["src"], fallback["href"])
+                        self.assertEqual(fallback.get_text(strip=True), download)
+                        self.assertTrue(player["src"].startswith("/admin/_captcha/audio/"))
+            # Markup only; real generation and playback require separate runtime evidence.
 
 
 class CaptchaConcurrencyTests(TransactionTestCase):

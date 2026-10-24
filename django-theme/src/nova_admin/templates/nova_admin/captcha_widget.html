@@ -9,9 +9,10 @@
   </div>
   {% include "django/forms/widgets/multiwidget.html" %}
   <p class="nova-captcha-status" role="status" aria-live="polite" aria-atomic="true" data-captcha-status></p>
+  {% if audio %}<audio class="nova-captcha-player" controls preload="none" src="{{ audio }}" aria-label="{% translate 'Listen to verification audio' context "Nova Admin" %}" data-captcha-player></audio>{% endif %}
   <div class="nova-captcha-actions">
     <button type="button" class="nova-captcha-refresh" data-captcha-refresh hidden>{% translate 'New image' context "Nova Admin" %}</button>
-    {% if audio %}<a href="{{ audio }}" data-captcha-audio>{% translate 'Listen to verification audio' context "Nova Admin" %}</a>{% endif %}
+    {% if audio %}<a href="{{ audio }}" data-captcha-audio>{% translate 'Download verification audio' context "Nova Admin" %}</a>{% endif %}
     <details class="nova-captcha-help"><summary>{% translate 'Alternative sign-in help' context "Nova Admin" %}</summary><p>{{ nova_captcha_help }}{% if nova_captcha_support_url %} <a href="{{ nova_captcha_support_url }}">{% translate 'Alternative sign-in help' context "Nova Admin" %}</a>{% endif %}</p></details>
   </div>
   <noscript><p>{% translate 'Reload this page for a new image. Your sign-in still works without JavaScript.' context "Nova Admin" %}</p></noscript>

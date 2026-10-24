@@ -36,6 +36,7 @@ class NovaCatalogTests(SimpleTestCase):
         self.assertTrue(all(isinstance(key, str) and key.startswith("Nova Admin\x04") for key in messages))
         self.assertEqual(catalog.pgettext("Nova Admin", "Other apps"), "其他应用")
         self.assertEqual(catalog.pgettext("Nova Admin", "Navigation"), "导航菜单")
+        self.assertEqual(catalog.pgettext("Nova Admin", "Download verification audio"), "下载验证码音频")
         self.assertEqual(catalog.gettext("Other apps"), "Other apps")
         self.assertEqual(catalog.gettext("- Select an option -"), "- Select an option -")
 
