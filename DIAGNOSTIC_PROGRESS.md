@@ -13,8 +13,8 @@
 | 3.1 | R3b CI 前端摘要契约过期 | 本地验收通过 | 真实18套件/1274项及121项主题JS摘要通过；7类独立故障注入均拒绝；82项脚本回归通过 |
 | 4 | T1 当前平台证据 | 已更新 | R2/R1/R3b实际运行于macOS ARM64；不将其拆成两组平台或冒充完整矩阵 |
 | 4.1 | T2 容器/PostgreSQL | 2026-10-24 本地已独立验收并清理 | core/CAPTCHA真实构建、PG连接/迁移、双站业务、并发/回滚、完整启动器重复up及原卷down/up通过；历史首次300秒超时保留，收尾见本页末 |
-| 5 | T3 音频验证码 | T3-4/5/6 已依次完成本地独立验收 | 过期门、共享超时/503、显式资源清理与大小限制通过；T4/人工听辨/其他浏览器/线上完整矩阵/生产仍未验收 |
-| 6 | T4 设备及辅助技术 | 未验收 | 未做物理真机、屏幕阅读器或人工听辨；其他浏览器未测；F1–F6仍为候选需求 |
+| 5 | T3 音频验证码 | T3-4/5/6 已依次完成本地独立验收并提交53f13d9，未推送 | 过期门、共享超时/503、显式资源清理与大小限制通过；人工音频听辨/其他组合/线上完整矩阵/生产仍未验收 |
+| 6 | T4 设备及辅助技术 | 无CAPTCHA登录+导航最小范围已接受 | 用户操作并回报真实iPhone Safari/VoiceOver正常；统筹环境/Chromium证据另列；不等于全站WCAG或所有设备/功能完成 |
 
 ## 基线复核证据
 
@@ -234,3 +234,27 @@ Nova 自有可选生成器替代原始上游音频调用，保留写库取挑战
 统筹另行独立确认T3/T2均0容器0网络、4193/4189关闭、两项目原卷Name/CreatedAt保留、四份0600密钥哈希未变、原示例状态目录缺省；应用/测试仍等于T3-6冻结哈希，Playwright列表为空。独立收尾证据 `.local/t3-hardening-review-20261024/final-environment-independent.json`。原T3/T2卷、账号、密钥、全部输入快照与镜像保留，历史失败不重写。
 
 验收后文档差量共4份：`DIAGNOSTIC_REPORT.md`、`DIAGNOSTIC_PROGRESS.md`、`FEATURE_PROGRESS.md`、`django-theme/CAPTCHA_INTEGRATION.md`，独立已复核主报告；它们的最终哈希单列，不宣称更新后的文档与旧227输入完全相同。收尾回执 `.local/t3-hardening-20261024/T3-hardening-final.json`，文档差量 `.local/t3-hardening-20261024/cleanup/post-acceptance-document-delta.json`。本轮实施结束并停止写入；当前会话继续统筹更合适，后续任务须另行授权。
+
+## 2026-10-24 T4：无CAPTCHA登录与导航最小范围接受
+
+T3已由统筹提交为`53f13d905d433aa75ebfa5a14bcbdc1efd125139`（Harden CAPTCHA audio expiry, timeouts, and cleanup），未推送。T4从此干净基线及`codex/t4-accessibility-validation`分支开展，只创建本地ignored的`.local/t4-20261024/`临时fixture，未改应用/测试/资源；本轮已跟踪差量仅本页、诊断主报告和功能进度三份验收文档。
+
+### 环境与证据来源
+
+复用固定镜像`sha256:3101e80d3ce8374a64d9531c308ff47fa2d3ae73d7c5315ad3f22e23ec1cf5bc`，其63个已安装资源与当前`53f13d9`源码比对通过；旧镜像构建来源为T3候选，不能将本轮新文档冒充它的全部输入。独立项目`nova-t4-a11y-20261024`使用新PG17.11库/role`nova_a11y_t4`、新卷及0700状态目录和0600两密钥/凭据，3个独立只读staff，无超级用户和数据变更权限；未复用T2/T3卷或秘密。DEBUG=False、CAPTCHA关闭、TEST_MODE/POOL=False，4195只发布到127.0.0.1和指定LAN地址，PG无宿主端口，Host/CSRF保护保留。
+
+实施单次config和up通过，up为11.397秒exit0；34项Mac宿主HTTP检查通过，包括双地址登录/静态/只读导航、Host400、缺失及跨站CSRF403。统筹独立验证环境、63资源、权限与隔离，并用桌面Chromium完成430px错误/正确登录、移动导航展开/Escape关闭与焦点返回、筛选跳转和截图检查。环境证据 `.local/t4-review-20261024/environment-verification.json`，浏览器证据同目录；不能把桌面自动化、AX/ARIA、模拟视口或HTTP检查替代真实手机/读屏。
+
+### 用户在真实设备逐项操作后的回报
+
+设备型号iPhone 12 Pro Max及系统27.0.1均为用户自报，同一局域网由用户确认，手机Safari具体build未读取。用户在真实Safari逐项回报：页面正常；错误提示、正确登录和软键盘遮挡检查正常；导航展开/收起、筛选商品跳转、横竖屏正常。用户实际开启VoiceOver后回报：导航名称和展开状态朗读、菜单操作、商品链接跳转正常；保持VoiceOver可完成输入和登录，错误密码提示自动朗读。记录 `.local/t4-review-20261024/verification.json`；来源明确为用户操作和反馈，实施及统筹未直接操作iPhone，也不声称亲耳观察朗读。
+
+统筹已接受上述无CAPTCHA core登录+导航的最小范围。历史未验收/失败段落仍保留为各时点记录；本结论不覆盖全站WCAG、所有功能或设备。人工音频听辨、可选验证码真机流程、其他设备/浏览器/读屏组合、线上CI、完整Python/wheel/可选依赖矩阵及生产仍未验收。本轮只完成授权的T4收尾，不继续扩展功能或其他验收，不提交、推送或部署。
+
+### T4单次收尾与保留资源
+
+对唯一项目`nova-t4-a11y-20261024`及其`.local/t4-20261024/compose.t4.yml`执行一次`down --timeout 30`，总上限120秒，无`-v`、无重试；30.847秒exit0，未触及总超时，不据此声称已证明优雅退出。实施只读读回：T4容器和网络均空，`127.0.0.1:4195`、`192.168.31.14:4195`均关闭；原T4卷Name/CreatedAt/Driver/Labels与统筹停机前基线一致，三份state文件SHA256及0600权限一致，state目录仍0700，fixture/Compose文件和固定镜像保留。三个只读staff账号的停机前数据库基线由统筹保存；停机后未重启数据库作复查。未操作T2/T3及其他服务，未修改网络、防火墙或全局设置，实施未启动浏览器或VoiceOver、未操作手机。
+
+停机前独立基线 `.local/t4-review-20261024/pre-teardown.json`，执行回执 `.local/t4-20261024/final-down.json`，实施收尾读回 `.local/t4-20261024/closure-readback.json`。统筹随后独立收尾复核通过，证据 `.local/t4-review-20261024/teardown-independent.json`：T4容器/网络和两个4195绑定均关闭，卷身份/三状态文件哈希及0600权限/fixture/固定镜像保留，63源码资源不变；T2/T3继续停止、原卷密钥不变，原`examples/compose/.local`不存在。统筹已正常退出review账号并关闭自有浏览器。
+
+三份文档最终SHA256、相对`53f13d9`的文档差量和最终状态单列于`.local/t4-20261024/T4-final-receipt.json`；不把新文档冒充旧镜像输入。应用/测试/63份资源和本地fixture未改，历史证据保留；当前会话只继续统筹最后的文档核对，本实施会话完成并停止写入。
