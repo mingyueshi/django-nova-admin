@@ -119,7 +119,7 @@ def sdist_files(source):
     for name in ('pyproject.toml', 'MANIFEST.in', 'LICENSE', 'requirements-test.txt'):
         files[name] = (base / name).read_bytes()
     suffixes = {'demo': {'.py', '.html', '.css', '.webp', '.svg', '.json', '.po', '.mo', '.txt'},
-                'tests': {'.py'}, 'scripts': {'.py', '.sh', '.mjs', '.json'}}
+                'tests': {'.py', '.json'}, 'scripts': {'.py', '.sh', '.mjs', '.json'}}
     for folder, allowed in suffixes.items():
         for path in sorted((base / folder).rglob('*')):
             relative = path.relative_to(base)

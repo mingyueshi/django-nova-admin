@@ -494,6 +494,41 @@ class SdistTests(unittest.TestCase):
             files = self.fixture(root)
             self.assertEqual(artifacts.sdist_check(self.write(root, files), root)['source_files'], 7)
 
+    def json_fixture(self, root):
+        files = self.fixture(root)
+        name = 'tests/fixtures/brand-names.json'
+        content = b'{"name": "Nova"}\n'
+        path = root / 'django-theme' / name
+        path.parent.mkdir(parents=True)
+        path.write_bytes(content)
+        files[name] = content
+        return files
+
+    def test_test_json_fixture_is_source_bound(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = self.json_fixture(root)
+            self.assertEqual(artifacts.sdist_check(self.write(root, files), root)['source_files'], 8)
+
+    def test_missing_or_changed_test_json_fixture_refused(self):
+        for change in ('missing', 'changed'):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                files = self.json_fixture(root)
+                name = 'tests/fixtures/brand-names.json'
+                if change == 'missing': files.pop(name)
+                else: files[name] = b'{"name": "tampered"}\n'
+                with self.assertRaisesRegex(ValueError, 'source/documentation'):
+                    artifacts.sdist_check(self.write(root, files), root)
+
+    def test_unexpected_test_json_fixture_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = self.json_fixture(root)
+            files['tests/fixtures/unexpected.json'] = b'{}'
+            with self.assertRaisesRegex(ValueError, 'generated sdist content'):
+                artifacts.sdist_check(self.write(root, files), root)
+
     def test_missing_or_changed_document_refused(self):
         for change in ('missing', 'changed'):
             with self.subTest(change=change), tempfile.TemporaryDirectory() as tmp:
