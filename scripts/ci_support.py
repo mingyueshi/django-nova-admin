@@ -35,16 +35,18 @@ FRONTEND_SUMMARIES = {
     'chart-libraries': 'TOTAL 77 chart library checks passed',
     'analysis-lab': 'TOTAL 63 analysis lab checks passed',
     'shared-css': 'TOTAL 4 shared login CSS checks passed',
+    'navigation': 'TOTAL 24 preview navigation scenarios passed',
 }
 FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_SUMMARIES.items()}
 FRONTEND_TOTAL = sum(FRONTEND_COUNTS.values())
+NAVIGATION_TOTAL = 108
 ENHANCEMENT_TOTAL = 38
 COMMAND_PALETTE_TOTAL = 25
 PRINT_TOTAL = 24
 MESSAGE_TOTAL = 26
 APPEARANCE_TOTAL = 24
 CAPTCHA_TOTAL = 15
-THEME_JS_TOTAL = 78 + COMMAND_PALETTE_TOTAL + APPEARANCE_TOTAL + ENHANCEMENT_TOTAL + PRINT_TOTAL + MESSAGE_TOTAL + CAPTCHA_TOTAL
+THEME_JS_TOTAL = NAVIGATION_TOTAL + COMMAND_PALETTE_TOTAL + APPEARANCE_TOTAL + ENHANCEMENT_TOTAL + PRINT_TOTAL + MESSAGE_TOTAL + CAPTCHA_TOTAL
 
 def read(path):
     return json.loads(Path(path).read_text())
@@ -74,7 +76,7 @@ def check_node_summaries(logs):
     for name, pattern, summaries in [
         ('frontend', r'^TOTAL\b.*$', list(FRONTEND_SUMMARIES.values())),
         ('navigation', r'^\d+ (?:navigation|command palette|appearance) DOM scenarios .+$', [
-            '78 navigation DOM scenarios passed (3 Django script versions).',
+            f'{NAVIGATION_TOTAL} navigation DOM scenarios passed (3 Django script versions).',
             f'{COMMAND_PALETTE_TOTAL} command palette DOM scenarios passed.',
             f'{APPEARANCE_TOTAL} appearance DOM scenarios passed (3 Django script versions).',
         ]),

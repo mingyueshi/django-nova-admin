@@ -23,6 +23,38 @@ models retain configuration order, with at most 50 configured entries. The
 original application/model navigation remains available. Unlinked labels stay
 unlinked. Original native add URLs and permissions are preserved.
 
+## Explicit disclosure preferences
+
+Groups and applications start collapsed, including on a deep link to the current
+model. Only activating a summary records an open/closed choice. Routes, theme
+changes and current-page highlighting do not open groups automatically. Search
+expands matching ancestors temporarily; clearing it restores the manual choices.
+The static preview follows the same explicit-choice rule.
+
+Optional group keys keep choices stable across label, ordering and permission
+changes:
+
+```python
+NOVA_ADMIN_NAV_GROUPS = [
+    {"key": "business", "label": "业务管理", "apps": ["catalog"]},
+    {"key": "system", "label": "系统管理", "apps": ["auth"]},
+]
+```
+
+Keys contain 1–100 ASCII letters, digits, `_`, `.`, `:`, or `-`, beginning with a
+letter or digit. Duplicate keys are rejected before permission filtering; invalid
+or duplicate keys fall back to the visible application membership fingerprint.
+Only permission-filtered server links are rendered.
+
+Manual disclosure uses `nova.admin.navigation.v2.<opaque-scope>`; v1 mixed manual
+and automatic expansion, so it is preserved but not migrated. The tab-local
+search retains its v1 session key and schema. Back/Forward cache restoration and
+other-tab storage updates synchronize disclosures without replacing forms or
+writing search expansion as a preference. Failed writes retain current-page
+choices. If the initial read fails, navigation, favorites and search stay
+memory-only until a fresh load can read storage; unknown saved values are never
+overwritten even if writing is allowed.
+
 ## Browser-local favorites
 
 Each permitted model list gets a keyboard-accessible star button with

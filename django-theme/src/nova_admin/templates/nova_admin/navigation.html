@@ -24,7 +24,7 @@
   {% endif %}
   {% for group in navigation.groups %}
     {% if group.label %}
-      <details open class="nova-nav-section">
+      <details class="nova-nav-section"{% if group.key %} data-nova-nav-section="{{ group.key }}"{% endif %}>
         <summary class="nova-nav-section-title"><span>{{ group.label }}</span></summary>
         <div class="nova-nav-section-apps">
     {% endif %}

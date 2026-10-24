@@ -212,6 +212,35 @@ class NavigationGroupTagTests(SimpleTestCase):
             result = self.groups([self.catalog])
         self.assertEqual(result, [{"label": "业务管理", "apps": [self.catalog]}])
 
+    def test_explicit_keys_remain_stable_across_translation_order_and_permissions(self):
+        for label, members, visible in [
+            ("Business", ["catalog", "auth"], [self.catalog, self.auth]),
+            ("业务", ["auth", "catalog"], [self.catalog]),
+        ]:
+            with override_settings(NOVA_ADMIN_NAV_GROUPS=[{"key": "business", "label": label, "apps": members}]):
+                self.assertEqual(self.groups(visible)[0]["key"], "business")
+
+    def test_invalid_and_duplicate_keys_fall_back_without_affecting_allowed_apps(self):
+        for key in [None, {}, 42, "", "x" * 101, '<script>', 'quote"', "space key"]:
+            with override_settings(NOVA_ADMIN_NAV_GROUPS=[{"key": key, "label": "Business", "apps": ["catalog"]}]):
+                self.assertNotIn("key", self.groups()[0])
+        with override_settings(NOVA_ADMIN_NAV_GROUPS=[
+            {"key": "same", "label": "Business", "apps": ["catalog"]},
+            {"key": "same", "label": "System", "apps": ["auth"]},
+        ]):
+            groups = self.groups()
+        self.assertNotIn("key", groups[0])
+        self.assertNotIn("key", groups[1])
+        self.assertEqual(grouped_apps(groups), [self.catalog, self.auth, self.audit])
+
+    @override_settings(NOVA_ADMIN_NAV_GROUPS=[
+        {"key": "duplicate", "label": "Business", "apps": ["catalog"]},
+        {"key": "duplicate", "label": "System", "apps": ["auth"]},
+    ])
+    def test_duplicate_key_never_moves_between_groups_when_permissions_change(self):
+        for visible in [[self.auth], [self.catalog], [self.catalog, self.auth]]:
+            self.assertTrue(all("key" not in group for group in self.groups(visible)))
+
 
 @override_settings(
     NOVA_ADMIN_ENABLED=True,

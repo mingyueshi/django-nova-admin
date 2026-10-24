@@ -1,5 +1,5 @@
 {% load i18n %}
-<details open data-nova-nav-app="{{ app.app_label }}" class="nova-nav-group app-{{ app.app_label }}{% if app.app_url in request.path|urlencode %} current-app{% endif %}">
+<details data-nova-nav-app="{{ app.app_label }}" class="nova-nav-group app-{{ app.app_label }}{% if app.app_url in request.path|urlencode %} current-app{% endif %}">
   <summary><span>{% include "nova_admin/navigation_icon.html" with icon_path=app.nova_icon_path icon_name=app.nova_icon_name %}{{ app.name }}</span><span class="nova-nav-count" aria-hidden="true">{{ app.models|length }}</span></summary>
   <table>
     <caption class="visually-hidden">{{ app.name }}</caption>

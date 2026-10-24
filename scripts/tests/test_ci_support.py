@@ -64,7 +64,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':230,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':260,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -131,9 +131,9 @@ class MatrixTests(unittest.TestCase):
 class FrontendContractTests(unittest.TestCase):
     def test_checkout_npm_test_sequence_matches_the_registered_contract(self):
         names = support.frontend_contract()
-        self.assertEqual(len(names), 18)
-        self.assertEqual(names[-5:], ['icons', 'analytics', 'chart-libraries', 'analysis-lab', 'shared-css'])
-        self.assertEqual(support.FRONTEND_TOTAL, 1298)
+        self.assertEqual(len(names), 19)
+        self.assertEqual(names[-6:], ['icons', 'analytics', 'chart-libraries', 'analysis-lab', 'shared-css', 'navigation'])
+        self.assertEqual(support.FRONTEND_TOTAL, 1322)
 
     def altered_package(self, mutation):
         with tempfile.TemporaryDirectory() as tmp:
@@ -182,10 +182,11 @@ TOTAL 64 analytics checks passed
 TOTAL 77 chart library checks passed
 TOTAL 63 analysis lab checks passed
 TOTAL 4 shared login CSS checks passed
+TOTAL 24 preview navigation scenarios passed
 """
     GROUP_LOGS = {
         'frontend': FRONTEND_LOG,
-        'navigation': '78 navigation DOM scenarios passed (3 Django script versions).\n25 command palette DOM scenarios passed.\n24 appearance DOM scenarios passed (3 Django script versions).\n',
+        'navigation': '108 navigation DOM scenarios passed (3 Django script versions).\n25 command palette DOM scenarios passed.\n24 appearance DOM scenarios passed (3 Django script versions).\n',
         'enhancements': 'TOTAL 38 changelist enhancement tests passed\n24 print DOM scenarios passed.\n26 message DOM scenarios passed.\n',
         'captcha': 'TOTAL 15 CAPTCHA enhancement tests passed\n',
     }
@@ -209,16 +210,16 @@ TOTAL 4 shared login CSS checks passed
     def collect(self, root):
         return support.collect_node(root / 'logs', root / 'output', COMMIT, '24.21.0', '11.19.0')
 
-    def test_current_log_fixture_records_all_1298_checks_in_eighteen_suites(self):
+    def test_current_log_fixture_records_all_1322_checks_in_nineteen_suites(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.logs(root)
             result = self.collect(root)
-            self.assertEqual(result['frontend'], 1298)
-            self.assertEqual(result['theme_js'], 230)
-            self.assertEqual(len(result['frontend_suites']), 18)
+            self.assertEqual(result['frontend'], 1322)
+            self.assertEqual(result['theme_js'], 260)
+            self.assertEqual(len(result['frontend_suites']), 19)
             self.assertEqual(result['frontend_suites']['palettes'], 165)
-            self.assertEqual(sum(result['frontend_suites'].values()), 1298)
+            self.assertEqual(sum(result['frontend_suites'].values()), 1322)
             self.assertEqual(json.loads((root / 'output/report.json').read_text()), result)
 
     def test_every_frontend_suite_requires_exactly_one_success_summary(self):
@@ -236,7 +237,7 @@ TOTAL 4 shared login CSS checks passed
                     self.assertFalse((root / 'output').exists())
 
     def test_same_total_cannot_hide_an_absent_suite(self):
-        # Omit the 165 palette checks but add those 165 to pagination: still 1298.
+        # Omit the 165 palette checks but add those 165 to pagination: still 1322.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             logs = self.logs(root)
@@ -307,6 +308,16 @@ TOTAL 4 shared login CSS checks passed
                         with self.assertRaisesRegex(ValueError, 'Node test evidence: ' + group):
                             self.collect(root)
 
+    def test_pre_navigation_merge_summaries_are_rejected(self):
+        for group, old in [('frontend', self.FRONTEND_LOG.replace('TOTAL 24 preview navigation scenarios passed\n', '')),
+                           ('navigation', self.GROUP_LOGS['navigation'].replace('108 navigation', '78 navigation'))]:
+            with self.subTest(group=group), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                logs = self.logs(root)
+                (logs / (group + '.log')).write_text(old)
+                with self.assertRaisesRegex(ValueError, 'Node test evidence: ' + group):
+                    self.collect(root)
+
     def test_stale_enhancement_count_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -357,7 +368,7 @@ TOTAL 4 shared login CSS checks passed
                 (logs / name).unlink()
             result = support.check_node_summaries(logs)
             self.assertEqual(result['kind'], 'node-suite-contract')
-            self.assertEqual(result['frontend'], 1298)
+            self.assertEqual(result['frontend'], 1322)
             self.assertIn('no install, runtime, step', result['boundary'])
             self.assertNotIn('commit', result)
             self.assertNotIn('node', result)
@@ -367,7 +378,7 @@ TOTAL 4 shared login CSS checks passed
                 support.verify_reports(root, 'quick', COMMIT, WHEEL_SHA)
 
     def test_gate_rejects_stale_or_incomplete_frontend_counts(self):
-        changes = [lambda x: x.update(theme_js=97), lambda x: x.update(theme_js=121), lambda x: x.update(frontend=540), lambda x: x.update(frontend=590),
+        changes = [lambda x: x.update(theme_js=230), lambda x: x.update(frontend=1298), lambda x: x.update(theme_js=97), lambda x: x.update(theme_js=121), lambda x: x.update(frontend=540), lambda x: x.update(frontend=590),
                    lambda x: x.update(frontend=606), lambda x: x.update(frontend=622), lambda x: x.update(frontend=1270),
                    lambda x: x.pop('frontend_suites'),
                    lambda x: x['frontend_suites'].pop('palettes'),
