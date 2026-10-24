@@ -81,7 +81,7 @@ docker buildx imagetools inspect postgres:17.11-bookworm
 
 ## 验证记录与未验证范围
 
-本轮执行环境没有 `docker` 可执行文件，**没有执行镜像构建、docker compose config、容器启动、PostgreSQL 迁移或 PostgreSQL 验证码并发测试**；没有为此安装 Docker。不能把 SQLite 测试当 PostgreSQL 通过。
+2026-10-03 的首次验证环境没有 `docker` 可执行文件，当时**没有执行镜像构建、docker compose config、容器启动、PostgreSQL 迁移或 PostgreSQL 验证码并发测试**，也没有为此安装 Docker。以下保留当时的结果；SQLite 检查不代替 PostgreSQL 验收。
 
 已验证（2026-10-03）：
 
@@ -98,6 +98,32 @@ python3 examples/compose/verify.py             # 需要 Django 与源码
 python3 examples/compose/verify.py --captcha   # 另需主题 captcha extra
 ```
 
-有 Docker 的维护者还应完成真实验收：core 和 CAPTCHA 两种构建分别 `up`，检查迁移、两站登录/权限/关联字段/表单保存、真实图片刷新与 CSRF；重复启动确认已有编辑保留；`down` 后重启确认卷持久化；检查宿主端口只监听 127.0.0.1；另做 PostgreSQL 并发消费/事务回滚验证。只有完成后才能报告容器和 PostgreSQL 已通过。
+### 2026-10-24 本机容器验收
+
+本次运行验收绑定源码 `243effb0569591f2732831a0650cac99c9f8e704` 及其 222 份隔离输入，随后仅补充本文记录。环境为 macOS ARM64 宿主上的 Docker Desktop **Linux ARM64 容器**，web 只绑定 `127.0.0.1:4189`，PostgreSQL 没有宿主端口映射。逐项独立复核与脱敏回执索引见[统筹验收台账](../../DIAGNOSTIC_PROGRESS.md)。
+
+| 组件 | 实际验证版本 |
+| --- | --- |
+| Docker Engine / Compose | 29.9.2 / 5.6.1 |
+| 宿主启动器 Python | 3.12.14 |
+| 容器 Python | 3.12.15（`3.12.15-slim-bookworm`） |
+| Django | 5.2.17 |
+| PostgreSQL | 17.11（`17.11-bookworm`，Debian 17.11-1.pgdg12+2） |
+| psycopg binary | 3.3.6 |
+| django-simple-captcha / Pillow | 0.7.0 / 12.2.0 |
+
+早期“未拉取镜像”的描述属于 2026-10-03 记录。本次已实际构建镜像；Python 基础镜像沿用 `sha256:6a0e06f5ba0b373d051aabd3fffb9b873f27f9a2a3a14bcbe37dee6f0e3bbc70`，PostgreSQL 沿用 `sha256:858bb5e98eed02eb8cafbcdc007f9a65d1b613972028944a8ec2133ccaf80d27`。这些版本与摘要限定本次环境，未形成完整传递依赖锁定。
+
+本机已验收：
+
+- core 与 CAPTCHA 两种镜像分别完成构建、`pip check`、Compose 配置校验及健康启动；实际 PostgreSQL 认证连接、迁移与合成种子读回通过，无待迁移。
+- `/admin/`、`/warehouse/` 均完成真实桌面浏览器登录和退出、只读 staff 权限拒绝、分类自动补全、标签多选、规格 inline 与表单保存；Nova 与 Django 原生外观均有实际工作流。有效 CSRF 可以保存，缺失 CSRF 被拒绝；两站主题表单的跨站 `next` 均回到请求站点。
+- CAPTCHA extra 实际安装并迁移；两站图片生成与 UI 刷新、刷新 POST/CSRF 校验、旧挑战拒绝、错误答案不登录及正确答案登录通过。`CAPTCHA_TEST_MODE=False`、`CAPTCHA_GET_FROM_POOL=False`，使用真实合成挑战，答案和密码未输出到回执。
+- 真实 PostgreSQL 的两条独立连接同时读到同一挑战后，仅一方成功提交消费；外层事务回滚恢复挑战，随后提交消费后重放被拒绝。真实行锁超时异常向调用方传播，认证入口与后端均未被调用；正向对照实际调用认证后端并通过。仅处理本阶段新建挑战，没有清空验证码表。
+- 原始完整 `demo.py up` 重复启动，以及 `down` 后从同一保留卷 `up` 均通过。两件已编辑商品的字段、关系和规格、4 个合成账号的原密码及权限保持一致，种子未覆盖哨兵；原卷、密钥与 options 保留。最终收尾只移除本项目容器和网络、关闭 4189，未操作无关资源。
+
+2026-10-23 首次一体启动达到 300.009 秒外层超时，该总预算包含镜像下载、构建和启动；日志停在 web Starting，事后 web 仍为 Created。随后将构建和启动分开计时，完成上述运行闭环。分步成功没有确定首次启动未完成的底层原因，也没有证明应用或 Docker 存在故障；历史超时及核对脚本失败回执保留，最终结果以逐项独立复核为准。未修改运行代码或放宽启动器默认健康等待超时。
+
+本次范围为上述版本和本机容器环境。T3 音频生成/播放、T4 物理真机与屏幕阅读器、完整 CI、完整 Python/wheel/可选依赖矩阵及生产部署/安全验收均未覆盖；本次没有运行新的完整矩阵。更换宿主、镜像或依赖、数据库及认证配置后，需要在目标环境重新验收。
 
 本例使用 `DEBUG=True`、Django development server、HTTP 和 PostgreSQL 初始化管理员角色，没有生产 TLS、最小数据库角色、备份/恢复、限流、MFA/SSO、审计、验证码清理调度、可访问替代认证或生产 CSP 配置。它不承诺公开托管、全浏览器/无障碍认证或生产安全审计；生产项目应采用自己的已审核部署与认证流程。
