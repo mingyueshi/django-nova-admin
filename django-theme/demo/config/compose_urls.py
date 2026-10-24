@@ -19,14 +19,14 @@ urlpatterns = [path("_health/", health)]
 if settings.NOVA_EXAMPLE_CAPTCHA:
     from nova_admin.captcha import CaptchaAdminAuthenticationForm, captcha_refresh
 
-    # Both existing instances receive the explicit opt-in. One shared upstream
+    # Both existing instances receive the explicit opt-in. One shared protected
     # CAPTCHA mount avoids global image/audio URL-name collisions.
     for site in (admin.site, warehouse_site):
         site.login_form = CaptchaAdminAuthenticationForm
         site.login_template = "nova_admin/captcha_login.html"
     urlpatterns += [
         path("_captcha/refresh/", captcha_refresh, name="nova-captcha-refresh"),
-        path("_captcha/", include("captcha.urls")),
+        path("_captcha/", include("nova_admin.captcha_urls")),
     ]
 
 urlpatterns += [

@@ -14,7 +14,7 @@ from django.core import signing
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import router
 from django.forms import MultiValueField
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare
@@ -22,8 +22,10 @@ from django.utils.translation import pgettext_lazy
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
+from ranged_response import RangedFileResponse
 
 from .captcha_policy import CaptchaPolicyMixin
+from .captcha_audio import AudioChallengeUnavailable, AudioGenerationError, generate_audio as _generate_audio
 
 
 _TOKEN_SALT = "nova_admin.login-captcha.v1"
@@ -133,6 +135,52 @@ class SingleUseCaptchaField(CaptchaField):
 
 class CaptchaAdminAuthenticationForm(CaptchaPolicyMixin, AdminAuthenticationForm):
     captcha = SingleUseCaptchaField()
+
+
+def _audio_available(key, alias):
+    return CaptchaStore.objects.using(alias).filter(
+        hashkey=key, expiration__gt=timezone.now(),
+    ).exists()
+
+
+def _discard_audio(response):
+    try:
+        response.close()
+    finally:
+        # ranged-response 0.2.0's iterator does not forward close() to its
+        # file. A rejected response is never streamed, so release it here.
+        if isinstance(response, RangedFileResponse):
+            response.ranged_file.f.close()
+
+
+@never_cache
+def captcha_audio(request, key):
+    """Keep upstream audio/Range output only while its write-DB row is live.
+
+    Listening never claims a challenge. Validation or refresh can consume it
+    during generation, so recheck before handing the generated response out.
+    """
+    if not captcha_settings.CAPTCHA_FLITE_PATH:
+        return HttpResponse(status=404)
+    if not isinstance(key, str) or not _KEY_RE.fullmatch(key):
+        return HttpResponse(status=410)
+    alias = router.db_for_write(CaptchaStore)
+    if not _audio_available(key, alias):
+        return HttpResponse(status=410)
+    try:
+        response = _generate_audio(request, key, alias)
+    except AudioChallengeUnavailable:
+        return HttpResponse(status=410)
+    except AudioGenerationError:
+        return HttpResponse(status=503)
+    try:
+        if _audio_available(key, alias):
+            return response
+    except BaseException:
+        _discard_audio(response)
+        raise
+    _discard_audio(response)
+    return HttpResponse(status=410)
 
 
 @never_cache

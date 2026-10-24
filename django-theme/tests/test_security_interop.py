@@ -13,7 +13,9 @@ if not (apps.is_installed("axes") and apps.is_installed("captcha")):
             pass
 else:
     from datetime import timedelta
+    from inspect import unwrap
 
+    from captcha.conf import settings as captcha_settings
     from axes.models import AccessAttempt
     from bs4 import BeautifulSoup
     from captcha.models import CaptchaStore
@@ -23,11 +25,11 @@ else:
     from django.contrib.auth.models import Permission
     from django.db.models import Sum
     from django.test import Client, RequestFactory, TestCase, override_settings
-    from django.urls import resolve, reverse
+    from django.urls import NoReverseMatch, URLResolver, get_resolver, resolve, reverse
     from django.utils import timezone
 
     from nova_admin.axes import AxesCaptchaAdminAuthenticationForm
-    from nova_admin.captcha import _read_key, _sign_key
+    from nova_admin.captcha import captcha_audio, _read_key, _sign_key
 
 
     @override_settings(LANGUAGE_CODE="en")
@@ -192,7 +194,34 @@ else:
             count = CaptchaStore.objects.count()
             self.assertEqual(self.client.post(refresh, {"key": "unused"}).status_code, 429)
             self.assertEqual(self.client.get(reverse("captcha-image", kwargs={"key": key})).status_code, 429)
+            with patch("nova_admin.captcha._generate_audio") as generate:
+                self.assertEqual(self.client.get(reverse("captcha-audio", kwargs={"key": key})).status_code, 429)
+                generate.assert_not_called()
             self.assertEqual(CaptchaStore.objects.count(), count)
+
+        def test_audio_mount_has_one_guarded_axes_wrapped_route(self):
+            url = reverse("captcha-audio", kwargs={"key": "a" * 40})
+            callback = resolve(url).func
+            self.assertIsNot(callback, captcha_audio)
+            self.assertIs(unwrap(callback), unwrap(captcha_audio))
+            callbacks = []
+
+            def visit(patterns):
+                for pattern in patterns:
+                    if isinstance(pattern, URLResolver):
+                        visit(pattern.url_patterns)
+                    elif pattern.name == "captcha-audio":
+                        callbacks.append(pattern.callback)
+
+            visit(get_resolver().url_patterns)
+            self.assertEqual(callbacks, [callback])
+            with self.assertRaises(NoReverseMatch):
+                reverse("captcha-refresh")
+            with patch.object(captcha_settings, "CAPTCHA_FLITE_PATH", "/synthetic/flite"), patch("nova_admin.captcha._generate_audio") as generate:
+                response = self.client.get(url)
+            self.assertEqual(response.status_code, 410)
+            self.assertIn("no-store", response["Cache-Control"])
+            generate.assert_not_called()
 
         def test_audit_admin_uses_native_model_permissions(self):
             log_url = reverse("admin:axes_accessattempt_changelist")

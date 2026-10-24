@@ -102,7 +102,7 @@ python demo/manage.py runserver 127.0.0.1:8000 --settings=config.captcha_setting
 ## 无障碍与部署边界
 
 - 可操作标签、错误关联、键盘刷新、状态播报已经实现；图片答案不放在alt/HTML/JavaScript中
-- 历史云环境缺少Flite/SoX，当时仅验证条件链接。2026-10-24已在独立本机容器中验收正常配置的真实音频生成、双站原生控件/键盘及无JS播放，原下载体验缺陷已修复；默认音频仍关闭，主机未安装工具。上游过期音频仍200、工具异常/缺少子进程超时及失败残留等边界未修复，人工听辨、真机/读屏、其他浏览器与线上CI未跑，不能作为生产或无障碍全通过；配置和完整范围见下方[Accessibility and audio](#accessibility-and-audio)
+- 历史云环境缺少Flite/SoX，当时仅验证条件链接。2026-10-24已在独立本机容器中验收真实音频生成、双站原生/键盘/无JS播放，并依次独立验收T3-4过期保护、T3-5共享超时/稳定503、T3-6资源清理/大小限制；默认音频仍关闭，主机未安装工具。应使用 `nova_admin.captcha_urls`，原来直接挂载 `captcha.urls` 的项目需显式迁移。人工听辨、真机/读屏、其他浏览器、线上CI、完整安装矩阵及生产未验收；直接子进程、OS拒删等真实边界保留。配置和完整范围见下方[Accessibility and audio](#accessibility-and-audio)
 - 项目仍需提供可用的无障碍认证或支持流程；帮助文字/链接本身不实现替代认证。图形和音频验证码都不能单独作为WCAG 2.2登录合规证明
 - PostgreSQL/MySQL、生产负载、读写路由、外层事务/回滚、限流、MFA/SSO及清理策略需项目单独验收。原有事务回滚可能恢复被删挑战；不要跨请求复用表单校验结果
 - 不公开测试库、动态令牌或提交端点。导出的真实样本只保留合成PNG和禁用表单
@@ -209,7 +209,7 @@ admin.site.login_template = 'nova_admin/captcha_login.html'
 
 urlpatterns = [
     path('admin/_captcha/refresh/', captcha_refresh, name='nova-captcha-refresh'),
-    path('admin/_captcha/', include('captcha.urls')),
+    path('admin/_captcha/', include('nova_admin.captcha_urls')),
     # Your existing Nova preference route, if enabled, goes here.
     path('admin/', admin.site.urls),
 ]
@@ -223,7 +223,11 @@ its existing superclass, fields and authentication checks; do not silently
 replace a custom MFA/SSO form with this example. Custom URL namespaces require
 subclassing `NovaCaptchaTextInput.refresh_url_name` and configuring the field to
 use that widget. Upstream image/audio names are the global names shown above;
-use one shared upstream mount per project.
+use one shared `nova_admin.captcha_urls` mount per project. This explicit optional
+mount keeps upstream URL names and replaces only the audio callback with Nova's
+live-challenge guard. Existing projects mounting `captcha.urls` must change that
+include to receive the guard; installing/upgrading Nova does not rewrite host
+URL configurations. Do not mount a second unguarded audio route alongside it.
 
 The optional template extends `admin/login.html`, preserving native login CSS,
 `form.media`, and the native version's CSP rendering. Its content uses NOVA's
@@ -284,9 +288,12 @@ The `New image` button performs a same-origin CSRF-protected POST to NOVA's
 refresh endpoint. A valid signed old token must win deletion before exactly one
 replacement is generated. An expired row can be refreshed while it still
 exists. A missing/consumed/cleaned row returns 409 and asks the user to reload.
-Upstream's unrelated GET refresh endpoint is still mounted by `captcha.urls`;
+Upstream's unrelated GET refresh endpoint is still mounted by
+`nova_admin.captcha_urls`, preserving the ordinary integration's exposure;
 it generates unsigned keys and does **not** invalidate previous keys. The NOVA
 widget never uses it, and those unsigned keys do not pass this login field.
+The Axes demo continues to omit that GET endpoint and wraps all retained CAPTCHA
+callbacks, including protected audio, with its existing lockout decorator.
 
 While refreshing, submit is blocked, the answer is cleared, and repeated
 click/keyboard activation issues one request. The image is preloaded before
@@ -338,6 +345,7 @@ CAPTCHA_FLITE_PATH = '/usr/bin/flite'
 CAPTCHA_SOX_PATH = '/usr/bin/sox'
 CAPTCHA_TEST_MODE = False
 CAPTCHA_GET_FROM_POOL = False
+NOVA_ADMIN_CAPTCHA_AUDIO_TIMEOUT = 10  # One shared budget in seconds.
 ```
 
 Debian's `flite`, `sox` and `libsox-fmt-base` packages supplied the tested pipeline.
@@ -349,8 +357,8 @@ When audio is configured, the widget renders a labelled native
 `<audio controls preload="none">` without autoplay and an explicit download
 fallback. Both admin sites were exercised in desktop Chromium with actual
 native controls, including keyboard Space and JavaScript disabled: playback
-advanced through `playing`/`timeupdate` to `ended`. The upstream attachment
-response remains unchanged; the player fetches it as media, while the fallback
+advanced through `playing`/`timeupdate` to `ended`. WAV attachment and Range
+semantics are retained; the player fetches it as media, while the fallback
 downloads it. No browser speech synthesis or plaintext answer injection is used.
 
 With JavaScript enabled, starting a refresh pauses the player, removes its old
@@ -364,19 +372,80 @@ Listening does not consume a challenge. Form validation and CSRF-protected
 refresh do; a fresh audio request for the consumed key returns 410. Previously
 downloaded or buffered bytes cannot be revoked by deleting a database row.
 
-**Observed upstream boundaries remain unfixed.** Before production enablement,
-address and verify these paths in the project's own audio integration:
+The shared Nova audio entry validates a 40-character lowercase hexadecimal key
+and checks `expiration > now` on the write database before generation. Missing,
+consumed, expired and exact-deadline challenges return 410 without invoking the
+audio generator. A second write-database check rejects challenges that expire
+or are consumed during generation. That rejected response and its underlying
+ranged-response file are closed before returning 410. Successful audio and 410
+responses are not cached; valid WAV, attachment and Range responses
+are preserved. Audio remains unavailable when Flite is unconfigured. This guard
+does not consume or prune rows and does not mutate third-party URL patterns.
 
-- A challenge whose expiration is in the past but whose row still exists can
-  still return audio 200. Form validation rejects and consumes it; subsequent
-  audio requests return 410. Expired-but-stored and already-consumed are
-  different cases.
-- Upstream subprocess calls have no explicit timeout or `check=True`. Missing
-  executable paths and nonzero exits can raise errors or return unusable output;
-  they are not a verified graceful fallback.
-- Missing/failing SoX left one source WAV in the tested private temporary
-  directory before the probe cleaned its own files. Normal named-file cleanup
-  passed in the tested cases; failure/resource cleanup has not been hardened.
+The protected entry uses Nova's local Flite/SoX generator. It reads the challenge
+from the write database and retains character spelling, mathematical operators,
+optional SoX brown noise, PCM WAV and Range/download behavior. All subprocesses
+run without a shell, check their exit status and share a single monotonic
+deadline. `NOVA_ADMIN_CAPTCHA_AUDIO_TIMEOUT` defaults to 10 seconds and must be a
+positive finite number (booleans are rejected). Invalid budgets launch no tool.
+Each later stage receives only the remaining time, including when prior stages
+succeeded. Missing executables, nonzero exits, timeouts and unusable WAV output
+produce an empty, uncached 503; tool arguments, output, challenge and temporary
+paths are not returned or logged. A later valid configuration can generate audio
+for the same still-live challenge, since failures do not consume it.
+
+Nova's subprocess runner kills and waits for the direct child on timeout or
+interruption, and also closes its output pipe.
+Configured executables must be trusted; this is not a supervisor for arbitrary
+descendant processes. OS process creation itself cannot be interrupted by that
+timeout. Shared-timeout/failure handling passed T3-5 independent local acceptance;
+the following resource hardening passed separate T3-6 independent local acceptance.
+
+Each generation owns one private 0700 directory; cleanup never scans or deletes
+another request's directory. Explicit `finally` cleanup also runs on
+`KeyboardInterrupt`/`SystemExit`. Cleanup failures close any already-created
+response/file and make one bounded retry on that exact owned directory before
+propagating the failure. Persistent OS deletion denial may retain that restricted
+directory; this cannot be guaranteed away by GC or an application retry.
+
+Only the SoX sample-rate output is captured: at most 128 bytes are accepted, and
+overflow terminates/reaps the direct child. Other stdout and all stderr go to
+the null device. Intermediate regular files are checked against a 2 MiB limit
+after each writing stage. WAV reads accept at most 2 MiB, validate RIFF length,
+uncompressed PCM frame size and full frame availability, and reject empty,
+invalid, truncated or oversized output with uncached 503. Copy blocks are at
+most 64 KiB. These are per-output/read limits, not an absolute bound on aggregate
+process memory or disk: a tool can write before its stage finishes, concurrent
+requests have separate allocations, and the example's private 32 MiB tmpfs is
+an environment-specific bound. Tools must remain trusted executables.
+
+Nova's own ranged response closes its underlying file explicitly on
+`response.close()`, stream exhaustion, iterator close and stream exceptions;
+call `response.close()` when abandoning an unread or partial response. Generated
+files also close if response construction, directory cleanup or the post-generation
+DB check fails or is interrupted. These paths do not depend on garbage collection.
+Audio remains disabled by default. T3-4, T3-5 and T3-6 were independently accepted
+in that order in the local Linux ARM64 container. With GC disabled and responses
+retained, normal/partial/Range closes and same-key concurrency kept file descriptors
+stable and preserved another request's sentinel. Injected creation/copy/response,
+cleanup, stream and postcheck failures released owned files; oversized tool/WAV
+output was rejected. Evidence and historical failures remain in the diagnostic
+ledger. Physical devices, assistive technology, human intelligibility, other
+browsers, complete installation matrices, online CI and production remain
+separate acceptance work. Persistent OS deletion denial retains the explicit
+restricted-directory boundary described above.
+
+**Retained upstream baseline and remaining scope:**
+
+- The original upstream-only mount returned audio 200 for expired-but-stored
+  challenges in the retained baseline. Hosts still mounting raw `captcha.urls`
+  retain that behavior until they migrate to the protected Nova entry above.
+- The retained upstream-only baseline had no explicit subprocess timeout or
+  exit-code checking; missing/failing SoX left a source WAV. Those historical
+  observations are preserved and do not describe Nova's new local generator.
+- Raw ranged-response 0.2.0 does not forward `response.close()` to its underlying
+  file, as observed in the preserved baseline. Nova now owns that file explicitly;
+  T3-6 separately verifies normal/partial streaming, failures and interruption.
 
 This result covers local normal configuration and the playback UI fix, not
 production readiness or complete authentication accessibility. Human listening

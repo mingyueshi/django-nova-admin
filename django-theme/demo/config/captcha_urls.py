@@ -8,6 +8,6 @@ admin.site.login_form = CaptchaAdminAuthenticationForm
 admin.site.login_template = "nova_admin/captcha_login.html"
 urlpatterns = [
     path("admin/_captcha/refresh/", captcha_refresh, name="nova-captcha-refresh"),
-    path("admin/_captcha/", include("captcha.urls")),
+    path("admin/_captcha/", include("nova_admin.captcha_urls")),
     *urlpatterns,
 ]
