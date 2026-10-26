@@ -132,12 +132,14 @@ function forms() {
   );
 }
 function dataShowcase() {
-  const { icon, getUser, getUsers, person } = helpers();
+  const { icon, getUser, getUsers, person, esc } = helpers();
   const u = getUser();
   return (
     panel(
       '成员详情卡',
-      `<div class="lab-body"><div class="profile-showcase"><span class="avatar violet">${u.name.slice(-2)}</span><h3>${u.name}</h3><p>${u.email}</p><span class="pill role-admin">${u.role}</span></div><div class="mini-stats"><div><strong>24</strong><span>内容记录</span></div><div><strong>12</strong><span>本周操作</span></div><div><strong>98%</strong><span>资料完成度</span></div></div><div class="lab-form-actions"><button class="btn primary" data-detail="${u.id}">${icon('book')}查看完整详情</button><button class="btn" data-edit="${u.id}">${icon('edit')}编辑资料</button></div></div>`,
+      u
+        ? `<div class="lab-body"><div class="profile-showcase"><span class="avatar violet">${esc(u.name.slice(-2))}</span><h3>${esc(u.name)}</h3><p>${esc(u.email)}</p><span class="pill role-admin">${esc(u.role)}</span></div><div class="mini-stats"><div><strong>24</strong><span>内容记录</span></div><div><strong>12</strong><span>本周操作</span></div><div><strong>98%</strong><span>资料完成度</span></div></div><div class="lab-form-actions"><button class="btn primary" data-detail="${u.id}">${icon('book')}查看完整详情</button><button class="btn" data-edit="${u.id}">${icon('edit')}编辑资料</button></div></div>`
+        : `<div class="lab-body empty-state"><h3>暂无成员</h3><p>添加一位演示用户后，可查看成员资料与详情。</p><button class="btn primary" data-action="add">${icon('plus')}添加演示用户</button></div>`,
     ) +
     panel(
       '进度与资源',
@@ -150,7 +152,7 @@ function dataShowcase() {
       )
         .map(
           (u) =>
-            `<tr><td>${person(u)}</td><td>${u.role}</td><td><span class="pill dot status-normal">正常</span></td></tr>`,
+            `<tr><td>${person(u)}</td><td>${esc(u.role)}</td><td><span class="pill dot status-normal">正常</span></td></tr>`,
         )
         .join('')}</tbody></table></div></div>`,
       'lab-span-2',
@@ -272,7 +274,7 @@ function detailDrawer(id) {
   let u = getUser(id);
   if (!u) return;
   openOverlay(
-    `<section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title"><div class="drawer-header"><div><h2 id="drawer-title">成员详情</h2><p>演示资料 · 不连接真实账户</p></div><button class="icon-button" data-action="close" aria-label="关闭详情">${icon('close')}</button></div><div class="drawer-content"><div class="detail-profile">${person(u)}<span class="pill ${u.status === '正常' ? 'status-normal' : ''}">${u.status}</span></div><dl class="detail-list"><div><dt>成员编号</dt><dd>NOVA-${String(u.id).padStart(4, '0')}</dd></div><div><dt>所属团队</dt><dd>${u.team}</dd></div><div><dt>角色</dt><dd>${u.role}</dd></div><div><dt>加入时间</dt><dd>${u.joined}</dd></div><div><dt>电子邮箱</dt><dd>${esc(u.email)}</dd></div></dl><h3 style="margin-top:28px">最近活动 · 示例</h3><div class="timeline"><div><i></i><strong>资料已更新</strong><p>完善团队信息</p><small>2026-10-01 09:42</small></div><div><i></i><strong>角色已分配</strong><p>${u.role} · ${u.team}</p><small>${u.joined}</small></div><div><i></i><strong>加入工作空间</strong><p>演示账户创建成功</p><small>${u.joined}</small></div></div></div><div class="drawer-footer"><button class="btn" data-action="close">关闭</button><button class="btn primary" data-edit="${u.id}">${icon('edit')}编辑资料</button></div></section>`,
+    `<section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title"><div class="drawer-header"><div><h2 id="drawer-title">成员详情</h2><p>演示资料 · 不连接真实账户</p></div><button class="icon-button" data-action="close" aria-label="关闭详情">${icon('close')}</button></div><div class="drawer-content"><div class="detail-profile">${person(u)}<span class="pill ${u.status === '正常' ? 'status-normal' : ''}">${esc(u.status)}</span></div><dl class="detail-list"><div><dt>成员编号</dt><dd>NOVA-${esc(String(u.id).padStart(4, '0'))}</dd></div><div><dt>所属团队</dt><dd>${esc(u.team)}</dd></div><div><dt>角色</dt><dd>${esc(u.role)}</dd></div><div><dt>加入时间</dt><dd>${esc(u.joined)}</dd></div><div><dt>电子邮箱</dt><dd>${esc(u.email)}</dd></div></dl><h3 style="margin-top:28px">最近活动 · 示例</h3><div class="timeline"><div><i></i><strong>资料已更新</strong><p>完善团队信息</p><small>2026-10-01 09:42</small></div><div><i></i><strong>角色已分配</strong><p>${esc(u.role)} · ${esc(u.team)}</p><small>${esc(u.joined)}</small></div><div><i></i><strong>加入工作空间</strong><p>演示账户创建成功</p><small>${esc(u.joined)}</small></div></div></div><div class="drawer-footer"><button class="btn" data-action="close">关闭</button><button class="btn primary" data-edit="${u.id}">${icon('edit')}编辑资料</button></div></section>`,
   );
 }
 function auditDrawer(id) {

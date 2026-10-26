@@ -22,6 +22,7 @@ FRONTEND_SUMMARIES = {
     'controls': 'TOTAL 15 control tests passed',
     'media': 'TOTAL 19 media and news tests passed',
     'recovery': 'TOTAL 36 recovery edge tests passed (Node/jsdom)',
+    'users-data': 'TOTAL 62 user data checks passed (Node/jsdom)',
     'enterprise': 'TOTAL 13 enterprise preview tests passed',
     'boundaries': 'TOTAL 68 refactor boundary checks passed (Node/jsdom)',
     'bulk-publish': 'TOTAL 7 catalog bulk publish checks passed (Node/jsdom)',

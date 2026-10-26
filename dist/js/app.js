@@ -60,24 +60,57 @@ const esc = (s) =>
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
   );
+const userRoles = Object.keys(initialPermissions),
+  userStatuses = ['正常', '待激活', '已停用'],
+  userTeams = ['产品设计', '研发中心', '内容运营', '客户服务'];
+function validUserDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number),
+    leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0),
+    days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return year >= 1 && month >= 1 && month <= 12 && day >= 1 && day <= days[month - 1];
+}
+// Storage reads and form writes share the same field rules. Invalid saved data
+// uses the existing demo fallback without overwriting the original storage.
+function userFieldErrors(user) {
+  const errors = {};
+  if (typeof user.name !== 'string' || user.name.trim().length < 2)
+    errors.name = '请输入至少 2 个字符的姓名';
+  else if (user.name.length > 24) errors.name = '姓名最多 24 个字符';
+  if (typeof user.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email))
+    errors.email = '请输入有效的邮箱地址';
+  if (!userRoles.includes(user.role)) errors.role = '请选择有效的角色';
+  if (!userStatuses.includes(user.status)) errors.status = '请选择有效的状态';
+  if (!userTeams.includes(user.team)) errors.team = '请选择有效的团队';
+  if (!validUserDate(user.joined)) errors.joined = '加入日期无效，请恢复演示数据后重试';
+  return errors;
+}
+function validUsers(users) {
+  const ids = new Set(),
+    emails = new Set();
+  return (
+    Array.isArray(users) &&
+    users.every((user) => {
+      if (
+        !user ||
+        !Number.isSafeInteger(user.id) ||
+        user.id < 1 ||
+        ids.has(user.id) ||
+        Object.keys(userFieldErrors(user)).length ||
+        emails.has(user.email.toLowerCase())
+      )
+        return false;
+      ids.add(user.id);
+      emails.add(user.email.toLowerCase());
+      return true;
+    })
+  );
+}
 const read = (k, f) => {
   try {
     const v = JSON.parse(localStorage.getItem(k));
     if (v === null) return f;
-    if (
-      k === 'nova-users' &&
-      (!Array.isArray(v) ||
-        !v.every(
-          (u) =>
-            u &&
-            Number.isFinite(u.id) &&
-            typeof u.name === 'string' &&
-            typeof u.email === 'string' &&
-            ['管理员', '编辑', '只读成员'].includes(u.role) &&
-            ['正常', '待激活', '已停用'].includes(u.status),
-        ))
-    )
-      return f;
+    if (k === 'nova-users' && !validUsers(v)) return f;
     if (
       k === 'nova-permissions' &&
       !Object.keys(initialPermissions).every(
@@ -253,7 +286,7 @@ function button(text, action, cls = '', ico = '') {
   return `<button type="button" class="btn ${cls}" data-action="${action}">${ico ? icon(ico) : ''}${text}</button>`;
 }
 function pill(status) {
-  return `<span class="pill dot status-${status === '正常' ? 'normal' : status === '待激活' ? 'pending' : 'disabled'}">${status}</span>`;
+  return `<span class="pill dot status-${status === '正常' ? 'normal' : status === '待激活' ? 'pending' : 'disabled'}">${esc(status)}</span>`;
 }
 function person(u) {
   return `<div class="person">${thumbnail(imageSpec('avatar', u.id, u.name))}<div><strong>${esc(u.name)}</strong><small>${esc(u.email)}</small></div></div>`;
@@ -369,7 +402,7 @@ function filteredUsers() {
   return userCollection.filtered();
 }
 function table(rows, full = true) {
-  return `<table><thead><tr>${full ? '<th class="check-cell"><input class="checkbox" type="checkbox" id="select-all" aria-label="选择当前页全部用户" ' + (rows.length && rows.every((u) => userList.selected.has(u.id)) ? 'checked' : '') + '></th>' : ''}<th>用户</th><th>角色</th><th>状态</th>${full ? '<th>所属团队</th>' : ''}<th>${full ? `<button class="sort-btn" data-action="sort">加入时间 ${icon('down')}</button>` : '加入时间'}</th><th style="text-align:right">操作</th></tr></thead><tbody>${rows.map((u) => `<tr>${full ? `<td class="check-cell"><input type="checkbox" class="checkbox row-check" value="${u.id}" aria-label="选择${esc(u.name)}" ${userList.selected.has(u.id) ? 'checked' : ''}></td>` : ''}<td>${person(u)}</td><td><span class="pill ${u.role === '管理员' ? 'role-admin' : ''}">${u.role}</span></td><td>${pill(u.status)}</td>${full ? `<td class="muted">${u.team}</td>` : ''}<td class="muted">${u.joined}</td><td style="text-align:right"><button class="icon-button" data-detail="${u.id}" aria-label="查看${esc(u.name)}详情">${icon('book')}</button><button class="icon-button" data-edit="${u.id}" aria-label="编辑${esc(u.name)}">${icon('edit')}</button></td></tr>`).join('')}</tbody></table>`;
+  return `<table><thead><tr>${full ? '<th class="check-cell"><input class="checkbox" type="checkbox" id="select-all" aria-label="选择当前页全部用户" ' + (rows.length && rows.every((u) => userList.selected.has(u.id)) ? 'checked' : '') + '></th>' : ''}<th>用户</th><th>角色</th><th>状态</th>${full ? '<th>所属团队</th>' : ''}<th>${full ? `<button class="sort-btn" data-action="sort">加入时间 ${icon('down')}</button>` : '加入时间'}</th><th style="text-align:right">操作</th></tr></thead><tbody>${rows.map((u) => `<tr>${full ? `<td class="check-cell"><input type="checkbox" class="checkbox row-check" value="${u.id}" aria-label="选择${esc(u.name)}" ${userList.selected.has(u.id) ? 'checked' : ''}></td>` : ''}<td>${person(u)}</td><td><span class="pill ${u.role === '管理员' ? 'role-admin' : ''}">${esc(u.role)}</span></td><td>${pill(u.status)}</td>${full ? `<td class="muted">${esc(u.team)}</td>` : ''}<td class="muted">${esc(u.joined)}</td><td style="text-align:right"><button class="icon-button" data-detail="${u.id}" aria-label="查看${esc(u.name)}详情">${icon('book')}</button><button class="icon-button" data-edit="${u.id}" aria-label="编辑${esc(u.name)}">${icon('edit')}</button></td></tr>`).join('')}</tbody></table>`;
 }
 function syncUserRoute(push = false) {
   if (state.view !== 'users') return;
@@ -395,7 +428,7 @@ function usersView() {
 function userResults() {
   const { all, pages, rows } = userCollection.pageItems();
   syncUserRoute();
-  return `<div class="mobile-table-actions"><label><input type="checkbox" id="mobile-select-all" class="checkbox" aria-label="选择当前页全部用户" ${rows.length && rows.every((u) => userList.selected.has(u.id)) ? 'checked' : ''} ${rows.length ? '' : 'disabled'}>本页全选</label><button class="btn subtle" data-action="sort">加入时间 ${userList.sort === 'desc' ? '↓' : '↑'}</button></div>${userList.selected.size ? `<div class="bulk-bar">已选 ${userList.selected.size} 位用户 · 本页 ${rows.filter((u) => userList.selected.has(u.id)).length} 位 / 其他页 ${userList.selected.size - rows.filter((u) => userList.selected.has(u.id)).length} 位 ${button('停用所选', 'bulk-disable')}${button('取消选择', 'clear-selection', 'subtle')}</div>` : ''}${rows.length ? `<div class="table-scroll users-full-table">${table(rows)}</div><div class="mobile-user-cards">${rows.map((u) => `<article class="user-card"><div class="user-card-top"><input type="checkbox" class="checkbox row-check" value="${u.id}" aria-label="选择${esc(u.name)}" ${userList.selected.has(u.id) ? 'checked' : ''}>${person(u)}<button class="icon-button" data-detail="${u.id}" aria-label="查看${esc(u.name)}详情">${icon('book')}</button><button class="icon-button" data-edit="${u.id}" aria-label="编辑${esc(u.name)}">${icon('edit')}</button></div><div class="user-card-bottom"><span class="pill ${u.role === '管理员' ? 'role-admin' : ''}">${u.role}</span>${pill(u.status)}<span class="spacer"></span>${u.team}</div></article>`).join('')}</div>` : `<div class="empty-state">${icon('search')}<h3>没有找到符合条件的用户</h3><p>试试其他关键词，或清除筛选条件</p>${button('清除筛选', 'reset-filters', 'subtle')}</div>`}${pagination(userCollection, 'users', 'data-page', '用户', '位用户')}`;
+  return `<div class="mobile-table-actions"><label><input type="checkbox" id="mobile-select-all" class="checkbox" aria-label="选择当前页全部用户" ${rows.length && rows.every((u) => userList.selected.has(u.id)) ? 'checked' : ''} ${rows.length ? '' : 'disabled'}>本页全选</label><button class="btn subtle" data-action="sort">加入时间 ${userList.sort === 'desc' ? '↓' : '↑'}</button></div>${userList.selected.size ? `<div class="bulk-bar">已选 ${userList.selected.size} 位用户 · 本页 ${rows.filter((u) => userList.selected.has(u.id)).length} 位 / 其他页 ${userList.selected.size - rows.filter((u) => userList.selected.has(u.id)).length} 位 ${button('停用所选', 'bulk-disable')}${button('取消选择', 'clear-selection', 'subtle')}</div>` : ''}${rows.length ? `<div class="table-scroll users-full-table">${table(rows)}</div><div class="mobile-user-cards">${rows.map((u) => `<article class="user-card"><div class="user-card-top"><input type="checkbox" class="checkbox row-check" value="${u.id}" aria-label="选择${esc(u.name)}" ${userList.selected.has(u.id) ? 'checked' : ''}>${person(u)}<button class="icon-button" data-detail="${u.id}" aria-label="查看${esc(u.name)}详情">${icon('book')}</button><button class="icon-button" data-edit="${u.id}" aria-label="编辑${esc(u.name)}">${icon('edit')}</button></div><div class="user-card-bottom"><span class="pill ${u.role === '管理员' ? 'role-admin' : ''}">${esc(u.role)}</span>${pill(u.status)}<span class="spacer"></span>${esc(u.team)}</div></article>`).join('')}</div>` : `<div class="empty-state">${icon('search')}<h3>没有找到符合条件的用户</h3><p>试试其他关键词，或清除筛选条件</p>${button('清除筛选', 'reset-filters', 'subtle')}</div>`}${pagination(userCollection, 'users', 'data-page', '用户', '位用户')}`;
 }
 function syncUserSelection() {
   const { indeterminate } = userCollection.pageItems();
@@ -637,13 +670,11 @@ function openUser(id) {
     color: 'violet',
   };
   openOverlay(
-    `<section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title"><div class="drawer-header"><div><h2 id="drawer-title">${id ? '编辑用户' : '添加用户'}</h2><p>本地演示资料，不会创建真实账户</p></div><button class="icon-button" data-action="close" aria-label="关闭表单">${icon('close')}</button></div><form id="user-form" data-id="${id || ''}" style="display:contents" novalidate><div class="drawer-content"><div class="form-avatar">${thumbnail(imageSpec('avatar', u.id, u.name || '新成员'))}<div><p>${id ? esc(u.name) : '新的协作，从这里开始'}</p><small>完善基本资料，分配合适的角色</small></div></div><div class="field"><label for="member-name">姓名 <span style="color:var(--danger)">*</span></label><input name="name" id="member-name" aria-describedby="name-error" value="${esc(u.name)}" placeholder="请输入姓名" maxlength="24" autocomplete="off"><small class="error" id="name-error"></small></div><div class="field"><label for="member-email">邮箱 <span style="color:var(--danger)">*</span></label><input name="email" id="member-email" aria-describedby="email-error" value="${esc(u.email)}" type="email" placeholder="name@example.com" autocomplete="off"><small class="error" id="email-error"></small></div><div class="field-row"><div class="field"><label for="member-role">角色</label><select name="role" id="member-role">${Object.keys(
-      initialPermissions,
-    )
+    `<section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title"><div class="drawer-header"><div><h2 id="drawer-title">${id ? '编辑用户' : '添加用户'}</h2><p>本地演示资料，不会创建真实账户</p></div><button class="icon-button" data-action="close" aria-label="关闭表单">${icon('close')}</button></div><form id="user-form" data-id="${id || ''}" style="display:contents" novalidate><div class="drawer-content"><div class="form-avatar">${thumbnail(imageSpec('avatar', u.id, u.name || '新成员'))}<div><p>${id ? esc(u.name) : '新的协作，从这里开始'}</p><small>完善基本资料，分配合适的角色</small></div></div><div class="field"><label for="member-name">姓名 <span style="color:var(--danger)">*</span></label><input name="name" id="member-name" aria-describedby="name-error" value="${esc(u.name)}" placeholder="请输入姓名" maxlength="24" autocomplete="off"><small class="error" id="name-error"></small></div><div class="field"><label for="member-email">邮箱 <span style="color:var(--danger)">*</span></label><input name="email" id="member-email" aria-describedby="email-error" value="${esc(u.email)}" type="email" placeholder="name@example.com" autocomplete="off"><small class="error" id="email-error"></small></div><div class="field-row"><div class="field"><label for="member-role">角色</label><select name="role" id="member-role" aria-describedby="role-error">${userRoles
       .map((r) => `<option ${u.role === r ? 'selected' : ''}>${r}</option>`)
       .join(
         '',
-      )}</select></div><div class="field"><label for="member-status">状态</label><select name="status" id="member-status">${['正常', '待激活', '已停用'].map((r) => `<option ${u.status === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div></div><div class="field"><label for="member-team">所属团队</label><select name="team" id="member-team">${['产品设计', '研发中心', '内容运营', '客户服务'].map((r) => `<option ${u.team === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div><div class="notice" style="font-size:11px">${icon('shield')}角色与状态仅在预览中生效，不授予任何真实访问权限。</div></div><div class="drawer-footer">${button('取消', 'close')}<button type="submit" class="btn primary">${icon('check')}${id ? '保存修改' : '创建演示用户'}</button></div></form></section>`,
+      )}</select><small class="error" id="role-error"></small></div><div class="field"><label for="member-status">状态</label><select name="status" id="member-status" aria-describedby="status-error">${userStatuses.map((r) => `<option ${u.status === r ? 'selected' : ''}>${r}</option>`).join('')}</select><small class="error" id="status-error"></small></div></div><div class="field"><label for="member-team">所属团队</label><select name="team" id="member-team" aria-describedby="team-error">${userTeams.map((r) => `<option ${u.team === r ? 'selected' : ''}>${r}</option>`).join('')}</select><small class="error" id="team-error"></small></div><p id="user-form-error" class="error" role="alert" tabindex="-1"></p><div class="notice" style="font-size:11px">${icon('shield')}角色与状态仅在预览中生效，不授予任何真实访问权限。</div></div><div class="drawer-footer">${button('取消', 'close')}<button type="submit" class="btn primary">${icon('check')}${id ? '保存修改' : '创建演示用户'}</button></div></form></section>`,
   );
 }
 function docs() {
@@ -1041,34 +1072,34 @@ document.addEventListener('submit', (e) => {
     return;
   e.preventDefault();
   if (e.target.id === 'user-form') {
-    let f = new FormData(e.target),
+    const f = new FormData(e.target),
       id = Number(e.target.dataset.id),
-      name = f.get('name').trim(),
-      email = f.get('email').trim(),
-      valid = true;
-    $('#name-error').textContent = '';
-    $('#email-error').textContent = '';
-    if (name.length < 2) {
-      $('#name-error').textContent = '请输入至少 2 个字符的姓名';
-      $('#member-name').setAttribute('aria-invalid', 'true');
-      valid = false;
-    } else $('#member-name').removeAttribute('aria-invalid');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      $('#email-error').textContent = '请输入有效的邮箱地址';
-      $('#member-email').setAttribute('aria-invalid', 'true');
-      valid = false;
-    } else if (
-      state.users.some((u) => u.id !== id && u.email.toLowerCase() === email.toLowerCase())
-    ) {
-      $('#email-error').textContent = '该邮箱已存在于演示用户中';
-      $('#member-email').setAttribute('aria-invalid', 'true');
-      valid = false;
-    } else $('#member-email').removeAttribute('aria-invalid');
-    if (!valid) {
-      $('.error:not(:empty)')?.previousElementSibling?.focus();
+      current = state.users.find((u) => u.id === id),
+      data = {
+        id: id || Math.max(...state.users.map((u) => u.id), 0) + 1,
+        name: String(f.get('name') ?? '').trim(),
+        email: String(f.get('email') ?? '').trim(),
+        role: f.get('role'),
+        status: f.get('status'),
+        team: f.get('team'),
+        joined: current?.joined ?? new Date().toISOString().slice(0, 10),
+      },
+      errors = userFieldErrors(data);
+    if (state.users.some((u) => u.id !== id && u.email.toLowerCase() === data.email.toLowerCase()))
+      errors.email = '该邮箱已存在于演示用户中';
+    for (const field of ['name', 'email', 'role', 'status', 'team']) {
+      $('#' + field + '-error').textContent = errors[field] || '';
+      if (errors[field]) $('#member-' + field).setAttribute('aria-invalid', 'true');
+      else $('#member-' + field).removeAttribute('aria-invalid');
+    }
+    if (id && !current) errors.record = '找不到该成员，请关闭表单后重试';
+    if (!Number.isSafeInteger(data.id) || data.id < 1)
+      errors.record = '成员编号超出可用范围，无法创建演示用户';
+    $('#user-form-error').textContent = errors.joined || errors.record || '';
+    if (Object.keys(errors).length) {
+      ($('#user-form [aria-invalid="true"]') || $('#user-form-error')).focus();
       return;
     }
-    let data = { name, email, role: f.get('role'), status: f.get('status'), team: f.get('team') };
     const next = structuredClone(state.users);
     if (id)
       Object.assign(
@@ -1078,13 +1109,11 @@ document.addEventListener('submit', (e) => {
     else
       next.unshift({
         ...data,
-        id: Math.max(...next.map((u) => u.id), 0) + 1,
         color: 'violet',
-        joined: new Date().toISOString().slice(0, 10),
       });
     if (!save('nova-users', next)) return;
     state.users = next;
-    addAuditEvent(id ? '修改用户' : '新增用户', name);
+    addAuditEvent(id ? '修改用户' : '新增用户', data.name);
     closeOverlay(true);
     layout();
     toast(id ? '用户资料已更新' : '演示用户已创建');

@@ -1,10 +1,21 @@
 # NOVA Admin
 
-版本：交互预览 **1.8.0** / 原生 Django 主题 **0.6.1** · 2026-10-23
+版本：交互预览 **1.8.0** / 原生 Django 主题 **0.6.1** · 状态更新：2026-10-26
 
-本轮新增设计令牌与品牌配置、权限内的收藏/常用模型/图标/计数、自检警告、上游漂移预警、隔离 Compose 示例和可选 Axes 接入。入口见 [品牌指南](django-theme/BRANDING.md)、[导航扩展](django-theme/NAVIGATION_EXTENSIONS.md)、[模板漂移](django-theme/UPSTREAM_DRIFT.md)、[Compose](examples/compose/README.md)、[验证码与安全工具](django-theme/CAPTCHA_INTEGRATION.md)。公开演示只承载合成预览与只读样本。官方源码见 [GitHub 仓库](https://github.com/mingyueshi/django-nova-admin)。历史源码包交付记录见 [DELIVERY.md](docs/DELIVERY.md)，当前版本与验证范围见 [发行验证](django-theme/RELEASE_VALIDATION.md) 和 [CI 说明](docs/CI_CD.md)。
+现有能力包括设计令牌与品牌配置、权限内的收藏/常用模型/图标/计数、自检警告、上游漂移预警、隔离 Compose 示例和可选 Axes 接入。入口见 [品牌指南](django-theme/BRANDING.md)、[导航扩展](django-theme/NAVIGATION_EXTENSIONS.md)、[模板漂移](django-theme/UPSTREAM_DRIFT.md)、[Compose](examples/compose/README.md)、[验证码与安全工具](django-theme/CAPTCHA_INTEGRATION.md)。公开演示只承载合成预览与只读样本。官方源码见 [GitHub 仓库](https://github.com/mingyueshi/django-nova-admin)。历史源码包交付记录见 [DELIVERY.md](docs/DELIVERY.md)，主题发行验证记录与工作流说明见 [发行验证](django-theme/RELEASE_VALIDATION.md) 和 [CI 说明](docs/CI_CD.md)；当前仓库与未提交候选的状态见下节。
 
-既有 7 组 Python/Django 精确组合和 3 组 Node 工具链继续保留，新增验证与未实测边界见 [本轮报告](django-theme/TEST_REPORT.md)。Docker/PostgreSQL 运行、音频、旧 admin-honeypot 仍未实测。GitHub 工作流配置随源码提供，实际运行状态以仓库 Actions 为准，生产部署与候选发布开关未自动启用。
+## 当前状态（2026-10-26）
+
+本地 `main` 的 HEAD 为 `df48494`，该提交仅新增诊断复核文档；产品基线为 `c6e3484`。用户数据校验与转义修复是工作区中已独立验收、尚未提交的六文件候选，没有推送或触发该候选的线上 CI。
+
+| 验证层次 | 已核验范围与证据 |
+|---|---|
+| 历史主线合并与线上 CI · 2026-10-24 | 音频、排序和导航分支已依次合入，最终合并为 `cbc1624`，现已是当前 HEAD 的祖先。[快速 CI 40099609587](https://github.com/mingyueshi/django-nova-admin/actions/runs/40099609587) 和 [完整 CI 40100316363](https://github.com/mingyueshi/django-nova-admin/actions/runs/40100316363) 均已独立验收；完整矩阵为 7 组 Python/Django、28 个源码/wheel 环境、3 组 Node。该时点每组 Node 的前端 1,322 项、主题 JS 260 项通过，不代表当前候选已跑线上矩阵。 |
+| 未提交用户数据候选 · 2026-10-26 | Node 24.21.0 / npm 11.19.0 本地全量 **20 套件、1,397 项前端检查**及 **62 项 CI 适配器测试**由统筹独立重跑通过；真实 Chrome 的桌面/窄视口、正常表单、刷新、CSV 与失败恢复已验收。实施另运行主题 JS 260 项通过。范围、冻结哈希和双方证据见 [用户数据独立验收](docs/USER_DATA_VALIDATION_ACCEPTANCE_2026-10-26.md)。没有为该候选重跑完整 Django Python/wheel 或线上矩阵。 |
+| 本地容器与音频 · 2026-10-24 | T2 已完成 Docker/PostgreSQL 的双站业务、权限、验证码并发/回滚和持久化恢复验收；T3 已完成 Flite/SoX 正常生成、浏览器原生控件播放，以及后续过期、超时和资源清理边界验收。分阶段范围与保留的异常记录见 [T2/T3/T4 进度](docs/DIAGNOSTIC_PROGRESS.md)。这些环境已停止，历史记录不充当当前源码重跑结果。 |
+| 真机与未覆盖边界 | T4 仅接受用户在真实 iPhone Safari / VoiceOver 上回报的**无 CAPTCHA core 登录与导航最小操作范围**，不是全站无障碍认证。人工音频听辨按用户决定跳过，仍未验收；可选验证码真机流程、其他设备/读屏组合、旧 admin-honeypot，以及当前候选的发行与生产部署均未验收。 |
+
+最新问题和处理依据见 [2026-10-26 诊断报告](docs/DIAGNOSIS_2026-10-26.md)、[诊断复核](docs/DIAGNOSIS_2026-10-26_REVIEW.md) 和 [用户数据独立验收](docs/USER_DATA_VALIDATION_ACCEPTANCE_2026-10-26.md)。历史源码/安装测试保留在 [主题测试报告](django-theme/TEST_REPORT.md)，各文档中的日期、SHA 和执行范围分别有效。
 
 完整文档目录见 [文档索引](docs/README.md)。专题指南、规划与历史验收记录集中在 `docs/`；可独立发行的主题文档仍在 `django-theme/`。
 
@@ -16,7 +27,7 @@
 | `django-theme/src/nova_admin/` | 可安装、可恢复原生的 Django Admin 主题 | 使用原来的 AdminSite、ModelAdmin、认证、权限、CSRF、表单和动作 |
 | `django-theme/demo/` | 可运行 Django 项目与图片列示例 | 本地 SQLite，由你创建管理员；真实增删改及关系字段流程 |
 | `dist/native-admin/` | 真实 Django 6.1.1 渲染的 56 页＋96 个配色代表页＋入口 | 明暗/自动、标准/紧凑与原生外观，完全只读；脚本、认证及提交能力已经移除 |
-| `tests/` | 交互预览的 1298 项前端检查 | Node/jsdom，不代表浏览器视觉或真机认证 |
+| `tests/` | 当前未提交候选的 20 套件、1,397 项前端检查 | Node 24.21.0/jsdom 本地验收；浏览器证据另列，不代表真机认证或线上 CI |
 | `django-theme/tests/` | 核心、可选验证码和 Axes 独立测试 | 精确补丁版本测试，详情见验证报告 |
 
 `dist/` 就是前端源码，**不存在缺失的 React/Vue 工程或构建步骤**。本包没有 Python/Node 环境或依赖缓存；首次安装依赖需要访问官方 PyPI/npm。原始 PNG 图集、截图、数据库、浏览器数据、日志和发布配置没有打包。三份约 694 KB 的 WebP 是各演示入口的本地资源，不依赖外链。
@@ -127,7 +138,7 @@ python -m pip install -e /path/to/nova-admin/django-theme
 python3 scripts/verify_package.py
 ```
 
-前端开发/测试推荐 **Node.js 24.21.0 + npm 11.19.0**；22.23.3 LTS与26.10.0 Current亦已独立验证。依赖的历史技术门槛仍为Node 18，18/20已EOL且不列为维护推荐；项目未新增engines限制。查看静态预览或运行真实Django主题不需要Node。在项目根目录运行：
+前端开发/测试推荐 **Node.js 24.21.0 + npm 11.19.0**。22.23.3 LTS与26.10.0 Current的历史验证属于上方 `cbc1624` 线上矩阵；当前 1,397 项未提交候选的本地运行时仅为 Node 24.21.0。依赖的历史技术门槛仍为Node 18，18/20已EOL且不列为维护推荐；项目未新增engines限制。查看静态预览或运行真实Django主题不需要Node。在项目根目录运行：
 
 ```bash
 npm ci
@@ -146,12 +157,14 @@ node scripts/test-navigation.mjs
 # django-theme/COMPATIBILITY.md（从主题目录执行脚本）
 ```
 
-本轮及历史执行记录见 `django-theme/TEST_REPORT.md`。服务端 TestClient、DOM/CSS 契约与浏览器视觉验收分别记录，不能互相替代。先前实际浏览器多尺寸检查使用 iframe，不是物理手机测试。
+主题历史执行记录见 [主题测试报告](django-theme/TEST_REPORT.md)，当前预览候选见 [用户数据独立验收](docs/USER_DATA_VALIDATION_ACCEPTANCE_2026-10-26.md)。服务端 TestClient、DOM/CSS 契约与浏览器视觉验收分别记录，不能互相替代。早期多尺寸检查使用 iframe，本轮预览验收使用桌面 Chrome 窄视口；用户真实 iPhone Safari / VoiceOver 的 T4 最小实操范围另见 [分阶段进度](docs/DIAGNOSTIC_PROGRESS.md)。
 
 ## 授权与素材
 
 原创代码遵循根目录 `LICENSE` 的 MIT 条款；Django/Select2 静态资源的许可证保留于 `dist/native-admin/`。合成图片由本次演示生成，为虚构成年人、无品牌产品与虚构场景，没有私人照片或第三方图片热链；见 `THIRD_PARTY_NOTICES.md`。
 
+
+以下带版本号的章节保留当时的版本记录，旧计数及“本轮未实测”等描述均指该历史阶段；当前状态以页首 2026-10-26 摘要为准。
 
 ## 1.4.1 / 0.2.1 首批整改
 
@@ -253,7 +266,7 @@ npm run check:login-css
 
 ## CI/CD
 
-GitHub Actions 包含 PR/主分支快速矩阵、手动完整矩阵、源码绑定的 wheel/sdist/静态产物，以及默认关闭的手动审批候选交付。官方仓库已运行快速 CI；本次发行提交的实际验证单独记录，没有自动包发布或生产部署。配置与边界见 [CI/CD接入说明](docs/CI_CD.md)。
+GitHub Actions 包含 PR/主分支快速矩阵、手动完整矩阵、源码绑定的 wheel/sdist/静态产物，以及默认关闭的手动审批候选交付。`cbc1624` 的历史快速与完整 CI 已通过并独立验收，运行链接和当时计数见页首；当前未提交用户数据候选只有另行记录的本地验收，未触发线上 CI，没有包发布或生产部署。工作流配置与历史接入记录见 [CI/CD接入说明](docs/CI_CD.md)。
 
 ## 独立配色预设
 
