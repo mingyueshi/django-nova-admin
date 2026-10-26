@@ -133,7 +133,7 @@ class FrontendContractTests(unittest.TestCase):
         names = support.frontend_contract()
         self.assertEqual(len(names), 20)
         self.assertEqual(names[-6:], ['icons', 'analytics', 'chart-libraries', 'analysis-lab', 'shared-css', 'navigation'])
-        self.assertEqual(support.FRONTEND_TOTAL, 1397)
+        self.assertEqual(support.FRONTEND_TOTAL, 1398)
 
     def altered_package(self, mutation):
         with tempfile.TemporaryDirectory() as tmp:
@@ -174,7 +174,7 @@ TOTAL 62 user data checks passed (Node/jsdom)
 TOTAL 13 enterprise preview tests passed
 TOTAL 68 refactor boundary checks passed (Node/jsdom)
 TOTAL 7 catalog bulk publish checks passed (Node/jsdom)
-TOTAL 44 passed, 0 failed (Node/jsdom static login demo)
+TOTAL 45 passed, 0 failed (Node/jsdom static login demo)
 TOTAL 52 presentation checks passed
 TOTAL 254 pagination checks passed (Node/jsdom)
 TOTAL 5 extensions guide tests passed
@@ -212,17 +212,17 @@ TOTAL 24 preview navigation scenarios passed
     def collect(self, root):
         return support.collect_node(root / 'logs', root / 'output', COMMIT, '24.21.0', '11.19.0')
 
-    def test_current_log_fixture_records_all_1397_checks_in_twenty_suites(self):
+    def test_current_log_fixture_records_all_1398_checks_in_twenty_suites(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.logs(root)
             result = self.collect(root)
-            self.assertEqual(result['frontend'], 1397)
+            self.assertEqual(result['frontend'], 1398)
             self.assertEqual(result['theme_js'], 260)
             self.assertEqual(len(result['frontend_suites']), 20)
             self.assertEqual(result['frontend_suites']['users-data'], 62)
             self.assertEqual(result['frontend_suites']['palettes'], 165)
-            self.assertEqual(sum(result['frontend_suites'].values()), 1397)
+            self.assertEqual(sum(result['frontend_suites'].values()), 1398)
             self.assertEqual(json.loads((root / 'output/report.json').read_text()), result)
 
     def test_every_frontend_suite_requires_exactly_one_success_summary(self):
@@ -260,7 +260,7 @@ TOTAL 24 preview navigation scenarios passed
             self.assertFalse((root / 'output').exists())
 
     def test_same_total_cannot_hide_an_absent_suite(self):
-        # Omit the 165 palette checks but add those 165 to pagination: still 1397.
+        # Omit the 165 palette checks but add those 165 to pagination: still 1398.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             logs = self.logs(root)
@@ -391,7 +391,7 @@ TOTAL 24 preview navigation scenarios passed
                 (logs / name).unlink()
             result = support.check_node_summaries(logs)
             self.assertEqual(result['kind'], 'node-suite-contract')
-            self.assertEqual(result['frontend'], 1397)
+            self.assertEqual(result['frontend'], 1398)
             self.assertIn('no install, runtime, step', result['boundary'])
             self.assertNotIn('commit', result)
             self.assertNotIn('node', result)

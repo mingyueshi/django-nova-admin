@@ -21,7 +21,8 @@
 | slider + 策略安装 wheel | 29 通过 | 29 通过 |
 
 - `npm test`：1398 项通过，含新增组件原生 FormData prefix 提交；登录演示 45 项通过，vendor 哈希通过。
-- 图形验证码增强：15 项通过。
+- 图形验证码增强：15 项通过；固定上游组件测试 47 项通过。
+- CI 证据契约同步登录 45 项/前端总计 1398 项，继续拒绝缺项、重复或错误计数；本地 CI 适配器测试通过。
 - 新增 Django 回归涵盖渲染、完整前缀登录与证明消费、重用拒绝、错误字段名拒绝、双语替代入口、无配置、危险 URL 和 SafeString/属性转义。
 - 核心命令：`PYTHONPATH=src:demo:. python -m django test tests --settings=config.settings --noinput`；安装 wheel 时移除 `src`。
 - 集成命令：安装固定 slider 后，`PYTHONPATH=src:demo:. python -m django test tests.test_slider tests.test_captcha_policy --settings=tests.slider_settings --noinput`；安装 wheel 时移除 `src`。
