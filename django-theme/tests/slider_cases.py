@@ -3,16 +3,18 @@ from datetime import timedelta
 from unittest.mock import patch
 from bs4 import BeautifulSoup
 from django.conf import settings
+from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import override
+from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from nova_slider_captcha.models import Challenge
 from nova_slider_captcha.services import issue, verify
-from nova_admin.slider import SliderCaptchaAdminAuthenticationForm
+from nova_admin.slider import NovaSliderWidget, SliderCaptchaAdminAuthenticationForm
 from nova_admin.preferences import SESSION_KEY
 
 
@@ -158,3 +160,84 @@ class SliderLoginTests(TestCase):
             self.assertEqual(soup.select_one(selector).get('nonce'), 'synthetic-slider-nonce')
         self.assertEqual(len(soup.select('#login-form')), 1)
         self.assertEqual(len(soup.select('script[src$="nova_slider_captcha/slider.js"]')), 1)
+
+    def test_prefixed_widget_binds_complete_field_name_and_login_consumes_proof(self):
+        class PrefixedLoginForm(SliderCaptchaAdminAuthenticationForm):
+            def __init__(self, *args, **kwargs):
+                kwargs['prefix'] = 'auth'
+                super().__init__(*args, **kwargs)
+
+        self.page()  # Resolve the lazy site and URL configuration before patching.
+        with patch.object(admin.site._wrapped, 'login_form', PrefixedLoginForm):
+            _, soup = self.page()
+            component = soup.select_one('nova-slider')
+            self.assertEqual(component['field-name'], 'auth-nova_slider_token')
+            self.assertEqual(component['id'], 'id_auth-nova_slider_token')
+            self.assertFalse(soup.select('input[name$="nova_slider_token"]'))
+            token, _ = self.proof()
+            data = {'auth-username': self.user.username, 'auth-password': 'synthetic-slider-only',
+                    component['field-name']: token}
+            response = self.client.post(reverse('admin:login'), data)
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(self.client.session['_auth_user_id'], str(self.user.pk))
+            with patch('django.contrib.auth.forms.authenticate') as auth:
+                self.client.post(reverse('admin:login'), data)
+                auth.assert_not_called()
+
+    def test_prefixed_form_rejects_unprefixed_token_before_authentication(self):
+        token, _ = self.proof()
+        request = self.client.get(reverse('admin:login')).wsgi_request
+        with patch('django.contrib.auth.forms.authenticate') as auth:
+            form = SliderCaptchaAdminAuthenticationForm(request=request, prefix='auth', data={
+                'auth-username': self.user.username, 'auth-password': 'synthetic-slider-only',
+                'nova_slider_token': token,
+            })
+            self.assertFalse(form.is_valid())
+            self.assertIn('nova_slider_token', form.errors)
+            auth.assert_not_called()
+        self.assertFalse(Challenge.objects.get(token_consumed=False).token_consumed)
+
+    @override_settings(LOCALE_PATHS=())
+    def test_configured_alternative_is_outside_component_in_both_languages(self):
+        for language, label in (('en', 'Use secure assistance'), ('zh-hans', '使用安全替代验证')):
+            with self.subTest(language=language), override(language), override_settings(
+                NOVA_SLIDER_ALTERNATIVE_URL='/secure-help/', NOVA_SLIDER_ALTERNATIVE_LABEL=label,
+            ):
+                _, soup = self.page()
+                link = soup.select_one('.nsc-alternative a')
+                self.assertEqual(link['href'], '/secure-help/')
+                self.assertEqual(link.get_text(), label)
+                self.assertIsNone(link.find_parent('nova-slider'))
+                self.assertEqual(soup.select_one('nova-slider')['locale'], language)
+
+    @override_settings(NOVA_SLIDER_ALTERNATIVE_URL=None, NOVA_SLIDER_ALTERNATIVE_LABEL=None)
+    def test_unconfigured_alternative_stays_absent(self):
+        self.assertIsNone(self.page()[1].select_one('.nsc-alternative'))
+
+    def test_alternative_forces_escaping_even_for_safe_strings(self):
+        url = mark_safe('/secure?next="\'><svg/onload=alert(1)>&a=1')
+        label = mark_safe('<img src=x onerror=alert(1)> & "help"')
+        with override_settings(NOVA_SLIDER_ALTERNATIVE_URL=url, NOVA_SLIDER_ALTERNATIVE_LABEL=label):
+            _, soup = self.page()
+        link = soup.select_one('.nsc-alternative a')
+        self.assertEqual(link.attrs, {'href': str(url)})
+        self.assertEqual(link.get_text(), str(label))
+        self.assertFalse(link.find_all(True))
+        self.assertFalse(soup.select('.nova-slider-form-widget svg, .nova-slider-form-widget img'))
+
+    def test_unsafe_alternative_urls_are_omitted_without_removing_verification(self):
+        for url in ('javascript:alert(1)', '//evil.invalid/', '/%2fevil.invalid/', '/\\evil.invalid/', '/bad%0apath'):
+            with self.subTest(url=url), override_settings(
+                NOVA_SLIDER_ALTERNATIVE_URL=url, NOVA_SLIDER_ALTERNATIVE_LABEL='Help',
+            ):
+                _, soup = self.page()
+                self.assertIsNone(soup.select_one('.nsc-alternative'))
+                self.assertEqual(soup.select_one('nova-slider')['field-name'], 'nova_slider_token')
+
+    def test_widget_field_name_and_id_are_attribute_escaped(self):
+        name = 'auth-\"><script>alert(1)</script>'
+        soup = BeautifulSoup(NovaSliderWidget().render(name, None, {'id': name}), 'html.parser')
+        component = soup.select_one('nova-slider')
+        self.assertEqual(component['field-name'], name)
+        self.assertEqual(component['id'], name)
+        self.assertFalse(soup.select('script'))

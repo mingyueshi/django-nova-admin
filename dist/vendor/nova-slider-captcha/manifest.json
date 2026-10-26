@@ -1,12 +1,13 @@
 {
   "name": "nova-slider-captcha",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "source": "https://github.com/mingyueshi/django-nova-slider-captcha",
   "license": "MIT",
   "files": {
-    "slider.js": "4d941680a7892566691712663d65bfb6f5c3961847af0b0e5335c19b3e2dc22f",
-    "slider.css": "284a5512efc6a19eb895497e1664b5e9b7c5bbf062055cd759f919325936aa2c",
+    "slider.js": "a92d3a3235791dd4be5df69046acc8ee1b20402f4998153c5cb2824446c110d4",
+    "slider.css": "f74abe77d9b0c42c2caa490dbd3c4c35460c8ce520a12bd897347b44792e2981",
     "LICENSE.txt": "dbeb6f42abed95102b184d055361664c2d9f13fda02ee49647474e6e28271ffe"
   },
-  "usage": "Unmodified Web Component; preview subclass simulates transport locally. Django uses the installed package and server-side consume()."
+  "usage": "Unmodified Web Component; preview subclass simulates transport locally. Django uses the installed package and server-side consume().",
+  "commit": "62a93e7efc2d4f1cca0a9390627f5a821c4c742c"
 }

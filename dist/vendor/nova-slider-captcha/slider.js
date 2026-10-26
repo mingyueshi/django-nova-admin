@@ -86,13 +86,48 @@
     "challenge_unavailable", "init_required", "expired", "already_verified",
     "attempts_exhausted",
   ]);
-  const normalizeLocale = (value) =>
-    typeof value === "string" && /^en(?:[-_][a-z0-9]+)*$/i.test(value.trim())
-      ? "en" : "zh-CN";
+  const normalizeLocale = (value) => {
+    if (typeof value !== "string") return "zh-CN";
+    const tag = value.trim();
+    // A small locale-tag grammar, not a BCP47 registry/semantic validator.
+    // Missing/malformed input retains the historical Chinese default; explicit
+    // well-formed unsupported languages use the available English dictionary.
+    if (!/^[a-z]{2,8}(?:[-_][a-z0-9]{1,8})*$/i.test(tag)) return "zh-CN";
+    return /^zh(?:[-_]|$)/i.test(tag) ? "zh-CN" : "en";
+  };
   const bounded = (value, max) =>
     typeof value === "number" && Number.isFinite(value)
       ? Math.min(max, Math.max(0, Math.ceil(value))) : 0;
   const localError = (key, values = {}) => Object.assign(new Error(key), { key, values });
+  function loadImage(image, source, signal) {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const decode = typeof image.decode === "function";
+      const finish = (error) => {
+        if (settled) return;
+        settled = true;
+        image.removeEventListener("load", loaded);
+        image.removeEventListener("error", failed);
+        signal.removeEventListener("abort", aborted);
+        if (error) reject(error); else resolve();
+      };
+      const loaded = () => { if (!decode) finish(); };
+      const failed = () => finish(new Error("Image loading failed"));
+      const aborted = () => finish(new DOMException("Image loading aborted", "AbortError"));
+      // Register before src, including cached/synchronously delivered load events.
+      image.addEventListener("load", loaded);
+      image.addEventListener("error", failed);
+      signal.addEventListener("abort", aborted, { once: true });
+      if (signal.aborted) { aborted(); return; }
+      try {
+        image.src = source;
+        if (decode) image.decode().then(() => finish(), finish);
+        else if (image.complete) {
+          if (image.naturalWidth > 0) finish(); else failed();
+        }
+      } catch (error) { finish(error); }
+    });
+  }
   const errorText = (data, fallback) => {
     if (data?.code === "rate_limit_unavailable") return { key: "unavailable", values: {} };
     if (!errorKeys.has(data?.code)) return { key: fallback, values: {} };
@@ -120,14 +155,26 @@
     return inits.get(endpoint);
   }
   class NovaSlider extends HTMLElement {
-    static get observedAttributes() { return ["locale"]; }
+    static get observedAttributes() { return ["locale", "aria-describedby", "aria-invalid"]; }
     get locale() { return normalizeLocale(this.getAttribute("locale")); }
     set locale(value) { this.setLocale(value); }
     setLocale(value) {
       this.setAttribute("locale", normalizeLocale(value));
       return this.locale;
     }
-    attributeChangedCallback() { this.renderLocale(); }
+    attributeChangedCallback(name) {
+      if (name === "locale") this.renderLocale();
+      else this.syncFormAria();
+    }
+    syncFormAria() {
+      if (!this.range) return;
+      const descriptions = (this.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean);
+      descriptions.push(this.querySelector(".nsc-keyboard").id);
+      this.range.setAttribute("aria-describedby", [...new Set(descriptions)].join(" "));
+      const invalid = this.getAttribute("aria-invalid");
+      if (invalid === null) this.range.removeAttribute("aria-invalid");
+      else this.range.setAttribute("aria-invalid", invalid);
+    }
     get messages() { return { ...dictionaries[this.locale], ...this._messages }; }
     set messages(overrides) {
       if (overrides === null) this._messages = {};
@@ -164,7 +211,7 @@
         if (attribute) element.setAttribute(attribute, this.getText(key));
         else element.textContent = this.getText(key);
       }
-      this.range.setAttribute("aria-valuetext", this.getText("value", { percent: Math.round((this.x / 276) * 100) }));
+      this.range.setAttribute("aria-valuetext", this.getText("value", { percent: Math.round((this.x / this.maxX) * 100) }));
       this.renderStatus();
       this.emit("captcha-locale", { locale: this.locale });
     }
@@ -173,6 +220,8 @@
       this.live = true;
       this.seq = (this.seq || 0) + 1;
       this.x = 0;
+      this.maxX = 1;
+      this.imageWidth = 1;
       this.resetPointer();
       this.abortEvents = new AbortController();
       // Upgrade property values assigned before customElements.define().
@@ -184,12 +233,14 @@
         }
       }
       // Only fixed markup is inserted here. All translated/custom text uses textContent.
-      this.innerHTML = `<div class="nsc"><div class="nsc-image"><img class="nsc-background" alt="" draggable="false"><img class="nsc-piece" alt="" draggable="false"><div class="nsc-overlay"></div></div><div class="nsc-track"><div class="nsc-fill"></div><span class="nsc-track-text" aria-hidden="true"></span><input class="nsc-range" type="range" min="0" max="276" step="1" value="0" aria-describedby="nsc-instructions-${NovaSlider.id++}"><span class="nsc-handle" aria-hidden="true">→</span></div><div class="nsc-meta"><span class="nsc-status" role="status" aria-live="polite"></span><button class="nsc-refresh" type="button"><span aria-hidden="true">↻</span> <span class="nsc-refresh-text"></span></button></div><p class="nsc-keyboard"></p><input type="hidden" name="nova_slider_token" value=""></div>`;
+      this.innerHTML = `<div class="nsc"><div class="nsc-image"><img class="nsc-background" alt="" draggable="false"><img class="nsc-piece" alt="" draggable="false"><div class="nsc-overlay"></div></div><div class="nsc-track"><div class="nsc-fill"></div><span class="nsc-track-text" aria-hidden="true"></span><input class="nsc-range" type="range" min="0" max="1" step="1" value="0" aria-describedby="nsc-instructions-${NovaSlider.id++}"><span class="nsc-handle" aria-hidden="true">→</span></div><div class="nsc-meta"><span class="nsc-status" role="status" aria-live="polite"></span><button class="nsc-refresh" type="button"><span aria-hidden="true">↻</span> <span class="nsc-refresh-text"></span></button></div><p class="nsc-keyboard"></p><input type="hidden" name="nova_slider_token" value=""></div>`;
       this.range = this.querySelector(".nsc-range");
       this.querySelector(".nsc-keyboard").id = this.range.getAttribute("aria-describedby");
+      this.syncFormAria();
       this.status = this.querySelector(".nsc-status");
       this.overlay = this.querySelector(".nsc-overlay");
       this.field = this.querySelector("input[type=hidden]");
+      this.field.name = this.getAttribute("field-name") || "nova_slider_token";
       this.state = "loading";
       this.stateText = { key: "connecting", values: {} };
       this.renderLocale();
@@ -267,12 +318,12 @@
       this.emit("captcha-state", { state, message: this.status.textContent });
     }
     move(x) {
-      this.x = Number.isFinite(x) ? Math.min(276, Math.max(0, x)) : 0;
+      this.x = Number.isFinite(x) ? Math.min(this.maxX, Math.max(0, x)) : 0;
       this.range.value = this.x;
-      this.querySelector(".nsc-piece").style.left = (this.x / 320) * 100 + "%";
-      this.querySelector(".nsc-handle").style.left = `calc(${(this.x / 276) * 100}% - ${(this.x / 276) * 48}px)`;
-      this.querySelector(".nsc-fill").style.width = `calc(${(this.x / 276) * 100}% + ${48 - (this.x / 276) * 48}px)`;
-      this.range.setAttribute("aria-valuetext", this.getText("value", { percent: Math.round((this.x / 276) * 100) }));
+      this.querySelector(".nsc-piece").style.left = (this.x / this.imageWidth) * 100 + "%";
+      this.querySelector(".nsc-handle").style.left = `calc(${(this.x / this.maxX) * 100}% - var(--nsc-handle-size) * ${this.x / this.maxX})`;
+      this.querySelector(".nsc-fill").style.width = `calc(${(this.x / this.maxX) * 100}% + var(--nsc-handle-size) * ${1 - this.x / this.maxX})`;
+      this.range.setAttribute("aria-valuetext", this.getText("value", { percent: Math.round((this.x / this.maxX) * 100) }));
     }
     async post(action, body, signal) {
       const csrfToken = await init(this.endpoint);
@@ -306,13 +357,31 @@
           const message = errorText(data, "generation_failed");
           throw localError(message.key, message.values);
         }
+        // Geometry is public protocol data, but must be valid before arithmetic
+        // or enabling input. Dimensions are bounded independently of CSS pixels.
+        const dimension = (v) => Number.isInteger(v) && v > 0 && v <= 8192;
+        if (!dimension(data.width) || !dimension(data.height) || !dimension(data.pieceWidth)
+            || data.pieceWidth >= data.width || data.pieceWidth > data.height
+            || !Number.isInteger(data.pieceY) || data.pieceY < 0
+            || data.pieceY > data.height - data.pieceWidth)
+          throw localError("generation_failed");
         this.challenge = data;
-        const bg = this.querySelector(".nsc-background"), piece = this.querySelector(".nsc-piece");
-        bg.src = data.background;
-        piece.src = data.piece;
+        this.imageWidth = data.width;
+        this.maxX = data.width - data.pieceWidth;
+        this.range.max = String(this.maxX);
+        this.querySelector(".nsc-image").style.aspectRatio = `${data.width} / ${data.height}`;
+        this.move(0);
+        // New nodes isolate each generation from old image load/error events.
+        const bg = new Image(), piece = new Image();
+        for (const [image, className, alt] of [[bg, "nsc-background", "background_alt"], [piece, "nsc-piece", "piece_alt"]]) {
+          image.className = className;
+          image.alt = this.getText(alt);
+          image.draggable = false;
+          this.querySelector("." + className).replaceWith(image);
+        }
         piece.style.width = (data.pieceWidth / data.width) * 100 + "%";
         piece.style.top = (data.pieceY / data.height) * 100 + "%";
-        await Promise.all([bg.decode(), piece.decode()]);
+        await Promise.all([loadImage(bg, data.background, this.request.signal), loadImage(piece, data.piece, this.request.signal)]);
         if (seq !== this.seq) return;
         this.setState("ready", "ready");
         this.timer = setTimeout(() => {
@@ -325,6 +394,7 @@
         }, Math.max(0, data.expiresIn * 1000 - (Date.now() - started)));
       } catch (e) {
         if (seq !== this.seq || e.name === "AbortError") return;
+        this.request.abort(); // Also clean up a sibling image still loading.
         this.setState("error", Object.hasOwn(dictionaries.en, e.key) ? e.key : "network_error", e.values);
       }
     }

@@ -206,7 +206,7 @@ npm run format
 
 ## 1.6.0 / 0.4.0 登录页与可选验证码
 
-当前登录演示已支持图形／拼图滑块、每次验证／异常后验证，以及 5／6／8 位字符对比。图片与输入框各占一行；真实 Django 表单支持服务端失败升级策略，滑块接入独立 `nova-slider-captcha` 0.2.0 包并先消费一次性凭证再认证。预览仍为本地 mock。配置与兄弟项目安装方法见 [登录验证码接入](django-theme/CAPTCHA_INTEGRATION.md)。
+当前登录演示已支持图形／拼图滑块、每次验证／异常后验证，以及 5／6／8 位字符对比。图片与输入框各占一行；真实 Django 表单支持服务端失败升级策略，滑块接入独立 `nova-slider-captcha` 0.3.0 包并先消费一次性凭证再认证。预览仍为本地 mock。配置与兄弟项目安装方法见 [登录验证码接入](django-theme/CAPTCHA_INTEGRATION.md)。
 
 - `dist/login.html`：独立登录交互演示，企业浅蓝/深色/自动、几何背景、手机单栏。只使用预填的虚构账号，不输入真实密码
 - `#login-preview` 和 `#native-samples` 提供入口，`responsive.html` 可检查不同宽度

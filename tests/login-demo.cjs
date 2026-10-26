@@ -606,6 +606,26 @@ test('original slider component keyboard solve and one-time demo consumption', a
   assert.equal(slider.live, false);
 });
 
+test('component submits its configured prefixed name through native FormData', async (ui) => {
+  const form = ui.d.createElement('form');
+  const slider = ui.d.createElement('nova-slider-demo');
+  slider.setAttribute('field-name', 'auth-nova_slider_token');
+  slider.setAttribute('purpose', 'login');
+  form.append(slider);
+  ui.d.body.append(form);
+  await settleSlider();
+  assert.equal(slider.state, 'ready');
+  slider.move(slider.demoPuzzle.x); // Public synthetic answer; transport stays local.
+  slider.range.dispatchEvent(new ui.w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await settleSlider();
+  assert.equal(slider.state, 'success');
+  const submitted = new ui.w.FormData(form);
+  assert.equal(submitted.get('auth-nova_slider_token'), slider.getToken());
+  assert.equal(submitted.has('nova_slider_token'), false);
+  assert.equal(form.querySelectorAll('input[type="hidden"]').length, 1);
+  form.remove();
+});
+
 test('slider proof expiry, refresh and wrong password require a fresh solution', async (ui) => {
   ui.change('#captcha-provider', 'slider');
   await solveSlider(ui); ui.advance(60001);
@@ -637,7 +657,8 @@ test('vendored slider bytes match the declared MIT source manifest', () => {
   const crypto = require('node:crypto');
   const base = path.join(project, 'dist/vendor/nova-slider-captcha');
   const manifest = JSON.parse(fs.readFileSync(path.join(base, 'manifest.json')));
-  assert.equal(manifest.version, '0.2.0');
+  assert.equal(manifest.version, '0.3.0');
+  assert.equal(manifest.commit, '62a93e7efc2d4f1cca0a9390627f5a821c4c742c');
   assert.equal(manifest.license, 'MIT');
   for (const [name, digest] of Object.entries(manifest.files))
     assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(base, name))).digest('hex'), digest);
