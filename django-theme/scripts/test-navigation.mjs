@@ -193,18 +193,19 @@ for (const path of paths) {
     assert.equal(result.apps[1].open, false);
     assert.deepEqual(result.sections.map(section => section.open), [false, false]);
   });
-  await test('first visit and active route never expand untouched ancestors', () => {
+  await test('first visit reveals only active ancestors without persisting automatic choices', () => {
     const result = setup({active: 'product'});
-    assert.deepEqual(result.apps.map(item => item.open), [false, false]);
-    assert.deepEqual(result.sections.map(item => item.open), [false, false]);
+    assert.deepEqual(result.apps.map(item => item.open), [true, false]);
+    assert.deepEqual(result.sections.map(item => item.open), [true, false]);
     assert.deepEqual(result.state().nodes, []);
     const different = setup({active: 'category', local: result.local, session: result.session});
-    assert.equal(different.apps[0].open, false);
-    assert.equal(different.sections[0].open, false);
+    assert.equal(different.apps[0].open, true);
+    assert.equal(different.sections[0].open, true);
+    assert.deepEqual(different.state().nodes, []);
     assert.equal(different.window.document.querySelector('[aria-current="page"]').textContent, '商品分类');
   });
   await test('manual open and close survive routes and reloads with independent levels', () => {
-    const result = setup({active: 'product'});
+    const result = setup();
     result.sections[0].querySelector('summary').click();
     result.apps[0].querySelector('summary').click();
     // No timeout: the user's choice is persisted before a navigation can unload.
@@ -220,7 +221,7 @@ for (const path of paths) {
     closedParent.sections[0].querySelector('summary').click();
     assert.equal(closedParent.apps[0].open, true);
     closedParent.apps[0].querySelector('summary').click();
-    const closedChild = setup({active: 'product', local: result.local});
+    const closedChild = setup({local: result.local});
     assert.equal(closedChild.apps[0].open, false);
     assert.equal(closedChild.sections[0].open, true);
   });
@@ -228,10 +229,70 @@ for (const path of paths) {
     const legacy = JSON.stringify({version: 1, active: 'legacy', nodes: [['a:0000000000000000', true]]});
     const local = new MemoryStorage([[filterKey(scope), legacy], ['nova-theme', 'dark'], ['django.admin.navSidebarIsOpen', 'false']]);
     const result = setup({local, active: 'product'});
-    assert.ok([...result.apps, ...result.sections].every(item => !item.open));
+    assert.deepEqual(result.apps.map(item => item.open), [true, false]);
+    assert.deepEqual(result.sections.map(item => item.open), [true, false]);
     assert.equal(local.getItem(filterKey(scope)), legacy);
     assert.equal(local.getItem('nova-theme'), 'dark');
     assert.equal(local.getItem('django.admin.navSidebarIsOpen'), 'false');
+  });
+  await test('saved closed ancestors yield to a new route but remain explicit stored choices', () => {
+    const first = setup({active: 'product'});
+    first.sections[0].querySelector('summary').click();
+    first.apps[0].querySelector('summary').click();
+    assert.ok(first.state().nodes.every(([, value]) => value === false));
+    const before = first.local.getItem(stateKey(scope));
+    for (const grouped of [false, true]) {
+      const next = setup({active: 'category', local: first.local, grouped});
+      assert.equal(next.apps[0].open, true);
+      if (grouped) assert.equal(next.sections[0].open, true);
+      assert.ok(next.state().nodes.every(([, value]) => value === false));
+    }
+    assert.ok(before.includes('false'));
+  });
+  await test('in-page manual collapse survives search clearing and storage or Back restoration', () => {
+    const result = setup({active: 'product'});
+    result.apps[0].querySelector('summary').click();
+    result.sections[0].querySelector('summary').click();
+    result.fire('input', '商品');
+    assert.equal(result.apps[0].open, true);
+    result.window.dispatchEvent(new result.window.StorageEvent('storage', {key: stateKey(scope)}));
+    result.fire('input', '');
+    result.window.dispatchEvent(new result.window.PageTransitionEvent('pageshow', {persisted: true}));
+    assert.equal(result.apps[0].open, false);
+    assert.equal(result.sections[0].open, false);
+    const refreshed = setup({active: 'product', local: result.local});
+    assert.equal(refreshed.apps[0].open, true);
+    assert.equal(refreshed.sections[0].open, true);
+  });
+  await test('old sidebar search cannot hide the current page; a new search remains usable', () => {
+    const previous = setup();
+    previous.fire('input', 'Users');
+    const current = setup({active: 'product', local: previous.local, session: previous.session});
+    assert.equal(current.filter.value, '');
+    assert.equal(current.apps[0].hidden, false);
+    assert.equal(current.apps[0].open, true);
+    assert.equal(current.sections[0].open, true);
+    assert.deepEqual(current.state().nodes, []);
+    current.fire('input', 'Users');
+    assert.equal(current.apps[0].hidden, true);
+    current.fire('keyup', '', 'Escape');
+    assert.equal(current.apps[0].hidden, false);
+    assert.equal(current.apps[0].open, true);
+  });
+  await test('app index markers reveal their section without an active model link', () => {
+    const html = markup().replace('class="nova-nav-group"', 'class="nova-nav-group current-app"');
+    const result = setup({html});
+    assert.equal(result.window.document.querySelector('[aria-current="page"]'), null);
+    assert.equal(result.apps[0].open, true);
+    assert.equal(result.sections[0].open, true);
+    assert.deepEqual(result.state().nodes, []);
+  });
+  await test('current location is visible when storage is inaccessible', () => {
+    const result = setup({active: 'product', denyStorage: true});
+    assert.equal(result.apps[0].open, true);
+    assert.equal(result.sections[0].open, true);
+    result.apps[0].querySelector('summary').click();
+    assert.equal(result.apps[0].open, false);
   });
   await test('explicit group keys survive labels and visible membership changes', () => {
     const html = markup().replace('class="nova-nav-section"', 'class="nova-nav-section" data-nova-nav-section="business"');

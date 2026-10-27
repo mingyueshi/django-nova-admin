@@ -87,7 +87,7 @@ class NavigationPersistenceMarkupTests(TestCase):
         )]
         self.assertTrue(details)
         for item in details:
-            self.assertNotIn("open", item["attrs"])
+            self.assertIn("open", item["attrs"])
             children = [child for child in elements if child["ancestors"] and child["ancestors"][-1] is item]
             self.assertEqual(children[0]["tag"], "summary")
             self.assertNotIn("role", children[0]["attrs"])
@@ -99,15 +99,51 @@ class NavigationPersistenceMarkupTests(TestCase):
         self.assertEqual(current[0]["attrs"]["href"], reverse("admin:catalog_product_changelist"))
 
     @override_settings(NOVA_ADMIN_NAV_GROUPS=[{"key": "business", "label": "Business", "apps": ["catalog"]}])
-    def test_both_disclosure_levels_are_closed_even_on_the_current_model(self):
+    def test_both_disclosure_levels_open_for_the_current_model_without_javascript(self):
         elements = self.elements(self.client.get(reverse("admin:catalog_product_changelist")))
         details = [item for item in elements if item["tag"] == "details" and any(
             name in item["attrs"].get("class", "").split() for name in ["nova-nav-group", "nova-nav-section"]
         )]
         self.assertEqual(len(details), 2)
-        self.assertTrue(all("open" not in item["attrs"] for item in details))
+        self.assertTrue(all("open" in item["attrs"] for item in details))
         section = next(item for item in details if "nova-nav-section" in item["attrs"]["class"])
         self.assertEqual(section["attrs"]["data-nova-nav-section"], "business")
+
+    @override_settings(NOVA_ADMIN_NAV_GROUPS=[
+        {"key": "business", "label": "Business", "apps": ["catalog"]},
+        {"key": "system", "label": "System", "apps": ["auth"]},
+    ])
+    def test_direct_routes_open_only_current_ancestors(self):
+        self.viewer.user_permissions.add(*Permission.objects.filter(
+            content_type__app_label="catalog", codename="add_product",
+        ), Permission.objects.get(content_type__app_label="auth", codename="view_user"))
+        for url in [
+            reverse("admin:catalog_product_changelist"),
+            reverse("admin:catalog_product_changelist") + "?q=Navigation&p=0",
+            reverse("admin:catalog_product_add"),
+            reverse("admin:catalog_product_change", args=[self.product.pk]),
+            reverse("admin:catalog_product_history", args=[self.product.pk]),
+            reverse("admin:app_list", args=["catalog"]),
+        ]:
+            with self.subTest(url=url):
+                elements = self.elements(self.client.get(url))
+                details = [item for item in elements if item["tag"] == "details" and
+                           ("data-nova-nav-app" in item["attrs"] or "data-nova-nav-section" in item["attrs"])]
+                opened = [item["attrs"].get("data-nova-nav-app") or item["attrs"].get("data-nova-nav-section")
+                          for item in details if "open" in item["attrs"]]
+                self.assertEqual(opened, ["business", "catalog"])
+
+    def test_moved_custom_and_add_only_destinations_use_visible_menu_membership(self):
+        from nova_admin.templatetags.nova_tags import nova_navigation_app_current, nova_navigation_group_current
+
+        moved = {"app_url": "/admin/old/", "models": [{"admin_url": "/admin/other/record/"}]}
+        add_only = {"models": [{"add_url": "/admin/other/record/add/"}]}
+        self.assertTrue(nova_navigation_app_current(moved, "/admin/other/record/7/manage/edit/"))
+        self.assertFalse(nova_navigation_app_current(moved, "/admin/other/recorded/"))
+        self.assertFalse(nova_navigation_app_current(moved, "/admin/old/unrelated/"))
+        self.assertTrue(nova_navigation_app_current(add_only, "/admin/other/record/add/"))
+        self.assertTrue(nova_navigation_group_current({"apps": [moved]}, "/admin/other/record/7/history/"))
+        self.assertFalse(nova_navigation_group_current({"apps": []}, "/admin/other/record/"))
 
     def test_native_mode_has_no_nova_state_attributes_or_script(self):
         session = self.client.session

@@ -163,15 +163,22 @@
             return nodes;
         };
         let savedNodes = decodeNodes(stored);
+        // Route visibility is transient, separate from the user's stored choices.
+        // Use server-rendered markers so host-specific menu ownership is retained.
+        const currentPath = new Set(details.filter(item => item.matches('.current-app') ||
+            item.querySelector('.current-app, .current-model, [aria-current="page"]')));
+        const currentChoices = new Map();
+        const effectiveOpen = item => currentPath.has(item) ?
+            (currentChoices.has(item) ? currentChoices.get(item) : true) :
+            savedNodes.get(keys.get(item)) === true;
         const openState = new Map();
         const setOpen = (item, value) => { item.open = value; };
         details.forEach(item => {
-            const value = savedNodes.get(keys.get(item)) === true;
+            const value = effectiveOpen(item);
             openState.set(item, value);
             setOpen(item, value);
         });
-        // aria-current still identifies the page; routes never change disclosure.
-        // Only explicitly activated nodes are saved. Untouched nodes stay closed.
+        // Only explicit clicks are saved. Unrelated untouched nodes stay closed.
         let openWriteFailed = false;
         const persistOpen = () => {
             // A failed initial read means existing choices are unknown. Keep
@@ -229,6 +236,7 @@
             const value = !item.open;
             setOpen(item, value);
             if (!filtering) {
+                if (currentPath.has(item)) currentChoices.set(item, value);
                 openState.set(item, value);
                 savedNodes.set(keys.get(item), value);
                 persistOpen();
@@ -243,7 +251,9 @@
         // are attached to the replacement input, so the two filters do not race.
         records.forEach(record => record.rows.forEach(row => { row.node.style.display = ''; }));
         const storedFilter = read('sessionStorage', 2000, filterKey);
-        filter.value = storedFilter && storedFilter.signature === signature &&
+        // A previous page's search must not hide this page's current location.
+        // A fresh search remains available and clearing it restores in-page choices.
+        filter.value = !currentPath.size && storedFilter && storedFilter.signature === signature &&
             typeof storedFilter.query === 'string' && storedFilter.query.length <= MAX_QUERY ?
             storedFilter.query : '';
         persistOpen(); // Prune stale nodes; saved state never creates DOM or links.
@@ -254,7 +264,7 @@
             if (latest === undefined) return; // Keep this page usable when storage is blocked.
             savedNodes = decodeNodes(latest);
             details.forEach(item => {
-                const value = savedNodes.get(keys.get(item)) === true;
+                const value = effectiveOpen(item);
                 openState.set(item, value);
                 if (!filtering) setOpen(item, value);
             });

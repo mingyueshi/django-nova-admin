@@ -5,10 +5,34 @@ from collections import Counter
 
 from django import template
 from django.utils.crypto import salted_hmac
+from django.utils.encoding import iri_to_uri
 from django.utils.html import format_html
 from django.utils.translation import pgettext
 
 register = template.Library()
+
+
+@register.filter
+def nova_navigation_app_current(app, path):
+    """Locate a permitted app using its displayed destinations, including add-only menus."""
+    path = iri_to_uri(path or "")
+    if not path or not isinstance(app, dict):
+        return False
+    if app.get("app_url") and path == iri_to_uri(app["app_url"]):
+        return True
+    for model in app.get("models", []):
+        for url in (model.get("admin_url"), model.get("add_url")):
+            if url:
+                url = iri_to_uri(url)
+                if path == url or path.startswith(url.rstrip("/") + "/"):
+                    return True
+    return False
+
+
+@register.filter
+def nova_navigation_group_current(group, path):
+    """Only open ancestors already present in this permission-filtered group."""
+    return any(nova_navigation_app_current(app, path) for app in group.get("apps", []))
 
 
 @register.simple_tag
