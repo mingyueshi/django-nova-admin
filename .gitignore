@@ -26,3 +26,5 @@ django-theme/build/
 django-theme/dist/
 PACKAGE_MANIFEST.json
 .workbuddy/
+.mimosa/
+.video_agent/
