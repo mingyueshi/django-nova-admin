@@ -12,6 +12,7 @@ from unittest.mock import Mock, patch
 from captcha.conf import settings as captcha_settings
 from captcha.models import CaptchaStore
 from django.test import RequestFactory, TransactionTestCase, override_settings
+from django.core.cache import cache
 
 from nova_admin.captcha import captcha_audio, _discard_audio
 from nova_admin.captcha_audio import AudioGenerationError, _run
@@ -20,6 +21,8 @@ from nova_admin.captcha_audio import AudioGenerationError, _run
 class SyntheticAudioTools:
     def setUp(self):
         super().setUp()
+        cache.clear()
+        self.enterContext(override_settings(NOVA_ADMIN_CAPTCHA_AUDIO_KEY_LIMIT=1000, NOVA_ADMIN_CAPTCHA_AUDIO_IP_LIMIT=1000))
         self.directory = TemporaryDirectory(prefix="nova-audio-test-")
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
@@ -107,7 +110,7 @@ class CaptchaAudioGenerationTests(SyntheticAudioTools, TransactionTestCase):
             _run(["synthetic"], 1)
             _run(["synthetic"], 1)
         waits = [call.kwargs["timeout"] for call in process.wait.call_args_list if "timeout" in call.kwargs]
-        self.assertEqual(waits, [0.9, 0.4])
+        self.assertEqual(waits, [0.9, 0.2, 0.4, 0.2])
         for call in spawn.call_args_list:
             self.assertFalse(call.kwargs["shell"])
 
@@ -116,6 +119,17 @@ class CaptchaAudioGenerationTests(SyntheticAudioTools, TransactionTestCase):
             with self.assertRaises(AudioGenerationError):
                 _run(["synthetic"], 1)
             run.assert_not_called()
+
+    def test_unreapable_killed_child_cannot_block_cleanup_forever(self):
+        process = Mock(stdout=Mock())
+        process.poll.return_value = None
+        process.wait.side_effect = subprocess.TimeoutExpired('synthetic', 0.2)
+        with patch('nova_admin.captcha_audio.subprocess.Popen', return_value=process), patch('nova_admin.captcha_audio._wait_process', side_effect=AudioGenerationError):
+            with self.assertRaises(AudioGenerationError):
+                _run(['synthetic'], float('inf'))
+        process.kill.assert_called_once()
+        process.wait.assert_called_once_with(timeout=0.2)
+        process.stdout.close.assert_called_once()
 
     @override_settings(NOVA_ADMIN_CAPTCHA_AUDIO_TIMEOUT=1)
     def test_pipeline_shares_deadline_instead_of_restarting_each_stage(self):

@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Focused regression tests for the authored palette token resolver."""
 import importlib.util
+import io
+import json
 from pathlib import Path
 import unittest
+from contextlib import redirect_stdout
+from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location('palette_contrast', Path(__file__).parents[1] / 'test_palette_contrast.py')
 contrast = importlib.util.module_from_spec(SPEC)
@@ -13,6 +17,12 @@ selector_match = contrast.selector_match
 
 
 class PaletteTokenResolverTests(unittest.TestCase):
+    def test_missing_input_still_emits_failure_json(self):
+        output = io.StringIO()
+        with patch.object(contrast, 'audit', side_effect=FileNotFoundError('missing palette')), redirect_stdout(output):
+            self.assertTrue(contrast.main())
+        self.assertEqual(json.loads(output.getvalue())['passed'], False)
+
     def test_where_is_zero_specificity_and_matches_nested_not(self):
         element = {'tag': 'html', 'classes': set(),
                    'attributes': {'data-palette': 'graphite', 'data-theme': 'dark'}}

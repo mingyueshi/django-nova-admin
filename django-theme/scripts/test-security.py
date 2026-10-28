@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline wheel-only Axes interoperability matrix with import provenance.
+"""Offline wheel-only Axes and Slider interoperability with import provenance.
 
 Example (run from django-theme):
   python scripts/test-security.py --wheel dist/nova_django_admin_theme-0.6.0-py3-none-any.whl \
@@ -62,12 +62,17 @@ def worker(context_path, step):
     assert settings.DATABASES["default"]["NAME"] == ":memory:"
     assert settings.DATABASES["default"]["TEST"]["NAME"] == context["test_db"]
     django.setup()
+    from django.apps import apps
+    if context['profile'] == 'slider':
+        assert apps.is_installed('nova_slider_captcha'), 'Slider provider must be enabled'
     if step == "check":
         call_command("check")
     elif step == "migrations":
         call_command("makemigrations", check=True, dry_run=True, interactive=False)
     elif step == "tests":
-        call_command("test", "tests.test_security_interop", verbosity=2, interactive=False)
+        labels = (["tests.test_slider", "tests.test_captcha_policy"] if context['profile'] == 'slider'
+                  else ["tests.test_security_interop"])
+        call_command("test", *labels, verbosity=2, interactive=False)
     else:
         raise ValueError(step)
 
@@ -80,6 +85,7 @@ def main():
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--wheelhouse", type=Path, action="append", required=True)
     parser.add_argument("--django", nargs="+", default=["5.2.17", "6.0.8", "6.1.1"])
+    parser.add_argument("--profile", nargs="+", choices=["security", "slider"], default=["security", "slider"])
     args = parser.parse_args()
     if len(args.django) != len(set(args.django)):
         parser.error("--django must not contain duplicate version cells")
@@ -121,14 +127,15 @@ def main():
     shutil.copy2(__file__, script)
     env = {key: value for key, value in os.environ.items() if not key.startswith(("PYTHON", "DJANGO", "NOVA_", "PIP_"))}
     results = []
-    for version in args.django:
-        directory = args.root / version
+    for profile, version in ((profile, version) for profile in args.profile for version in args.django):
+        directory = args.root / f'{profile}-{version}'
         directory.mkdir()
         venv = directory / "venv"
         python = venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
-        deps = {"Django": version, **manifest["core"], **manifest["captcha"], "django-axes": "8.3.1"}
+        deps = {"Django": version, **manifest["core"],
+                **(manifest['captcha'] if profile == 'security' else {}), **manifest[profile]}
         context = {
-            "python": args.expected_python, "django": version, "version": project["version"], "wheel_sha256": wheel_hash,
+            "python": args.expected_python, "django": version, "profile": profile, "version": project["version"], "wheel_sha256": wheel_hash,
             "venv": str(venv), "directory": str(directory), "dependencies": deps,
             "test_db": str(directory / "security-test.sqlite3"),
             "import_paths": [str(directory), str(harness), str(harness / "demo")],
@@ -136,7 +143,8 @@ def main():
         write_json(directory / "context.json", context)
         database = {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:", "TEST": {"NAME": context["test_db"]}}
         (directory / "security_matrix_settings.py").write_text(
-            f"from config.security_settings import *\nDATABASES = {{'default': {database!r}}}\n"
+            f"from {'config.security_settings' if profile == 'security' else 'tests.slider_settings'} import *\n"
+            f"DATABASES = {{'default': {database!r}}}\nNOVA_DEMO_LOOPBACK_ONLY = False\n"
         )
         install = [str(python), "-I", "-m", "pip", "--disable-pip-version-check", "install", "--no-index", "--no-deps", "--only-binary=:all:"]
         for wheelhouse in args.wheelhouse:
@@ -151,7 +159,7 @@ def main():
         # SQLite connection from being reused by file-backed test DB setup.
         for step in ("check", "migrations", "tests"):
             commands[step] = [str(python), "-I", str(script), "--worker", str(directory / "context.json"), step]
-        row = {"django": version, "status": "running", "steps": {}}
+        row = {"django": version, "profile": profile, "status": "running", "steps": {}}
         results.append(row)
         for name, command in commands.items():
             with (directory / f"{name}.log").open("w") as log:
@@ -168,7 +176,7 @@ def main():
                 content = (directory / "tests.log").read_text()
                 match = re.search(r"Ran (\d+) tests? in", content)
                 row["steps"][name]["tests_run"] = int(match[1]) if match else None
-                if not match or "\nOK\n" not in content:
+                if not match or int(match[1]) == 0 or "\nOK\n" not in content or re.search(r'\bskipped\b', content):
                     code = code or 1
                     row["steps"][name]["exit_code"] = code
             if code:
@@ -177,7 +185,7 @@ def main():
         else:
             row["status"] = "passed"
         write_json(args.root / "results.json", {"wheel": str(args.wheel), "wheel_sha256": wheel_hash, "results": results})
-        print(f"Django {version}: {row['status']}", flush=True)
+        print(f"{profile} / Django {version}: {row['status']}", flush=True)
     return int(any(row["status"] != "passed" for row in results))
 
 

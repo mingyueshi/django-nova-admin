@@ -11,6 +11,14 @@ from tests.test_theme_context import MissingRouteUrls, NestedUrls, NoThemeUrls
 
 
 class ThemeChecksTests(SimpleTestCase):
+    def test_each_django_engine_requires_the_processor(self):
+        templates = deepcopy(settings.TEMPLATES)
+        other = deepcopy(templates[0])
+        other['NAME'] = 'other'
+        other['OPTIONS']['context_processors'].remove('nova_admin.context_processors.theme')
+        with override_settings(TEMPLATES=[*templates, other]):
+            self.assertEqual([message.id for message in theme_context_check(None)], ['nova_admin.W001'])
+
     def test_default_project_is_clean_and_checks_are_registered(self):
         self.assertEqual(theme_context_check(None), [])
         self.assertEqual(theme_namespace_check(None), [])

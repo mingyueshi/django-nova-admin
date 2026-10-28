@@ -99,6 +99,8 @@ def wheel_check(wheel, source):
             raise ValueError('Unexpected wheel content')
         record_path = prefix + 'RECORD'
         records = list(csv.reader(io.StringIO(archive.read(record_path).decode())))
+        if any(len(row) != 3 for row in records):
+            raise ValueError('Malformed wheel RECORD: every row must have three fields')
         if len(records) != len(names) or {x[0] for x in records} != set(names):
             raise ValueError('Incomplete wheel RECORD')
         for name, hash_value, size in records:
@@ -263,7 +265,7 @@ def build(source, output, commit):
     env = dict(os.environ, SOURCE_DATE_EPOCH=str(epoch))
     with tempfile.TemporaryDirectory(prefix='nova-wheel-build-') as temp:
         stage = Path(temp) / 'theme'
-        shutil.copytree(source / 'django-theme', stage, ignore=shutil.ignore_patterns('__pycache__','*.pyc','*.sqlite3','*.sqlite3-*','.venv','build','dist','*.egg-info'))
+        shutil.copytree(source / 'django-theme', stage, ignore=shutil.ignore_patterns('__pycache__','*.pyc','*.sqlite3','*.sqlite3-*','.venv','build','dist','staticfiles','*.egg-info','.DS_Store'))
         # build's default creates an sdist, then builds the wheel FROM that sdist.
         subprocess.run([sys.executable,'-m','build','--no-isolation','--outdir',str(output),str(stage)], check=True, env=env)
     wheels = list(output.glob('*.whl'))

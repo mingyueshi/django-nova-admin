@@ -54,16 +54,16 @@
         const records = apps.map(app => ({
             node: app,
             section: app.closest('.nova-nav-section'),
-            title: normalize(app.querySelector('summary > span').textContent),
+            title: normalize(app.querySelector('summary > span')?.textContent || ''),
             rows: Array.from(app.querySelectorAll('tbody > tr')).map(row => ({
                 node: row,
-                title: normalize((row.querySelector('.nova-nav-model-label') || row.querySelector('th[scope="row"]')).textContent),
+                title: normalize((row.querySelector('.nova-nav-model-label') || row.querySelector('th[scope="row"]'))?.textContent || ''),
                 key: row.dataset.novaNavModel || '',
                 modelKey: row.dataset.novaModelKey || '',
             })),
         }));
         const sectionTitles = new Map(sections.map(section => [
-            section, normalize(section.querySelector('summary > span').textContent),
+            section, normalize(section.querySelector('summary > span')?.textContent || ''),
         ]));
         const signature = fingerprint(JSON.stringify(records.map(record => [
             keys.get(record.node), keys.get(record.section), record.rows.map(row => row.key).sort(),

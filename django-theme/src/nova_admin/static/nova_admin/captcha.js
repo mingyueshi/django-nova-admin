@@ -42,7 +42,7 @@
       }
       if (audio) { audio.hidden = !url; if (url) audio.href = url; }
     }
-    const submitters = Array.from(form.querySelectorAll('[type="submit"]'));
+    const submitters = Array.from(form.elements).filter(function (item) { return item.type === 'submit'; });
     const disabledBefore = submitters.map(function (item) { return item.disabled; });
     function lock(value) {
       answer.readOnly = value;

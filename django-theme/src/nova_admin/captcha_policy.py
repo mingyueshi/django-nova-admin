@@ -34,7 +34,8 @@ class CaptchaPolicyMixin:
             self._nova_key = "nova-login-risk:" + salted_hmac("nova_admin.login-risk.v1", peer).hexdigest()
             count = self._nova_cache.get(self._nova_key, 0)
             if type(count) is not int or count < 0:
-                raise ImproperlyConfigured("Invalid CAPTCHA risk counter.")
+                self._nova_cache.delete(self._nova_key)
+                count = 0
             risk_check = getattr(settings, "NOVA_ADMIN_CAPTCHA_RISK_CHECK", None)
             if risk_check is not None and not callable(risk_check):
                 raise ImproperlyConfigured("NOVA_ADMIN_CAPTCHA_RISK_CHECK must be callable.")
@@ -57,18 +58,17 @@ class CaptchaPolicyMixin:
         if self._errors:
             if not self._nova_failure_recorded:
                 self._nova_failure_recorded = True
-                if self._nova_cache.add(self._nova_key, 1, timeout=self._nova_window):
-                    count = 1
-                else:
+                for _ in range(3):
+                    if self._nova_cache.add(self._nova_key, 1, timeout=self._nova_window):
+                        count = 1
+                        break
                     try:
                         count = self._nova_cache.incr(self._nova_key)
+                        break
                     except ValueError:
-                        # Expiry between add/incr. Start a fresh window without
-                        # overwriting a counter created by another request.
-                        if self._nova_cache.add(self._nova_key, 1, timeout=self._nova_window):
-                            count = 1
-                        else:
-                            count = self._nova_cache.incr(self._nova_key)
+                        continue  # TTL expired between add/incr; retry boundedly.
+                else:
+                    count = self._nova_limit  # Render a challenge on repeated expiry.
                 if count >= self._nova_limit:
                     self.captcha_required = True
             if self.captcha_required:

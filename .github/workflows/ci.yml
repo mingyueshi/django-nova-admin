@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches: [main, master]
+  schedule:
+    - cron: '23 5 * * 2'
   workflow_dispatch:
     inputs:
       scope:
@@ -50,7 +52,7 @@ jobs:
           python-version: '3.12.15'
       - id: plan
         env:
-          SCOPE: ${{ (inputs.full == true || inputs.scope == 'full') && 'full' || 'quick' }}
+          SCOPE: ${{ (github.event_name == 'schedule' || inputs.full == true || inputs.scope == 'full') && 'full' || 'quick' }}
         run: python scripts/ci_support.py plan --scope "$SCOPE" >> "$GITHUB_OUTPUT"
 
   build:
@@ -192,7 +194,7 @@ jobs:
       - name: Obtain exact official Django sidebar files, without installing Django
         run: |
           mkdir "$RUNNER_TEMP/django-wheels"
-          for version in 5.2.17 6.0.8 6.1.1; do
+          for version in $(python -c 'import json; print(" ".join(json.load(open("ci/matrix.json"))["django_wheels"]))'); do
             python -m pip download --no-deps --only-binary=:all: --index-url https://pypi.org/simple --dest "$RUNNER_TEMP/django-wheels" "Django==$version"
           done
           python scripts/ci_support.py sidebars --wheelhouse "$RUNNER_TEMP/django-wheels" --output "$RUNNER_TEMP/sidebars"
@@ -225,7 +227,7 @@ jobs:
           retention-days: 7
 
   security:
-    name: Optional Axes interoperability
+    name: Axes and Slider security regressions
     needs: [plan, build]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -252,12 +254,14 @@ jobs:
         run: |
           python scripts/ci_artifacts.py verify --directory "$RUNNER_TEMP/artifact" --commit "$GITHUB_SHA"
           mkdir "$RUNNER_TEMP/security-wheels"
-          versions=(6.1.1)
-          if [[ "$SCOPE" == full ]]; then versions=(5.2.17 6.0.8 6.1.1); fi
-          for version in "${versions[@]}"; do
-            python -m pip download --no-deps --only-binary=:all: --index-url https://pypi.org/simple --dest "$RUNNER_TEMP/security-wheels" "Django==$version"
+          python -m pip install --require-hashes --no-deps --only-binary=:all: --index-url https://pypi.org/simple -r ci/requirements-tools.txt
+          python scripts/ci_support.py slider-wheel --output "$RUNNER_TEMP/security-wheels"
+          mapfile -t pins < <(python scripts/ci_support.py dependency-pins --scope "$SCOPE" --profile core --profile captcha --profile security)
+          # Different Django versions are independent wheel downloads.
+          for pin in "${pins[@]}"; do
+            python -m pip download --no-deps --only-binary=:all: --index-url https://pypi.org/simple --dest "$RUNNER_TEMP/security-wheels" "$pin"
           done
-          python -m pip download --no-deps --only-binary=:all: --index-url https://pypi.org/simple --dest "$RUNNER_TEMP/security-wheels" asgiref==3.12.1 sqlparse==0.6.0 beautifulsoup4==4.15.0 soupsieve==2.10 typing_extensions==4.16.0 django-simple-captcha==0.7.0 Pillow==12.2.0 django-axes==8.3.1
+          mapfile -t versions < <(python -c 'import json,os; v=list(dict.fromkeys(c["django"] for c in json.load(open("django-theme/scripts/test-matrix.json"))["cells"])); print("\n".join(v if os.environ["SCOPE"] == "full" else v[-1:]))')
           wheel=("$RUNNER_TEMP/artifact/"*.whl)
           python django-theme/scripts/test-security.py --wheel "${wheel[0]}" --python "$(command -v python)" --root "$RUNNER_TEMP/security-matrix" --wheelhouse "$RUNNER_TEMP/security-wheels" --wheelhouse "$RUNNER_TEMP/test-support" --django "${versions[@]}"
       - name: Preserve optional integration evidence
@@ -269,6 +273,7 @@ jobs:
             ${{ runner.temp }}/security-matrix/results.json
             ${{ runner.temp }}/security-matrix/*/provenance.json
             ${{ runner.temp }}/security-matrix/*/*.log
+            ${{ runner.temp }}/security-wheels/slider-provenance.json
           if-no-files-found: warn
           retention-days: 7
 

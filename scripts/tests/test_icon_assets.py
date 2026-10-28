@@ -1,5 +1,6 @@
 """Offline consistency and importer bounds for licensed SVG sources."""
 import importlib.util
+import json
 from pathlib import Path
 import unittest
 import xml.etree.ElementTree as ET
@@ -10,6 +11,13 @@ SPEC.loader.exec_module(icons)
 
 
 class IconAssetTests(unittest.TestCase):
+    def test_template_delimiters_remain_json_data(self):
+        value = {'label': '` ${globalThis.injected = true} \\ backtick`'}
+        embedded = icons.raw_json_literal(json.dumps(value))
+        self.assertNotIn('`', embedded)
+        self.assertNotIn('${', embedded)
+        self.assertEqual(json.loads(embedded), value)
+
     def test_reviewed_sources_and_licenses_match_hashes(self):
         data = icons.payload()
         self.assertEqual(len(data['icons']), 320)

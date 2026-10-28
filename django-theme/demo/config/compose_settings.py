@@ -22,6 +22,8 @@ def _secret_file(variable):
 
 SECRET_KEY = _secret_file("NOVA_DJANGO_SECRET_KEY_FILE")
 DEBUG = True  # Required for this development server's local static-file serving.
+# Docker's peer is its bridge; compose.yml enforces the loopback-only publish.
+NOVA_DEMO_LOOPBACK_ONLY = False
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
 ROOT_URLCONF = "config.compose_urls"
 DATABASES = {"default": {

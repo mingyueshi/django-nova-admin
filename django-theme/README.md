@@ -58,11 +58,16 @@ python demo/manage.py createsuperuser
 python demo/manage.py runserver 127.0.0.1:8000
 ```
 
+裸 demo 默认只接受回环连接，按连接 `REMOTE_ADDR` 检查，不信任转发头。
+未设置 `DJANGO_SECRET_KEY` 时每次进程启动生成新的临时密钥，重启会使旧会话失效；
+需要保留本地会话时可通过环境提供自己的随机密钥。Compose 示例使用独立密钥文件，
+由回环端口发布约束访问范围。这些演示设置仍只用于本地开发。
+
 访问 `http://127.0.0.1:8000/admin/`，使用你刚创建的管理员。没有默认账号、共享密码、免登录入口。本地研究包附带可重复运行的 `seed_demo`，预置合成分类、标签、商品、会员头像与新闻封面，不创建登录账号、不会覆盖已有样例的修改。也可跳过种子，自行先建立分类和标签，再创建商品；可测试分类自动完成、标签多选、规格内联、字段分组、只读更新时间、批量上架、分页与删除确认。
 
 Demo 模型只是接入示例，不需要复制进你的业务项目。`0002` 增加可选分类 FK、标签 M2M；`0003` 增加默认为 False 的精选推荐 BooleanField。`0004` 新增可选商品图片 key、会员资料和新闻两个轻量示例模型。均为保留原商品的增量迁移；从上一版 Demo 升级需运行 `migrate`。会员资料不是认证账号，新闻示例不是 CMS 或发布服务。
 
-`demo/config/settings.py` 只供本地演示：SQLite、DEBUG、本地示例密钥。不能直接用于生产。生产仍须自行配置真实密钥、HTTPS、ALLOWED_HOSTS、安全 Cookie、数据库备份、关闭 DEBUG 和静态资源部署。
+`demo/config/settings.py` 只供本地演示：SQLite、DEBUG、临时随机密钥或环境密钥。不能直接用于生产。生产仍须自行配置真实密钥、HTTPS、ALLOWED_HOSTS、安全 Cookie、数据库备份、关闭 DEBUG 和静态资源部署。
 
 ## 接入已有项目
 

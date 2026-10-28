@@ -1,10 +1,12 @@
 """Local demonstration settings. Do not deploy these settings to production."""
 import os
+import secrets
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "local-demo-only-not-for-production-nova-theme")
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY") or secrets.token_urlsafe(48)
 DEBUG = True
+NOVA_DEMO_LOOPBACK_ONLY = True
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
 INSTALLED_APPS = [
     "nova_admin",  # Opt-in: must come BEFORE django.contrib.admin.
@@ -13,6 +15,7 @@ INSTALLED_APPS = [
     "catalog",
 ]
 MIDDLEWARE = [
+    "config.local_demo.LoopbackOnlyMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

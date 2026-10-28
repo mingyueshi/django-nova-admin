@@ -11,13 +11,14 @@ from captcha.models import CaptchaStore
 from django.conf import settings
 from django.contrib.admin.forms import AdminAuthenticationForm
 from django.core import signing
+from django.core.cache import caches
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import router
 from django.forms import MultiValueField
 from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.crypto import constant_time_compare
+from django.utils.crypto import constant_time_compare, salted_hmac
 from django.utils.translation import pgettext_lazy
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
@@ -153,6 +154,45 @@ def _discard_audio(response):
             response.ranged_file.f.close()
 
 
+def _audio_rate_allowed(request, key):
+    """Bound generator launches, including concurrent requests and failed tools.
+
+    Use a shared cache with atomic add/incr for multiple workers. Only the
+    connection IP is trusted; raw addresses never become cache keys.
+    """
+    window = getattr(settings, "NOVA_ADMIN_CAPTCHA_AUDIO_WINDOW", 60)
+    key_limit = getattr(settings, "NOVA_ADMIN_CAPTCHA_AUDIO_KEY_LIMIT", 6)
+    ip_limit = getattr(settings, "NOVA_ADMIN_CAPTCHA_AUDIO_IP_LIMIT", 20)
+    if any(type(value) is not int or value < 1 for value in (window, key_limit, ip_limit)):
+        raise AudioGenerationError
+    try:
+        cache = caches[getattr(settings, "NOVA_ADMIN_CAPTCHA_AUDIO_CACHE", "default")]
+        peer = request.META.get("REMOTE_ADDR", "unknown")
+        for scope, identity, limit in (("ip", peer, ip_limit), ("key", key, key_limit)):
+            counter = "nova-captcha-audio:" + salted_hmac("nova_admin.audio." + scope, identity).hexdigest()
+            for _ in range(3):
+                if cache.add(counter, 1, timeout=window):
+                    count = 1
+                    break
+                try:
+                    count = cache.incr(counter)
+                    break
+                except ValueError:
+                    # Expiry between add/incr: retry without overwriting a
+                    # concurrent request's counter. Repeated races fail closed.
+                    continue
+            else:
+                raise AudioGenerationError
+            if type(count) is not int or count < 1:
+                raise AudioGenerationError
+            if count > limit:
+                return False, window
+    except Exception:
+        # Cache outage/configuration errors must never enable unbounded forks.
+        raise AudioGenerationError from None
+    return True, window
+
+
 @never_cache
 def captcha_audio(request, key):
     """Keep upstream audio/Range output only while its write-DB row is live.
@@ -168,6 +208,11 @@ def captcha_audio(request, key):
     if not _audio_available(key, alias):
         return HttpResponse(status=410)
     try:
+        allowed, window = _audio_rate_allowed(request, key)
+        if not allowed:
+            response = HttpResponse(status=429)
+            response["Retry-After"] = str(window)
+            return response
         response = _generate_audio(request, key, alias)
     except AudioChallengeUnavailable:
         return HttpResponse(status=410)

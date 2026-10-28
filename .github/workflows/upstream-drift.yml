@@ -47,7 +47,10 @@ jobs:
           python scripts/template_drift.py --django-root .upstream-django/django --label "main@$revision" --output "$RUNNER_TEMP/upstream-observation/templates"
       - name: Install fixed core test helpers
         run: |
-          python -m pip install --index-url https://pypi.org/simple --only-binary=:all: --no-deps asgiref==3.13.0 sqlparse==0.6.0 beautifulsoup4==4.15.0 soupsieve==2.10 typing_extensions==4.16.0 packaging==26.3
+          # Django main's newer asgiref requirement is an intentional experimental
+          # override in test-matrix.json/upstream, separate from supported releases.
+          mapfile -t pins < <(python scripts/ci_support.py dependency-pins --profile core --profile upstream)
+          python -m pip install --index-url https://pypi.org/simple --only-binary=:all: --no-deps "${pins[@]}"
       - name: Verify declared upstream requirements and source origin
         id: dependencies
         continue-on-error: true

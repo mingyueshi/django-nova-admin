@@ -96,6 +96,16 @@ class LauncherTests(unittest.TestCase):
             with self.subTest(args=args), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
                 demo.main(args)
 
+    def test_unknown_or_nonobject_saved_options_are_cleanly_rejected(self):
+        local = demo.prepare_local(self.root)
+        for value in ({'captcha': False, 'port': 8000, 'unexpected': True}, [], None):
+            with self.subTest(value=value):
+                (local / 'options.json').write_text(json.dumps(value))
+                with patch.object(demo, 'HERE', self.root), patch.object(demo.shutil, 'which', return_value='/fake/docker'), patch.object(demo.subprocess, 'run') as run:
+                    with self.assertRaisesRegex(ValueError, 'Invalid local options'):
+                        demo.main(['status'])
+                    self.assertEqual(run.call_count, 1)  # Only the version probe.
+
     def test_external_compose_project_is_not_inherited(self):
         with patch.dict(os.environ, {"COMPOSE_FILE": "/unrelated.yml", "COMPOSE_PROJECT_NAME": "production"}):
             env = demo.compose_environment(False, 8000)

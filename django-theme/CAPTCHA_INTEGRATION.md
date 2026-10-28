@@ -384,6 +384,18 @@ responses are not cached; valid WAV, attachment and Range responses
 are preserved. Audio remains unavailable when Flite is unconfigured. This guard
 does not consume or prune rows and does not mutate third-party URL patterns.
 
+Since the 2026-10-29 hardening, generation requests are limited to **6 per
+challenge and 20 per connection IP within 60 seconds**, including failed
+generation attempts. Exceeding either limit returns an uncached **429** with
+`Retry-After`; a cache failure returns **503** without launching speech tools.
+Configure positive integer `NOVA_ADMIN_CAPTCHA_AUDIO_KEY_LIMIT`,
+`NOVA_ADMIN_CAPTCHA_AUDIO_IP_LIMIT`, and `NOVA_ADMIN_CAPTCHA_AUDIO_WINDOW` to tune
+these budgets. `NOVA_ADMIN_CAPTCHA_AUDIO_CACHE` selects the cache alias (default
+`default`). Multiple workers/instances must use a shared cache with atomic
+`add`/`incr`; LocMem applies the limits separately in each process. Only
+`REMOTE_ADDR` is used, so trusted proxy configuration remains the host's
+responsibility. These audio budgets do not replace login/image/refresh limits.
+
 The protected entry uses Nova's local Flite/SoX generator. It reads the challenge
 from the write database and retains character spelling, mathematical operators,
 optional SoX brown noise, PCM WAV and Range/download behavior. All subprocesses
@@ -398,6 +410,8 @@ for the same still-live challenge, since failures do not consume it.
 
 Nova's subprocess runner kills and waits for the direct child on timeout or
 interruption, and also closes its output pipe.
+The final reap waits at most 0.2 seconds: a child stuck in uninterruptible kernel
+IO may remain pending after SIGKILL, but cannot indefinitely hold this request.
 Configured executables must be trusted; this is not a supervisor for arbitrary
 descendant processes. OS process creation itself cannot be interrupted by that
 timeout. Shared-timeout/failure handling passed T3-5 independent local acceptance;

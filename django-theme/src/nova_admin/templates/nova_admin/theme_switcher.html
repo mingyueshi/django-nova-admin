@@ -7,7 +7,7 @@
 {% endif %}
 <form class="nova-theme-switcher" method="post" action="{{ nova_admin_preference_url }}" aria-label="{% translate 'Admin appearance' context 'Nova Admin' %}"{% if nova_admin_active %} aria-describedby="nova-appearance-help"{% endif %}>
   {% csrf_token %}
-  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <input type="hidden" name="next" value="{{ nova_admin_return_path }}">
   <label for="nova-admin-mode">{% translate 'Appearance' context 'Nova Admin' %}</label>
   <select id="nova-admin-mode" name="mode">
     <option value="dark"{% if nova_admin_mode == 'dark' %} selected{% endif %}>{% translate 'Nova dark' context 'Nova Admin' %}</option>

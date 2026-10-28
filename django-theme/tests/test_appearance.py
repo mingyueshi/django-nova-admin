@@ -19,6 +19,13 @@ def nonce_context(request):
 
 @override_settings(NOVA_ADMIN_ENABLED=True)
 class AppearanceDisclosureTests(TestCase):
+    def test_return_path_does_not_depend_on_request_context_processor(self):
+        templates = deepcopy(settings.TEMPLATES)
+        templates[0]['OPTIONS']['context_processors'].remove('django.template.context_processors.request')
+        with override_settings(TEMPLATES=templates):
+            _, soup = self.page(query={'q': 'Appearance', 'p': '0'})
+        self.assertEqual(soup.select_one('form.nova-theme-switcher input[name="next"]')['value'], self.url + '?q=Appearance&p=0')
+
     @classmethod
     def setUpTestData(cls):
         cls.viewer=get_user_model().objects.create_user(username='appearance-viewer',is_staff=True)

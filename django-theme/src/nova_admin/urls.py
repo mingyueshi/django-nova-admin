@@ -28,7 +28,11 @@ def for_admin(admin_site):
         request.session[SESSION_KEY] = mode
         if palette is not None:
             request.session[PALETTE_SESSION_KEY] = palette
-        index = reverse(f"{admin_site.name}:index")
+        match = getattr(request, "resolver_match", None)
+        parents = match.namespaces[:-1] if match else []
+        current_app = ":".join([*parents, admin_site.name])
+        index = reverse(f"{current_app}:index", current_app=current_app,
+                        urlconf=getattr(request, "urlconf", None))
         destination = safe_admin_return(request, request.POST.get("next", ""), index)
         return HttpResponseRedirect(destination)
 

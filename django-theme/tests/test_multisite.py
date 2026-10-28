@@ -1,17 +1,28 @@
 """Real named AdminSite instances, not a mock replacement admin registry."""
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.contrib.admin import AdminSite
 from django.test import Client, TestCase, override_settings
-from django.urls import reverse
+from django.urls import include, path, reverse
 
 from catalog.admin import ProductAdmin
 from catalog.models import Category, Product
 from nova_admin.preferences import SESSION_KEY
 from tests.multisite_urls import review_site, warehouse_site
 from tests.test_navigation import navigation_markup
+from nova_admin.urls import for_admin
+from tests.test_theme_context import NestedUrls
 
 
 SITE_NAMESPACES = {"warehouse": "warehouse_theme", "review": "review_theme"}
+
+
+class RepeatedSiteNames:
+    urlpatterns = []
+    for side in ('east', 'west'):
+        site = AdminSite(name='admin')
+        patterns = [path('_theme/', include(for_admin(site), namespace='theme')), path('', site.urls)]
+        urlpatterns.append(path(side + '/', include((patterns, 'portal'), namespace=side)))
 
 
 @override_settings(
@@ -20,6 +31,18 @@ SITE_NAMESPACES = {"warehouse": "warehouse_theme", "review": "review_theme"}
     NOVA_ADMIN_URL_NAMESPACES=SITE_NAMESPACES,
 )
 class MultipleAdminSiteTests(TestCase):
+    def test_nested_instances_keep_their_own_fallback_and_next_boundary(self):
+        self.client.force_login(self.superuser)
+        for urlconf, site, prefix in ((NestedUrls, 'warehouse', '/{side}/warehouse/'), (RepeatedSiteNames, 'admin', '/{side}/')):
+            with override_settings(ROOT_URLCONF=urlconf):
+                for side in ('east', 'west'):
+                    endpoint = (f'{side}:warehouse_theme:preference' if site == 'warehouse' else f'{side}:theme:preference')
+                    index = prefix.format(side=side)
+                    for destination in ('', index + '?q=kept', prefix.format(side='west' if side == 'east' else 'east')):
+                        with self.subTest(site=site, side=side, destination=destination):
+                            response = self.client.post(reverse(endpoint), {'mode': 'dark', 'next': destination})
+                            self.assertEqual(response.url, destination if destination.startswith(index) else index)
+
     @classmethod
     def setUpTestData(cls):
         cls.superuser = get_user_model().objects.create_superuser(

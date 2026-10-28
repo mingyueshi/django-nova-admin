@@ -6,7 +6,7 @@ const { JSDOM } = require('jsdom');
 const script = readFileSync(new URL('../src/nova_admin/static/nova_admin/captcha.js', import.meta.url), 'utf8');
 const settle = () => new Promise(resolve => setImmediate(resolve));
 function deferred() { let resolve; const promise = new Promise(r => resolve = r); return { promise, resolve }; }
-function setup({ invalid = false, disabled = false, imageError = false, audio = true, holdPreload = false } = {}) {
+function setup({ invalid = false, disabled = false, imageError = false, audio = true, holdPreload = false, bareSubmit = false } = {}) {
   const dom = new JSDOM(`<form><input name="csrfmiddlewaretoken" value="csrf-test"><div data-nova-captcha data-refresh-url="/refresh/" data-loading-message="Loading" data-success-message="Ready" data-error-message="Reload page" data-image-error-message="Image failed"><img data-captcha-image src="/old.png">${audio ? '<audio data-captcha-player controls preload="none" src="/old.wav"></audio><a data-captcha-audio href="/old.wav">Download</a>' : ''}<input type="hidden" value="signed-old"><input type="text" value="old answer" ${invalid ? 'aria-invalid="true"' : ''}><button type="button" data-captcha-refresh hidden>New image</button><p data-captcha-status role="status"></p></div><input type="submit" ${disabled ? 'disabled' : ''}></form>`, {runScripts:'outside-only', url:'https://test.invalid/login/'});
   const w = dom.window, d = w.document;
   Object.defineProperty(w.HTMLImageElement.prototype, 'complete', { get: () => false });
@@ -21,8 +21,9 @@ function setup({ invalid = false, disabled = false, imageError = false, audio = 
   const calls = [];
   const pending = deferred();
   w.fetch = (...args) => { calls.push(args); return pending.promise; };
+  if (bareSubmit) d.querySelector('input[type=submit]').replaceWith(d.createElement('button'));
   w.eval(script);
-  return { dom, w, d, calls, preloads, preloadInstances, mediaEvents, player, audio:d.querySelector('a'), pending, button:d.querySelector('button'), answer:d.querySelector('[type="text"]'), token:d.querySelector('[type="hidden"]'), submit:d.querySelector('[type="submit"]'), image:d.querySelector('img'), status:d.querySelector('[role="status"]') };
+  return { dom, w, d, calls, preloads, preloadInstances, mediaEvents, player, audio:d.querySelector('a'), pending, button:d.querySelector('button'), answer:d.querySelector('[type="text"]'), token:d.querySelector('[type="hidden"]'), submit:d.querySelector('[type="submit"],button:not([type])'), image:d.querySelector('img'), status:d.querySelector('[role="status"]') };
 }
 const ok = (key='signed-new') => ({ ok:true, json:async () => ({key, image_url:'/new.png', audio_url:'/new.wav'}) });
 let count = 0;
@@ -94,5 +95,9 @@ await test('A response without audio keeps both media and download fallback unav
 await test('Image-only CAPTCHA continues to refresh without an audio element', {audio:false}, async x => {
   x.button.click(); x.pending.resolve(ok()); await settle();
   assert.equal(x.player,null); assert.equal(x.audio,null); assert.equal(x.token.value,'signed-new'); assert.equal(x.submit.disabled,false);
+});
+
+await test('Bare button default submit is disabled while refresh is pending', {bareSubmit:true}, async x => {
+  x.button.click(); assert.equal(x.submit.disabled,true); x.pending.resolve(ok()); await settle(); assert.equal(x.submit.disabled,false);
 });
 console.log(`TOTAL ${count} CAPTCHA enhancement tests passed`);

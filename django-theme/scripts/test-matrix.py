@@ -99,7 +99,7 @@ def load_manifest(path):
         ids.append(cell_id(cell))
     if len(ids) != len(set(ids)):
         raise ValueError("Duplicate matrix cells")
-    for profile in ("core", "captcha"):
+    for profile in ("core", "captcha", "security", "slider", "upstream"):
         pins = manifest.get(profile)
         if not isinstance(pins, dict) or not pins:
             raise ValueError(f"Missing {profile} dependency pins")

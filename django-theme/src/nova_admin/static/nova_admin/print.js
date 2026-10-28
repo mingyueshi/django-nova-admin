@@ -110,9 +110,21 @@
     tool.hidden = false;
     button.hidden = false;
     rememberScreen();
-    const observer = new MutationObserver(rememberScreen);
-    observer.observe(list, {subtree: true, childList: true, characterData: true, attributes: true});
-    window.addEventListener('resize', rememberScreen);
+    let pendingFrame = null;
+    function scheduleScreen() {
+        // If print media arrives before the next frame, fail closed instead of
+        // using eligibility from before a visibility/structure change.
+        screenNodes = new WeakSet();
+        if (pendingFrame !== null || media.matches || sheet) return;
+        pendingFrame = window.requestAnimationFrame(() => {
+            pendingFrame = null;
+            rememberScreen();
+        });
+    }
+    const observer = new MutationObserver(scheduleScreen);
+    observer.observe(list, {subtree: true, childList: true, attributes: true,
+        attributeFilter: ['class', 'style', 'hidden', 'inert', 'aria-hidden', 'data-nova-no-print', 'data-nova-print-exclude']});
+    window.addEventListener('resize', scheduleScreen);
     window.addEventListener('beforeprint', prepare);
     window.addEventListener('afterprint', cleanup);
     media.addEventListener?.('change', () => { if (!media.matches) { cleanup(); rememberScreen(); } });

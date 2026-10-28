@@ -48,9 +48,9 @@ class RunnerTests(unittest.TestCase):
         with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
             return runner.main(self.arguments(*extra))
 
-    def test_manifest_is_exact_seven_cells_not_cartesian_product(self):
+    def test_manifest_is_exact_eight_cells_not_cartesian_product(self):
         self.assertEqual([runner.cell_id(cell) for cell in self.manifest["cells"]], [
-            "3.11.17/5.2.17", "3.12.15/5.2.17", "3.12.15/6.0.8",
+            "3.10.20/5.2.17", "3.11.17/5.2.17", "3.12.15/5.2.17", "3.12.15/6.0.8",
             "3.12.15/6.1.1", "3.13.16/6.1.1", "3.14.8/5.2.17", "3.14.8/6.1.1"])
         self.assertEqual(self.manifest["core"]["beautifulsoup4"], "4.15.0")
 
@@ -154,7 +154,7 @@ class RunnerTests(unittest.TestCase):
             variant.assert_not_called()
         self.assertFalse((self.base / "run").exists())
 
-    def test_orchestration_selects_28_distinct_variants_in_serial_order(self):
+    def test_orchestration_selects_32_distinct_variants_in_serial_order(self):
         def successful_variant(*args):
             result = {"status": "passed"}
             args[-1](result)
@@ -163,7 +163,7 @@ class RunnerTests(unittest.TestCase):
                 patch.object(runner, "run_variant", side_effect=successful_variant) as variant:
             self.assertEqual(self.invoke("--with-captcha"), 0)
         calls = [call.args[:3] for call in variant.call_args_list]
-        self.assertEqual(len(calls), 28)
+        self.assertEqual(len(calls), 32)
         self.assertEqual(calls[:4], [(self.manifest["cells"][0], p, m)
                                      for p in ("core", "captcha") for m in ("source", "wheel")])
         report = runner.read_json(self.base / "run/results.json")

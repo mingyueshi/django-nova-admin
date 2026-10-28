@@ -28,3 +28,7 @@ PACKAGE_MANIFEST.json
 .workbuddy/
 .mimosa/
 .video_agent/
+.DS_Store
+/tmp/
+/output/
+django-theme/demo/staticfiles/

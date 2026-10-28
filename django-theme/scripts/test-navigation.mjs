@@ -101,6 +101,12 @@ for (const path of paths) {
       const result = setup({html, runUpstream: false});
       assert.equal(result.errors.length, 0);
     }
+    const partial = markup().replace(/<summary[^>]*>[\s\S]*?<\/summary>/g, '<summary></summary>')
+      .replace(/<th scope="row">[\s\S]*?<\/th>/g, '<td></td>');
+    const result = setup({html: partial, runUpstream: false, mobile: true});
+    result.fire('input', 'missing label');
+    result.resize(false);
+    assert.equal(result.errors.length, 0);
   });
   await test('all previous two/three-level reveal/restore and case checks', async () => {
     for (const grouped of [false, true]) {

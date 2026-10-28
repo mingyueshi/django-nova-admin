@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django import forms
 from django.utils.html import format_html
+from django.utils import timezone
 from .models import Category, MemberProfile, NewsItem, Product, ProductVariant, Tag
 from .media import DemoMediaAdminMixin
 from .pagination import BoundedPaginationAdminMixin
@@ -64,7 +65,7 @@ class ProductAdmin(BoundedPaginationAdminMixin, DemoMediaAdminMixin, admin.Model
 
     @admin.action(description="上架所选商品", permissions=["change"])
     def publish_products(self, request, queryset):
-        count = queryset.update(status=Product.Status.ACTIVE)
+        count = queryset.update(status=Product.Status.ACTIVE, updated_at=timezone.now())
         self.message_user(request, f"已上架 {count} 件商品。")
 
 

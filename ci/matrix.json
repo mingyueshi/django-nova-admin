@@ -2,6 +2,11 @@
   "schema": 1,
   "quick_python": [
     {
+      "python": "3.10.20",
+      "django": "5.2.17",
+      "captcha": false
+    },
+    {
       "python": "3.11.17",
       "django": "5.2.17",
       "captcha": false
@@ -48,6 +53,12 @@
       "filename": "django-6.1.1-py3-none-any.whl",
       "sha256": "585fb82bf15053c42cf52e67c2f1b54a032dca384759315fd6678ab1870d1d72"
     }
+  },
+  "slider_source": {
+    "version": "0.3.0",
+    "commit": "62a93e7efc2d4f1cca0a9390627f5a821c4c742c",
+    "url": "https://codeload.github.com/mingyueshi/django-nova-slider-captcha/tar.gz/62a93e7efc2d4f1cca0a9390627f5a821c4c742c",
+    "sha256": "21160c340cd0671394d64b4fc48f1518283da041848263c2929c108c29d66924"
   },
   "ranged_response": {
     "version": "0.2.0",

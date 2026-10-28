@@ -40,13 +40,13 @@ FRONTEND_SUMMARIES = {
 }
 FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_SUMMARIES.items()}
 FRONTEND_TOTAL = sum(FRONTEND_COUNTS.values())
-NAVIGATION_TOTAL = 108
+NAVIGATION_TOTAL = 123
 ENHANCEMENT_TOTAL = 38
 COMMAND_PALETTE_TOTAL = 25
-PRINT_TOTAL = 24
+PRINT_TOTAL = 26
 MESSAGE_TOTAL = 26
 APPEARANCE_TOTAL = 24
-CAPTCHA_TOTAL = 15
+CAPTCHA_TOTAL = 16
 THEME_JS_TOTAL = NAVIGATION_TOTAL + COMMAND_PALETTE_TOTAL + APPEARANCE_TOTAL + ENHANCEMENT_TOTAL + PRINT_TOTAL + MESSAGE_TOTAL + CAPTCHA_TOTAL
 
 def read(path):
@@ -138,8 +138,11 @@ def sidebars(wheelhouse, output):
             names = [n for n in archive.namelist() if n.endswith('.dist-info/METADATA')]
             if len(names) != 1 or BytesParser().parsebytes(archive.read(names[0]))['Version'] != version:
                 raise ValueError('Django wheel version mismatch')
-            content = archive.read('django/contrib/admin/static/admin/js/nav_sidebar.js')
-            filters = archive.read('django/contrib/admin/static/admin/js/filters.js')
+            try:
+                content = archive.read('django/contrib/admin/static/admin/js/nav_sidebar.js')
+                filters = archive.read('django/contrib/admin/static/admin/js/filters.js')
+            except KeyError as error:
+                raise ValueError(f'Django {version} wheel lacks required admin asset: {error.args[0]}') from None
         dest = output / ('django-' + version + '.js')
         dest.write_bytes(content)
         filter_dest = output / ('django-' + version + '-filters.js')
@@ -176,6 +179,52 @@ def ranged_wheel(output, sdist=None):
     result = {'source': origin, 'source_sha256': config['sha256'], 'wheel': wheels[0].name, 'wheel_sha256': digest(wheels[0])}
     (output / 'provenance.json').write_text(json.dumps(result, indent=2) + '\n')
     return result
+
+
+def slider_wheel(output, sdist=None):
+    """Build the reviewed provider from a checksum-pinned public source archive."""
+    config = read(ROOT / 'ci/matrix.json')['slider_source']
+    version = read(ROOT / 'django-theme/scripts/test-matrix.json')['slider']['nova-slider-captcha']
+    if config['version'] != version or not config['url'].endswith('/' + config['commit']):
+        raise ValueError('Slider source/version pins disagree')
+    output = Path(output).resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    source = output / 'nova-slider-source.tar.gz'
+    if source.exists() or list(output.glob('nova_slider_captcha-*.whl')):
+        raise ValueError('Slider support already exists; use a fresh output directory')
+    data = Path(sdist).read_bytes() if sdist else None
+    if data is None:
+        with urllib.request.urlopen(config['url'], timeout=60) as response:
+            data = response.read()
+    if hashlib.sha256(data).hexdigest() != config['sha256']:
+        raise ValueError('Slider source checksum mismatch')
+    source.write_bytes(data)
+    subprocess.run([sys.executable, '-m', 'pip', '--disable-pip-version-check', 'wheel', '--no-index', '--no-deps',
+                    '--no-build-isolation', '--wheel-dir', str(output), str(source)], check=True)
+    wheels = list(output.glob('nova_slider_captcha-*.whl'))
+    if len(wheels) != 1:
+        raise ValueError('Expected one slider provider wheel')
+    with zipfile.ZipFile(wheels[0]) as archive:
+        names = [name for name in archive.namelist() if name.endswith('.dist-info/METADATA')]
+        if len(names) != 1 or BytesParser().parsebytes(archive.read(names[0]))['Version'] != version:
+            raise ValueError('Slider wheel version mismatch')
+    result = {**config, 'wheel': wheels[0].name, 'wheel_sha256': digest(wheels[0])}
+    (output / 'slider-provenance.json').write_text(json.dumps(result, indent=2) + '\n')
+    return result
+
+
+def dependency_pins(profiles, scope=None):
+    manifest = read(ROOT / 'django-theme/scripts/test-matrix.json')
+    pins = {}
+    if scope:
+        versions = list(dict.fromkeys(cell['django'] for cell in manifest['cells']))
+        pins['Django'] = versions if scope == 'full' else versions[-1:]
+    for profile in profiles:
+        for name, version in manifest[profile].items():
+            if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*', name) or not re.fullmatch(r'\d+(?:\.\d+)+', version):
+                raise ValueError('Invalid dependency pin')
+            pins[name] = [version]
+    return [f'{name}=={version}' for name, versions in pins.items() for version in versions]
 
 def collect_python(run_root, output, commit, cell, captcha):
     """Only reports/logs; never upload venvs, caches, harnesses, or test DBs."""
@@ -270,17 +319,23 @@ def main():
     p = sub.add_parser('plan');p.add_argument('--scope', choices=['quick','full'], required=True)
     p = sub.add_parser('sidebars');p.add_argument('--wheelhouse', type=Path, required=True);p.add_argument('--output', type=Path, required=True)
     p = sub.add_parser('ranged-wheel');p.add_argument('--output', type=Path, required=True);p.add_argument('--sdist', type=Path)
+    p = sub.add_parser('slider-wheel');p.add_argument('--output', type=Path, required=True);p.add_argument('--sdist', type=Path)
+    p = sub.add_parser('dependency-pins');p.add_argument('--profile', choices=['core','captcha','security','slider','upstream'], action='append', required=True);p.add_argument('--scope', choices=['quick','full'])
     p = sub.add_parser('collect-python');p.add_argument('--run-root', type=Path, required=True);p.add_argument('--output', type=Path, required=True);p.add_argument('--commit', required=True);p.add_argument('--cell', required=True);p.add_argument('--captcha', choices=['true','false'], required=True)
     p = sub.add_parser('collect-node');p.add_argument('--logs', type=Path, required=True);p.add_argument('--output', type=Path, required=True);p.add_argument('--commit', required=True);p.add_argument('--node', required=True);p.add_argument('--npm', required=True)
     p = sub.add_parser('check-node-summaries');p.add_argument('--logs', type=Path, required=True)
     p = sub.add_parser('verify-reports');p.add_argument('--reports', type=Path, required=True);p.add_argument('--scope', choices=['quick','full'], required=True);p.add_argument('--commit', required=True);p.add_argument('--wheel', type=Path, required=True)
     args = parser.parse_args()
+    if args.command == 'dependency-pins':
+        print('\n'.join(dependency_pins(args.profile, args.scope)))
+        return
     if args.command == 'plan':
         result = plan(args.scope)
         for k,v in result.items(): print(k+'='+ (v if isinstance(v,str) else json.dumps(v,separators=(',',':'))))
         return
     if args.command == 'sidebars': result = sidebars(args.wheelhouse,args.output)
     elif args.command == 'ranged-wheel': result = ranged_wheel(args.output,args.sdist)
+    elif args.command == 'slider-wheel': result = slider_wheel(args.output,args.sdist)
     elif args.command == 'collect-python': result = collect_python(args.run_root,args.output,args.commit,args.cell,args.captcha=='true')
     elif args.command == 'collect-node': result = collect_node(args.logs,args.output,args.commit,args.node,args.npm)
     elif args.command == 'check-node-summaries': result = check_node_summaries(args.logs)

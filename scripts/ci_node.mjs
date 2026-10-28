@@ -38,7 +38,9 @@ function run(name, command, values) {
   if (result.status !== 0 || result.error || result.signal) throw Error(`${name} failed; inspect ${logs}`);
   return fs.readFileSync(path.join(logs, name + '.log'), 'utf8');
 }
-const npmVersion = run('npm-version', 'npm', ['--version']).trim().split(/\r?\n/).at(-1);
+const versionLines = run('npm-version', 'npm', ['--version']).trim().split(/\r?\n/).filter(line => /^\d+\.\d+\.\d+$/.test(line));
+if (versionLines.length !== 1) throw Error('Expected one unambiguous npm version');
+const npmVersion = versionLines[0];
 if (npmVersion !== selected.npm) throw Error('Bundled npm differs from matrix');
 fs.writeFileSync(path.join(logs, 'runtime.json'), JSON.stringify({ node: process.version, npm: npmVersion, platform: process.platform, arch: process.arch, execPath: process.execPath }, null, 2));
 run('install', 'npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund', '--registry=https://registry.npmjs.org']);

@@ -21,6 +21,7 @@ from ranged_response import RangedFileResponse
 MAX_WAV_BYTES = 2 * 1024 * 1024
 MAX_TOOL_OUTPUT_BYTES = 128
 COPY_BLOCK_BYTES = 64 * 1024
+REAP_TIMEOUT = 0.2
 
 
 class AudioGenerationError(Exception):
@@ -130,7 +131,11 @@ def _run(argv, deadline, *, output=False):
                 try:
                     # Also reap on BaseException or output overflow. This owns
                     # the direct child only, not an arbitrary process tree.
-                    process.wait()
+                    # Even SIGKILL cannot immediately reap a child stuck in
+                    # kernel IO. Do not hold the request thread indefinitely.
+                    process.wait(timeout=REAP_TIMEOUT)
+                except subprocess.TimeoutExpired:
+                    pass
                 finally:
                     if process.stdout is not None:
                         process.stdout.close()

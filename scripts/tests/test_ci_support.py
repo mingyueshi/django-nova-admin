@@ -22,15 +22,15 @@ COMMIT = 'a' * 40
 WHEEL_SHA = 'b' * 64
 
 class MatrixTests(unittest.TestCase):
-    def test_quick_is_eight_variants_and_one_node(self):
+    def test_quick_is_ten_variants_and_one_node(self):
         result = support.plan('quick')
-        self.assertEqual(len(result['python']['include']), 3)
-        self.assertEqual(sum(4 if x['captcha'] else 2 for x in result['python']['include']), 8)
+        self.assertEqual(len(result['python']['include']), 4)
+        self.assertEqual(sum(4 if x['captcha'] else 2 for x in result['python']['include']), 10)
         self.assertEqual([x['node'] for x in result['node']['include']], ['24.21.0'])
 
-    def test_full_is_twenty_eight_variants_and_three_nodes(self):
+    def test_full_is_thirty_two_variants_and_three_nodes(self):
         result = support.plan('full')
-        self.assertEqual(len(result['python']['include']), 7)
+        self.assertEqual(len(result['python']['include']), 8)
         self.assertTrue(all(x['captcha'] for x in result['python']['include']))
         self.assertEqual(len(result['node']['include']), 3)
 
@@ -64,7 +64,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':260,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':278,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -72,7 +72,7 @@ class MatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);paths=self.reports(root)
             result=support.verify_reports(root,'full',COMMIT,WHEEL_SHA)
-            self.assertEqual(result['python_variants'],28)
+            self.assertEqual(result['python_variants'],32)
             paths[-1].unlink()
             with self.assertRaises(ValueError): support.verify_reports(root,'full',COMMIT,WHEEL_SHA)
 
@@ -120,7 +120,7 @@ class MatrixTests(unittest.TestCase):
                 config={'django_wheels':{'5.2.17':{'filename':wheel.name,'sha256':support.digest(wheel)}}}
                 with patch.object(support,'read',return_value=config):
                     if missing_filter:
-                        with self.assertRaises(KeyError):support.sidebars(wheelhouse,root/'scripts')
+                        with self.assertRaisesRegex(ValueError, '5.2.17.*filters.js'):support.sidebars(wheelhouse,root/'scripts')
                     else:
                         rows=support.sidebars(wheelhouse,root/'scripts')
                         self.assertEqual((root/'scripts'/rows[0]['file']).read_text(),'native sidebar')
@@ -188,9 +188,9 @@ TOTAL 24 preview navigation scenarios passed
 """
     GROUP_LOGS = {
         'frontend': FRONTEND_LOG,
-        'navigation': '108 navigation DOM scenarios passed (3 Django script versions).\n25 command palette DOM scenarios passed.\n24 appearance DOM scenarios passed (3 Django script versions).\n',
-        'enhancements': 'TOTAL 38 changelist enhancement tests passed\n24 print DOM scenarios passed.\n26 message DOM scenarios passed.\n',
-        'captcha': 'TOTAL 15 CAPTCHA enhancement tests passed\n',
+        'navigation': '123 navigation DOM scenarios passed (3 Django script versions).\n25 command palette DOM scenarios passed.\n24 appearance DOM scenarios passed (3 Django script versions).\n',
+        'enhancements': 'TOTAL 38 changelist enhancement tests passed\n26 print DOM scenarios passed.\n26 message DOM scenarios passed.\n',
+        'captcha': 'TOTAL 16 CAPTCHA enhancement tests passed\n',
     }
 
     def logs(self, root):
@@ -218,7 +218,7 @@ TOTAL 24 preview navigation scenarios passed
             self.logs(root)
             result = self.collect(root)
             self.assertEqual(result['frontend'], 1398)
-            self.assertEqual(result['theme_js'], 260)
+            self.assertEqual(result['theme_js'], 278)
             self.assertEqual(len(result['frontend_suites']), 20)
             self.assertEqual(result['frontend_suites']['users-data'], 62)
             self.assertEqual(result['frontend_suites']['palettes'], 165)
@@ -333,7 +333,7 @@ TOTAL 24 preview navigation scenarios passed
 
     def test_pre_navigation_merge_summaries_are_rejected(self):
         for group, old in [('frontend', self.FRONTEND_LOG.replace('TOTAL 24 preview navigation scenarios passed\n', '')),
-                           ('navigation', self.GROUP_LOGS['navigation'].replace('108 navigation', '78 navigation'))]:
+                           ('navigation', self.GROUP_LOGS['navigation'].replace('123 navigation', '78 navigation'))]:
             with self.subTest(group=group), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 logs = self.logs(root)

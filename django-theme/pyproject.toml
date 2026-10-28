@@ -11,7 +11,7 @@ requires-python = ">=3.10"
 dependencies = ["Django>=5.2.17,<6.2"]
 license = "MIT"
 license-files = ["LICENSE"]
-classifiers = ["Framework :: Django :: 5.2", "Framework :: Django :: 6.0", "Framework :: Django :: 6.1", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Programming Language :: Python :: 3.14", "Development Status :: 3 - Alpha"]
+classifiers = ["Framework :: Django :: 5.2", "Framework :: Django :: 6.0", "Framework :: Django :: 6.1", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Programming Language :: Python :: 3.14", "Development Status :: 3 - Alpha"]
 
 [project.urls]
 Homepage = "https://github.com/mingyueshi/django-nova-admin"
@@ -20,8 +20,8 @@ Changelog = "https://github.com/mingyueshi/django-nova-admin/blob/main/django-th
 Issues = "https://github.com/mingyueshi/django-nova-admin/issues"
 
 [project.optional-dependencies]
-captcha = ["django-simple-captcha==0.7.0", "Pillow==12.2.0"]
-security = ["django-simple-captcha==0.7.0", "Pillow==12.2.0", "django-axes==8.3.1"]
+captcha = ["django-simple-captcha>=0.7,<0.8", "Pillow>=12.2,<13"]
+security = ["django-simple-captcha>=0.7,<0.8", "Pillow>=12.2,<13", "django-axes>=8.3,<9"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

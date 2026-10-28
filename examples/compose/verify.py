@@ -23,7 +23,7 @@ def main():
             "NOVA_DJANGO_SECRET_KEY_FILE": str(secret),
             "NOVA_POSTGRES_PASSWORD_FILE": str(secret),
             "NOVA_EXAMPLE_CAPTCHA": "1" if args.captcha else "0",
-            "PYTHONPATH": os.pathsep.join((str(root), str(root / "django-theme" / "src"), str(root / "django-theme" / "demo"))),
+            "PYTHONPATH": os.pathsep.join(filter(None, (str(root), str(root / "django-theme" / "src"), str(root / "django-theme" / "demo"), env.get("PYTHONPATH")))),
         })
         subprocess.run([
             sys.executable, str(root / "django-theme" / "demo" / "manage.py"),

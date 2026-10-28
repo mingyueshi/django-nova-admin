@@ -1,5 +1,25 @@
 # CI/CD 接入与验证
 
+## 2026-10-29 工作区修复后的执行规范
+
+PR/push 保留 quick；新增每周二 05:23 UTC 的 full 定时运行。quick 增加
+Python 3.10.20 / Django 5.2.17 的源码和 wheel，因此共 10 个环境；full
+共 8 组 Python/Django、32 个环境。下方有日期的既往运行与计数保留为历史证据。
+
+安全 job 在 quick 下实际执行 Django 6.1.1 的 Axes 和 Slider 安装包测试；full
+覆盖 5.2.17、6.0.8、6.1.1 各自的两个 profile。版本统一读取
+`django-theme/scripts/test-matrix.json` 的 core/captcha/security/slider，Slider
+从 `ci/matrix.json` 固定的公开提交与 SHA-256 源包构建，不依赖开发者的 `.local/`。
+每个 profile 有独立虚拟环境和数据库，并核验安装版本、导入来源、实际运行数及无跳过。
+实验 upstream profile 单独声明 Django main 所需的 asgiref 3.13.0 覆盖。
+
+当前 Node 契约为 20 套件、1,398 项前端及 278 项主题 JS：导航 123、命令面板 25、
+外观 24、changelist 38、打印 26、消息 26、CAPTCHA 16。新增或删除测试时，必须同步
+更新 `scripts/ci_support.py` 的数量/成功摘要及 `scripts/tests/test_ci_support.py`
+中的证据 fixture，并实际执行对应套件。精确计数用于发现漏跑，不能用空断言补数量。
+交互用例各自创建和关闭 app，可用 `node --experimental-vm-modules tests/interactions.cjs
+"Add save"` 单跑。CI 配置修改尚不等于 GitHub Actions 已运行。
+
 ## 当前状态与已合并阶段（2026-10-26）
 
 音频、排序、导航分支已依次合入主线，最终合并 `cbc1624` 是当前本地 `main@df48494` 的祖先。`df48494` 仅新增诊断复核文档，产品基线为 `c6e3484`；统筹 2026-10-26 的 `git ls-remote` 只读回执显示远端 `main` 仍为 `c6e3484`。以下历史运行均绑定各自提交，不属于当前文档或未提交候选的验证。

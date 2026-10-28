@@ -326,7 +326,7 @@ def audit():
 def main():
     try:
         result = audit()
-    except ValueError as error:
+    except (ValueError, OSError) as error:
         result = {'scope': SCOPE, 'passed': False, 'error': str(error)}
     print(json.dumps(result, indent=2))
     return not result['passed']

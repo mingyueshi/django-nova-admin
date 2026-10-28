@@ -112,3 +112,16 @@ class CaptchaPolicyTests(TestCase):
                 self.form()
         with self.assertRaises(ImproperlyConfigured):
             PolicyForm(data={'username': self.user.username, 'password': 'wrong'})
+
+    def test_dirty_counter_is_reset_and_login_still_works(self):
+        form = self.form()
+        for value in ('dirty', None, -1, True):
+            with self.subTest(value=value):
+                cache.set(form._nova_key, value)
+                self.assertTrue(self.form('synthetic-policy-only').is_valid())
+
+    def test_repeated_counter_expiry_race_escalates_without_500(self):
+        form = self.form()
+        with patch.object(form._nova_cache, 'add', return_value=False), patch.object(form._nova_cache, 'incr', side_effect=ValueError('expired')):
+            self.assertFalse(form.is_valid())
+        self.assertIn('captcha', form.fields)

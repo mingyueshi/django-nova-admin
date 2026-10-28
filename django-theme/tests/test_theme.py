@@ -181,10 +181,12 @@ class ThemeIntegrationTests(TestCase):
         self.assertTrue(LogEntry.objects.filter(object_id=str(created.pk), action_flag=1).exists())
 
     def test_native_bulk_action_works(self):
+        previous_update = self.product.updated_at
         response = self.client.post(self.list_url, {"action": "publish_products", "_selected_action": [self.product.pk], "index": "0"})
         self.assertEqual(response.status_code, 302)
         self.product.refresh_from_db()
         self.assertEqual(self.product.status, Product.Status.ACTIVE)
+        self.assertGreater(self.product.updated_at, previous_update)
 
     def test_permissions_not_bypassed_by_skin(self):
         self.client.force_login(self.staff)

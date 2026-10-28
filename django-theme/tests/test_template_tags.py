@@ -26,7 +26,7 @@ class NonceTemplateTests(SimpleTestCase):
     def test_theme_asset_tags_receive_context_nonce(self):
         html = render_to_string("admin/base.html", {
             "nova_admin_active": True, "nova_admin_navigation": True,
-            "nova_admin_mode": "dark", "has_permission": False, "csp_nonce": "asset-nonce-123",
+            "nova_admin_mode": "dark", "has_permission": True, "csp_nonce": "asset-nonce-123",
         })
         stylesheet = re.search(r'<link\b[^>]*nova_admin/theme\.css[^>]*>', html)
         script = re.search(r'<script\b[^>]*nova_admin/navigation\.js[^>]*>', html)

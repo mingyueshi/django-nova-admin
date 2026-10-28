@@ -20,8 +20,8 @@ def theme_context_check(app_configs, **kwargs):
         return []
     engines = [engine for engine in settings.TEMPLATES
                if engine.get("BACKEND") == "django.template.backends.django.DjangoTemplates"]
-    if any("nova_admin.context_processors.theme" in engine.get("OPTIONS", {}).get("context_processors", ())
-           for engine in engines):
+    if engines and all("nova_admin.context_processors.theme" in engine.get("OPTIONS", {}).get("context_processors", ())
+                       for engine in engines):
         return []
     return [Warning(
         "Nova Admin's theme context processor is missing.",

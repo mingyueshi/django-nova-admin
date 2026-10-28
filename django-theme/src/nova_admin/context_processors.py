@@ -79,5 +79,6 @@ def theme(request):
         "nova_admin_palette": selected_palette(request),
         "nova_admin_navigation": bool(getattr(settings, "NOVA_ADMIN_NAVIGATION", False)),
         "nova_admin_preference_url": preference_url,
+        "nova_admin_return_path": request.get_full_path(),
         "nova_admin_branding": branding() if enabled and mode != "native" else {},
     }

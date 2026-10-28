@@ -1,6 +1,7 @@
 {
   "schema": 1,
   "cells": [
+    {"python": "3.10.20", "django": "5.2.17"},
     {"python": "3.11.17", "django": "5.2.17"},
     {"python": "3.12.15", "django": "5.2.17"},
     {"python": "3.12.15", "django": "6.0.8"},
@@ -20,5 +21,16 @@
     "django-simple-captcha": "0.7.0",
     "Pillow": "12.2.0",
     "django-ranged-response": "0.2.0"
+  },
+  "security": {
+    "django-axes": "8.3.1"
+  },
+  "slider": {
+    "nova-slider-captcha": "0.3.0",
+    "Pillow": "12.2.0"
+  },
+  "upstream": {
+    "asgiref": "3.13.0",
+    "packaging": "26.3"
   }
 }

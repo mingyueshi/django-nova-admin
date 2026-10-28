@@ -1,5 +1,6 @@
 """Optional live-challenge guard tests; no speech binaries required."""
 from datetime import timedelta
+from concurrent.futures import ThreadPoolExecutor
 from inspect import unwrap
 from io import BytesIO
 from unittest.mock import patch
@@ -8,21 +9,60 @@ from captcha.conf import settings as captcha_settings
 from captcha.models import CaptchaStore
 from captcha.views import captcha_audio as upstream_audio
 from django.http import HttpResponse
+from django.core.cache import cache
 from django.test import RequestFactory, TestCase, TransactionTestCase, override_settings
 from django.urls import URLResolver, get_resolver, resolve, reverse
 from django.utils import timezone
 from ranged_response import RangedFileResponse
 
-from nova_admin.captcha import captcha_audio
+from nova_admin.captcha import captcha_audio, _audio_rate_allowed
 
 
 class CaptchaAudioTests(TransactionTestCase):
     def setUp(self):
+        cache.clear()
         self.request = RequestFactory().get("/audio/")
         self.row = CaptchaStore.objects.create(challenge="SYNTHETIC", response="synthetic")
         self.flite = patch.object(captcha_settings, "CAPTCHA_FLITE_PATH", "/synthetic/flite")
         self.flite.start()
         self.addCleanup(self.flite.stop)
+
+    @override_settings(NOVA_ADMIN_CAPTCHA_AUDIO_KEY_LIMIT=2)
+    def test_key_limit_blocks_forks_across_different_connection_ips(self):
+        with patch('nova_admin.captcha._generate_audio', side_effect=lambda *args: HttpResponse()) as generate:
+            codes = [captcha_audio(RequestFactory().get('/audio/', REMOTE_ADDR=f'192.0.2.{i}'), self.row.hashkey).status_code for i in range(4)]
+        self.assertEqual(codes, [200, 200, 429, 429])
+        self.assertEqual(generate.call_count, 2)
+
+    @override_settings(NOVA_ADMIN_CAPTCHA_AUDIO_IP_LIMIT=2)
+    def test_ip_limit_spans_keys_and_ignores_forwarded_headers(self):
+        with patch('nova_admin.captcha._generate_audio', side_effect=lambda *args: HttpResponse()) as generate:
+            for index in range(3):
+                row = CaptchaStore.objects.create(challenge='SYNTHETIC', response='synthetic')
+                request = RequestFactory().get('/audio/', HTTP_X_FORWARDED_FOR=f'192.0.2.{index}')
+                response = captcha_audio(request, row.hashkey)
+            self.assertEqual(response.status_code, 429)
+            self.assertEqual(response['Retry-After'], '60')
+            self.assert_no_cache(response)
+            self.assertEqual(generate.call_count, 2)
+
+    @override_settings(NOVA_ADMIN_CAPTCHA_AUDIO_KEY_LIMIT=3, NOVA_ADMIN_CAPTCHA_AUDIO_IP_LIMIT=100)
+    def test_atomic_counter_admits_only_limit_under_concurrency_and_resets_on_expiry(self):
+        def attempt(_):
+            return _audio_rate_allowed(self.request, self.row.hashkey)[0]
+        with ThreadPoolExecutor(max_workers=16) as pool:
+            self.assertEqual(sum(pool.map(attempt, range(40))), 3)
+        cache.clear()  # Simulate both windows expiring.
+        self.assertTrue(attempt(None))
+
+    def test_failed_cache_or_repeated_expiry_never_start_generator(self):
+        for failure in (RuntimeError('offline'), ValueError('expired')):
+            with self.subTest(failure=type(failure).__name__), patch('nova_admin.captcha.caches') as caches, patch('nova_admin.captcha._generate_audio') as generate:
+                backend = caches.__getitem__.return_value
+                backend.add.return_value = False
+                backend.incr.side_effect = failure
+                self.assertEqual(captcha_audio(self.request, self.row.hashkey).status_code, 503)
+                generate.assert_not_called()
 
     def assert_no_cache(self, response):
         self.assertIn("no-store", response["Cache-Control"])
