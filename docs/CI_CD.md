@@ -13,7 +13,7 @@ Python 3.10.20 / Django 5.2.17 的源码和 wheel，因此共 10 个环境；ful
 每个 profile 有独立虚拟环境和数据库，并核验安装版本、导入来源、实际运行数及无跳过。
 实验 upstream profile 单独声明 Django main 所需的 asgiref 3.13.0 覆盖。
 
-当前 Node 契约为 20 套件、1,398 项前端及 278 项主题 JS：导航 123、命令面板 25、
+当前 Node 契约为 20 套件、1,400 项前端（含 47 项登录演示）及 278 项主题 JS：导航 123、命令面板 25、
 外观 24、changelist 38、打印 26、消息 26、CAPTCHA 16。新增或删除测试时，必须同步
 更新 `scripts/ci_support.py` 的数量/成功摘要及 `scripts/tests/test_ci_support.py`
 中的证据 fixture，并实际执行对应套件。精确计数用于发现漏跑，不能用空断言补数量。

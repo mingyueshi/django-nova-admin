@@ -2,6 +2,7 @@ import json
 from datetime import timedelta
 from unittest.mock import patch
 from bs4 import BeautifulSoup
+from django import forms
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import get_user_model
@@ -13,7 +14,7 @@ from django.utils.translation import override
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from nova_slider_captcha.models import Challenge
-from nova_slider_captcha.services import issue, verify
+from nova_slider_captcha.services import consume, issue, verify
 from nova_admin.slider import NovaSliderWidget, SliderCaptchaAdminAuthenticationForm
 from nova_admin.preferences import SESSION_KEY
 
@@ -117,9 +118,116 @@ class SliderLoginTests(TestCase):
         token, _ = self.proof()
         result = self.client.post(reverse('admin:login'), self.data(token, password='wrong'))
         self.assertEqual(result.status_code, 200)
+        self.assertTrue(Challenge.objects.get(solved=True).token_consumed)
         with patch('django.contrib.auth.forms.authenticate') as auth:
             self.client.post(reverse('admin:login'), self.data(token))
             auth.assert_not_called()
+
+    def test_field_errors_preserve_proof_and_skip_authentication(self):
+        class ExtendedLogin(SliderCaptchaAdminAuthenticationForm):
+            extra = forms.CharField()
+
+        class ExtraFirstLogin(ExtendedLogin):
+            field_order = ('extra', 'username', 'password', 'nova_slider_token')
+
+        token, _ = self.proof()
+        row = Challenge.objects.get(solved=True)
+        request = self.page()[0].wsgi_request
+        for form_type, values, field in (
+            (SliderCaptchaAdminAuthenticationForm, {'username': ''}, 'username'),
+            (SliderCaptchaAdminAuthenticationForm, {'username': '   '}, 'username'),
+            (SliderCaptchaAdminAuthenticationForm, {'password': ''}, 'password'),
+            (ExtendedLogin, {}, 'extra'),
+            (ExtraFirstLogin, {}, 'extra'),
+        ):
+            with self.subTest(field=field, form=form_type.__name__), patch('nova_admin.slider.consume', wraps=consume) as claim, patch('django.contrib.auth.forms.authenticate') as auth:
+                form = form_type(request, data=self.data(token, **values))
+                self.assertFalse(form.is_valid())
+                self.assertIn(field, form.errors)
+                self.assertNotIn(token, form.cleaned_data.values())
+                self.assertNotIn(token, form.as_p())
+                claim.assert_not_called()
+                auth.assert_not_called()
+            row.refresh_from_db()
+            self.assertFalse(row.token_consumed)
+        self.assertEqual(self.client.post(reverse('admin:login'), self.data(token)).status_code, 302)
+        row.refresh_from_db()
+        self.assertTrue(row.token_consumed)
+
+    def test_prefixed_field_error_preserves_proof_for_corrected_login(self):
+        class PrefixedLogin(SliderCaptchaAdminAuthenticationForm):
+            def __init__(self, *args, **kwargs):
+                kwargs['prefix'] = 'auth'
+                super().__init__(*args, **kwargs)
+
+        self.page()
+        token, _ = self.proof()
+        row = Challenge.objects.get(solved=True)
+        data = {'auth-username': self.user.username, 'auth-password': '', 'auth-nova_slider_token': token}
+        with patch.object(admin.site._wrapped, 'login_form', PrefixedLogin):
+            with patch('nova_admin.slider.consume', wraps=consume) as claim, patch('django.contrib.auth.forms.authenticate') as auth:
+                response = self.client.post(reverse('admin:login'), data)
+                self.assertEqual(response.status_code, 200)
+                self.assertIn('password', response.context['form'].errors)
+                self.assertNotContains(response, token)
+                claim.assert_not_called()
+                auth.assert_not_called()
+            row.refresh_from_db()
+            self.assertFalse(row.token_consumed)
+            data['auth-password'] = 'synthetic-slider-only'
+            self.assertEqual(self.client.post(reverse('admin:login'), data).status_code, 302)
+        row.refresh_from_db()
+        self.assertTrue(row.token_consumed)
+
+    def test_proof_is_consumed_once_before_password_authentication(self):
+        token, _ = self.proof()
+        row = Challenge.objects.get(solved=True)
+        request = self.page()[0].wsgi_request
+
+        def authenticate(*args, **kwargs):
+            row.refresh_from_db()
+            self.assertTrue(row.token_consumed)
+            return self.user
+
+        with patch('nova_admin.slider.consume', wraps=consume) as claim, patch('django.contrib.auth.forms.authenticate', side_effect=authenticate) as auth:
+            form = SliderCaptchaAdminAuthenticationForm(request, data=self.data(token))
+            self.assertTrue(form.is_valid())
+            self.assertTrue(form.is_valid())
+            self.assertFalse(form.errors)
+            self.assertEqual(form.cleaned_data['nova_slider_token'], '')
+            claim.assert_called_once_with(token, request, purpose='login')
+            auth.assert_called_once()
+
+    @override_settings(NOVA_ADMIN_CAPTCHA_POLICY='progressive')
+    def test_progressive_ungated_login_ignores_unsolicited_proof(self):
+        token, _ = self.proof()
+        row = Challenge.objects.get(solved=True)
+        with patch('nova_admin.slider.consume', wraps=consume) as claim:
+            self.assertEqual(self.client.post(reverse('admin:login'), self.data(token)).status_code, 302)
+            claim.assert_not_called()
+        row.refresh_from_db()
+        self.assertFalse(row.token_consumed)
+
+    @override_settings(NOVA_ADMIN_CAPTCHA_POLICY='progressive')
+    def test_progressive_required_field_error_preserves_proof_and_success_clears_risk(self):
+        for _ in range(2):
+            self.client.post(reverse('admin:login'), self.data(password='wrong'))
+        token, _ = self.proof()
+        row = Challenge.objects.get(solved=True)
+        with patch('nova_admin.slider.consume', wraps=consume) as claim, patch('django.contrib.auth.forms.authenticate') as auth:
+            response = self.client.post(reverse('admin:login'), self.data(token, username=''))
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('username', response.context['form'].errors)
+            self.assertTrue(response.context['form'].captcha_required)
+            claim.assert_not_called()
+            auth.assert_not_called()
+        row.refresh_from_db()
+        self.assertFalse(row.token_consumed)
+        response = self.client.post(reverse('admin:login'), self.data(token))
+        self.assertEqual(response.status_code, 302)
+        row.refresh_from_db()
+        self.assertTrue(row.token_consumed)
+        self.assertNotIn('nova_slider_token', SliderCaptchaAdminAuthenticationForm(response.wsgi_request).fields)
 
     def test_cross_session_wrong_purpose_and_expired_tokens_rejected(self):
         other = Client()

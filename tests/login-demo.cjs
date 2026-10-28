@@ -606,6 +606,70 @@ test('original slider component keyboard solve and one-time demo consumption', a
   assert.equal(slider.live, false);
 });
 
+test('checking keeps slider focus while blocking edits and repeated verification', async (ui) => {
+  ui.change('#captcha-provider', 'slider');
+  await settleSlider();
+  const slider = ui.q('nova-slider-demo');
+  const post = slider.post.bind(slider);
+  let finish, verifications = 0;
+  slider.post = (action, body) => action === 'verify'
+    ? (verifications++, new Promise(resolve => { finish = resolve; })) : post(action, body);
+  slider.move(30);
+  slider.range.focus();
+  slider.range.dispatchEvent(new ui.w.KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true}));
+  assert.equal(slider.state, 'checking');
+  assert.equal(ui.d.activeElement, slider.range);
+  assert.equal(slider.range.disabled, false);
+  assert.equal(slider.range.getAttribute('aria-disabled'), 'true');
+  const arrow = new ui.w.KeyboardEvent('keydown', {key: 'ArrowRight', bubbles: true, cancelable: true});
+  slider.range.dispatchEvent(arrow);
+  assert.equal(arrow.defaultPrevented, true);
+  slider.range.value = 100;
+  slider.range.dispatchEvent(new ui.w.Event('input', {bubbles: true}));
+  assert.equal(Number(slider.range.value), 30);
+  const pointer = new ui.w.Event('pointerdown', {bubbles: true, cancelable: true});
+  Object.defineProperty(pointer, 'pointerId', {value: 1});
+  slider.range.dispatchEvent(pointer);
+  assert.equal(pointer.defaultPrevented, true);
+  assert.equal(slider.activePointerId, null);
+  slider.range.dispatchEvent(new ui.w.KeyboardEvent('keydown', {key: 'Enter', bubbles: true}));
+  assert.equal(verifications, 1);
+  finish({ok: false, code: 'incorrect', attemptsRemaining: 4});
+  await settleSlider();
+  assert.equal(slider.state, 'ready');
+  assert.equal(ui.d.activeElement, slider.range);
+  assert.equal(slider.range.getAttribute('aria-disabled'), 'false');
+  assert.equal(slider.querySelector('.nsc-overlay').getAttribute('aria-hidden'), 'true');
+});
+
+test('checking respects focus leaving and refresh rejects late verification', async (ui) => {
+  ui.change('#captcha-provider', 'slider');
+  await settleSlider();
+  const slider = ui.q('nova-slider-demo');
+  const post = slider.post.bind(slider);
+  const pending = [];
+  slider.post = (action, body) => action === 'verify'
+    ? new Promise(resolve => pending.push(resolve)) : post(action, body);
+  const refresh = slider.querySelector('.nsc-refresh');
+  slider.range.focus();
+  slider.range.dispatchEvent(new ui.w.KeyboardEvent('keydown', {key: 'Enter', bubbles: true}));
+  refresh.focus(); // Simulate the destination reached by Tab; native Tab is checked in Chromium.
+  pending.shift()({ok: false, code: 'incorrect', attemptsRemaining: 4});
+  await settleSlider();
+  assert.equal(ui.d.activeElement, refresh);
+  slider.range.focus();
+  slider.range.dispatchEvent(new ui.w.KeyboardEvent('keydown', {key: 'Enter', bubbles: true}));
+  const oldChallenge = slider.demoID;
+  refresh.focus(); refresh.click();
+  await settleSlider();
+  assert.notEqual(slider.demoID, oldChallenge);
+  pending.shift()({ok: true, token: 'late-local-demo-proof', expiresIn: 60});
+  await settleSlider();
+  assert.equal(slider.state, 'ready');
+  assert.equal(slider.getToken(), '');
+  assert.equal(ui.d.activeElement, refresh);
+});
+
 test('component submits its configured prefixed name through native FormData', async (ui) => {
   const form = ui.d.createElement('form');
   const slider = ui.d.createElement('nova-slider-demo');
@@ -658,7 +722,7 @@ test('vendored slider bytes match the declared MIT source manifest', () => {
   const base = path.join(project, 'dist/vendor/nova-slider-captcha');
   const manifest = JSON.parse(fs.readFileSync(path.join(base, 'manifest.json')));
   assert.equal(manifest.version, '0.3.0');
-  assert.equal(manifest.commit, '62a93e7efc2d4f1cca0a9390627f5a821c4c742c');
+  assert.equal(manifest.commit, '691d36f1d2319d0c83c382d40ce29390a5e2b324');
   assert.equal(manifest.license, 'MIT');
   for (const [name, digest] of Object.entries(manifest.files))
     assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(base, name))).digest('hex'), digest);

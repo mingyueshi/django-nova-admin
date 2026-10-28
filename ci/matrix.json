@@ -56,9 +56,9 @@
   },
   "slider_source": {
     "version": "0.3.0",
-    "commit": "62a93e7efc2d4f1cca0a9390627f5a821c4c742c",
-    "url": "https://codeload.github.com/mingyueshi/django-nova-slider-captcha/tar.gz/62a93e7efc2d4f1cca0a9390627f5a821c4c742c",
-    "sha256": "21160c340cd0671394d64b4fc48f1518283da041848263c2929c108c29d66924"
+    "commit": "691d36f1d2319d0c83c382d40ce29390a5e2b324",
+    "url": "https://codeload.github.com/mingyueshi/django-nova-slider-captcha/tar.gz/691d36f1d2319d0c83c382d40ce29390a5e2b324",
+    "sha256": "090c565ab2d83a571095ea6a5410813bd2a7814d634ac6dbe50946cdff68de91"
   },
   "ranged_response": {
     "version": "0.2.0",

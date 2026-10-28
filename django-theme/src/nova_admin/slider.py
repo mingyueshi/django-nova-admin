@@ -36,8 +36,22 @@ class SliderCaptchaAdminAuthenticationForm(CaptchaPolicyMixin, AdminAuthenticati
     nova_slider_token.widget = NovaSliderWidget()
 
     def clean_nova_slider_token(self):
-        token = self.cleaned_data["nova_slider_token"]
-        if self.request is None or not consume(token, self.request, purpose="login"):
-            raise ValidationError(pgettext_lazy("Nova Admin", "Security verification is missing, expired, or already used. Please try again."), code="captcha_invalid")
-        # Keep proof out of cleaned_data after one-time consumption.
-        return ""
+        # Retain the field hook for project forms; do not consume until every
+        # field (including fields declared after this one) has been validated.
+        return self.cleaned_data["nova_slider_token"]
+
+    def clean(self):
+        token = self.cleaned_data.pop(self.captcha_field_name, "")
+        if self.errors:
+            return self.cleaned_data
+        if self.captcha_required:
+            if self.request is None or not consume(token, self.request, purpose="login"):
+                self.add_error(self.captcha_field_name, ValidationError(
+                    pgettext_lazy("Nova Admin", "Security verification is missing, expired, or already used. Please try again."),
+                    code="captcha_invalid",
+                ))
+                return self.cleaned_data
+            self.cleaned_data[self.captcha_field_name] = ""
+        # Progressive ungated requests keep Django's normal authentication.
+        # Required proofs are consumed before password auth, even on failure.
+        return super().clean()

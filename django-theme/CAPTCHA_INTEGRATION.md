@@ -23,7 +23,7 @@ NOVA_ADMIN_CAPTCHA_RISK_CHECK = lambda request: False
 
 ## Nova Slider CAPTCHA 接入
 
-滑块复用独立的 `nova-slider-captcha` **0.3.0** 包及原生 Web Component，本次同步源码固定为 `62a93e7efc2d4f1cca0a9390627f5a821c4c742c`（不代表已发布到 PyPI）。核心主题不自动导入该包，也不强制安装图片验证码。当前源代码工作区可从 `django-nova-admin` 仓库根目录安装兄弟项目：
+滑块复用独立的 `nova-slider-captcha` **0.3.0** 包及原生 Web Component，本次同步源码固定为 `691d36f1d2319d0c83c382d40ce29390a5e2b324`（不代表已发布到 PyPI）。核心主题不自动导入该包，也不强制安装图片验证码。当前源代码工作区可从 `django-nova-admin` 仓库根目录安装兄弟项目：
 
 ```bash
 python -m pip install -e ./django-theme
@@ -57,7 +57,9 @@ urlpatterns = [
 
 执行宿主项目的 `migrate` 和 `collectstatic`。这不需要外部服务或 API 密钥；安装包提供图片生成、数据库表、同源 CSRF 接口及资源。模板保留 Nova 品牌、深浅色及原生模式，组件支持拖动、触屏、方向键与 Enter。滑块需要 JavaScript，无脚本提示只引导到项目自己的替代验证渠道，不会绕过服务端要求。
 
-`nova_slider_token` 隐藏字段由组件创建，模板不重复输出。模板用 `field-name="{{ widget.name }}"` 传入完整 Django 字段名，因此 `prefix="auth"` 的表单会提交 `auth-nova_slider_token`。表单用固定 `purpose="login"` 调用包的 `consume()`，先原子消费绑定当前会话、未过期的一次性凭证，再执行 Django 原生密码、active/staff 和安全 next 检查。密码错误也需要重新拼图。凭证过期、跨会话、跨用途、重用及接口 CSRF 失败均不能登录。不要把前端 `verified` 事件当作服务端授权；不要把消费校验放入之后可能回滚的外层事务。接口限流和清理沿用独立包的配置与 `prune_slider_captcha` 命令，需按项目实际数据库和部署方式验收。
+`nova_slider_token` 隐藏字段由组件创建，模板不重复输出。模板用 `field-name="{{ widget.name }}"` 传入完整 Django 字段名，因此 `prefix="auth"` 的表单会提交 `auth-nova_slider_token`。表单先完成全部字段校验；缺少用户名、密码或宿主新增的必填字段时，不消费凭证，也不调用认证后端。字段通过且当前策略要求验证码时，用固定 `purpose="login"` 调用包的 `consume()`，先原子消费绑定当前会话、未过期的一次性凭证，再执行 Django 原生密码、active/staff 和安全 next 检查。密码错误也需要重新拼图。渐进策略未触发时不消费客户端额外提交的凭证；`cleaned_data` 不保留原始凭证。凭证过期、跨会话、跨用途、重用及接口 CSRF 失败均不能登录。不要把前端 `verified` 事件当作服务端授权；不要把消费校验放入之后可能回滚的外层事务。接口限流和清理沿用独立包的配置与 `prune_slider_captcha` 命令，需按项目实际数据库和部署方式验收。
+
+此修订还包含 init 新会话的 IP 限流（默认容量 40，按每分钟 40 次的速率补充），已有有效绑定的 init 不扣新会话额度；拒绝请求不创建 session 或 CSRF Cookie。校验挑战从写库读取，以免滞后副本影响判定；新修订没有新增模型或迁移。静态演示与 CI 安装来源须同步固定提交及 SHA-256，包名版本仍是 0.3.0，不能只靠版本字符串区分修订。
 
 已有 MFA/SSO／Axes 自定义表单需要组合现有逻辑，不直接替换；本适配器没有宣称自动提供滑块与 Axes 的补报联动。自定义 URL namespace 可继承 `NovaSliderWidget.get_context()` 改用自己接口的反向解析。组件只声明简体中文与英语文案；真实无障碍替代认证、生产数据库并发和负载需分别验收。
 
