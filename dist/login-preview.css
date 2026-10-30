@@ -55,7 +55,77 @@ body.nova-admin.login .login-password input { padding-right:64px; }
 .login-verification-controls select { min-width:0; max-width:100%; width:100%; padding:7px 5px; min-height:40px; background:var(--nova-panel); color:var(--body-fg); border:1px solid var(--border-color); border-radius:6px; }
 .login-risk-status { margin:12px 0 20px; color:var(--body-quiet-color); font-size:12px; line-height:1.7; }
 .login-slider-label { display:block; margin-bottom:10px; font-size:14px; font-weight:600; }
-nova-slider-demo { display:block; min-width:0; width:100%; --nsc-accent:var(--link-fg); --nsc-muted:var(--body-quiet-color); --nsc-panel:var(--darkened-bg); --nsc-line:var(--border-color); --nsc-text:var(--body-fg); }
+/* DemoSlider subclasses the component in JS, not CSS selector matching.
+   Mirror its host defaults/themes here; keep vendored assets unmodified. */
+nova-slider-demo {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  --nsc-handle-size: 48px;
+  --nsc-fallback-accent: #1d4ed8;
+  --nsc-fallback-muted: #526078;
+  --nsc-fallback-panel: #f7f8fc;
+  --nsc-fallback-line: #c5cede;
+  --nsc-fallback-text: #23283a;
+  --nsc-fallback-handle: #fff;
+  --nsc-fallback-success: #176348;
+  --nsc-fallback-error: #b1223c;
+  /* Semantic link/error tokens precede Django's decorative yellow --accent. */
+  --nsc-accent: var(--link-fg, var(--accent, var(--nsc-fallback-accent)));
+  --nsc-muted: var(--body-quiet-color, var(--muted, var(--nsc-fallback-muted)));
+  --nsc-panel: var(--panel2, var(--darkened-bg, var(--nsc-fallback-panel)));
+  --nsc-line: var(--line, var(--border-color, var(--nsc-fallback-line)));
+  --nsc-text: var(--text, var(--body-fg, var(--nsc-fallback-text)));
+  --nsc-handle-bg: var(--panel, var(--nova-panel, var(--body-bg, var(--nsc-fallback-handle))));
+  --nsc-success: var(--nsc-fallback-success);
+  --nsc-error: var(--error-fg, var(--danger, var(--nsc-fallback-error)));
+  --nsc-success-panel: #164b3a;
+  --nsc-success-text: #fff;
+}
+/* OS preference supplies standalone fallbacks, never overrides host tokens. */
+@media (prefers-color-scheme: dark) {
+  :where(:root:not([data-theme="light"])) nova-slider-demo {
+    --nsc-fallback-accent: #a8c7ff;
+    --nsc-fallback-muted: #b4c1d6;
+    --nsc-fallback-panel: #253246;
+    --nsc-fallback-line: #53647e;
+    --nsc-fallback-text: #e7edf5;
+    --nsc-fallback-handle: #1b2534;
+    --nsc-fallback-success: #78e0b4;
+    --nsc-fallback-error: #ff9aaf;
+  }
+}
+:where(:root[data-theme="dark"]) nova-slider-demo {
+  --nsc-fallback-accent: #a8c7ff;
+  --nsc-fallback-muted: #b4c1d6;
+  --nsc-fallback-panel: #253246;
+  --nsc-fallback-line: #53647e;
+  --nsc-fallback-text: #e7edf5;
+  --nsc-fallback-handle: #1b2534;
+  --nsc-fallback-success: #78e0b4;
+  --nsc-fallback-error: #ff9aaf;
+}
+/* Explicit Django/Nova appearance wins over OS defaults. */
+:where(:root[data-theme="light"], .nova-mode-light) nova-slider-demo {
+  --nsc-fallback-accent: #1d4ed8;
+  --nsc-fallback-muted: #526078;
+  --nsc-fallback-panel: #f7f8fc;
+  --nsc-fallback-line: #c5cede;
+  --nsc-fallback-text: #23283a;
+  --nsc-fallback-handle: #fff;
+  --nsc-fallback-success: #176348;
+  --nsc-fallback-error: #b1223c;
+}
+:where(.nova-mode-dark) nova-slider-demo {
+  --nsc-fallback-accent: #a8c7ff;
+  --nsc-fallback-muted: #b4c1d6;
+  --nsc-fallback-panel: #253246;
+  --nsc-fallback-line: #53647e;
+  --nsc-fallback-text: #e7edf5;
+  --nsc-fallback-handle: #1b2534;
+  --nsc-fallback-success: #78e0b4;
+  --nsc-fallback-error: #ff9aaf;
+}
 body.nova-admin.login nova-slider-demo .nsc-range { width:100%; height:100%; min-height:0; margin:0; padding:0; border:0; border-radius:0; box-shadow:none; }
 body.nova-admin.login nova-slider-demo .nsc-keyboard { margin:0; }
 nova-slider-demo .nsc-refresh { min-height:44px; }

@@ -165,6 +165,12 @@ async function createDemo(options = {}) {
 }
 
 
+test('demo subclass mirrors the complete vendored slider host CSS contract', () => {
+  const vendor = fs.readFileSync(path.join(project, 'dist/vendor/nova-slider-captcha/slider.css'), 'utf8');
+  const hostContract = vendor.split('\n.nsc {')[0].trimEnd().replaceAll('nova-slider', 'nova-slider-demo');
+  assert.ok(css.includes(hostContract), 'Demo tag requires its own complete host defaults and theme selectors');
+});
+
 test('focused login keeps required controls visible and auxiliary scenarios closed', ({ q, d }) => {
   assert.equal(d.querySelectorAll('form').length, 1);
   assert.equal(d.querySelectorAll('form input[required]').length, 3);

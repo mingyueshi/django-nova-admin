@@ -1,0 +1,11 @@
+{
+  "base_commit": "10000fb62b6b675a2f606977138b4054fd3f1915",
+  "site_v42_source": "65053d372a516517ca7e60ad2930413ec883fafa",
+  "sha256": {
+    "dist/login-preview.css": "31c3e4df7171936df1f18021d6e7f9dfcb7c08afa9671fbcedfe29dec69ef7c8",
+    "tests/login-demo.cjs": "a94a968fcb89573e71cadc1f56b0f50f9b3ee81b364b715c3335299bb3f2b37d",
+    "dist/vendor/nova-slider-captcha/slider.js": "ab34596636072ba3e58adeeff673c92fd9cd8060bca1f295b2d3016fd7075154",
+    "dist/vendor/nova-slider-captcha/slider.css": "fcd03314b02dece6de1af0460c0a3e14ca3efe59373717364a4ec86273443902",
+    "dist/vendor/nova-slider-captcha/manifest.json": "20e1fd8678e7fdacdbe3ee34b2f740e81a86e1818d6ff81a94b8b10cecc0dd08"
+  }
+}
