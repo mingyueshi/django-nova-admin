@@ -1,0 +1,11 @@
+{% load i18n %}
+{# Keep the challenge inline when JavaScript/dialog is unavailable. #}
+<dialog class="nova-captcha-dialog" data-nova-captcha-dialog aria-modal="true" aria-labelledby="nova-captcha-title">
+  <header class="nova-captcha-dialog-header">
+    <h2 id="nova-captcha-title" tabindex="-1">{% translate 'Security verification' context 'Nova Admin' %}</h2>
+    <button type="button" class="nova-captcha-close" data-nova-captcha-close aria-label="{% translate 'Close' context 'Nova Admin' %}">×</button>
+  </header>
+  <div data-nova-captcha-slot></div>
+  <p role="alert" data-nova-captcha-unavailable hidden>{% translate 'Verification is temporarily unavailable. Please reload the page and try again.' context 'Nova Admin' %}</p>
+  {% if form.captcha %}<button type="button" class="nova-captcha-continue" data-nova-captcha-continue>{% translate 'Log in' %}</button>{% endif %}
+</dialog>

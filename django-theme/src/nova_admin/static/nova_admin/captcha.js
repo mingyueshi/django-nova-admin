@@ -46,7 +46,8 @@
     const disabledBefore = submitters.map(function (item) { return item.disabled; });
     function lock(value) {
       answer.readOnly = value;
-      submitters.forEach(function (item, index) { item.disabled = value || disabledBefore[index]; });
+      if (form.novaCaptchaDialog) form.novaCaptchaDialog.setBlocked(value);
+      submitters.forEach(function (item, index) { item.disabled = (!form.novaCaptchaDialog && value) || disabledBefore[index]; });
     }
     function announce(message, state) {
       status.textContent = message;
@@ -61,10 +62,11 @@
     image.addEventListener('error', imageFailed);
     if (image.complete && image.naturalWidth === 0) imageFailed();
     form.addEventListener('submit', function (event) {
+      if (event.defaultPrevented) return;
       if (busy || blocked) { event.preventDefault(); button.focus(); }
     });
     button.hidden = false;
-    if (answer.getAttribute('aria-invalid') === 'true' && !blocked) answer.focus();
+    if (!form.novaCaptchaDialog && answer.getAttribute('aria-invalid') === 'true' && !blocked) answer.focus();
     button.addEventListener('click', async function () {
       if (busy) return; // Repeated keyboard/click activation issues one request.
       busy = true;
@@ -109,7 +111,7 @@
         replaceAudio(audioURL);
         blocked = false;
         announce(root.dataset.successMessage, 'ready');
-        answer.focus();
+        if (!form.novaCaptchaDialog || form.novaCaptchaDialog.active) answer.focus();
       } catch (error) {
         if (current !== generation) return;
         clearAudio();
@@ -121,9 +123,21 @@
           button.disabled = false;
           root.removeAttribute('aria-busy');
           lock(blocked);
-          if (blocked) button.focus();
+          if (blocked && (!form.novaCaptchaDialog || form.novaCaptchaDialog.active)) button.focus();
         }
       }
+    });
+    const challenge = root.closest('[data-nova-login-challenge]');
+    challenge?.addEventListener('nova-captcha-cancel', function () {
+      generation += 1;
+      if (controller) controller.abort();
+      if (busy) { blocked = true; announce(root.dataset.errorMessage, 'error'); }
+      busy = false;
+      button.disabled = false;
+      root.removeAttribute('aria-busy');
+      lock(blocked);
+      // Stop playback without discarding an otherwise usable audio alternative.
+      if (player && typeof player.pause === 'function') player.pause();
     });
     window.addEventListener('pagehide', function () { generation += 1; if (controller) controller.abort(); clearAudio(); });
     window.addEventListener('pageshow', function (event) {

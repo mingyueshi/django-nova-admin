@@ -430,3 +430,7 @@ msgstr "外观设置"
 msgctxt "Nova Admin"
 msgid "Changes take effect only after Apply."
 msgstr "更改仅在点击“应用”后生效。"
+
+msgctxt "Nova Admin"
+msgid "Verification is temporarily unavailable. Please reload the page and try again."
+msgstr "验证服务暂不可用，请重新加载页面后重试。"

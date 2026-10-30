@@ -159,6 +159,15 @@ class CaptchaLoginTests(TestCase):
         self.assertContains(response, "nova_admin/captcha.js")
         self.assertContains(response, "nova_admin/captcha.css")
 
+    def test_image_dialog_preserves_inline_no_script_answer_and_csrf(self):
+        response, soup, _, _ = self.read_form()
+        self.assertTrue(soup.select_one('#login-form [data-nova-login-challenge="image"] [name="captcha_1"]'))
+        self.assertFalse(soup.select_one('[data-nova-captcha-dialog]').has_attr('open'))
+        self.assertTrue(soup.select_one('[data-nova-captcha-continue]'))
+        self.assertContains(response, 'nova_admin/captcha-dialog.js', count=1)
+        self.assertContains(response, 'nova_admin/captcha-dialog.css', count=1)
+        self.assertContains(response, 'Your sign-in still works without JavaScript.')
+
     def test_captcha_survives_native_and_disabled_theme(self):
         for mode in ("light", "dark", "native"):
             session = self.client.session

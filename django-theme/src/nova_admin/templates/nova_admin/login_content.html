@@ -26,10 +26,11 @@
     {% for field in form %}
       {% if field.name != 'username' and field.name != 'password' %}
         {% if field.is_hidden %}{{ field }}{% else %}
-          <div class="form-row nova-login-extra">{{ field.errors }}{{ field.label_tag }} {{ field }}{% if field.help_text %}<div class="help{% if field.name == 'captcha' %} nova-login-visually-hidden{% endif %}" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</div>{% endif %}</div>
+          <div class="form-row nova-login-extra"{% if field.name == 'captcha' %} data-nova-login-challenge="image"{% elif field.name == 'nova_slider_token' %} data-nova-login-challenge="slider"{% endif %}>{{ field.errors }}{{ field.label_tag }} {{ field }}{% if field.help_text %}<div class="help{% if field.name == 'captcha' %} nova-login-visually-hidden{% endif %}" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</div>{% endif %}</div>
         {% endif %}
       {% endif %}
     {% endfor %}
+    {% if form.captcha or form.nova_slider_token %}{% include "nova_admin/captcha_dialog.html" %}{% endif %}
     <input type="hidden" name="next" value="{{ next }}">
     {% url 'admin_password_reset' as password_reset_url %}
     {% if password_reset_url %}<div class="password-reset-link"><a href="{{ password_reset_url }}">{% translate 'Forgotten your login credentials?' %}</a></div>{% endif %}

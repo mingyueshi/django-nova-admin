@@ -9,6 +9,34 @@ window.addEventListener('storage', (event) => {
 // The optional Django integration validates its challenge independently on the server.
 const $ = (selector) => document.querySelector(selector);
 const form = $('#demo-login-form');
+const verificationDialog = $('#demo-captcha-dialog');
+const modalSupported = typeof verificationDialog?.showModal === 'function';
+let awaitingVerification = false,
+  verificationFocus = null;
+if (modalSupported) {
+  $('#demo-captcha-slot').append($('#image-captcha-section'), $('#slider-captcha-section'));
+}
+function closeVerification() {
+  if (!awaitingVerification) return;
+  awaitingVerification = false;
+  cancelPending();
+  slider?.remove();
+  slider = null;
+  $('#demo-captcha').value = '';
+  verificationDialog.close();
+  verificationFocus?.focus();
+}
+$('#close-demo-captcha').addEventListener('click', closeVerification);
+verificationDialog.addEventListener('cancel', (event) => {
+  event.preventDefault();
+  closeVerification();
+});
+verificationDialog.addEventListener('close', () => {
+  if (!verificationDialog.open) closeVerification();
+});
+$('#continue-demo-captcha').addEventListener('click', () =>
+  form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })),
+);
 const fields = [$('#demo-username'), $('#demo-password'), $('#demo-captcha')];
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const lifetime = 120000;
@@ -27,6 +55,7 @@ const usesImage = () => $('#captcha-provider').value === 'image';
 
 function updateVerification({ renew = true } = {}) {
   const required = requiresCaptcha();
+  $('#continue-demo-captcha').hidden = !usesImage();
   $('#image-captcha-section').hidden = !required || !usesImage();
   $('#slider-captcha-section').hidden = !required || usesImage();
   $('#demo-captcha').disabled = !required || !usesImage();
@@ -48,15 +77,19 @@ function updateVerification({ renew = true } = {}) {
     clearTimeout(expiryTimer);
     challenge = '';
     $('#demo-captcha').value = '';
-    if (required && !slider) {
+    if (required && !slider && (!modalSupported || verificationDialog.open)) {
       slider = document.createElement('nova-slider-demo');
       slider.setAttribute('endpoint', './demo-only/');
       slider.setAttribute('purpose', 'login');
       slider.setAttribute('role', 'group');
       slider.setAttribute('aria-label', '演示拼图滑块验证');
       slider.setAttribute('aria-describedby', 'slider-error');
+      slider.addEventListener('verified', () => {
+        if (awaitingVerification && verificationDialog.open)
+          form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      });
       $('#slider-captcha-mount').append(slider);
-    } else if (required && renew) slider.refresh();
+    } else if (required && renew && slider) slider.refresh();
   }
 }
 function recordFailure() {
@@ -65,6 +98,7 @@ function recordFailure() {
 }
 for (const id of ['captcha-policy', 'captcha-provider', 'captcha-length']) {
   $('#' + id).addEventListener('change', () => {
+    closeVerification();
     cancelPending();
     clearErrors();
     updateVerification();
@@ -234,6 +268,17 @@ $('#password-visible').addEventListener('click', () => {
   $('#password-visible').setAttribute('aria-label', show ? '隐藏演示密码' : '显示演示密码');
   $('#password-visible').setAttribute('aria-pressed', String(show));
 });
+form.addEventListener('keydown', (event) => {
+  if (
+    event.key === 'Enter' &&
+    !event.isComposing &&
+    event.target instanceof HTMLInputElement &&
+    ['text', 'password'].includes(event.target.type)
+  ) {
+    event.preventDefault();
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  }
+});
 form.addEventListener('submit', (event) => {
   event.preventDefault();
   if (pending) return;
@@ -245,6 +290,14 @@ form.addEventListener('submit', (event) => {
   const answer = $('#demo-captcha').value.trim().toUpperCase();
   if (!username) fieldError('username', '请输入演示用户名');
   if (!password) fieldError('password', '请输入演示密码');
+  if (username && password && required && modalSupported && !verificationDialog.open) {
+    awaitingVerification = true;
+    verificationFocus = document.activeElement;
+    verificationDialog.showModal();
+    $('#demo-captcha-title').focus();
+    updateVerification({ renew: false });
+    return;
+  }
   if (imageRequired && !answer) fieldError('captcha', '请输入验证码');
   const invalid = form.querySelector('[aria-invalid="true"]');
   if (invalid) {
@@ -275,6 +328,8 @@ form.addEventListener('submit', (event) => {
   const attempt = ++generation;
   const fail = $('#fail-login').checked;
   $('#fail-login').checked = false;
+  awaitingVerification = false;
+  if (verificationDialog.open) verificationDialog.close();
   setPending(true);
   submitTimer = setTimeout(() => {
     if (attempt !== generation) return;
@@ -330,6 +385,7 @@ $('#login-again').addEventListener('click', () => {
   fields[0].focus();
 });
 window.addEventListener('pagehide', () => {
+  closeVerification();
   cancelPending();
   clearTimeout(expiryTimer);
   fields[1].value = '';

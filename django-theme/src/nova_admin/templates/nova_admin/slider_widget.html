@@ -1,6 +1,8 @@
 {% load i18n %}
 <div class="nova-slider-form-widget">
+  <template data-nova-slider-template>
   <nova-slider endpoint="{{ widget.endpoint }}" purpose="login" field-name="{{ widget.name }}" locale="{{ widget.locale }}"{% if widget.attrs.id %} id="{{ widget.attrs.id }}"{% endif %} role="group" aria-label="{% translate 'Security verification' context 'Nova Admin' %}"{% if widget.invalid %} aria-invalid="true"{% endif %}{% if widget.describedby %} aria-describedby="{{ widget.describedby }}"{% endif %}></nova-slider>
+  </template>
   <noscript>{% translate "JavaScript is required for this visual challenge. Use the site's equivalent secure nonvisual verification route or contact support." context 'Nova Admin' %}</noscript>
   {% if widget.alternative %}<p class="nsc-alternative"><a href="{{ widget.alternative.url|force_escape }}">{{ widget.alternative.label|force_escape }}</a></p>{% endif %}
 </div>

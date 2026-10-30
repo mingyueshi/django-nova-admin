@@ -1,0 +1,11 @@
+{
+  "passed": 6,
+  "checks": [
+    "preview initially closed",
+    "preview blank username stays outside modal",
+    "preview credential Enter opens",
+    "preview Escape closes",
+    "preview mobile fits",
+    "preview image answer Enter succeeds"
+  ]
+}

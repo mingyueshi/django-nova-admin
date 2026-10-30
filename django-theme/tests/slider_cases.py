@@ -63,6 +63,18 @@ class SliderLoginTests(TestCase):
         with override_settings(NOVA_ADMIN_ENABLED=False):
             self.assertEqual(len(self.page()[1].select('nova-slider')), 1)
 
+    def test_challenge_is_lazy_and_dialog_assets_preserve_native_form(self):
+        response, soup = self.page()
+        self.assertTrue(soup.select_one('[data-nova-login-challenge="slider"] template nova-slider'))
+        dialog = soup.select_one('#login-form dialog[data-nova-captcha-dialog]')
+        self.assertNotIn('open', dialog.attrs)
+        self.assertEqual(dialog['aria-labelledby'], 'nova-captcha-title')
+        self.assertEqual(soup.select_one('[data-nova-captcha-close]')['type'], 'button')
+        self.assertContains(response, 'nova_admin/captcha-dialog.js', count=1)
+        self.assertContains(response, 'nova_admin/captcha-dialog.css', count=1)
+        self.assertTrue(soup.select_one('[name="csrfmiddlewaretoken"]'))
+        self.assertTrue(soup.select_one('[name="next"]'))
+
     def test_missing_and_invalid_token_never_call_authentication(self):
         for token in ('', 'invalid', 'x' * 43):
             with self.subTest(token=token), patch('django.contrib.auth.forms.authenticate') as auth:

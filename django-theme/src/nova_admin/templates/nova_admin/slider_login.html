@@ -4,9 +4,11 @@
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'nova_slider_captcha/slider.css' %}" {% nova_nonce %}>
   <link rel="stylesheet" href="{% static 'nova_admin/slider.css' %}" {% nova_nonce %}>
+  <link rel="stylesheet" href="{% static 'nova_admin/captcha-dialog.css' %}" {% nova_nonce %}>
 {% endblock %}
 {% block extrahead %}
   {{ block.super }}
   <script src="{% static 'nova_slider_captcha/slider.js' %}" defer {% nova_nonce %}></script>
+  <script src="{% static 'nova_admin/captcha-dialog.js' %}" defer {% nova_nonce %}></script>
 {% endblock %}
 {% block content %}{% include "nova_admin/login_content.html" %}{% endblock %}

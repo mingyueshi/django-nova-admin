@@ -1,5 +1,15 @@
 # 登录页与可选验证码接入
 
+## 登录后弹出验证码
+
+使用 `nova_admin/slider_login.html` 或 `nova_admin/captcha_login.html` 时，点击登录或在凭据框按 Enter，先完成基本字段校验，再打开安全验证对话框。滑块验证通过后自动继续原生登录提交；图片验证码在弹窗中填写后按 Enter 或点击登录，仍由服务端和密码一起校验。登录表单平时不预留验证码区域，渐进触发策略保持原值。
+
+取消、Esc、表单重置和页面离开会终止待处理验证，迟到的成功响应不能自动提交；重新打开滑块时使用新挑战。提交期间只允许一次登录，保留宿主的安全 GET 恢复入口。对话框使用原生 `showModal()` 管理焦点和背景交互，关闭后返回原焦点；不支持该 API 时保留内联交互，图片验证码的无脚本提交也继续可用。
+
+宿主若覆盖整个登录模板，需给挑战容器加 `data-nova-login-challenge="slider"`（或 `image`），在同一个表单内 include `nova_admin/captcha_dialog.html`，加载 `nova_admin/captcha-dialog.css`，并在自有适配脚本之前加载 `nova_admin/captcha-dialog.js`。适配器必须继续在续提的 submit 事件中校验自己的 proof 和截止时间；不得仅凭弹窗状态放行。挑战签发、CSRF、限流、密码和权限检查均由原服务端负责。
+
+本地交互回归：`node --test django-theme/scripts/test-captcha-dialog.mjs`。静态 `dist/login.html` 仅模拟该流程，不建立真实登录会话。
+
 ## 独立行布局与渐进式验证
 
 图片与答案输入框各占一行，图片按原比例显示、宽度最多为容器宽度，答案输入框没有 4 位长度限制。`CAPTCHA_LENGTH = 6` 可配置上游随机字符生成器的长度；自定义生成器也可返回 5 位、8 位或更长的答案。

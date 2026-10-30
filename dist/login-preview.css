@@ -67,3 +67,13 @@ nova-slider-demo .nsc-refresh { min-height:44px; }
 }
 
 @media(max-width:360px) { .login-preview-toolbar { width:calc(100% - 40px); } }
+
+/* Verification opens after submitting valid credentials. */
+.login-captcha-dialog { box-sizing:border-box; margin:auto; width:calc(100% - 32px); max-width:400px; max-height:calc(100dvh - 32px); overflow:auto; padding:24px; border:1px solid var(--hairline-color,#ddd); border-radius:16px; background:var(--body-bg,#fff); color:var(--body-fg,#333); box-shadow:0 24px 80px #0004; }
+.login-captcha-dialog::backdrop { background:#10182780; }
+.login-captcha-dialog header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
+.login-captcha-dialog h2 { margin:0; font-size:18px; }
+.login-captcha-dialog button { min-height:44px; border:0; border-radius:8px; padding:8px 12px; cursor:pointer; }
+#close-demo-captcha { min-width:44px; font-size:24px; }
+#continue-demo-captcha { width:100%; margin-top:16px; background:var(--button-bg,#417690); color:var(--button-fg,#fff); }
+.login-captcha-dialog [hidden] { display:none !important; }

@@ -4,9 +4,11 @@
 {% block extrastyle %}
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'nova_admin/captcha.css' %}" {% nova_nonce %}>
+  <link rel="stylesheet" href="{% static 'nova_admin/captcha-dialog.css' %}" {% nova_nonce %}>
 {% endblock %}
 {% block extrahead %}
   {{ block.super }}
+  <script src="{% static 'nova_admin/captcha-dialog.js' %}" defer {% nova_nonce %}></script>
   <script src="{% static 'nova_admin/captcha.js' %}" defer {% nova_nonce %}></script>
 {% endblock %}
 {% block content %}
