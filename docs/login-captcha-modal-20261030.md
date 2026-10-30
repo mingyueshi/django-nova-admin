@@ -9,7 +9,7 @@
 - 完整 `npm test` 通过，包含静态登录预览 47 项。
 - `node --test django-theme/scripts/test-captcha-dialog.mjs`：16 项通过；旧图片增强 16 项通过。
 - Django 核心：436 项运行、3 项可选集成跳过；单独滑块 23 项、图片验证码/策略 77 项通过。首次将原生登录测试与滑块测试混跑触发共享 AdminSite 状态干扰，按仓库既有独立配置分别复跑通过。
-- CI 支持脚本单测和 CSS 体积检查按项目解释器运行。系统 Python 3.9 缺 `tomllib` 的尝试不计通过。
+- CI 支持脚本 105 项单测和 CSS 体积检查通过；收集器明确要求新弹窗步骤、保留 TAP 日志并拒绝失败/跳过/缺失结果，总计 294 项主题 JS 检查。该 CI 收尾不改变 d67bd4eb 的运行文件和两站固定 wheel。系统 Python 3.9 缺 `tomllib` 的尝试不计通过。
 - [实际模板浏览器检查](evidence/login-captcha-modal-20261030/browser-checks.json)：38 条通过，三项目均有凭据 Enter、空字段、Esc、焦点返回、320px、一次预验证和一次原生登录；图片验证码答案 Enter 通过。
 - [静态预览浏览器检查](evidence/login-captcha-modal-20261030/preview-browser.json)：6 条通过，含图片验证码答案 Enter 与 320px 布局。
 

@@ -60,7 +60,7 @@ const versions = Object.keys(JSON.parse(fs.readFileSync(path.join(root, 'ci/matr
 run('navigation', process.execPath, ['django-theme/scripts/test-navigation.mjs', ...versions.map(version => path.join(sidebars, `django-${version}.js`))]);
 run('enhancements', process.execPath, ['django-theme/scripts/test-enhancements.mjs']);
 run('captcha', process.execPath, ['django-theme/scripts/test-captcha.mjs']);
-run('captcha-dialog', process.execPath, ['--test', 'django-theme/scripts/test-captcha-dialog.mjs']);
+run('captcha-dialog', process.execPath, ['--test', '--test-reporter=tap', 'django-theme/scripts/test-captcha-dialog.mjs']);
 for (const [file, hash] of Object.entries(before)) if (sha(file) !== hash) throw Error(`Dependency input changed: ${file}`);
 fs.writeFileSync(path.join(logs, 'inputs.json'), JSON.stringify(before, null, 2));
 console.log(`PASS Node ${selected.node} / npm ${selected.npm}; lock unchanged`);

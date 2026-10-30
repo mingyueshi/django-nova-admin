@@ -73,7 +73,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':278,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':294,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -200,6 +200,7 @@ TOTAL 24 preview navigation scenarios passed
         'navigation': '123 navigation DOM scenarios passed (3 Django script versions).\n25 command palette DOM scenarios passed.\n24 appearance DOM scenarios passed (3 Django script versions).\n',
         'enhancements': 'TOTAL 38 changelist enhancement tests passed\n26 print DOM scenarios passed.\n26 message DOM scenarios passed.\n',
         'captcha': 'TOTAL 16 CAPTCHA enhancement tests passed\n',
+        'captcha-dialog': 'TAP version 13\n1..16\n# tests 16\n# pass 16\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n',
     }
 
     def logs(self, root):
@@ -210,7 +211,7 @@ TOTAL 24 preview navigation scenarios passed
         data = {
             'runtime': {'node': 'v24.21.0', 'npm': '11.19.0'},
             'steps': [{'name': name, 'exitCode': 0, 'signal': None} for name in
-                      ['npm-version', 'install', 'dependency-tree', 'frontend', 'navigation', 'enhancements', 'captcha']],
+                      ['npm-version', 'install', 'dependency-tree', 'frontend', 'navigation', 'enhancements', 'captcha', 'captcha-dialog']],
             'inputs': {name: support.digest(ROOT / name) for name in ['package.json', 'package-lock.json']},
             'dependency-tree': {},
         }
@@ -227,7 +228,7 @@ TOTAL 24 preview navigation scenarios passed
             self.logs(root)
             result = self.collect(root)
             self.assertEqual(result['frontend'], 1400)
-            self.assertEqual(result['theme_js'], 278)
+            self.assertEqual(result['theme_js'], 294)
             self.assertEqual(len(result['frontend_suites']), 20)
             self.assertEqual(result['frontend_suites']['users-data'], 62)
             self.assertEqual(result['frontend_suites']['palettes'], 165)
@@ -315,6 +316,20 @@ TOTAL 24 preview navigation scenarios passed
                                'wrong-count': content.replace(content.split()[1] if content.startswith('TOTAL') else content.split()[0], '0', 1)}[change]
                     (logs / (group + '.log')).write_text(content)
                     with self.assertRaisesRegex(ValueError, 'Node test evidence: ' + group): self.collect(root)
+
+    def test_modal_tap_evidence_requires_all_tests_and_no_failed_or_skipped_cases(self):
+        content = self.GROUP_LOGS['captcha-dialog']
+        for changed in ('', content * 2, content.replace('# tests 16', '# tests 15'),
+                        content.replace('# pass 16', '# pass 15'),
+                        content.replace('# fail 0', '# fail 1'),
+                        content.replace('# skipped 0', '# skipped 1'),
+                        'not ok 1 - modal login\n' + content):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                logs = self.logs(root)
+                (logs / 'captcha-dialog.log').write_text(changed)
+                with self.assertRaisesRegex(ValueError, 'Node test evidence: captcha-dialog'):
+                    self.collect(root)
 
     def test_failed_test_line_cannot_be_hidden_by_success_summary(self):
         for group in self.GROUP_LOGS:

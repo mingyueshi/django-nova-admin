@@ -47,7 +47,8 @@ PRINT_TOTAL = 26
 MESSAGE_TOTAL = 26
 APPEARANCE_TOTAL = 24
 CAPTCHA_TOTAL = 16
-THEME_JS_TOTAL = NAVIGATION_TOTAL + COMMAND_PALETTE_TOTAL + APPEARANCE_TOTAL + ENHANCEMENT_TOTAL + PRINT_TOTAL + MESSAGE_TOTAL + CAPTCHA_TOTAL
+CAPTCHA_DIALOG_TOTAL = 16
+THEME_JS_TOTAL = NAVIGATION_TOTAL + COMMAND_PALETTE_TOTAL + APPEARANCE_TOTAL + ENHANCEMENT_TOTAL + PRINT_TOTAL + MESSAGE_TOTAL + CAPTCHA_TOTAL + CAPTCHA_DIALOG_TOTAL
 
 def read(path):
     return json.loads(Path(path).read_text())
@@ -87,6 +88,10 @@ def check_node_summaries(logs):
             f'{MESSAGE_TOTAL} message DOM scenarios passed.',
         ]),
         ('captcha', r'^TOTAL\b.*$', [f'TOTAL {CAPTCHA_TOTAL} CAPTCHA enhancement tests passed']),
+        ('captcha-dialog', r'^(?:1\.\.\d+|# (?:tests|pass|fail|cancelled|skipped|todo) \d+)$', [
+            f'1..{CAPTCHA_DIALOG_TOTAL}', f'# tests {CAPTCHA_DIALOG_TOTAL}',
+            f'# pass {CAPTCHA_DIALOG_TOTAL}', '# fail 0', '# cancelled 0', '# skipped 0', '# todo 0',
+        ]),
     ]:
         content = (logs / (name + '.log')).read_text()
         if re.findall(pattern, content, re.M) != summaries or re.search(r'^(?:FAIL|FAILED|not ok)\b', content, re.M):
@@ -260,7 +265,7 @@ def collect_node(logs, output, commit, node, npm):
     if version['node'] != 'v' + node or version['npm'] != npm:
         raise ValueError('Actual Node/npm mismatch')
     steps = read(logs / 'steps.json')
-    required = {'npm-version','install','dependency-tree','frontend','navigation','enhancements','captcha'}
+    required = {'npm-version','install','dependency-tree','frontend','navigation','enhancements','captcha','captcha-dialog'}
     if len(steps) != len(required) or {x['name'] for x in steps} != required or any(x['exitCode'] != 0 or x.get('signal') or x.get('error') for x in steps):
         raise ValueError('Incomplete Node commands')
     inputs = read(logs / 'inputs.json')
@@ -268,7 +273,7 @@ def collect_node(logs, output, commit, node, npm):
         raise ValueError('Node test inputs differ from checkout')
     check_node_summaries(logs)
     output = safe_new_directory(output)
-    for name in ['frontend.log', 'navigation.log', 'enhancements.log', 'captcha.log', 'runtime.json', 'dependency-tree.json']:
+    for name in ['frontend.log', 'navigation.log', 'enhancements.log', 'captcha.log', 'captcha-dialog.log', 'runtime.json', 'dependency-tree.json']:
         (output / name).write_bytes((logs / name).read_bytes())
     result = {'kind': 'node', 'commit': commit, 'node': node, 'npm': npm, 'status': 'passed', 'frontend': FRONTEND_TOTAL, 'frontend_suites': dict(FRONTEND_COUNTS), 'theme_js': THEME_JS_TOTAL,
               'package_lock_sha256': digest(ROOT / 'package-lock.json')}
