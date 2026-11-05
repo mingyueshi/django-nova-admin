@@ -65,3 +65,6 @@ NOVA_ADMIN_NAV_GROUPS = [
     {"key": "business", "label": "业务管理", "apps": ["catalog"]},
     {"key": "system", "label": "系统管理", "apps": ["auth"]},
 ]
+
+# Print current page stays hidden unless the host opts in.
+NOVA_ADMIN_PRINT = True

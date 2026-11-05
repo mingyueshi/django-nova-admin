@@ -19,18 +19,7 @@ def nonce_context(request):
     return {'csp_nonce': 'print-test-nonce'}
 
 
-@override_settings(NOVA_ADMIN_ENABLED=True)
-class PrintMarkupTests(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.viewer = get_user_model().objects.create_user(username='print-viewer', is_staff=True)
-        cls.viewer.user_permissions.add(Permission.objects.get(content_type__app_label='catalog', codename='view_product'))
-        Product.objects.bulk_create([Product(name=f'PUBLIC-{i:03}', sku=f'PUBLIC-{i:03}', price=1, stock=1) for i in range(1, 26)])
-
-    def setUp(self):
-        self.client.force_login(self.viewer)
-        self.url = reverse('admin:catalog_product_changelist')
-
+class PrintPageMixin:
     def page(self, url=None, query=None):
         response = self.client.get(url or self.url, query or {})
         self.assertEqual(response.status_code, 200)
@@ -40,6 +29,19 @@ class PrintMarkupTests(TestCase):
         self.assertNotContains(response, 'data-nova-print-tool')
         self.assertNotContains(response, 'nova_admin/print.js')
         self.assertNotContains(response, 'nova_admin/print.css')
+
+
+@override_settings(NOVA_ADMIN_ENABLED=True, NOVA_ADMIN_PRINT=True)
+class PrintMarkupTests(PrintPageMixin, TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.viewer = get_user_model().objects.create_user(username='print-viewer', is_staff=True)
+        cls.viewer.user_permissions.add(Permission.objects.get(content_type__app_label='catalog', codename='view_product'))
+        Product.objects.bulk_create([Product(name=f'PUBLIC-{i:03}', sku=f'PUBLIC-{i:03}', price=1, stock=1) for i in range(1, 26)])
+
+    def setUp(self):
+        self.client.force_login(self.viewer)
+        self.url = reverse('admin:catalog_product_changelist')
 
     def test_readonly_staff_gets_hidden_non_submit_tool_outside_forms(self):
         _, soup = self.page()
@@ -91,6 +93,10 @@ class PrintMarkupTests(TestCase):
         session=self.client.session;session[SESSION_KEY]='native';session.save()
         self.assert_absent(self.page()[0])
 
+    def test_print_defaults_to_hidden_until_explicitly_enabled(self):
+        with override_settings(NOVA_ADMIN_PRINT=False):
+            self.assert_absent(self.page()[0])
+
     def test_popup_anonymous_and_non_list_have_no_print_tool(self):
         self.assert_absent(self.page(query={'_popup':'1'})[0])
         self.assert_absent(self.page(reverse('admin:index'))[0])
@@ -130,3 +136,27 @@ class PrintMarkupTests(TestCase):
             _,soup=self.page()
         self.assertIsNotNone(soup.select_one('[data-nova-print]'))
         self.assertIsNone(soup.select_one('.nova-navigation'))
+
+
+@override_settings(NOVA_ADMIN_ENABLED=True)
+class PrintOptInDefaultTests(PrintPageMixin, TestCase):
+    """Without NOVA_ADMIN_PRINT the page carries no print tool, script or stylesheet."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.viewer = get_user_model().objects.create_user(username='print-default-viewer', is_staff=True)
+        cls.viewer.user_permissions.add(Permission.objects.get(content_type__app_label='catalog', codename='view_product'))
+        Product.objects.create(name='PUBLIC-001', sku='PUBLIC-001', price=1, stock=1)
+
+    def setUp(self):
+        self.client.force_login(self.viewer)
+        self.url = reverse('admin:catalog_product_changelist')
+
+    def test_unset_setting_omits_tool_and_assets(self):
+        # Simulate a project that never defines NOVA_ADMIN_PRINT; the bare
+        # override restores the wrapped settings object on exit.
+        with override_settings(NOVA_ADMIN_PRINT=True):
+            del settings.NOVA_ADMIN_PRINT
+            self.assertFalse(getattr(settings, 'NOVA_ADMIN_PRINT', False))
+            self.assert_absent(self.page()[0])
+        self.assertTrue(getattr(settings, 'NOVA_ADMIN_PRINT', False))

@@ -101,6 +101,7 @@ INSTALLED_APPS = [
 NOVA_ADMIN_ENABLED = True
 NOVA_ADMIN_DEFAULT_MODE = "dark"  # dark / light / native
 NOVA_ADMIN_NAVIGATION = True     # 默认 False；显式选择分组侧栏
+NOVA_ADMIN_PRINT = True          # 默认 False；显式选择「打印当前页」入口
 ```
 
 ### 可选三级导航配置
@@ -131,7 +132,7 @@ NOVA_ADMIN_NAV_GROUPS = [
 
 ### 当前列表打印
 
-Nova 外观下，真实 changelist 提供「打印当前页」。只取当前页已经显示的标题、列名和行，打印说明中标明页码和显示行数；不查询其他页、不打开新窗口、不提交或保存表单。当前可见的 `list_editable` 值会按屏幕状态打印，并注明可能尚未保存。打印使用临时纯文本表格，去掉链接、动作、筛选、分页控件，黑白排版、长文本换行并重复表头；默认 A4 横向，实际设置由浏览器和打印机决定。
+「打印当前页」默认不显示；宿主设置 `NOVA_ADMIN_PRINT = True` 后，Nova 外观下的真实 changelist 才提供该入口。只取当前页已经显示的标题、列名和行，打印说明中标明页码和显示行数；不查询其他页、不打开新窗口、不提交或保存表单。当前可见的 `list_editable` 值会按屏幕状态打印，并注明可能尚未保存。打印使用临时纯文本表格，去掉链接、动作、筛选、分页控件，黑白排版、长文本换行并重复表头；默认 A4 横向，实际设置由浏览器和打印机决定。
 
 宿主可给元素或容器加 `data-nova-no-print`（兼容 `data-nova-print-exclude`）排除其内容；在表头 `th` 上添加会排除整列，在 `tr` 上添加会排除整行。隐藏行列、`hidden`/`aria-hidden`/`inert` 内容、hidden/password/file 控件均不复制到打印表格。先在屏幕模式记录可见节点，避免宿主打印 CSS 把屏幕隐藏的值重新显露。排除标记是呈现选项，宿主仍负责对象和字段权限。
 

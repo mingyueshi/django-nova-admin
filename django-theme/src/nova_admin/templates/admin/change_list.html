@@ -3,21 +3,21 @@
 
 {% block extrastyle %}
   {{ block.super }}
-  {% if nova_admin_active and has_permission and not is_popup %}
+  {% if nova_admin_active and has_permission and not is_popup and nova_admin_print %}
     <link rel="stylesheet" href="{% static 'nova_admin/print.css' %}" {% nova_nonce %}>
   {% endif %}
 {% endblock %}
 
 {% block extrahead %}
   {{ block.super }}
-  {% if nova_admin_active and has_permission and not is_popup %}
+  {% if nova_admin_active and has_permission and not is_popup and nova_admin_print %}
     <script src="{% static 'nova_admin/print.js' %}" defer {% nova_nonce %}></script>
   {% endif %}
 {% endblock %}
 
 {% block object-tools-items %}
   {{ block.super }}
-  {% if nova_admin_active and has_permission and not is_popup %}
+  {% if nova_admin_active and has_permission and not is_popup and nova_admin_print %}
     <li class="nova-print-tool" hidden data-nova-print-tool>
       <button type="button" class="nova-print-button" data-nova-print hidden
               data-title="{% translate 'Current page displayed content' context 'Nova Admin' %}"
