@@ -32,3 +32,4 @@ PACKAGE_MANIFEST.json
 /tmp/
 /output/
 django-theme/demo/staticfiles/
+.v2c/
