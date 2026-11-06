@@ -146,7 +146,7 @@ class PaletteIntegrationTests(TestCase):
         html = response.content.decode()
         assets = ["nova_admin/theme.css", "nova_admin/tokens.css", "nova_admin/presets.css", "catalog/enterprise.css"]
         self.assertEqual(sorted(assets, key=html.index), assets)
-        for language, labels in (("en", ["Color palette", "Project default", "Healthcare teal", "Professional indigo", "Education violet", "Retail terracotta", "Graphite black", "Midnight blue", "Forest green", "Warm amber", "Deep ocean", "Slate gray", "Dusk plum", "Mocha brown", "Glacier blue", "Rose red", "Tundra olive", "Polar night"]), ("zh-hans", ["配色", "项目默认", "医疗青", "专业靛", "文教紫", "零售陶", "石墨黑", "午夜蓝", "松林绿", "暖琥珀", "深海青", "雾岩灰", "暮梅紫", "摩卡棕", "冰川蓝", "胭脂红", "苔原绿", "极夜黑"])):
+                for language, labels in (("en", ["Color palette", "Project default", "Healthcare teal", "Professional indigo", "Education violet", "Retail terracotta", "Graphite black", "Midnight blue", "Forest green", "Warm amber", "Deep ocean", "Slate gray", "Dusk plum", "Mocha brown", "Glacier blue", "Rose red", "Tundra olive", "Polar night", "Cinnabar red", "Gilded gold", "Emerald green", "Peacock blue", "Sunset magenta", "Industrial orange", "Orchid lilac", "Terminal green", "Parchment gold"]), ("zh-hans", ["配色", "项目默认", "医疗青", "专业靛", "文教紫", "零售陶", "石墨黑", "午夜蓝", "松林绿", "暖琥珀", "深海青", "雾岩灰", "暮梅紫", "摩卡棕", "冰川蓝", "胭脂红", "苔原绿", "极夜黑", "朱砂红", "鎏金黄", "翡翠绿", "孔雀蓝", "霞光紫", "工业橙", "兰花紫", "终端绿", "宣纸黄"])):
             with override(language):
                 page = self.client.get(self.index)
                 for label in labels:

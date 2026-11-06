@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const { JSDOM } = require('jsdom');
 const { createApp } = require('./dom-runtime.cjs');
 const root = path.join(__dirname, '../dist');
-const keys = ['default', 'teal', 'indigo', 'violet', 'terracotta', 'graphite', 'midnight', 'forest', 'amber', 'ocean', 'slate', 'plum', 'coffee', 'glacier', 'rose', 'olive', 'ink'];
+const keys = ['default', 'teal', 'indigo', 'violet', 'terracotta', 'graphite', 'midnight', 'forest', 'amber', 'ocean', 'slate', 'plum', 'coffee', 'glacier', 'rose', 'olive', 'ink', 'cinnabar', 'gilded', 'emerald', 'peacock', 'sunset', 'industrial', 'lilac', 'terminal', 'parchment'];
 let count = 0;
 function check(name, run) { run(); console.log('PASS', name); count++; }
 const wait = () => new Promise(resolve => setTimeout(resolve, 10));
@@ -54,7 +54,7 @@ async function login(storage = {}, fail = false) {
     assert.equal(app.w.localStorage.getItem('nova-theme'), 'dark');
     assert.equal(app.w.localStorage.getItem('other-business'), 'keep');
   });
-  check('gallery presents 16 named preset buttons outside the workspace form', () => {
+  check('gallery presents 25 named preset buttons outside the workspace form', () => {
     const cards = [...app.d.querySelectorAll('[data-palette-card]')];
     assert.deepEqual(cards.map(card => card.dataset.paletteCard), keys.slice(1));
     assert.ok(cards.every(card => card.type === 'button' && card.closest('form') === null));

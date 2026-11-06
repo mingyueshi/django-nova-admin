@@ -28,6 +28,15 @@
         'rose',
         'olive',
         'ink',
+        'cinnabar',
+        'gilded',
+        'emerald',
+        'peacock',
+        'sunset',
+        'industrial',
+        'lilac',
+        'terminal',
+        'parchment',
       ].includes(value)
     )
       palette = value;

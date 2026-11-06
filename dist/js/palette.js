@@ -17,6 +17,15 @@ export const palettes = Object.freeze([
   ['rose', '胭脂红'],
   ['olive', '苔原绿'],
   ['ink', '极夜黑'],
+  ['cinnabar', '朱砂红'],
+  ['gilded', '鎏金黄'],
+  ['emerald', '翡翠绿'],
+  ['peacock', '孔雀蓝'],
+  ['sunset', '霞光紫'],
+  ['industrial', '工业橙'],
+  ['lilac', '兰花紫'],
+  ['terminal', '终端绿'],
+  ['parchment', '宣纸黄'],
 ]);
 const paletteScenes = Object.freeze({
   teal: '医疗服务 · 清爽专注',
@@ -35,6 +44,15 @@ const paletteScenes = Object.freeze({
   rose: '品牌运营 · 玫瑰酒红',
   olive: '项目管理 · 橄榄苔绿',
   ink: '低干扰办公 · 极夜银灰',
+  cinnabar: '政务审批 · 庄重醒目',
+  gilded: '金融理财 · 财富质感',
+  emerald: '生鲜电商 · 自然新鲜',
+  peacock: '交通物流 · 航空出行',
+  sunset: '直播文娱 · 游戏运营',
+  industrial: '生产制造 · 设备运维',
+  lilac: '社交社区 · 婚庆花艺',
+  terminal: '研发运维 · 脚本日志',
+  parchment: '档案文书 · 合同审阅',
 });
 export function normalizePalette(value) {
   return palettes.some(([key]) => key === value) ? value : 'default';

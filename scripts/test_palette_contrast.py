@@ -10,8 +10,8 @@ from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
-PALETTES = ('teal', 'indigo', 'violet', 'terracotta', 'graphite', 'midnight', 'forest', 'amber', 'ocean', 'slate', 'plum', 'coffee', 'glacier', 'rose', 'olive', 'ink')
-SURFACE_PALETTES = ('teal', 'indigo', 'violet', 'terracotta', 'graphite', 'midnight', 'forest', 'amber', 'ocean', 'slate', 'plum', 'coffee', 'glacier', 'rose', 'olive', 'ink')
+PALETTES = ('teal', 'indigo', 'violet', 'terracotta', 'graphite', 'midnight', 'forest', 'amber', 'ocean', 'slate', 'plum', 'coffee', 'glacier', 'rose', 'olive', 'ink', 'cinnabar', 'gilded', 'emerald', 'peacock', 'sunset', 'industrial', 'lilac', 'terminal', 'parchment')
+SURFACE_PALETTES = ('teal', 'indigo', 'violet', 'terracotta', 'graphite', 'midnight', 'forest', 'amber', 'ocean', 'slate', 'plum', 'coffee', 'glacier', 'rose', 'olive', 'ink', 'cinnabar', 'gilded', 'emerald', 'peacock', 'sunset', 'industrial', 'lilac', 'terminal', 'parchment')
 SURFACE_NAMES = ('bg', 'sidebar', 'panel', 'panel2', 'text', 'muted', 'medium',
                  'line', 'border', 'tool', 'tool-hover')
 DJANGO_SURFACES = {

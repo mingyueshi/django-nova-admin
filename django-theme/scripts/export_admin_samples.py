@@ -53,6 +53,9 @@ PALETTES = {
     "graphite": "石墨黑", "midnight": "午夜蓝", "forest": "松林绿", "amber": "暖琥珀",
     "ocean": "深海青", "slate": "雾岩灰", "plum": "暮梅紫", "coffee": "摩卡棕",
     "glacier": "冰川蓝", "rose": "胭脂红", "olive": "苔原绿", "ink": "极夜黑",
+    "cinnabar": "朱砂红", "gilded": "鎏金黄", "emerald": "翡翠绿",
+    "peacock": "孔雀蓝", "sunset": "霞光紫", "industrial": "工业橙",
+    "lilac": "兰花紫", "terminal": "终端绿", "parchment": "宣纸黄",
 }
 PALETTE_PAGES = ("index", "changelist", "login")
 

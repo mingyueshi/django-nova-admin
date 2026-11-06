@@ -3,23 +3,23 @@
 The appearance form has two independent, translated selects:
 
 - Mode: `dark`, `light`, `auto`, `native` (existing behavior).
-- Palette: `default`, `teal` (医疗青), `indigo` (专业靛), `violet` (文教紫), `terracotta` (零售陶), `graphite` (石墨黑), `midnight` (午夜蓝), `forest` (松林绿), `amber` (暖琥珀), `ocean` (深海青), `slate` (雾岩灰), `plum` (暮梅紫), `coffee` (摩卡棕), `glacier` (冰川蓝), `rose` (胭脂红), `olive` (苔原绿), `ink` (极夜黑).
+- Palette: `default`, `teal` (医疗青), `indigo` (专业靛), `violet` (文教紫), `terracotta` (零售陶), `graphite` (石墨黑), `midnight` (午夜蓝), `forest` (松林绿), `amber` (暖琥珀), `ocean` (深海青), `slate` (雾岩灰), `plum` (暮梅紫), `coffee` (摩卡棕), `glacier` (冰川蓝), `rose` (胭脂红), `olive` (苔原绿), `ink` (极夜黑), `cinnabar` (朱砂红), `gilded` (鎏金黄), `emerald` (翡翠绿), `peacock` (孔雀蓝), `sunset` (霞光紫), `industrial` (工业橙), `lilac` (兰花紫), `terminal` (终端绿), `parchment` (宣纸黄).
 
 These industry-oriented names describe demonstration positioning only, not
 industry standards or a requirement for a particular kind of organization.
 
-Healthcare teal uses deep teal-green surfaces with a light teal accent; Professional indigo uses indigo-violet surfaces with a pale indigo accent; Education violet uses deep purple surfaces with a light violet accent; Retail terracotta uses warm terracotta-brown surfaces with an orange accent. Graphite black uses neutral charcoal surfaces; Midnight blue uses deep indigo
+Healthcare teal uses deep teal-green surfaces with a light teal accent; Professional indigo uses indigo-violet surfaces with a pale indigo accent; Education violet uses deep purple surfaces with a light violet accent; Retail terracotta uses warm terracotta-brown surfaces with an orange accent. Cinnabar red uses deep vermilion surfaces with a light cinnabar accent for government workflows; Gilded gold uses dark bronze surfaces with a champagne accent for finance; Emerald green uses deep emerald surfaces with a light green accent for fresh retail; Peacock blue uses deep blue surfaces with a sky accent for transport and logistics; Sunset magenta uses deep magenta surfaces with a soft pink accent for live entertainment; Industrial orange pairs cool steel surfaces with a saturated safety-orange accent for manufacturing; Orchid lilac uses deep orchid surfaces with a pale lilac accent for social and wedding workspaces; Terminal green uses near-black green surfaces with a vivid green accent for developer consoles; Parchment gold uses desaturated smoky-gold surfaces with a sand accent for archives and contract review. Graphite black uses neutral charcoal surfaces; Midnight blue uses deep indigo
 surfaces and a pale periwinkle accent, with clearer panel separation than the default dark palette.
 Forest green uses forest-green surfaces with a mint accent; Warm amber uses warm
-brown surfaces with an amber accent. Deep ocean uses blue-green surfaces for monitoring; Slate gray uses cool neutrals for dense tables; Dusk plum uses muted purple for editorial review; Mocha brown uses desaturated brown for reading and long forms. These are scenario suggestions. Glacier blue uses steel-blue surfaces for technical workspaces; Rose red uses wine-red surfaces for brand operations; Tundra olive uses olive surfaces for project management; Polar night uses near-black surfaces with cool silver accents for quiet workspaces. Select any of these sixteen surface palettes together
-with `dark`, or use `auto` to follow the system. All sixteen also have light accent
+brown surfaces with an amber accent. Deep ocean uses blue-green surfaces for monitoring; Slate gray uses cool neutrals for dense tables; Dusk plum uses muted purple for editorial review; Mocha brown uses desaturated brown for reading and long forms. These are scenario suggestions. Glacier blue uses steel-blue surfaces for technical workspaces; Rose red uses wine-red surfaces for brand operations; Tundra olive uses olive surfaces for project management; Polar night uses near-black surfaces with cool silver accents for quiet workspaces. Select any of these twenty-five surface palettes together
+with `dark`, or use `auto` to follow the system. All twenty-five also have light accent
 counterparts: selecting a palette never
 changes the appearance preference. Their dark backgrounds cover the workspace,
 sidebar, cards, form controls and login page.
 
-The optional exported gallery includes 96 palette representatives: sixteen
+The optional exported gallery includes 150 palette representatives: twenty-five
 palettes × light/dark × dashboard/product list/login, plus 57 default/native
-pages, for 153 HTML files in total. Palette representatives use standard density;
+pages, for 207 HTML files in total. Palette representatives use standard density;
 they do not provide separate auto or compact snapshots.
 
 `NOVA_ADMIN_DEFAULT_PALETTE = "default"` is optional. A valid saved session
@@ -50,9 +50,10 @@ Django's `--selected-bg`, `--selected-row` and Nova's `--nova-hover`. `auto` fol
 the OS with the existing media-query model. Semantic error, warning, success and
 destructive-action colors remain unchanged.
 
-All sixteen non-default palettes (Teal, Indigo, Violet, Terracotta, Graphite,
-Midnight, Forest, Amber, Ocean, Slate, Plum, Coffee, Glacier, Rose, Olive and
-Ink) define `--nova-surface-dark-*` tokens for
+All twenty-five non-default palettes (Teal, Indigo, Violet, Terracotta, Graphite,
+Midnight, Forest, Amber, Ocean, Slate, Plum, Coffee, Glacier, Rose, Olive, Ink,
+Cinnabar, Gilded, Emerald, Peacock, Sunset, Industrial, Lilac, Terminal and
+Parchment) define `--nova-surface-dark-*` tokens for
 background, sidebar, panel, raised panel, text, secondary text, border and tool
 roles. Their mappings apply only in `dark` and `auto` with a dark system
 preference. Later host mode rules can override these mappings just like the
@@ -71,6 +72,40 @@ selection/hover declarations now use preset variables with exact old values as
 fallbacks. This preserves the blue baseline without hiding a chosen preset.
 
 ## Validation
+
+The Industrial/Lilac/Terminal/Parchment scenario revision on 2026-11-07 added
+four more full-surface dark palettes and passed 4575 opaque color-role checks.
+The first audit run failed the light-mode link contrast of Industrial orange
+(4.259:1) and Parchment gold (4.481:1) on their light selection surfaces; both
+brand-light colors were darkened and the rerun passed. Dark-mode text minima
+for the four are 5.752:1, 6.388:1, 5.709:1 and 5.802:1; dark control-boundary
+minima are 3.540:1, 3.472:1, 4.429:1 and 3.631:1. The full Node 24.21.0/
+npm 11.19.0 `npm test` passed with 1,482 checks in 20 suites (246 palette
+checks), Python 3.12.14/Django 6.1.1 passed 438 theme tests (three expected
+optional-integration skips) plus 105 script and 25 matrix-runner tests, and the
+207-page read-only export was regenerated and passed the export-safety checks
+with zero scripts, live endpoints, external requests or submittable forms.
+Both preset sheets re-recorded their size budgets with 10% headroom. These
+results do not cover the full runtime matrix, live Django login interaction,
+third-party hosts, or production deployment, and the revision is not yet
+committed.
+
+The Cinnabar/Gilded/Emerald/Peacock/Sunset scenario revision on 2026-11-07 added
+five full-surface dark palettes with server preferences, translated labels and
+gallery cards, and passed 3843 opaque color-role checks across the Django,
+static preview and static login stylesheets including explicit/auto parity.
+Dark-mode text minima for the five are 6.564:1, 6.142:1, 5.981:1, 5.892:1 and
+6.409:1; dark control-boundary minima are 3.946:1, 3.871:1, 3.561:1, 4.123:1
+and 4.065:1. Role math is not a whole-site accessibility audit. The full
+Node 24.21.0/npm 11.19.0 `npm test` passed with 1,446 checks in 20 suites
+(210 palette checks), Python 3.12.14/Django 6.1.1 passed 438 theme tests
+(three expected optional-integration skips) plus 105 script and 25 matrix-runner
+tests, and the 183-page read-only export was regenerated from current source and
+passed the export-safety checks with zero scripts, live endpoints, external
+requests or submittable forms. Both preset sheets re-recorded their size budgets
+with 10% headroom. These results do not cover the full runtime matrix, live
+Django login interaction, third-party hosts, or production deployment, and the
+revision is not yet committed.
 
 The new `tests.test_palette_presets` suite covers every mode/palette pair,
 configured and malformed defaults/session values, default restoration,

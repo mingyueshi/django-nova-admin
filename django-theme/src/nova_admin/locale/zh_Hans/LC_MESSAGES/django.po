@@ -269,6 +269,42 @@ msgid "Polar night"
 msgstr "极夜黑"
 
 msgctxt "Nova Admin"
+msgid "Cinnabar red"
+msgstr "朱砂红"
+
+msgctxt "Nova Admin"
+msgid "Gilded gold"
+msgstr "鎏金黄"
+
+msgctxt "Nova Admin"
+msgid "Emerald green"
+msgstr "翡翠绿"
+
+msgctxt "Nova Admin"
+msgid "Peacock blue"
+msgstr "孔雀蓝"
+
+msgctxt "Nova Admin"
+msgid "Sunset magenta"
+msgstr "霞光紫"
+
+msgctxt "Nova Admin"
+msgid "Industrial orange"
+msgstr "工业橙"
+
+msgctxt "Nova Admin"
+msgid "Orchid lilac"
+msgstr "兰花紫"
+
+msgctxt "Nova Admin"
+msgid "Terminal green"
+msgstr "终端绿"
+
+msgctxt "Nova Admin"
+msgid "Parchment gold"
+msgstr "宣纸黄"
+
+msgctxt "Nova Admin"
 msgid "Unknown color palette"
 msgstr "未知配色"
 

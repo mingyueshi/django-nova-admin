@@ -348,30 +348,219 @@ body.nova-admin:where(.nova-palette-ink) {
   --nova-surface-dark-tool: #2e3a50;
   --nova-surface-dark-tool-hover: #404e67;
 }
-body.nova-admin.nova-mode-light:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink) {
+body.nova-admin:where(.nova-palette-cinnabar) {
+  --nova-brand-light: #b4342b;
+  --nova-brand-light-hover: #9a2820;
+  --nova-brand-dark: #f9a694;
+  --nova-brand-dark-hover: #fbc4b6;
+  --nova-palette-selected-light: #fde3e0;
+  --nova-palette-row-light: #fef4f2;
+  --nova-palette-selected-dark: #4a2420;
+  --nova-palette-row-dark: #381b18;
+  --nova-surface-dark-bg: #220d0a;
+  --nova-surface-dark-sidebar: #2a130f;
+  --nova-surface-dark-panel: #331a14;
+  --nova-surface-dark-panel2: #402219;
+  --nova-surface-dark-text: #fff1ec;
+  --nova-surface-dark-muted: #d3ada2;
+  --nova-surface-dark-medium: #ecd0c5;
+  --nova-surface-dark-line: #5c392e;
+  --nova-surface-dark-border: #a87c6c;
+  --nova-surface-dark-tool: #5e372a;
+  --nova-surface-dark-tool-hover: #764636;
+}
+body.nova-admin:where(.nova-palette-gilded) {
+  --nova-brand-light: #8f5c06;
+  --nova-brand-light-hover: #754a05;
+  --nova-brand-dark: #f5d989;
+  --nova-brand-dark-hover: #fbe9b8;
+  --nova-palette-selected-light: #fbeecb;
+  --nova-palette-row-light: #fdf8e9;
+  --nova-palette-selected-dark: #453a17;
+  --nova-palette-row-dark: #352d12;
+  --nova-surface-dark-bg: #1f1806;
+  --nova-surface-dark-sidebar: #272009;
+  --nova-surface-dark-panel: #2f280d;
+  --nova-surface-dark-panel2: #3b3213;
+  --nova-surface-dark-text: #fff6dd;
+  --nova-surface-dark-muted: #cfc09a;
+  --nova-surface-dark-medium: #e8dcba;
+  --nova-surface-dark-line: #54481f;
+  --nova-surface-dark-border: #a08c5a;
+  --nova-surface-dark-tool: #544621;
+  --nova-surface-dark-tool-hover: #6a5930;
+}
+body.nova-admin:where(.nova-palette-emerald) {
+  --nova-brand-light: #047857;
+  --nova-brand-light-hover: #036447;
+  --nova-brand-dark: #6ee7b7;
+  --nova-brand-dark-hover: #a0f0cb;
+  --nova-palette-selected-light: #d7f5e6;
+  --nova-palette-row-light: #f0fbf5;
+  --nova-palette-selected-dark: #1d4433;
+  --nova-palette-row-dark: #16352a;
+  --nova-surface-dark-bg: #082313;
+  --nova-surface-dark-sidebar: #0e2c19;
+  --nova-surface-dark-panel: #143722;
+  --nova-surface-dark-panel2: #1b442c;
+  --nova-surface-dark-text: #eafff0;
+  --nova-surface-dark-muted: #a5ccb2;
+  --nova-surface-dark-medium: #cfe9d8;
+  --nova-surface-dark-line: #2e5539;
+  --nova-surface-dark-border: #6f9d7e;
+  --nova-surface-dark-tool: #245039;
+  --nova-surface-dark-tool-hover: #2f6349;
+}
+body.nova-admin:where(.nova-palette-peacock) {
+  --nova-brand-light: #0c6da3;
+  --nova-brand-light-hover: #0a5884;
+  --nova-brand-dark: #82c7f0;
+  --nova-brand-dark-hover: #aedcf7;
+  --nova-palette-selected-light: #d7ecfa;
+  --nova-palette-row-light: #f0f8fd;
+  --nova-palette-selected-dark: #1f3f5e;
+  --nova-palette-row-dark: #183249;
+  --nova-surface-dark-bg: #091a2b;
+  --nova-surface-dark-sidebar: #0e2337;
+  --nova-surface-dark-panel: #142d44;
+  --nova-surface-dark-panel2: #1b3852;
+  --nova-surface-dark-text: #eaf5ff;
+  --nova-surface-dark-muted: #adc9dd;
+  --nova-surface-dark-medium: #d2e5f2;
+  --nova-surface-dark-line: #2c4d68;
+  --nova-surface-dark-border: #719cb8;
+  --nova-surface-dark-tool: #24455f;
+  --nova-surface-dark-tool-hover: #305876;
+}
+body.nova-admin:where(.nova-palette-sunset) {
+  --nova-brand-light: #ab2f6f;
+  --nova-brand-light-hover: #8f2459;
+  --nova-brand-dark: #f2a9d8;
+  --nova-brand-dark-hover: #f8cbe7;
+  --nova-palette-selected-light: #fbe0f0;
+  --nova-palette-row-light: #fdf2f9;
+  --nova-palette-selected-dark: #4d2545;
+  --nova-palette-row-dark: #3a1c35;
+  --nova-surface-dark-bg: #230f1e;
+  --nova-surface-dark-sidebar: #2b1425;
+  --nova-surface-dark-panel: #351a2d;
+  --nova-surface-dark-panel2: #422238;
+  --nova-surface-dark-text: #fff0f8;
+  --nova-surface-dark-muted: #d4aec7;
+  --nova-surface-dark-medium: #eccfe2;
+  --nova-surface-dark-line: #5e3850;
+  --nova-surface-dark-border: #a97f97;
+  --nova-surface-dark-tool: #5f3a51;
+  --nova-surface-dark-tool-hover: #764964;
+}
+body.nova-admin:where(.nova-palette-industrial) {
+  --nova-brand-light: #b03a0a;
+  --nova-brand-light-hover: #8f2f08;
+  --nova-brand-dark: #ff9d5c;
+  --nova-brand-dark-hover: #ffbe8f;
+  --nova-palette-selected-light: #ffe4d1;
+  --nova-palette-row-light: #fff4ea;
+  --nova-palette-selected-dark: #4b3222;
+  --nova-palette-row-dark: #392619;
+  --nova-surface-dark-bg: #131720;
+  --nova-surface-dark-sidebar: #181d28;
+  --nova-surface-dark-panel: #1e2430;
+  --nova-surface-dark-panel2: #262d3a;
+  --nova-surface-dark-text: #f2f5f8;
+  --nova-surface-dark-muted: #b0bccb;
+  --nova-surface-dark-medium: #d3dce6;
+  --nova-surface-dark-line: #363f4d;
+  --nova-surface-dark-border: #748296;
+  --nova-surface-dark-tool: #333c4a;
+  --nova-surface-dark-tool-hover: #414c5e;
+}
+body.nova-admin:where(.nova-palette-lilac) {
+  --nova-brand-light: #a1359e;
+  --nova-brand-light-hover: #872a86;
+  --nova-brand-dark: #e3a8e0;
+  --nova-brand-dark-hover: #f0c8ee;
+  --nova-palette-selected-light: #f6e0f5;
+  --nova-palette-row-light: #fbf2fa;
+  --nova-palette-selected-dark: #46264a;
+  --nova-palette-row-dark: #351c38;
+  --nova-surface-dark-bg: #221129;
+  --nova-surface-dark-sidebar: #291831;
+  --nova-surface-dark-panel: #311f3c;
+  --nova-surface-dark-panel2: #3e2849;
+  --nova-surface-dark-text: #f9f0ff;
+  --nova-surface-dark-muted: #c7aed6;
+  --nova-surface-dark-medium: #e0cdeb;
+  --nova-surface-dark-line: #463260;
+  --nova-surface-dark-border: #9678ab;
+  --nova-surface-dark-tool: #442e55;
+  --nova-surface-dark-tool-hover: #56396a;
+}
+body.nova-admin:where(.nova-palette-terminal) {
+  --nova-brand-light: #1f7a33;
+  --nova-brand-light-hover: #19632a;
+  --nova-brand-dark: #6df07a;
+  --nova-brand-dark-hover: #97f5a1;
+  --nova-palette-selected-light: #dcf5de;
+  --nova-palette-row-light: #f0fbf1;
+  --nova-palette-selected-dark: #1d4526;
+  --nova-palette-row-dark: #16351d;
+  --nova-surface-dark-bg: #0a120c;
+  --nova-surface-dark-sidebar: #0f1a11;
+  --nova-surface-dark-panel: #142317;
+  --nova-surface-dark-panel2: #1a2c1e;
+  --nova-surface-dark-text: #eaffec;
+  --nova-surface-dark-muted: #a3c4a9;
+  --nova-surface-dark-medium: #cbe4cf;
+  --nova-surface-dark-line: #28422d;
+  --nova-surface-dark-border: #679870;
+  --nova-surface-dark-tool: #1e3a24;
+  --nova-surface-dark-tool-hover: #294b30;
+}
+body.nova-admin:where(.nova-palette-parchment) {
+  --nova-brand-light: #7c5f33;
+  --nova-brand-light-hover: #634c27;
+  --nova-brand-dark: #e6cfa0;
+  --nova-brand-dark-hover: #f1e0bd;
+  --nova-palette-selected-light: #f3ead2;
+  --nova-palette-row-light: #faf6ea;
+  --nova-palette-selected-dark: #43391f;
+  --nova-palette-row-dark: #332b17;
+  --nova-surface-dark-bg: #1e1a10;
+  --nova-surface-dark-sidebar: #251f14;
+  --nova-surface-dark-panel: #2c2519;
+  --nova-surface-dark-panel2: #362d1f;
+  --nova-surface-dark-text: #f8f2e0;
+  --nova-surface-dark-muted: #c6b896;
+  --nova-surface-dark-medium: #e2d6b4;
+  --nova-surface-dark-line: #4c4227;
+  --nova-surface-dark-border: #93835a;
+  --nova-surface-dark-tool: #453b22;
+  --nova-surface-dark-tool-hover: #57492c;
+}
+body.nova-admin.nova-mode-light:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink, .nova-palette-cinnabar, .nova-palette-gilded, .nova-palette-emerald, .nova-palette-peacock, .nova-palette-sunset, .nova-palette-industrial, .nova-palette-lilac, .nova-palette-terminal, .nova-palette-parchment) {
   --selected-bg: var(--nova-palette-selected-light);
   --selected-row: var(--nova-palette-row-light);
   --nova-hover: var(--nova-palette-row-light);
 }
-body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink) {
+body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink, .nova-palette-cinnabar, .nova-palette-gilded, .nova-palette-emerald, .nova-palette-peacock, .nova-palette-sunset, .nova-palette-industrial, .nova-palette-lilac, .nova-palette-terminal, .nova-palette-parchment) {
   --selected-bg: var(--nova-palette-selected-light);
   --selected-row: var(--nova-palette-row-light);
   --nova-hover: var(--nova-palette-row-light);
 }
-body.nova-admin.nova-mode-dark:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink) {
+body.nova-admin.nova-mode-dark:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink, .nova-palette-cinnabar, .nova-palette-gilded, .nova-palette-emerald, .nova-palette-peacock, .nova-palette-sunset, .nova-palette-industrial, .nova-palette-lilac, .nova-palette-terminal, .nova-palette-parchment) {
   --selected-bg: var(--nova-palette-selected-dark);
   --selected-row: var(--nova-palette-row-dark);
   --nova-hover: var(--nova-palette-row-dark);
 }
 @media (prefers-color-scheme: dark) {
-  body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink) {
+  body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink, .nova-palette-cinnabar, .nova-palette-gilded, .nova-palette-emerald, .nova-palette-peacock, .nova-palette-sunset, .nova-palette-industrial, .nova-palette-lilac, .nova-palette-terminal, .nova-palette-parchment) {
     --selected-bg: var(--nova-palette-selected-dark);
     --selected-row: var(--nova-palette-row-dark);
     --nova-hover: var(--nova-palette-row-dark);
   }
 }
 /* Match the mode rules' specificity so later host styles remain authoritative. */
-body.nova-admin.nova-mode-dark:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink) {
+body.nova-admin.nova-mode-dark:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink, .nova-palette-cinnabar, .nova-palette-gilded, .nova-palette-emerald, .nova-palette-peacock, .nova-palette-sunset, .nova-palette-industrial, .nova-palette-lilac, .nova-palette-terminal, .nova-palette-parchment) {
   --body-bg: var(--nova-surface-dark-bg);
   --body-fg: var(--nova-surface-dark-text);
   --body-quiet-color: var(--nova-surface-dark-muted);
@@ -398,7 +587,7 @@ body.nova-admin.nova-mode-dark:where(.nova-palette-teal, .nova-palette-indigo, .
   --nova-switch-track: var(--nova-surface-dark-border);
 }
 @media (prefers-color-scheme: dark) {
-  body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink) {
+  body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink, .nova-palette-cinnabar, .nova-palette-gilded, .nova-palette-emerald, .nova-palette-peacock, .nova-palette-sunset, .nova-palette-industrial, .nova-palette-lilac, .nova-palette-terminal, .nova-palette-parchment) {
     --body-bg: var(--nova-surface-dark-bg);
     --body-fg: var(--nova-surface-dark-text);
     --body-quiet-color: var(--nova-surface-dark-muted);
