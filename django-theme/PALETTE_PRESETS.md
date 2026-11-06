@@ -8,11 +8,11 @@ The appearance form has two independent, translated selects:
 These industry-oriented names describe demonstration positioning only, not
 industry standards or a requirement for a particular kind of organization.
 
-Graphite black uses neutral charcoal surfaces; Midnight blue uses deep indigo
+Healthcare teal uses deep teal-green surfaces with a light teal accent; Professional indigo uses indigo-violet surfaces with a pale indigo accent; Education violet uses deep purple surfaces with a light violet accent; Retail terracotta uses warm terracotta-brown surfaces with an orange accent. Graphite black uses neutral charcoal surfaces; Midnight blue uses deep indigo
 surfaces and a pale periwinkle accent, with clearer panel separation than the default dark palette.
 Forest green uses forest-green surfaces with a mint accent; Warm amber uses warm
-brown surfaces with an amber accent. Deep ocean uses blue-green surfaces for monitoring; Slate gray uses cool neutrals for dense tables; Dusk plum uses muted purple for editorial review; Mocha brown uses desaturated brown for reading and long forms. These are scenario suggestions. Glacier blue uses steel-blue surfaces for technical workspaces; Rose red uses wine-red surfaces for brand operations; Tundra olive uses olive surfaces for project management; Polar night uses near-black surfaces with cool silver accents for quiet workspaces. Select any of these twelve surface palettes together
-with `dark`, or use `auto` to follow the system. All twelve also have light accent
+brown surfaces with an amber accent. Deep ocean uses blue-green surfaces for monitoring; Slate gray uses cool neutrals for dense tables; Dusk plum uses muted purple for editorial review; Mocha brown uses desaturated brown for reading and long forms. These are scenario suggestions. Glacier blue uses steel-blue surfaces for technical workspaces; Rose red uses wine-red surfaces for brand operations; Tundra olive uses olive surfaces for project management; Polar night uses near-black surfaces with cool silver accents for quiet workspaces. Select any of these sixteen surface palettes together
+with `dark`, or use `auto` to follow the system. All sixteen also have light accent
 counterparts: selecting a palette never
 changes the appearance preference. Their dark backgrounds cover the workspace,
 sidebar, cards, form controls and login page.
@@ -50,7 +50,9 @@ Django's `--selected-bg`, `--selected-row` and Nova's `--nova-hover`. `auto` fol
 the OS with the existing media-query model. Semantic error, warning, success and
 destructive-action colors remain unchanged.
 
-Graphite, Midnight, Forest, Amber, Ocean, Slate, Plum, Coffee, Glacier, Rose, Olive and Ink define `--nova-surface-dark-*` tokens for
+All sixteen non-default palettes (Teal, Indigo, Violet, Terracotta, Graphite,
+Midnight, Forest, Amber, Ocean, Slate, Plum, Coffee, Glacier, Rose, Olive and
+Ink) define `--nova-surface-dark-*` tokens for
 background, sidebar, panel, raised panel, text, secondary text, border and tool
 roles. Their mappings apply only in `dark` and `auto` with a dark system
 preference. Later host mode rules can override these mappings just like the
@@ -83,6 +85,22 @@ python -m venv /tmp/nova-palette-venv
 /tmp/nova-palette-venv/bin/pip install Django==5.2.17 beautifulsoup4==4.15.0
 PYTHONPATH=src:demo:. /tmp/nova-palette-venv/bin/python demo/manage.py test tests --noinput
 ```
+
+The Teal/Indigo/Violet/Terracotta full-surface revision on 2026-11-07 added
+`--nova-surface-dark-*` tokens and dark mapping for the four industry palettes
+and passed 2928 opaque color-role checks across the Django, static preview and
+static login stylesheets including explicit/auto parity. Dark-mode text minima
+for the four are 6.492:1, 6.468:1, 6.892:1 and 6.127:1; dark control-boundary
+minima are 3.995:1, 3.933:1, 3.604:1 and 3.890:1. Role math is not a whole-site
+accessibility audit. The full Node 24.21.0/npm 11.19.0 `npm test` passed with
+1,401 checks in 20 suites (165 palette checks), Python 3.12.14/Django 6.1.1
+passed 438 theme tests (three expected optional-integration skips) plus 105
+script and 25 matrix-runner tests, and the 153-page read-only export was
+regenerated from current source and passed the export-safety checks with zero
+scripts, live endpoints, external requests or submittable forms. Both preset
+sheets re-recorded their size budgets with 10% headroom. These results do not
+cover the full runtime matrix, live Django login interaction, third-party
+hosts, or production deployment, and the revision is not yet committed.
 
 The Glacier/Rose/Olive/Ink local revision on 2026-10-23 passed 686 frontend
 checks (146 palette checks), 335 Django tests (333 passing, two expected skips),

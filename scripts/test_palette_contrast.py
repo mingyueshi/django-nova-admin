@@ -11,7 +11,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 PALETTES = ('teal', 'indigo', 'violet', 'terracotta', 'graphite', 'midnight', 'forest', 'amber', 'ocean', 'slate', 'plum', 'coffee', 'glacier', 'rose', 'olive', 'ink')
-SURFACE_PALETTES = ('graphite', 'midnight', 'forest', 'amber', 'ocean', 'slate', 'plum', 'coffee', 'glacier', 'rose', 'olive', 'ink')
+SURFACE_PALETTES = ('teal', 'indigo', 'violet', 'terracotta', 'graphite', 'midnight', 'forest', 'amber', 'ocean', 'slate', 'plum', 'coffee', 'glacier', 'rose', 'olive', 'ink')
 SURFACE_NAMES = ('bg', 'sidebar', 'panel', 'panel2', 'text', 'muted', 'medium',
                  'line', 'border', 'tool', 'tool-hover')
 DJANGO_SURFACES = {

@@ -12,6 +12,17 @@ body.nova-admin:where(.nova-palette-teal) {
   --nova-palette-row-light: #f0fdfa;
   --nova-palette-selected-dark: #123b38;
   --nova-palette-row-dark: #102e2e;
+  --nova-surface-dark-bg: #06201e;
+  --nova-surface-dark-sidebar: #0a2926;
+  --nova-surface-dark-panel: #0e3230;
+  --nova-surface-dark-panel2: #143c39;
+  --nova-surface-dark-text: #e9fffa;
+  --nova-surface-dark-muted: #a2cbc4;
+  --nova-surface-dark-medium: #cde8e2;
+  --nova-surface-dark-line: #2b534d;
+  --nova-surface-dark-border: #6f9d95;
+  --nova-surface-dark-tool: #23504a;
+  --nova-surface-dark-tool-hover: #2d635b;
 }
 body.nova-admin:where(.nova-palette-indigo) {
   --nova-brand-light: #4338ca;
@@ -22,6 +33,17 @@ body.nova-admin:where(.nova-palette-indigo) {
   --nova-palette-row-light: #f7f8ff;
   --nova-palette-selected-dark: #282e54;
   --nova-palette-row-dark: #202641;
+  --nova-surface-dark-bg: #141144;
+  --nova-surface-dark-sidebar: #1b184f;
+  --nova-surface-dark-panel: #231f5b;
+  --nova-surface-dark-panel2: #2d2968;
+  --nova-surface-dark-text: #f1efff;
+  --nova-surface-dark-muted: #b8b4e2;
+  --nova-surface-dark-medium: #d5d2f4;
+  --nova-surface-dark-line: #453f8a;
+  --nova-surface-dark-border: #8d86cb;
+  --nova-surface-dark-tool: #383273;
+  --nova-surface-dark-tool-hover: #494387;
 }
 body.nova-admin:where(.nova-palette-violet) {
   --nova-brand-light: #6d28d9;
@@ -32,6 +54,17 @@ body.nova-admin:where(.nova-palette-violet) {
   --nova-palette-row-light: #faf8ff;
   --nova-palette-selected-dark: #34254f;
   --nova-palette-row-dark: #29203d;
+  --nova-surface-dark-bg: #170f2d;
+  --nova-surface-dark-sidebar: #1e1538;
+  --nova-surface-dark-panel: #271c45;
+  --nova-surface-dark-panel2: #322553;
+  --nova-surface-dark-text: #f7f2ff;
+  --nova-surface-dark-muted: #c4b3de;
+  --nova-surface-dark-medium: #ded2ef;
+  --nova-surface-dark-line: #473663;
+  --nova-surface-dark-border: #8e79ae;
+  --nova-surface-dark-tool: #3d2d57;
+  --nova-surface-dark-tool-hover: #4e3b6b;
 }
 body.nova-admin:where(.nova-palette-terracotta) {
   --nova-brand-light: #9a3412;
@@ -42,6 +75,17 @@ body.nova-admin:where(.nova-palette-terracotta) {
   --nova-palette-row-light: #fff7ed;
   --nova-palette-selected-dark: #483024;
   --nova-palette-row-dark: #30231f;
+  --nova-surface-dark-bg: #230f08;
+  --nova-surface-dark-sidebar: #2b150c;
+  --nova-surface-dark-panel: #351c11;
+  --nova-surface-dark-panel2: #422617;
+  --nova-surface-dark-text: #fff3ea;
+  --nova-surface-dark-muted: #d4b19b;
+  --nova-surface-dark-medium: #ecd2bc;
+  --nova-surface-dark-line: #5f3c26;
+  --nova-surface-dark-border: #a8805f;
+  --nova-surface-dark-tool: #5f3c25;
+  --nova-surface-dark-tool-hover: #764b2e;
 }
 /* Dark surface presets have light counterparts and never force the appearance mode. */
 body.nova-admin:where(.nova-palette-graphite) {
@@ -327,7 +371,7 @@ body.nova-admin.nova-mode-dark:where(.nova-palette-teal, .nova-palette-indigo, .
   }
 }
 /* Match the mode rules' specificity so later host styles remain authoritative. */
-body.nova-admin.nova-mode-dark:where(.nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink) {
+body.nova-admin.nova-mode-dark:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink) {
   --body-bg: var(--nova-surface-dark-bg);
   --body-fg: var(--nova-surface-dark-text);
   --body-quiet-color: var(--nova-surface-dark-muted);
@@ -354,7 +398,7 @@ body.nova-admin.nova-mode-dark:where(.nova-palette-graphite, .nova-palette-midni
   --nova-switch-track: var(--nova-surface-dark-border);
 }
 @media (prefers-color-scheme: dark) {
-  body.nova-admin.nova-mode-auto:where(.nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink) {
+  body.nova-admin.nova-mode-auto:where(.nova-palette-teal, .nova-palette-indigo, .nova-palette-violet, .nova-palette-terracotta, .nova-palette-graphite, .nova-palette-midnight, .nova-palette-forest, .nova-palette-amber, .nova-palette-ocean, .nova-palette-slate, .nova-palette-plum, .nova-palette-coffee, .nova-palette-glacier, .nova-palette-rose, .nova-palette-olive, .nova-palette-ink) {
     --body-bg: var(--nova-surface-dark-bg);
     --body-fg: var(--nova-surface-dark-text);
     --body-quiet-color: var(--nova-surface-dark-muted);

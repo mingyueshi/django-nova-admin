@@ -11,6 +11,8 @@
 
 <link href="../static/admin/css/login.css" rel="stylesheet"/>
 <link href="../static/nova_admin/captcha.css" rel="stylesheet"/>
+<link href="../static/nova_admin/captcha-dialog.css" rel="stylesheet"/>
+
 
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <link href="../static/admin/css/responsive.css" rel="stylesheet"/>
@@ -65,6 +67,15 @@
 </div>
 <noscript><p>刷新本页面可获取新验证码。不启用JavaScript也可通过服务端验证登录。</p></noscript>
 </div><div class="help nova-login-visually-hidden" id="id_captcha_helptext">请输入图片中的字符，不区分大小写。</div></div>
+<dialog aria-labelledby="nova-captcha-title" aria-modal="true" class="nova-captcha-dialog">
+<header class="nova-captcha-dialog-header">
+<h2 id="nova-captcha-title" tabindex="-1">安全验证</h2>
+<button aria-disabled="true" aria-label="关闭" class="nova-captcha-close" disabled="disabled" type="button">×</button>
+</header>
+<div></div>
+<p hidden="" role="alert">验证服务暂不可用，请重新加载页面后重试。</p>
+<button aria-disabled="true" class="nova-captcha-continue" disabled="disabled" type="button">登录</button>
+</dialog>
 
 <div class="submit-row"><input aria-disabled="true" disabled="disabled" type="submit" value="登录"/></div>
 </form>
