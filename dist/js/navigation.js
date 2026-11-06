@@ -42,6 +42,8 @@ export const navigationTree = [
       { id: 'columns', label: '列配置与视图', icon: 'more' },
       { id: 'recycle', label: '回收站', icon: 'history' },
       { id: 'tasks', label: '任务进度', icon: 'bolt' },
+      { id: 'bilingual', label: '双语对照', icon: 'book' },
+      { id: 'inline', label: '行内编辑', icon: 'edit' },
     ],
   },
   {

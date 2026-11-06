@@ -12,7 +12,7 @@ import { pagination, submitPageJump } from './pagination.js';
 import { searchShortcut } from './presentation.js';
 import { initMedia, thumbnail, imageSpec, restoreMedia } from './media.js';
 import { initNews, newsRouteLabel, renderNews, resetNews, syncNewsSelection } from './news.js';
-import { initFlows, renderFlow } from './flows.js';
+import { initFlows, renderFlow, renderNotificationCenter, unreadNoticeTotal } from './flows.js';
 import { enhanceControls } from './controls.js';
 import {
   initNativeSamples,
@@ -156,6 +156,8 @@ const validRoute = (route) =>
     'columns',
     'recycle',
     'tasks',
+    'bilingual',
+    'inline',
   ].includes(routeView(route));
 const initialRoute = validRoute(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
 let storageFailed = false;
@@ -316,7 +318,7 @@ function layout() {
         : state.view === 'news'
           ? newsRouteLabel(state.route)
           : '',
-    )}</div><div class="topbar-actions"><span class="prototype">交互原型 · 模拟数据</span><button class="global-search" data-action="search" aria-label="搜索页面或用户（${searchShortcut().spoken}）" aria-keyshortcuts="${searchShortcut().keys}"><span>${icon('search')}</span><span>搜索页面或用户</span><kbd aria-hidden="true">${searchShortcut().label}</kbd>${window.innerWidth < 701 ? icon('search') : ''}</button><button class="icon-button" data-action="theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? '切换浅色主题' : '切换深色主题'}">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><button class="icon-button unread" data-action="notifications" aria-label="查看演示通知">${icon('bell')}</button><span class="topbar-divider"></span><span class="avatar peach">演</span></div></header><main id="main" class="content" tabindex="-1"><div id="view"></div><footer class="footer"><span class="footer-left"><i class="live-dot"></i>NOVA ADMIN <span>·</span> 设计预览 v1.8.0</span><span class="footer-right">所有数据为本地模拟 <span>·</span> <a href="./responsive.html" target="_blank" rel="noopener">多尺寸预览 ↗</a> <span>·</span> <a href="#" data-action="docs">Django 集成说明</a></span></footer></main></div></div>`;
+    )}</div><div class="topbar-actions"><span class="prototype">交互原型 · 模拟数据</span><button class="global-search" data-action="search" aria-label="搜索页面或用户（${searchShortcut().spoken}）" aria-keyshortcuts="${searchShortcut().keys}"><span>${icon('search')}</span><span>搜索页面或用户</span><kbd aria-hidden="true">${searchShortcut().label}</kbd>${window.innerWidth < 701 ? icon('search') : ''}</button><button class="icon-button" data-action="theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? '切换浅色主题' : '切换深色主题'}">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><button class="icon-button" data-action="notifications" aria-label="查看演示通知">${icon('bell')}<span class="notice-badge" data-notice-badge ${unreadNoticeTotal() ? '' : 'hidden'}>${unreadNoticeTotal()}</span></button><span class="topbar-divider"></span><span class="avatar peach">演</span></div></header><main id="main" class="content" tabindex="-1"><div id="view"></div><footer class="footer"><span class="footer-left"><i class="live-dot"></i>NOVA ADMIN <span>·</span> 设计预览 v1.8.0</span><span class="footer-right">所有数据为本地模拟 <span>·</span> <a href="./responsive.html" target="_blank" rel="noopener">多尺寸预览 ↗</a> <span>·</span> <a href="#" data-action="docs">Django 集成说明</a></span></footer></main></div></div>`;
   document.body.classList.toggle('native', state.native);
   document.body.classList.toggle('reduced-motion', !state.settings.animations);
   renderView();
@@ -366,6 +368,8 @@ function renderView() {
     columns: () => renderFlow(state.route),
     recycle: () => renderFlow(state.route),
     tasks: () => renderFlow(state.route),
+    bilingual: () => renderFlow(state.route),
+    inline: () => renderFlow(state.route),
     'native-samples': nativeSamplesView,
     'login-preview': loginPreviewView,
   }[state.view];
@@ -895,21 +899,7 @@ const actions = {
     closeOverlay();
     toast('确认流程已完成');
   },
-  notifications: () =>
-    openOverlay(
-      `<section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title"><div class="drawer-header"><div><h2 id="drawer-title">工作动态</h2><p>示例通知，不连接实时服务</p></div><button class="icon-button" data-action="close" aria-label="关闭通知">${icon('close')}</button></div><div class="drawer-content">${[
-        ['mint', 'check', '数据备份完成', '演示环境的例行备份已完成', '10 分钟前'],
-        ['violet', 'users', '3 位成员加入工作空间', '查看新成员的角色与访问范围', '36 分钟前'],
-        ['blue', 'shield', '角色配置已更新', '编辑角色获得内容修改权限', '2 小时前'],
-      ]
-        .map(
-          ([c, i, t, d, time]) =>
-            `<div class="activity-item"><span class="avatar ${c}">${icon(i)}</span><div><p>${t}</p><small>${d}</small><p class="muted" style="font-size:10px;margin-top:9px">${time} · 模拟</p></div></div>`,
-        )
-        .join(
-          '',
-        )}</div><div class="drawer-footer">${button('查看用户', 'notification-users', 'primary')}</div></section>`,
-    ),
+  notifications: () => openOverlay(renderNotificationCenter(), true),
   'notification-users': () => {
     closeOverlay();
     navigate('users');

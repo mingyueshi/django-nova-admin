@@ -117,5 +117,32 @@ await checkA('Retry restarts the task as running from zero',async()=>{await wait
 
 
 
-check('New flows appear in the sidebar navigation with a dedicated group',()=>{assert.ok(all('.sidebar .nav-group').some(b=>b.textContent.includes('业务流程')));assert.ok(all('.sidebar .nav-item').some(a=>a.getAttribute('href')==='#import'));assert.ok(all('.sidebar .nav-item').some(a=>a.getAttribute('href')==='#calendar'));assert.ok(all('.sidebar .nav-item').some(a=>a.getAttribute('href')==='#tasks'))});
+const badgeBefore=Number(q('.notice-badge').textContent);
+click('[data-action="notifications"]');
+check('Notification center groups notices by type with live badge',()=>{assert.ok(q('.notice-drawer'));assert.ok(all('.notice-group').length>=2);assert.equal(q('.notice-badge').textContent,String(badgeBefore));assert.match(q('.notice-drawer .drawer-header p').textContent,new RegExp(`未读 ${badgeBefore} 条`))});
+click('.notice-item.notice-unread');
+check('Clicking a notice marks it read and decrements the badge',()=>{assert.equal(Number(q('.notice-badge').textContent),badgeBefore-1);assert.equal(all('.notice-item.notice-unread').length,badgeBefore-1)});
+click('[data-flow="notice-filter"][data-flow-filter="任务"]');
+check('Type filter narrows the drawer',()=>{assert.ok(all('.notice-group').length<=1)});
+click('[data-flow="notice-read-all"]');
+check('Mark all read hides the badge',()=>{assert.equal(q('.notice-badge').hidden,true)});
+q('[aria-label="关闭通知中心"]').click();
+
+await route('bilingual');
+check('Bilingual page shows side-by-side copy coverage',()=>{assert.equal(q('h1').textContent,'双语对照');assert.ok(q('.bilingual-table'));assert.match(q('.bilingual-sample strong').textContent,/季度经营简报/)});
+click('[data-flow="bilingual-lang"][data-flow-lang="en"]');
+check('Language toggle switches the live sample',()=>{assert.match(q('.bilingual-sample strong').textContent,/Quarterly/);assert.match(q('.bilingual-actions').textContent,/Save/)});
+
+await route('inline');
+check('Inline editor renders editable rows with seeded validation',()=>{assert.equal(q('h1').textContent,'行内编辑');assert.equal(all('.inline-table tbody tr').length,5);assert.match(q('.panel-head .pill').textContent,/全部已保存/);assert.match(q('.inline-table').textContent,/库存需为/)});
+const stockInput=q('[data-flow-inline="stock"][data-flow-id="1"]');stockInput.value='58';stockInput.dispatchEvent(new w.Event('input',{bubbles:true}));stockInput.dispatchEvent(new w.Event('change',{bubbles:true}));
+check('Editing marks the row dirty with save and revert actions',()=>{assert.ok(q('.inline-row-dirty'));assert.ok(q('[data-flow="inline-save"][data-flow-id="1"]'));assert.ok(q('[data-flow="inline-revert"][data-flow-id="1"]'))});
+q('[data-flow-inline="stock"][data-flow-id="1"]').value='-3';q('[data-flow-inline="stock"][data-flow-id="1"]').dispatchEvent(new w.Event('input',{bubbles:true}));q('[data-flow-inline="stock"][data-flow-id="1"]').dispatchEvent(new w.Event('change',{bubbles:true}));
+click('[data-flow="inline-save"][data-flow-id="1"]');
+check('Invalid stock blocks the save with a toast',()=>{assert.match(q('.toast').textContent,/库存需为/);assert.ok(q('.inline-row-dirty'))});
+q('[data-flow-inline="stock"][data-flow-id="1"]').value='58';q('[data-flow-inline="stock"][data-flow-id="1"]').dispatchEvent(new w.Event('input',{bubbles:true}));q('[data-flow-inline="stock"][data-flow-id="1"]').dispatchEvent(new w.Event('change',{bubbles:true}));
+click('[data-flow="inline-save"][data-flow-id="1"]');
+check('Valid save records the audit and clears dirty state',()=>{assert.match(w.localStorage.getItem('nova-audit')||'',/行内编辑/);assert.equal(q('[data-flow="inline-save"][data-flow-id="1"]'),null)});
+
+check('New flows appear in the sidebar navigation with a dedicated group',()=>{assert.ok(all('.sidebar .nav-group').some(b=>b.textContent.includes('业务流程')));assert.ok(all('.sidebar .nav-item').some(a=>a.getAttribute('href')==='#import'));assert.ok(all('.sidebar .nav-item').some(a=>a.getAttribute('href')==='#calendar'));assert.ok(all('.sidebar .nav-item').some(a=>a.getAttribute('href')==='#bilingual'));assert.ok(all('.sidebar .nav-item').some(a=>a.getAttribute('href')==='#inline'))});
 console.log('TOTAL',n,'flow demo checks passed');close()})().catch(e=>{console.error(e);process.exitCode=1});

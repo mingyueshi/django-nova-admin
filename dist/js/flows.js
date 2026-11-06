@@ -8,6 +8,8 @@ const hint = (text) => `<div class="model-hint">${icon('circle')}${text}</div>`;
 export function initFlows(dependencies) {
   ({ ui, recordAudit, getView } = dependencies);
   document.addEventListener('click', flowsClick);
+  document.addEventListener('input', flowsInput);
+  document.addEventListener('change', flowsInput);
   document.addEventListener('dragstart', flowsDragStart);
   document.addEventListener('dragover', flowsDragOver);
   document.addEventListener('drop', flowsDrop);
@@ -328,8 +330,10 @@ function approvalDecide(id, approve) {
       a.status = '已通过';
       a.timeline.push({ label: '归档完成', time, result: '通过', note: '' });
       recordAudit('审批通过', `${a.no} 归档完成`);
+      addNotice('审批', `${a.no} 已全部通过`, `${a.title} 已归档`);
     } else {
       recordAudit('审批通过', `${a.no} → ${APPROVAL_NODES[a.timeline.length]}`);
+      addNotice('审批', `${a.no} 进入下一节点`, APPROVAL_NODES[a.timeline.length]);
     }
     ui.toast(`${a.no} 已通过当前节点`);
   } else {
@@ -341,6 +345,7 @@ function approvalDecide(id, approve) {
       note: '请补充材料后重新提交',
     });
     recordAudit('审批驳回', `${a.no} 驳回`);
+    addNotice('审批', `${a.no} 已驳回`, '请查看驳回意见');
     ui.toast(`${a.no} 已驳回`);
   }
   ui.closeOverlay(true);
@@ -707,6 +712,7 @@ function taskTick() {
     } else if (task.percent >= 100) {
       task.status = 'done';
       recordAudit('后台任务', `${task.name} 完成`);
+      addNotice('任务', `${task.name} 已完成`, '可在任务进度中心查看结果');
       ui.toast(`${task.name} 已完成`);
       changed = true;
     }
@@ -736,6 +742,228 @@ export function renderTasks() {
   );
 }
 
+/* ---------------------------------------------------------------- 通知中心 */
+
+let notices = [
+  {
+    id: 1,
+    type: '审批',
+    title: 'AP-2601 等待二级审批',
+    detail: '十月营销物料采购已通过一级审批',
+    time: '36 分钟前',
+    unread: true,
+  },
+  {
+    id: 2,
+    type: '任务',
+    title: '数据看板配色适配已完成',
+    detail: '导出结果可在任务进度中心下载',
+    time: '2 小时前',
+    unread: true,
+  },
+  {
+    id: 3,
+    type: '内容',
+    title: '十月内容计划待审核',
+    detail: '编辑规范更新需要二级确认',
+    time: '5 小时前',
+    unread: true,
+  },
+  {
+    id: 4,
+    type: '系统',
+    title: '演示环境例行备份完成',
+    detail: '本地数据已整理',
+    time: '昨天 22:00',
+    unread: false,
+  },
+  {
+    id: 5,
+    type: '内容',
+    title: '秋季专题图片已替换',
+    detail: '封面加载失败样本已修复',
+    time: '昨天 18:20',
+    unread: false,
+  },
+  {
+    id: 6,
+    type: '系统',
+    title: '演示管理员登录提醒',
+    detail: '本地演示 · 无真实账户',
+    time: '前天 09:00',
+    unread: false,
+  },
+];
+let noticeFilter = '全部';
+function addNotice(type, title, detail) {
+  const id = notices.length ? Math.max(...notices.map((n) => n.id)) + 1 : 1;
+  notices.unshift({ id, type, title, detail, time: '刚刚', unread: true });
+  syncNoticeBadge();
+}
+function unreadNoticeCount() {
+  return notices.filter((n) => n.unread).length;
+}
+function syncNoticeBadge() {
+  const badge = document.querySelector('[data-notice-badge]');
+  if (!badge) return;
+  const count = unreadNoticeCount();
+  badge.textContent = String(count);
+  badge.hidden = count === 0;
+}
+export function unreadNoticeTotal() {
+  return unreadNoticeCount();
+}
+export function renderNotificationCenter() {
+  const types = ['全部', '审批', '任务', '内容', '系统'];
+  const rows = notices.filter((n) => noticeFilter === '全部' || n.type === noticeFilter);
+  const groups = [];
+  for (const row of rows) {
+    const last = groups[groups.length - 1];
+    if (last && last.type === row.type) last.items.push(row);
+    else groups.push({ type: row.type, items: [row] });
+  }
+  return `<section class="drawer notice-drawer" role="dialog" aria-modal="true" aria-labelledby="notice-title"><div class="drawer-header"><div><h2 id="notice-title">通知中心</h2><p>示例通知，按类型分组；未读 ${unreadNoticeCount()} 条</p></div><button class="icon-button" data-action="close" aria-label="关闭通知中心">${icon('close')}</button></div><div class="group-tabs notice-tabs" role="tablist" aria-label="通知筛选">${types.map((f) => `<button type="button" class="group-tab" data-flow="notice-filter" data-flow-filter="${f}" aria-selected="${noticeFilter === f}">${f}${f === '全部' && unreadNoticeCount() ? ` (${unreadNoticeCount()})` : ''}</button>`).join('')}</div><div class="drawer-content"><div class="notice-toolbar"><span class="muted">点击条目标为已读</span><button class="btn subtle" data-flow="notice-read-all" ${unreadNoticeCount() ? '' : 'disabled'}>${icon('check')}全部标为已读</button></div>${
+    groups.length
+      ? groups
+          .map(
+            (group) =>
+              `<div class="notice-group"><div class="notice-group-head">${group.type}</div>${group.items
+                .map(
+                  (n) =>
+                    `<button type="button" class="notice-item ${n.unread ? 'notice-unread' : ''}" data-flow="notice-read" data-flow-id="${n.id}"><span class="notice-dot" aria-hidden="true"></span><span class="notice-copy"><strong>${esc(n.title)}</strong><small>${esc(n.detail)}</small><small class="muted">${esc(n.time)} · ${n.type}</small></span>${n.unread ? '<span class="pill status-normal">未读</span>' : '<span class="pill">已读</span>'}</button>`,
+                )
+                .join('')}</div>`,
+          )
+          .join('')
+      : '<p class="muted cal-empty-day">该类型暂无通知。</p>'
+  }</div></section>`;
+}
+
+/* ---------------------------------------------------------------- 双语对照 */
+
+const BILINGUAL_GROUPS = [
+  [
+    '导航与页面',
+    [
+      ['工作概览', 'Overview'],
+      ['商品管理', 'Products'],
+      ['组织与成员', 'Organization'],
+      ['操作日志', 'Audit log'],
+    ],
+  ],
+  [
+    '操作按钮',
+    [
+      ['保存', 'Save'],
+      ['保存并继续编辑', 'Save and continue editing'],
+      ['新增', 'Add'],
+      ['删除', 'Delete'],
+      ['清除筛选', 'Clear filters'],
+      ['展开全部', 'Expand all'],
+    ],
+  ],
+  [
+    '状态与角色',
+    [
+      ['已发布', 'Published'],
+      ['待审核', 'In review'],
+      ['已驳回', 'Rejected'],
+      ['管理员', 'Administrator'],
+      ['只读成员', 'Read-only member'],
+    ],
+  ],
+  [
+    '消息与提示',
+    [
+      ['操作成功', 'Operation succeeded'],
+      ['浏览器未能保存偏好', 'The browser could not save the preference'],
+      ['至少保留一列', 'Keep at least one column'],
+      ['没有符合条件的记录', 'No matching records'],
+    ],
+  ],
+];
+let bilingualLanguage = 'zh';
+export function renderBilingual() {
+  const live = {
+    zh: {
+      title: '季度经营简报',
+      status: '待审核',
+      actions: ['保存', '导出 CSV', '删除'],
+      hint: '更改仅保存在当前浏览器',
+    },
+    en: {
+      title: 'Quarterly business brief',
+      status: 'In review',
+      actions: ['Save', 'Export CSV', 'Delete'],
+      hint: 'Changes stay in this browser only',
+    },
+  }[bilingualLanguage];
+  return (
+    ui.intro('双语对照', '同一套管理界面的中英文案对照，覆盖主题自带的翻译目录。', '') +
+    hint('静态演示 · Django 环境中由 i18n 目录按激活语言输出') +
+    `<section class="panel"><div class="panel-head"><div><h2>实时示例</h2><p>切换语言查看同一段界面的两种文案。</p></div><div class="segmented">${['zh', 'en'].map((code) => `<button data-flow="bilingual-lang" data-flow-lang="${code}" class="${bilingualLanguage === code ? 'active' : ''}">${code === 'zh' ? '中文' : 'English'}</button>`).join('')}</div></div><div class="bilingual-live"><div class="bilingual-sample"><strong>${esc(live.title)}</strong><span class="pill ${bilingualLanguage === 'zh' ? 'status-pending' : ''}">${esc(live.status)}</span></div><div class="bilingual-actions">${live.actions.map((a) => `<span class="btn">${esc(a)}</span>`).join('')}</div><p class="muted bilingual-hint">${esc(live.hint)}</p></div></section><section class="panel"><div class="panel-head"><div><h2>文案对照表</h2><p>主题自带标签的常用译法。</p></div></div><div class="table-scroll"><table class="bilingual-table"><thead><tr><th>场景</th><th>中文</th><th>English</th></tr></thead><tbody>${BILINGUAL_GROUPS.map(([scene, pairs]) => pairs.map(([zh, en], index) => `<tr>${index === 0 ? `<td rowspan="${pairs.length}">${scene}</td>` : ''}<td>${zh}</td><td>${en}</td></tr>`).join('')).join('')}</tbody></table></div></section>`
+  );
+}
+
+/* ---------------------------------------------------------------- 行内编辑 */
+
+let inlineRows = [
+  { id: 1, name: '无线充电板', stock: '42', status: '正常', note: '双十一前补货 30 件' },
+  { id: 2, name: '磁吸手机壳', stock: '120', status: '正常', note: '' },
+  { id: 3, name: '胡桃木收纳盘', stock: '0', status: '补货中', note: '等待工厂排产' },
+  { id: 4, name: '复古帆布包', stock: '17', status: '正常', note: '' },
+  { id: 5, name: '便携补光灯', stock: '-4', status: '停售', note: '演示负数校验' },
+];
+const INLINE_STATUSES = ['正常', '补货中', '停售'];
+let inlineBaseline = structuredClone(inlineRows);
+function inlineDirty(row) {
+  const base = inlineBaseline.find((b) => b.id === row.id);
+  return !base || base.stock !== row.stock || base.status !== row.status || base.note !== row.note;
+}
+function inlineError(row) {
+  const value = (row.stock || '').trim();
+  if (value === '' || !/^-?\d+$/.test(value) || Number(value) < 0) return '库存需为不小于 0 的整数';
+  return '';
+}
+export function renderInline() {
+  const dirtyCount = inlineRows.filter(inlineDirty).length;
+  return (
+    ui.intro(
+      '行内编辑',
+      '直接在表格里修改库存与状态，逐行保存并跟踪脏状态。',
+      `<button class="btn subtle" data-flow="inline-reset">放弃全部修改</button>`,
+    ) +
+    hint('合成库存表 · 保存只更新本地演示数据 · 校验失败会定位到单元格') +
+    `<section class="panel"><div class="panel-head"><div><h2>库存调整</h2><p>${dirtyCount ? `${dirtyCount} 行有未保存修改` : '没有未保存的修改'}</p></div><span class="pill ${dirtyCount ? 'status-pending' : ''}">${dirtyCount ? '有未保存更改' : '全部已保存'}</span></div><div class="table-scroll"><table class="inline-table"><thead><tr><th>商品</th><th>库存</th><th>状态</th><th>备注</th><th>操作</th></tr></thead><tbody>${inlineRows
+      .map((row) => {
+        const dirty = inlineDirty(row);
+        const error = inlineError(row);
+        return `<tr class="${dirty ? 'inline-row-dirty' : ''}"><td><strong>${esc(row.name)}</strong></td><td><input class="inline-input inline-stock" data-flow-inline="stock" data-flow-id="${row.id}" value="${esc(row.stock)}" inputmode="numeric" aria-label="${esc(row.name)}库存"><small class="error">${error}</small></td><td><select class="inline-input" data-flow-inline="status" data-flow-id="${row.id}" aria-label="${esc(row.name)}状态">${INLINE_STATUSES.map((s) => `<option ${s === row.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td><td><input class="inline-input" data-flow-inline="note" data-flow-id="${row.id}" value="${esc(row.note)}" maxlength="40" aria-label="${esc(row.name)}备注" placeholder="补充说明…"></td><td>${dirty ? `<span class="tree-actions"><button class="btn subtle" data-flow="inline-revert" data-flow-id="${row.id}">还原</button><button class="btn primary" data-flow="inline-save" data-flow-id="${row.id}">${icon('check')}保存</button></span>` : '<span class="muted inline-saved">已保存</span>'}</td></tr>`;
+      })
+      .join('')}</tbody></table></div></section>`
+  );
+}
+function inlineRevert(id) {
+  const base = inlineBaseline.find((b) => b.id === id);
+  const row = inlineRows.find((r) => r.id === id);
+  if (base && row) Object.assign(row, { stock: base.stock, status: base.status, note: base.note });
+}
+function inlineSave(id) {
+  const row = inlineRows.find((r) => r.id === id);
+  if (!row) return;
+  const error = inlineError(row);
+  if (error) {
+    ui.toast(`${row.name}：${error}`);
+    document.querySelector(`[data-flow-inline="stock"][data-flow-id="${id}"]`)?.focus();
+    return;
+  }
+  row.stock = row.stock.trim();
+  const base = inlineBaseline.find((b) => b.id === id);
+  if (base) Object.assign(base, { stock: row.stock, status: row.status, note: row.note });
+  recordAudit('行内编辑', `${row.name} 库存 ${row.stock} · ${row.status}`);
+  ui.toast(`${row.name} 已保存`);
+}
+
 /* ---------------------------------------------------------------- 事件分发 */
 
 export function renderFlow(route) {
@@ -747,12 +975,36 @@ export function renderFlow(route) {
   if (view === 'calendar') return renderCalendar();
   if (view === 'columns') return renderColumns();
   if (view === 'recycle') return renderRecycle();
+  if (view === 'bilingual') return renderBilingual();
+  if (view === 'inline') return renderInline();
   return renderTasks();
 }
 
 function rerender(focus) {
   ui.renderView();
   if (focus) document.querySelector(focus)?.focus();
+}
+function noticeSyncDrawer() {
+  const drawer = document.querySelector('.notice-drawer');
+  if (drawer) {
+    const subtitle = drawer.querySelector('.drawer-header p');
+    if (subtitle) subtitle.textContent = `示例通知，按类型分组；未读 ${unreadNoticeCount()} 条`;
+    const allTab = drawer.querySelector('[data-flow-filter="全部"]');
+    if (allTab)
+      allTab.textContent = `全部${unreadNoticeCount() ? ` (${unreadNoticeCount()})` : ''}`;
+    const readAll = drawer.querySelector('[data-flow="notice-read-all"]');
+    if (readAll) readAll.disabled = !unreadNoticeCount();
+  }
+  syncNoticeBadge();
+}
+function flowsInput(event) {
+  const input = event.target.closest?.('[data-flow-inline]');
+  if (!input) return false;
+  const row = inlineRows.find((r) => r.id === Number(input.dataset.flowId));
+  if (!row) return false;
+  row[input.dataset.flowInline] = input.value;
+  if (event.type === 'change') rerender();
+  return true;
 }
 
 export function flowsClick(event) {
@@ -963,6 +1215,56 @@ export function flowsClick(event) {
     ui.closeOverlay(true);
     rerender();
     ui.toast('回收站已清空');
+    return true;
+  }
+  if (action === 'notice-filter') {
+    noticeFilter = el.dataset.flowFilter;
+    const drawer = document.querySelector('.notice-drawer');
+    if (drawer) drawer.outerHTML = renderNotificationCenter();
+    return true;
+  }
+  if (action === 'notice-read') {
+    const notice = notices.find((n) => n.id === Number(el.dataset.flowId));
+    if (notice?.unread) {
+      notice.unread = false;
+      el.classList.remove('notice-unread');
+      const pill = el.querySelector('.pill');
+      if (pill) {
+        pill.textContent = '已读';
+        pill.classList.remove('status-normal');
+      }
+      noticeSyncDrawer();
+    }
+    return true;
+  }
+  if (action === 'notice-read-all') {
+    notices.forEach((n) => {
+      n.unread = false;
+    });
+    const drawer = document.querySelector('.notice-drawer');
+    if (drawer) drawer.outerHTML = renderNotificationCenter();
+    syncNoticeBadge();
+    return true;
+  }
+  if (action === 'bilingual-lang') {
+    bilingualLanguage = el.dataset.flowLang;
+    rerender();
+    return true;
+  }
+  if (action === 'inline-save') {
+    inlineSave(Number(el.dataset.flowId));
+    rerender();
+    return true;
+  }
+  if (action === 'inline-revert') {
+    inlineRevert(Number(el.dataset.flowId));
+    rerender();
+    return true;
+  }
+  if (action === 'inline-reset') {
+    inlineBaseline = structuredClone(inlineRows);
+    rerender();
+    ui.toast('已放弃全部未保存修改');
     return true;
   }
   if (action === 'task-start' || action === 'task-pause' || action === 'task-fail') {
