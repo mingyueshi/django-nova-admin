@@ -30,6 +30,21 @@ export const navigationTree = [
     ],
   },
   {
+    key: 'flows',
+    label: '业务流程',
+    icon: 'bolt',
+    children: [
+      { id: 'import', label: '导入向导', icon: 'download' },
+      { id: 'kanban', label: '状态看板', icon: 'grid' },
+      { id: 'approvals', label: '审批工作流', icon: 'check' },
+      { id: 'tree', label: '分类树', icon: 'layers' },
+      { id: 'calendar', label: '发布日历', icon: 'activity' },
+      { id: 'columns', label: '列配置与视图', icon: 'more' },
+      { id: 'recycle', label: '回收站', icon: 'history' },
+      { id: 'tasks', label: '任务进度', icon: 'bolt' },
+    ],
+  },
+  {
     key: 'developer',
     label: '开发与集成',
     icon: 'terminal',

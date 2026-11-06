@@ -12,6 +12,7 @@ import { pagination, submitPageJump } from './pagination.js';
 import { searchShortcut } from './presentation.js';
 import { initMedia, thumbnail, imageSpec, restoreMedia } from './media.js';
 import { initNews, newsRouteLabel, renderNews, resetNews, syncNewsSelection } from './news.js';
+import { initFlows, renderFlow } from './flows.js';
 import { enhanceControls } from './controls.js';
 import {
   initNativeSamples,
@@ -147,6 +148,14 @@ const validRoute = (route) =>
     'native-samples',
     'login-preview',
     'news',
+    'import',
+    'kanban',
+    'approvals',
+    'tree',
+    'calendar',
+    'columns',
+    'recycle',
+    'tasks',
   ].includes(routeView(route));
 const initialRoute = validRoute(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
 let storageFailed = false;
@@ -349,6 +358,14 @@ function renderView() {
     settings: settingsView,
     catalog: () => renderCatalog(state.route),
     news: () => renderNews(state.route),
+    import: () => renderFlow(state.route),
+    kanban: () => renderFlow(state.route),
+    approvals: () => renderFlow(state.route),
+    tree: () => renderFlow(state.route),
+    calendar: () => renderFlow(state.route),
+    columns: () => renderFlow(state.route),
+    recycle: () => renderFlow(state.route),
+    tasks: () => renderFlow(state.route),
     'native-samples': nativeSamplesView,
     'login-preview': loginPreviewView,
   }[state.view];
@@ -913,6 +930,7 @@ const actions = {
         'nova-catalog',
         'nova-audit',
         'nova-news',
+        'nova-view-columns',
       ])
         localStorage.removeItem(key);
     } catch {
@@ -1257,6 +1275,11 @@ initNews({
   routing: listRouting('news', true),
   saveRecords: (records) => save('nova-news', records),
   recordAudit: addAuditEvent,
+});
+initFlows({
+  ui: Object.freeze({ icon, esc, intro, toast, renderView, openOverlay, closeOverlay }),
+  recordAudit: addAuditEvent,
+  getView: () => state.view,
 });
 layout();
 

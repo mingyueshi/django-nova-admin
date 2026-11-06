@@ -140,9 +140,9 @@ class MatrixTests(unittest.TestCase):
 class FrontendContractTests(unittest.TestCase):
     def test_checkout_npm_test_sequence_matches_the_registered_contract(self):
         names = support.frontend_contract()
-        self.assertEqual(len(names), 20)
-        self.assertEqual(names[-6:], ['icons', 'analytics', 'chart-libraries', 'analysis-lab', 'shared-css', 'navigation'])
-        self.assertEqual(support.FRONTEND_TOTAL, 1489)
+        self.assertEqual(len(names), 21)
+        self.assertEqual(names[-7:], ['icons', 'analytics', 'chart-libraries', 'analysis-lab', 'shared-css', 'navigation', 'flows'])
+        self.assertEqual(support.FRONTEND_TOTAL, 1530)
 
     def altered_package(self, mutation):
         with tempfile.TemporaryDirectory() as tmp:
@@ -194,6 +194,7 @@ TOTAL 77 chart library checks passed
 TOTAL 63 analysis lab checks passed
 TOTAL 4 shared login CSS checks passed
 TOTAL 24 preview navigation scenarios passed
+TOTAL 41 flow demo checks passed
 """
     GROUP_LOGS = {
         'frontend': FRONTEND_LOG,
@@ -222,17 +223,17 @@ TOTAL 24 preview navigation scenarios passed
     def collect(self, root):
         return support.collect_node(root / 'logs', root / 'output', COMMIT, '24.21.0', '11.19.0')
 
-    def test_current_log_fixture_records_all_1489_checks_in_twenty_suites(self):
+    def test_current_log_fixture_records_all_1530_checks_in_twenty_one_suites(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.logs(root)
             result = self.collect(root)
-            self.assertEqual(result['frontend'], 1489)
+            self.assertEqual(result['frontend'], 1530)
             self.assertEqual(result['theme_js'], 304)
-            self.assertEqual(len(result['frontend_suites']), 20)
+            self.assertEqual(len(result['frontend_suites']), 21)
             self.assertEqual(result['frontend_suites']['users-data'], 62)
             self.assertEqual(result['frontend_suites']['palettes'], 246)
-            self.assertEqual(sum(result['frontend_suites'].values()), 1489)
+            self.assertEqual(sum(result['frontend_suites'].values()), 1530)
             self.assertEqual(json.loads((root / 'output/report.json').read_text()), result)
 
     def test_every_frontend_suite_requires_exactly_one_success_summary(self):
@@ -415,7 +416,7 @@ TOTAL 24 preview navigation scenarios passed
                 (logs / name).unlink()
             result = support.check_node_summaries(logs)
             self.assertEqual(result['kind'], 'node-suite-contract')
-            self.assertEqual(result['frontend'], 1489)
+            self.assertEqual(result['frontend'], 1530)
             self.assertIn('no install, runtime, step', result['boundary'])
             self.assertNotIn('commit', result)
             self.assertNotIn('node', result)

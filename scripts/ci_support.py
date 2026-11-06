@@ -37,6 +37,7 @@ FRONTEND_SUMMARIES = {
     'analysis-lab': 'TOTAL 63 analysis lab checks passed',
     'shared-css': 'TOTAL 4 shared login CSS checks passed',
     'navigation': 'TOTAL 24 preview navigation scenarios passed',
+    'flows': 'TOTAL 41 flow demo checks passed',
 }
 FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_SUMMARIES.items()}
 FRONTEND_TOTAL = sum(FRONTEND_COUNTS.values())
