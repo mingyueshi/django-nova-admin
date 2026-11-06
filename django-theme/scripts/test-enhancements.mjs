@@ -355,3 +355,4 @@ sorting({name:'商品名称及所属业务分组的长列名 LongUnbrokenColumnH
 console.log(`TOTAL ${count} changelist enhancement tests passed`);
 await import('./test-print.mjs');
 await import('./test-messages.mjs');
+await import('./test-markdown.mjs');

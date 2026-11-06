@@ -305,6 +305,38 @@ msgid "Parchment gold"
 msgstr "宣纸黄"
 
 msgctxt "Nova Admin"
+msgid "Markdown formatting"
+msgstr "Markdown 格式"
+
+msgctxt "Nova Admin"
+msgid "Bold"
+msgstr "加粗"
+
+msgctxt "Nova Admin"
+msgid "Italic"
+msgstr "斜体"
+
+msgctxt "Nova Admin"
+msgid "Inline code"
+msgstr "行内代码"
+
+msgctxt "Nova Admin"
+msgid "Link"
+msgstr "链接"
+
+msgctxt "Nova Admin"
+msgid "Heading"
+msgstr "标题"
+
+msgctxt "Nova Admin"
+msgid "Bulleted list"
+msgstr "符号列表"
+
+msgctxt "Nova Admin"
+msgid "Blockquote"
+msgstr "引用"
+
+msgctxt "Nova Admin"
 msgid "Unknown color palette"
 msgstr "未知配色"
 

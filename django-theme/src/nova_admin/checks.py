@@ -69,6 +69,17 @@ def theme_namespace_check(app_configs, **kwargs):
 
 
 @register(Tags.templates)
+def markdown_setting_check(app_configs, **kwargs):
+    if not isinstance(getattr(settings, "NOVA_ADMIN_MARKDOWN", False), bool):
+        return [Warning(
+            "NOVA_ADMIN_MARKDOWN must be True or False.",
+            hint="The opt-in Markdown toolbar stays off unless explicitly enabled. See EDITORS.md.",
+            id="nova_admin.W004",
+        )]
+    return []
+
+
+@register(Tags.templates)
 def navigation_settings_check(app_configs, **kwargs):
     if not getattr(settings, "NOVA_ADMIN_ENABLED", True):
         return []

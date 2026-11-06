@@ -147,6 +147,7 @@ const collection = createCollection({
 });
 const list = collection.state;
 const esc = (x) => ui.esc(x);
+let articleTab = 'base';
 // This screen can persist only its news records, not arbitrary app state.
 export function initNews(dependencies) {
   ({ ui, routing, saveRecords, recordAudit } = dependencies);
@@ -157,7 +158,8 @@ export function initNews(dependencies) {
       saved.length &&
       saved.every(
         (x) =>
-          seed.some((y) => y.id === x.id) &&
+          Number.isFinite(x.id) &&
+          x.id >= 201 &&
           typeof x.title === 'string' &&
           typeof x.date === 'string' &&
           /^\d{4}-\d{2}-\d{2}$/.test(x.date) &&
@@ -175,12 +177,28 @@ export function initNews(dependencies) {
   document.addEventListener('click', click);
   document.addEventListener('input', input);
   document.addEventListener('change', change);
-  document.addEventListener('submit', (event) =>
+  document.addEventListener('keydown', (event) => {
+    const tab = event.target.closest?.('[data-news-tab]');
+    if (!tab) return;
+    const order = ['base', 'content', 'publish'];
+    const index = order.indexOf(tab.dataset.newsTab);
+    if (index < 0 || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    event.preventDefault();
+    const next =
+      order[(index + (event.key === 'ArrowRight' ? 1 : order.length - 1)) % order.length];
+    switchArticleTab(next);
+  });
+  document.addEventListener('submit', (event) => {
+    if (event.target.id === 'news-article-form') {
+      event.preventDefault();
+      saveArticle();
+      return;
+    }
     submitPageJump(event, collection, 'news', (focus) => {
       sync(true);
       refresh(focus);
-    }),
-  );
+    });
+  });
 }
 export function resetNews() {
   records = structuredClone(seed);
@@ -194,9 +212,14 @@ function sync(push = false) {
   routing.replaceListRoute('news' + collection.queryString(), { push });
 }
 export function renderNews(route) {
+  if (route === 'news/add') return articleEditor();
   collection.restore(route);
   return (
-    ui.intro('新闻资讯', '封面、栏目与发布状态，一目了然。', '') +
+    ui.intro(
+      '新闻资讯',
+      '封面、栏目与发布状态，一目了然。',
+      `<a class="btn primary" href="#news/add">${ui.icon('plus')}添加文章</a>`,
+    ) +
     `<div class="model-hint">${ui.icon('circle')}合成内容与本地图片 · 点击封面预览 · 包含缺图与加载失败场景</div><section class="panel"><div class="catalog-toolbar"><div class="search-input">${ui.icon('search')}<input id="news-search" aria-label="搜索新闻" placeholder="搜索标题或作者…" value="${esc(list.query)}"></div><select id="news-category" aria-label="新闻栏目">${options(['全部栏目', '设计观察', '团队动态', '生活方式', '产品故事'], list.category)}</select><select id="news-status" aria-label="新闻状态">${options(['全部状态', '草稿', '待审核', '已发布', '归档'], list.status)}</select><button class="btn subtle" data-news="reset">清除筛选</button><span class="spacer"></span><span class="muted">${records.length} 篇内容</span></div><div id="news-results">${results()}</div></section>`
   );
 }
@@ -230,6 +253,80 @@ function detail(id) {
     `<section class="drawer news-detail" role="dialog" aria-modal="true" aria-labelledby="news-detail-title"><div class="drawer-header"><div><h2 id="news-detail-title">${esc(r.title)}</h2><p>${esc(r.category)} · ${esc(r.author)}</p></div><button class="icon-button" data-action="close" aria-label="关闭新闻详情">${ui.icon('close')}</button></div><div class="drawer-content">${thumbnail(imageSpec('cover', r.id, r.title), 'news-detail-cover')}<div class="news-detail-status">${badge(r.status)}<span>${r.date}</span><span>${r.views.toLocaleString()} 阅读</span></div><p class="news-summary">${esc(r.summary)}</p><div class="notice">${ui.icon('circle')}这是图文列表与详情样例，不连接内容发布系统。图片与人物均为合成演示素材。</div></div><div class="drawer-footer"><button class="btn primary" data-action="close">关闭详情</button></div></section>`,
   );
 }
+const articleGroups = [
+  ['base', 'edit', '基本信息'],
+  ['content', 'book', '正文内容'],
+  ['publish', 'settings', '发布设置'],
+];
+function articleEditor() {
+  articleTab = 'base';
+  const today = new Date().toISOString().slice(0, 10);
+  const panels = [
+    [
+      'base',
+      `<div class="field"><label for="article-title">文章标题 <span style="color:var(--danger)">*</span></label><input id="article-title" maxlength="60" placeholder="输入文章标题" aria-describedby="article-title-error"><small class="error" id="article-title-error"></small></div><div class="field-row"><div class="field"><label for="article-category">栏目</label><select id="article-category">${options(['设计观察', '团队动态', '生活方式', '产品故事'], '设计观察')}</select></div><div class="field"><label for="article-author">作者</label><input id="article-author" value="演示管理员" maxlength="20"></div></div><p class="group-tab-note">标题、栏目与作者会直接显示在列表中。</p>`,
+    ],
+    [
+      'content',
+      `<div class="field"><label for="article-summary">摘要</label><textarea id="article-summary" rows="3" maxlength="80" placeholder="列表副标题与详情页摘要"></textarea></div><div class="field"><label for="article-body">正文</label><div class="md-toolbar" role="toolbar" aria-label="Markdown 工具栏"><button type="button" data-md="bold" aria-label="加粗">B</button><button type="button" data-md="italic" aria-label="斜体">I</button><button type="button" data-md="code" aria-label="行内代码"></></button><button type="button" data-md="link" aria-label="链接">↗</button><button type="button" data-md="heading" aria-label="标题">H2</button><button type="button" data-md="list" aria-label="符号列表">≡</button><button type="button" data-md="quote" aria-label="引用">❝</button></div><textarea id="article-body" rows="9" placeholder="演示环境只记录纯文本，不连接内容发布系统"></textarea></div><p class="group-tab-note">正文为演示内容，保存后可在详情抽屉查看摘要。</p>`,
+    ],
+    [
+      'publish',
+      `<div class="field-row"><div class="field"><label for="article-status">发布状态</label><select id="article-status">${options(['草稿', '待审核', '已发布'], '草稿')}</select></div><div class="field"><label for="article-date">发布日期</label><input id="article-date" type="date" value="${today}"></div></div><p class="group-tab-note">保存后清除筛选并回到第一页，方便看到新文章。</p>`,
+    ],
+  ];
+  return (
+    ui.intro(
+      '添加文章',
+      '分组标签上下布局演示 · 只保存在当前浏览器。',
+      `<a class="btn" href="#news">${ui.icon('arrow')}返回列表</a>`,
+    ) +
+    `<div class="model-hint">${ui.icon('circle')}带编辑器的复杂表单使用整页；分组标签只负责组织字段，保存时一起提交。</div><form id="news-article-form" novalidate><section class="panel model-fieldset"><div class="group-tabs" role="tablist" aria-label="文章信息分组">${articleGroups.map(([id, ic, label]) => `<button type="button" class="group-tab" role="tab" id="news-tab-${id}" data-news-tab="${id}" aria-selected="${articleTab === id}" aria-controls="news-panel-${id}" tabindex="${articleTab === id ? '0' : '-1'}">${ui.icon(ic)}${label}</button>`).join('')}</div><div class="group-panels">${panels.map(([id, fields]) => `<div class="group-tab-panel" role="tabpanel" id="news-panel-${id}" aria-labelledby="news-tab-${id}" ${articleTab === id ? '' : 'hidden'}>${fields}</div>`).join('')}</div></section><div class="model-submit-row"><span class="muted">字段分组只是组织方式，保存时一起校验并提交。</span><div><a class="btn" href="#news">取消</a><button type="submit" class="btn primary" data-news="save-article">${ui.icon('check')}保存文章</button></div></div></form>`
+  );
+}
+export function newsRouteLabel(route) {
+  return route === 'news/add' ? '添加文章' : '';
+}
+function switchArticleTab(id) {
+  if (!articleGroups.some(([key]) => key === id) || articleTab === id) return;
+  articleTab = id;
+  for (const tab of document.querySelectorAll('[data-news-tab]')) {
+    const active = tab.dataset.newsTab === id;
+    tab.setAttribute('aria-selected', String(active));
+    tab.tabIndex = active ? 0 : -1;
+    const panel = document.getElementById(tab.getAttribute('aria-controls'));
+    if (panel) panel.hidden = !active;
+  }
+  document.getElementById(`news-tab-${id}`)?.focus();
+}
+function saveArticle() {
+  const title = document.getElementById('article-title');
+  const error = document.getElementById('article-title-error');
+  const value = (title.value || '').trim();
+  if (!value) {
+    if (articleTab !== 'base') switchArticleTab('base');
+    error.textContent = '请输入文章标题';
+    title.focus();
+    return;
+  }
+  const record = {
+    id: Math.max(...records.map((r) => r.id)) + 1,
+    title: value,
+    category: document.getElementById('article-category').value,
+    author: (document.getElementById('article-author').value || '').trim() || '演示管理员',
+    status: document.getElementById('article-status').value,
+    date: document.getElementById('article-date').value || new Date().toISOString().slice(0, 10),
+    views: 0,
+    summary:
+      (document.getElementById('article-summary').value || '').trim() || '本地演示新增的文章。',
+  };
+  if (!saveRecords([...records, record])) return;
+  records.push(record);
+  recordAudit('新增文章', `${record.title} · ${record.category}`);
+  collection.resetFilters({ resetSort: true });
+  ui.toast('演示文章已加入本地列表');
+  routing.navigate('news' + collection.queryString());
+}
 function click(e) {
   const d = e.target.closest('[data-news-detail]');
   if (d) {
@@ -241,6 +338,35 @@ function click(e) {
     collection.setPage(p.dataset.newsPage);
     sync(true);
     refresh(`[data-news-page="${list.page}"]`);
+    return;
+  }
+  const md = e.target.closest('[data-md]');
+  if (md) {
+    const area = document.getElementById('article-body');
+    if (!area) return;
+    const action = {
+      bold: ['**', '**', 'text'],
+      italic: ['*', '*', 'text'],
+      code: ['`', '`', 'code'],
+      link: ['[', '](https://)', 'label'],
+      heading: ['## ', '', ''],
+      list: ['- ', '', ''],
+      quote: ['> ', '', ''],
+    }[md.dataset.md];
+    if (!action) return;
+    const [start, end] = [area.selectionStart ?? area.value.length, area.selectionEnd ?? start];
+    const chosen = area.value.slice(start, end) || action[2];
+    area.value =
+      area.value.slice(0, start) + action[0] + chosen + action[1] + area.value.slice(end);
+    const inner = start + action[0].length;
+    area.setSelectionRange(inner, inner + chosen.length);
+    area.dispatchEvent(new Event('input', { bubbles: true }));
+    area.focus();
+    return;
+  }
+  const t = e.target.closest('[data-news-tab]');
+  if (t) {
+    switchArticleTab(t.dataset.newsTab);
     return;
   }
   const b = e.target.closest('[data-news]');
@@ -287,6 +413,11 @@ function click(e) {
   }
 }
 function input(e) {
+  if (e.target.id === 'article-title') {
+    const error = document.getElementById('article-title-error');
+    if (error) error.textContent = '';
+    return;
+  }
   if (e.target.id === 'news-search') {
     collection.setFilter('query', e.target.value);
     refresh();

@@ -20,7 +20,7 @@ FRONTEND_SUMMARIES = {
     'dom': 'TOTAL 31 passed',
     'workflows': 'TOTAL 33 workflow tests passed',
     'controls': 'TOTAL 15 control tests passed',
-    'media': 'TOTAL 19 media and news tests passed',
+    'media': 'TOTAL 26 media and news tests passed',
     'recovery': 'TOTAL 36 recovery edge tests passed (Node/jsdom)',
     'users-data': 'TOTAL 62 user data checks passed (Node/jsdom)',
     'enterprise': 'TOTAL 13 enterprise preview tests passed',
@@ -45,10 +45,11 @@ ENHANCEMENT_TOTAL = 38
 COMMAND_PALETTE_TOTAL = 25
 PRINT_TOTAL = 26
 MESSAGE_TOTAL = 26
+MARKDOWN_TOTAL = 10
 APPEARANCE_TOTAL = 24
 CAPTCHA_TOTAL = 16
 CAPTCHA_DIALOG_TOTAL = 16
-THEME_JS_TOTAL = NAVIGATION_TOTAL + COMMAND_PALETTE_TOTAL + APPEARANCE_TOTAL + ENHANCEMENT_TOTAL + PRINT_TOTAL + MESSAGE_TOTAL + CAPTCHA_TOTAL + CAPTCHA_DIALOG_TOTAL
+THEME_JS_TOTAL = NAVIGATION_TOTAL + COMMAND_PALETTE_TOTAL + APPEARANCE_TOTAL + ENHANCEMENT_TOTAL + PRINT_TOTAL + MESSAGE_TOTAL + MARKDOWN_TOTAL + CAPTCHA_TOTAL + CAPTCHA_DIALOG_TOTAL
 
 def read(path):
     return json.loads(Path(path).read_text())
@@ -82,10 +83,11 @@ def check_node_summaries(logs):
             f'{COMMAND_PALETTE_TOTAL} command palette DOM scenarios passed.',
             f'{APPEARANCE_TOTAL} appearance DOM scenarios passed (3 Django script versions).',
         ]),
-        ('enhancements', r'^(?:TOTAL\b.*|\d+ (?:print|message) DOM scenarios .+)$', [
+        ('enhancements', r'^(?:TOTAL\b.*|\d+ (?:print|message|markdown) DOM scenarios .+)$', [
             f'TOTAL {ENHANCEMENT_TOTAL} changelist enhancement tests passed',
             f'{PRINT_TOTAL} print DOM scenarios passed.',
             f'{MESSAGE_TOTAL} message DOM scenarios passed.',
+            f'{MARKDOWN_TOTAL} markdown DOM scenarios passed.',
         ]),
         ('captcha', r'^TOTAL\b.*$', [f'TOTAL {CAPTCHA_TOTAL} CAPTCHA enhancement tests passed']),
         ('captcha-dialog', r'^(?:1\.\.\d+|# (?:tests|pass|fail|cancelled|skipped|todo) \d+)$', [

@@ -1,0 +1,9 @@
+/* Opt-in NOVA_ADMIN_MARKDOWN toolbar for host-marked textareas.
+   Scoped to body.nova-admin, themed with existing admin tokens, no fonts or
+   icons. Without JavaScript the stylesheet renders nothing. */
+body.nova-admin .nova-md-toolbar { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; }
+body.nova-admin .nova-md-button { min-width: 30px; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: var(--nova-action-radius, 8px); background: var(--darkened-bg); color: var(--body-fg); font: inherit; font-size: 12px; line-height: 1.4; cursor: pointer; }
+body.nova-admin .nova-md-button:hover { border-color: var(--link-fg); }
+body.nova-admin .nova-md-button:focus-visible { outline: 2px solid var(--link-fg); outline-offset: 2px; }
+body.nova-admin .nova-md-button.nova-md-bold { font-weight: 700; }
+body.nova-admin .nova-md-button.nova-md-italic { font-style: italic; }

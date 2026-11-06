@@ -102,6 +102,7 @@ NOVA_ADMIN_ENABLED = True
 NOVA_ADMIN_DEFAULT_MODE = "dark"  # dark / light / native
 NOVA_ADMIN_NAVIGATION = True     # 默认 False；显式选择分组侧栏
 NOVA_ADMIN_PRINT = True          # 默认 False；显式选择「打印当前页」入口
+NOVA_ADMIN_MARKDOWN = True       # 默认 False；给标记了 data-nova-markdown 的 textarea 加本地 Markdown 工具栏
 ```
 
 ### 可选三级导航配置
@@ -135,6 +136,10 @@ NOVA_ADMIN_NAV_GROUPS = [
 「打印当前页」默认不显示；宿主设置 `NOVA_ADMIN_PRINT = True` 后，Nova 外观下的真实 changelist 才提供该入口。只取当前页已经显示的标题、列名和行，打印说明中标明页码和显示行数；不查询其他页、不打开新窗口、不提交或保存表单。当前可见的 `list_editable` 值会按屏幕状态打印，并注明可能尚未保存。打印使用临时纯文本表格，去掉链接、动作、筛选、分页控件，黑白排版、长文本换行并重复表头；默认 A4 横向，实际设置由浏览器和打印机决定。
 
 宿主可给元素或容器加 `data-nova-no-print`（兼容 `data-nova-print-exclude`）排除其内容；在表头 `th` 上添加会排除整列，在 `tr` 上添加会排除整行。隐藏行列、`hidden`/`aria-hidden`/`inert` 内容、hidden/password/file 控件均不复制到打印表格。先在屏幕模式记录可见节点，避免宿主打印 CSS 把屏幕隐藏的值重新显露。排除标记是呈现选项，宿主仍负责对象和字段权限。
+
+### 编辑器接入边界
+
+主题不捆绑任何编辑器运行时。富文本（CKEditor、TinyMCE、TipTap 等）由宿主自行安装并通过 widget 接入，Nova 只约定加载顺序和暗色令牌映射；纯文本字段可选开启 `NOVA_ADMIN_MARKDOWN`，为标记了 `data-nova-markdown` 的 textarea 注入零依赖的本地 Markdown 工具栏，无 JavaScript 时完整退化为普通 textarea。设置不是布尔值会触发 `nova_admin.W004` 系统检查。接入细节、安全边界与样式映射见 [EDITORS.md](EDITORS.md)。
 
 打印关闭、取消、重复触发或 API 抛错后移除临时表格，不修改原始值、勾选、CSRF、排序或分页。原生外观、全局关闭、popup、匿名及非列表页不增加入口；无 JS、print API 或打印样式不可用时隐藏入口，保留原页面和浏览器原有打印能力。只读导出样本保持入口隐藏、控件禁用，不提供此交互。
 

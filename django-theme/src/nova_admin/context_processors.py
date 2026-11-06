@@ -1,5 +1,6 @@
 """Presentation context only. Permissions and application lists belong to AdminSite."""
 from django.conf import settings
+from django.utils.translation import gettext as _
 from django.urls import NoReverseMatch, get_resolver, get_urlconf, reverse
 
 from .preferences import selected_mode, selected_palette
@@ -79,6 +80,17 @@ def theme(request):
         "nova_admin_palette": selected_palette(request),
         "nova_admin_navigation": bool(getattr(settings, "NOVA_ADMIN_NAVIGATION", False)),
         "nova_admin_print": bool(getattr(settings, "NOVA_ADMIN_PRINT", False)),
+        "nova_admin_markdown": bool(getattr(settings, "NOVA_ADMIN_MARKDOWN", False)),
+        "nova_admin_markdown_labels": {
+            "toolbar": _("Markdown formatting"),
+            "bold": _("Bold"),
+            "italic": _("Italic"),
+            "code": _("Inline code"),
+            "link": _("Link"),
+            "heading": _("Heading"),
+            "list": _("Bulleted list"),
+            "quote": _("Blockquote"),
+        },
         "nova_admin_preference_url": preference_url,
         "nova_admin_return_path": request.get_full_path(),
         "nova_admin_branding": branding() if enabled and mode != "native" else {},

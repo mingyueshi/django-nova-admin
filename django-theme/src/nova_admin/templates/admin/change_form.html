@@ -1,0 +1,17 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static nova_tags %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  {% if nova_admin_active and has_permission and not is_popup and nova_admin_markdown %}
+    <link rel="stylesheet" href="{% static 'nova_admin/markdown.css' %}" {% nova_nonce %}>
+  {% endif %}
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {% if nova_admin_active and has_permission and not is_popup and nova_admin_markdown %}
+    {{ nova_admin_markdown_labels|json_script:"nova-md-labels" }}
+    <script src="{% static 'nova_admin/markdown.js' %}" defer {% nova_nonce %}></script>
+  {% endif %}
+{% endblock %}

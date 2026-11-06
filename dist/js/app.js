@@ -11,7 +11,7 @@ import { createCollection } from './collection.js';
 import { pagination, submitPageJump } from './pagination.js';
 import { searchShortcut } from './presentation.js';
 import { initMedia, thumbnail, imageSpec, restoreMedia } from './media.js';
-import { initNews, renderNews, resetNews, syncNewsSelection } from './news.js';
+import { initNews, newsRouteLabel, renderNews, resetNews, syncNewsSelection } from './news.js';
 import { enhanceControls } from './controls.js';
 import {
   initNativeSamples,
@@ -298,7 +298,16 @@ function layout() {
     ' · ' +
     brandName(state.settings.brandName);
   $('#app').innerHTML =
-    `<div class="shell ${state.mobile ? 'mobile-open' : ''}"><button class="mobile-backdrop" data-action="close-nav" aria-label="关闭导航"></button><aside class="sidebar" id="nova-preview-sidebar"><a class="brand" href="#overview" aria-label="${esc(brandName(state.settings.brandName))} 管理首页"><span class="brand-mark" aria-hidden="true">${esc(brandInitial(state.settings.brandName))}</span><span class="brand-name">${esc(brandName(state.settings.brandName))}</span></a><button class="workspace-select" data-action="workspace"><span class="workspace-icon">${icon('layers')}</span><span class="workspace-copy"><strong>${esc(state.settings.workspace)}</strong></span>${icon('down')}</button><div class="section-label">工作空间</div><nav class="nav-list" aria-label="主导航">${renderNavigation(state, icon, esc, navOpened)}</nav><div class="sidebar-bottom"><div class="sidebar-integration"><span class="integration-mark">${icon('terminal')}</span><div><strong>Django Admin</strong><button data-action="docs">集成与原生恢复说明 ${icon('arrow')}</button></div></div><button class="nav-item" data-action="native">${icon('history')}<span>原生恢复对照</span></button><div class="user-profile"><span class="avatar peach">演</span><div><p>演示管理员</p><small>本地演示 · 无真实账户</small></div></div></div></aside><div class="main-area">${state.native ? '<div class="preview-banner">当前为原生外观模拟。真实 Django 恢复方式见集成说明。</div>' : ''}<header class="topbar"><div class="breadcrumb"><button type="button" class="icon-button mobile-menu" data-action="mobile" aria-controls="nova-preview-sidebar" aria-expanded="${state.mobile}" aria-label="${state.mobile ? '关闭导航' : '打开导航'}">${icon('menu')}</button>${renderBreadcrumb(state, icon, esc, state.view === 'catalog' ? catalogRouteLabel(state.route) : '')}</div><div class="topbar-actions"><span class="prototype">交互原型 · 模拟数据</span><button class="global-search" data-action="search" aria-label="搜索页面或用户（${searchShortcut().spoken}）" aria-keyshortcuts="${searchShortcut().keys}"><span>${icon('search')}</span><span>搜索页面或用户</span><kbd aria-hidden="true">${searchShortcut().label}</kbd>${window.innerWidth < 701 ? icon('search') : ''}</button><button class="icon-button" data-action="theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? '切换浅色主题' : '切换深色主题'}">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><button class="icon-button unread" data-action="notifications" aria-label="查看演示通知">${icon('bell')}</button><span class="topbar-divider"></span><span class="avatar peach">演</span></div></header><main id="main" class="content" tabindex="-1"><div id="view"></div><footer class="footer"><span class="footer-left"><i class="live-dot"></i>NOVA ADMIN <span>·</span> 设计预览 v1.8.0</span><span class="footer-right">所有数据为本地模拟 <span>·</span> <a href="./responsive.html" target="_blank" rel="noopener">多尺寸预览 ↗</a> <span>·</span> <a href="#" data-action="docs">Django 集成说明</a></span></footer></main></div></div>`;
+    `<div class="shell ${state.mobile ? 'mobile-open' : ''}"><button class="mobile-backdrop" data-action="close-nav" aria-label="关闭导航"></button><aside class="sidebar" id="nova-preview-sidebar"><a class="brand" href="#overview" aria-label="${esc(brandName(state.settings.brandName))} 管理首页"><span class="brand-mark" aria-hidden="true">${esc(brandInitial(state.settings.brandName))}</span><span class="brand-name">${esc(brandName(state.settings.brandName))}</span></a><button class="workspace-select" data-action="workspace"><span class="workspace-icon">${icon('layers')}</span><span class="workspace-copy"><strong>${esc(state.settings.workspace)}</strong></span>${icon('down')}</button><div class="section-label">工作空间</div><nav class="nav-list" aria-label="主导航">${renderNavigation(state, icon, esc, navOpened)}</nav><div class="sidebar-bottom"><div class="sidebar-integration"><span class="integration-mark">${icon('terminal')}</span><div><strong>Django Admin</strong><button data-action="docs">集成与原生恢复说明 ${icon('arrow')}</button></div></div><button class="nav-item" data-action="native">${icon('history')}<span>原生恢复对照</span></button><div class="user-profile"><span class="avatar peach">演</span><div><p>演示管理员</p><small>本地演示 · 无真实账户</small></div></div></div></aside><div class="main-area">${state.native ? '<div class="preview-banner">当前为原生外观模拟。真实 Django 恢复方式见集成说明。</div>' : ''}<header class="topbar"><div class="breadcrumb"><button type="button" class="icon-button mobile-menu" data-action="mobile" aria-controls="nova-preview-sidebar" aria-expanded="${state.mobile}" aria-label="${state.mobile ? '关闭导航' : '打开导航'}">${icon('menu')}</button>${renderBreadcrumb(
+      state,
+      icon,
+      esc,
+      state.view === 'catalog'
+        ? catalogRouteLabel(state.route)
+        : state.view === 'news'
+          ? newsRouteLabel(state.route)
+          : '',
+    )}</div><div class="topbar-actions"><span class="prototype">交互原型 · 模拟数据</span><button class="global-search" data-action="search" aria-label="搜索页面或用户（${searchShortcut().spoken}）" aria-keyshortcuts="${searchShortcut().keys}"><span>${icon('search')}</span><span>搜索页面或用户</span><kbd aria-hidden="true">${searchShortcut().label}</kbd>${window.innerWidth < 701 ? icon('search') : ''}</button><button class="icon-button" data-action="theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? '切换浅色主题' : '切换深色主题'}">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><button class="icon-button unread" data-action="notifications" aria-label="查看演示通知">${icon('bell')}</button><span class="topbar-divider"></span><span class="avatar peach">演</span></div></header><main id="main" class="content" tabindex="-1"><div id="view"></div><footer class="footer"><span class="footer-left"><i class="live-dot"></i>NOVA ADMIN <span>·</span> 设计预览 v1.8.0</span><span class="footer-right">所有数据为本地模拟 <span>·</span> <a href="./responsive.html" target="_blank" rel="noopener">多尺寸预览 ↗</a> <span>·</span> <a href="#" data-action="docs">Django 集成说明</a></span></footer></main></div></div>`;
   document.body.classList.toggle('native', state.native);
   document.body.classList.toggle('reduced-motion', !state.settings.animations);
   renderView();
@@ -358,7 +367,11 @@ function renderView() {
       state,
       icon,
       esc,
-      state.view === 'catalog' ? catalogRouteLabel(state.route) : '',
+      state.view === 'catalog'
+        ? catalogRouteLabel(state.route)
+        : state.view === 'news'
+          ? newsRouteLabel(state.route)
+          : '',
     );
 }
 function overview() {
@@ -458,7 +471,7 @@ function rolesView() {
     )
       .map(
         (r) =>
-          `<button class="role-card ${state.selectedRole === r ? 'active' : ''}" data-role="${r}" aria-pressed="${state.selectedRole === r}"><span class="role-icon">${icon(r === '管理员' ? 'shield' : r === '编辑' ? 'edit' : 'book')}</span><strong>${r}</strong><p>${roleDescription[r]}</p><small>${state.users.filter((u) => u.role === r).length} 位演示成员</small></button>`,
+          `<button class="role-card ${state.selectedRole === r ? 'active' : ''}" data-role="${r}" aria-pressed="${state.selectedRole === r}"><span class="role-head"><span class="role-icon">${icon(r === '管理员' ? 'shield' : r === '编辑' ? 'edit' : 'book')}</span><strong>${r}</strong></span><p>${roleDescription[r]}</p><small>${state.users.filter((u) => u.role === r).length} 位演示成员</small></button>`,
       )
       .join(
         '',
@@ -1241,7 +1254,7 @@ initNativeSamples({ icon, intro });
 initMedia({ icon, openOverlay, closeOverlay });
 initNews({
   ui: Object.freeze({ icon, esc, intro, toast, renderView, openOverlay, closeOverlay }),
-  routing: Object.freeze({ replaceListRoute: listRouting('news').replaceListRoute }),
+  routing: listRouting('news', true),
   saveRecords: (records) => save('nova-news', records),
   recordAudit: addAuditEvent,
 });

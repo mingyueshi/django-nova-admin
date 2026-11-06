@@ -168,7 +168,7 @@ node scripts/test-navigation.mjs
 
 ## 1.4.1 / 0.2.1 首批整改
 
-主题已修复自有文案国际化、可选URL反解、导航搜索/状态、Inline名称、搜索提示及数字/对比度细节。见 `django-theme/CHANGELOG.md`、`django-theme/REVIEW_RESPONSE.md` 与 `django-theme/INTEGRATION_GUIDE.md`。新版是云端基线，不包含或覆盖你本地的研究改动。
+主题已修复自有文案国际化、可选URL反解、导航搜索/状态、Inline名称、搜索提示及数字/对比度细节。见 `django-theme/CHANGELOG.md`、`django-theme/REVIEW_RESPONSE.md` 与 `django-theme/INTEGRATION_GUIDE.md`。编辑器接入保持主题零捆绑：富文本由宿主自带，纯文本字段可选开启 `NOVA_ADMIN_MARKDOWN` 本地 Markdown 工具栏，边界见 `django-theme/EDITORS.md`。新版是云端基线，不包含或覆盖你本地的研究改动。
 
 ## 1.4.2 / 0.2.2 交互恢复与手机导航
 
