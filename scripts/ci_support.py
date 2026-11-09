@@ -30,7 +30,7 @@ FRONTEND_SUMMARIES = {
     'presentation': 'TOTAL 52 presentation checks passed',
     'pagination': 'TOTAL 254 pagination checks passed (Node/jsdom)',
     'extensions': 'TOTAL 5 extensions guide tests passed',
-    'palettes': 'TOTAL 246 palette checks passed',
+    'palettes': 'TOTAL 248 palette checks passed',
     'icons': 'TOTAL 361 icon checks passed',
     'analytics': 'TOTAL 64 analytics checks passed',
     'chart-libraries': 'TOTAL 77 chart library checks passed',

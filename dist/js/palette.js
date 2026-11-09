@@ -27,6 +27,8 @@ export const palettes = Object.freeze([
   ['terminal', '终端绿'],
   ['parchment', '宣纸黄'],
 ]);
+// The gallery count and cards share one list; the default option is not a card.
+export const palettePresets = Object.freeze(palettes.filter(([key]) => key !== 'default'));
 const paletteScenes = Object.freeze({
   teal: '医疗服务 · 清爽专注',
   indigo: '企业办公 · 专业沉稳',
@@ -99,8 +101,7 @@ export function syncPaletteCards() {
 }
 export function renderPaletteCards(value) {
   const selected = normalizePalette(value);
-  return palettes
-    .filter(([key]) => key !== 'default')
+  return palettePresets
     .map(
       ([key, label], index) => `
         <button type="button" class="palette-card" data-palette-card="${key}" aria-pressed="${key === selected}" aria-label="应用${label}配色">

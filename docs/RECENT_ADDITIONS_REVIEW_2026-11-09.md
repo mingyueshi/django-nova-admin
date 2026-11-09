@@ -37,6 +37,14 @@ The first pushed revision `c0a5283` passed the build, Node 24.21.0 suite and the
 
 No matrix cell, dependency pin, integrity check or security test was removed. The follow-up workflow must still pass its own online run; the previous partial successes do not constitute a green final gate.
 
+## Settings palette-count follow-up
+
+Mac Chrome/Safari acceptance reported that the settings heading and palette-group accessible name still said 16 while the gallery rendered 25 non-default presets. The gallery renderer and both labels now share the same filtered `palettePresets` list. The default selection remains available separately and is excluded from the card count.
+
+Two DOM regressions compare the visible count and accessible group name with the rendered cards, and compare the count with the non-default select options. The visible-count regression failed against the old code (`16` versus `25`) before the fix. The complete `npm test` run passed 21 suites / 1,566 checks, including 248 palette checks, and all 107 CI/support script tests passed. The strict front-end summary contract and fixtures were updated together.
+
+The preceding CI wiring revision `fe861c24` passed all nine jobs in [run 42543467438](https://github.com/mingyueshi/django-nova-admin/actions/runs/42543467438). That result does not validate the subsequent palette-count patch; its exact pushed commit requires a separate run. This follow-up does not claim real IME, VoiceOver or host Django browser acceptance.
+
 ## Local acceptance on Mac mini
 
 Use a clean checkout of the final commit; preserve any uncommitted local work. Do not replace a running production environment or database.

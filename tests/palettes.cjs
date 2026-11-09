@@ -60,6 +60,16 @@ async function login(storage = {}, fail = false) {
     assert.ok(cards.every(card => card.type === 'button' && card.closest('form') === null));
     assert.equal(app.d.querySelector('[data-palette-current]').getAttribute('role'), 'status');
   });
+  check('gallery heading counts the rendered presets without the default option', () => {
+    const cards = app.d.querySelectorAll('[data-palette-card]');
+    assert.equal(app.d.querySelector('#palette-gallery-title span').textContent, `${cards.length} 套配色`);
+    assert.equal(cards.length, app.d.querySelectorAll('#palette-mode option:not([value="default"])').length);
+    assert.equal(app.d.querySelector('[data-palette-card="default"]'), null);
+  });
+  check('gallery accessible label counts the same rendered presets', () => {
+    const gallery = app.d.querySelector('.palette-grid');
+    assert.equal(gallery.getAttribute('aria-label'), `${gallery.querySelectorAll('[data-palette-card]').length}套配色色卡`);
+  });
   for (const key of keys.slice(1)) {
     const card = app.d.querySelector(`[data-palette-card="${key}"]`);
     card.focus(); card.querySelector('.palette-mini').click();

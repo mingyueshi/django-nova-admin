@@ -164,7 +164,7 @@ class FrontendContractTests(unittest.TestCase):
         names = support.frontend_contract()
         self.assertEqual(len(names), 21)
         self.assertEqual(names[-7:], ['icons', 'analytics', 'chart-libraries', 'analysis-lab', 'shared-css', 'navigation', 'flows'])
-        self.assertEqual(support.FRONTEND_TOTAL, 1564)
+        self.assertEqual(support.FRONTEND_TOTAL, 1566)
 
     def altered_package(self, mutation):
         with tempfile.TemporaryDirectory() as tmp:
@@ -209,7 +209,7 @@ TOTAL 48 passed, 0 failed (Node/jsdom static login demo)
 TOTAL 52 presentation checks passed
 TOTAL 254 pagination checks passed (Node/jsdom)
 TOTAL 5 extensions guide tests passed
-TOTAL 246 palette checks passed
+TOTAL 248 palette checks passed
 TOTAL 361 icon checks passed
 TOTAL 64 analytics checks passed
 TOTAL 77 chart library checks passed
@@ -245,17 +245,17 @@ TOTAL 75 flow demo checks passed
     def collect(self, root):
         return support.collect_node(root / 'logs', root / 'output', COMMIT, '24.21.0', '11.19.0')
 
-    def test_current_log_fixture_records_all_1564_checks_in_twenty_one_suites(self):
+    def test_current_log_fixture_records_all_1566_checks_in_twenty_one_suites(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.logs(root)
             result = self.collect(root)
-            self.assertEqual(result['frontend'], 1564)
+            self.assertEqual(result['frontend'], 1566)
             self.assertEqual(result['theme_js'], 309)
             self.assertEqual(len(result['frontend_suites']), 21)
             self.assertEqual(result['frontend_suites']['users-data'], 62)
-            self.assertEqual(result['frontend_suites']['palettes'], 246)
-            self.assertEqual(sum(result['frontend_suites'].values()), 1564)
+            self.assertEqual(result['frontend_suites']['palettes'], 248)
+            self.assertEqual(sum(result['frontend_suites'].values()), 1566)
             self.assertEqual(json.loads((root / 'output/report.json').read_text()), result)
 
     def test_every_frontend_suite_requires_exactly_one_success_summary(self):
@@ -293,11 +293,11 @@ TOTAL 75 flow demo checks passed
             self.assertFalse((root / 'output').exists())
 
     def test_same_total_cannot_hide_an_absent_suite(self):
-        # Omit the 246 palette checks but add those 246 to pagination: still 1482.
+        # Omit the 248 palette checks but add those 248 to pagination: still 1566.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             logs = self.logs(root)
-            content = self.FRONTEND_LOG.replace('TOTAL 246 palette checks passed\n', '').replace('TOTAL 254', 'TOTAL 500')
+            content = self.FRONTEND_LOG.replace('TOTAL 248 palette checks passed\n', '').replace('TOTAL 254', 'TOTAL 502')
             (logs / 'frontend.log').write_text(content)
             with self.assertRaises(ValueError): self.collect(root)
 
@@ -305,7 +305,7 @@ TOTAL 75 flow demo checks passed
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             logs = self.logs(root)
-            content = self.FRONTEND_LOG.replace('TOTAL 246 palette', 'TOTAL 245 palette').replace('TOTAL 361 icon', 'TOTAL 362 icon')
+            content = self.FRONTEND_LOG.replace('TOTAL 248 palette', 'TOTAL 247 palette').replace('TOTAL 361 icon', 'TOTAL 362 icon')
             (logs / 'frontend.log').write_text(content)
             with self.assertRaisesRegex(ValueError, 'Node test evidence: frontend'): self.collect(root)
 
@@ -320,11 +320,11 @@ TOTAL 75 flow demo checks passed
                 with self.assertRaisesRegex(ValueError, 'Node test evidence: frontend'): self.collect(root)
 
     def test_prior_palette_suite_counts_are_rejected(self):
-        for prior_count in (50, 66, 82, 165, 210):
+        for prior_count in (50, 66, 82, 165, 210, 246):
             with self.subTest(prior_count=prior_count), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 logs = self.logs(root)
-                (logs / 'frontend.log').write_text(self.FRONTEND_LOG.replace('TOTAL 246 palette', f'TOTAL {prior_count} palette'))
+                (logs / 'frontend.log').write_text(self.FRONTEND_LOG.replace('TOTAL 248 palette', f'TOTAL {prior_count} palette'))
                 with self.assertRaises(ValueError): self.collect(root)
 
     def test_every_theme_js_group_rejects_missing_duplicate_or_failed_summary(self):
@@ -438,7 +438,7 @@ TOTAL 75 flow demo checks passed
                 (logs / name).unlink()
             result = support.check_node_summaries(logs)
             self.assertEqual(result['kind'], 'node-suite-contract')
-            self.assertEqual(result['frontend'], 1564)
+            self.assertEqual(result['frontend'], 1566)
             self.assertIn('no install, runtime, step', result['boundary'])
             self.assertNotIn('commit', result)
             self.assertNotIn('node', result)
