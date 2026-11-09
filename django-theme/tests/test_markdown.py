@@ -51,3 +51,11 @@ class MarkdownAssetWiringTests(TestCase):
             self.assertNotContains(self.client.get(self.url), "nova_admin/markdown.js")
         with override_settings(NOVA_ADMIN_MARKDOWN=True):
             self.assertNotContains(self.client.get(self.url + "?_popup=1"), "nova_admin/markdown.js")
+
+    def test_non_boolean_settings_do_not_enable_assets(self):
+        for value in ("False", "true", 1, [True], None):
+            with self.subTest(value=value), override_settings(NOVA_ADMIN_MARKDOWN=value):
+                response = self.client.get(self.url)
+                self.assertNotContains(response, "nova_admin/markdown.js")
+                self.assertNotContains(response, "nova_admin/markdown.css")
+                self.assertNotContains(response, "nova-md-labels")

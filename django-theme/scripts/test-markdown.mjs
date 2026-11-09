@@ -97,4 +97,62 @@ check('inserted content fires a bubbling input event for host listeners', () => 
     d.querySelector('.nova-md-bold').click();
     assert.equal(fired, 1);
 });
+check('each marked textarea in one form row gets an independent toolbar', () => {
+    const {d, w} = setup({markup: '<div class="form-row"><textarea id="one" data-nova-markdown>one</textarea><textarea id="two" data-nova-markdown>two</textarea></div>'});
+    assert.equal(d.querySelectorAll('.nova-md-toolbar').length, 2);
+    d.querySelector('#two').previousElementSibling.querySelector('.nova-md-bold').click();
+    assert.equal(d.querySelector('#one').value, 'one');
+    assert.equal(d.querySelector('#two').value, '**text**two');
+    w.eval(source);
+    assert.equal(d.querySelectorAll('.nova-md-toolbar').length, 2);
+});
+check('fields locked after enhancement cannot be edited through existing buttons', () => {
+    for (const property of ['disabled', 'readOnly']) {
+        const {d} = setup({markup: marked()});
+        const area = d.querySelector('#body');
+        let events = 0;
+        area.addEventListener('input', () => events++);
+        area[property] = true;
+        d.querySelector('.nova-md-bold').click();
+        assert.equal(area.value, 'Line one');
+        assert.equal(events, 0);
+        area[property] = false;
+        d.querySelector('.nova-md-bold').click();
+        assert.equal(events, 1);
+    }
+});
+check('disabled fieldsets protect their textareas before and after enhancement', () => {
+    const {d} = setup({markup: '<fieldset disabled><textarea data-nova-markdown>locked</textarea></fieldset><fieldset id="later"><div>' + marked() + '</div></fieldset>'});
+    assert.equal(d.querySelector('fieldset').querySelector('.nova-md-toolbar'), null);
+    d.querySelector('#later').disabled = true;
+    d.querySelector('.nova-md-bold').click();
+    assert.equal(d.querySelector('#body').value, 'Line one');
+});
+check('empty inline templates stay pristine and added rows have working independent buttons', () => {
+    const {d, w} = setup({markup: '<div id="rows"><div class="empty-form" id="items-empty"><div class="form-row"><textarea data-nova-markdown id="id_items-__prefix__-body">row text</textarea></div></div></div>'});
+    const template = d.querySelector('.empty-form');
+    assert.equal(template.querySelector('.nova-md-toolbar'), null);
+    assert.equal(template.querySelector('textarea').dataset.novaMdReady, undefined);
+    for (let index = 0; index < 2; index++) {
+        const row = template.cloneNode(true);
+        row.classList.remove('empty-form');
+        row.id = 'items-' + index;
+        row.querySelector('textarea').id = 'id_items-' + index + '-body';
+        template.before(row);
+        row.dispatchEvent(new w.CustomEvent('formset:added', {bubbles: true, detail: {formsetName: 'items'}}));
+        row.dispatchEvent(new w.CustomEvent('formset:added', {bubbles: true}));
+        assert.equal(row.querySelectorAll('.nova-md-toolbar').length, 1);
+        row.querySelector('.nova-md-bold').click();
+        assert.equal(row.querySelector('textarea').value, '**text**row text');
+    }
+    assert.equal(template.querySelector('textarea').value, 'row text');
+    w.eval(source);
+    assert.equal(d.querySelectorAll('.nova-md-toolbar').length, 2);
+});
+check('DOMContentLoaded rescan remains idempotent after initial and inline scans', () => {
+    const {d, w} = setup({markup: marked()});
+    d.dispatchEvent(new w.Event('DOMContentLoaded'));
+    d.dispatchEvent(new w.Event('DOMContentLoaded'));
+    assert.equal(d.querySelectorAll('.nova-md-toolbar').length, 1);
+});
 console.log(`${count} markdown DOM scenarios passed.`);

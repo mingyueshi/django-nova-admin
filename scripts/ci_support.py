@@ -37,7 +37,7 @@ FRONTEND_SUMMARIES = {
     'analysis-lab': 'TOTAL 63 analysis lab checks passed',
     'shared-css': 'TOTAL 4 shared login CSS checks passed',
     'navigation': 'TOTAL 24 preview navigation scenarios passed',
-    'flows': 'TOTAL 51 flow demo checks passed',
+    'flows': 'TOTAL 75 flow demo checks passed',
 }
 FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_SUMMARIES.items()}
 FRONTEND_TOTAL = sum(FRONTEND_COUNTS.values())
@@ -46,7 +46,7 @@ ENHANCEMENT_TOTAL = 38
 COMMAND_PALETTE_TOTAL = 25
 PRINT_TOTAL = 26
 MESSAGE_TOTAL = 26
-MARKDOWN_TOTAL = 10
+MARKDOWN_TOTAL = 15
 APPEARANCE_TOTAL = 24
 CAPTCHA_TOTAL = 16
 CAPTCHA_DIALOG_TOTAL = 16

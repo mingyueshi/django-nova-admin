@@ -145,4 +145,110 @@ click('[data-flow="inline-save"][data-flow-id="1"]');
 check('Valid save records the audit and clears dirty state',()=>{assert.match(w.localStorage.getItem('nova-audit')||'',/行内编辑/);assert.equal(q('[data-flow="inline-save"][data-flow-id="1"]'),null)});
 
 check('New flows appear in the sidebar navigation with a dedicated group',()=>{assert.ok(all('.sidebar .nav-group').some(b=>b.textContent.includes('业务流程')));assert.ok(all('.sidebar .nav-item').some(a=>a.getAttribute('href')==='#import'));assert.ok(all('.sidebar .nav-item').some(a=>a.getAttribute('href')==='#calendar'));assert.ok(all('.sidebar .nav-item').some(a=>a.getAttribute('href')==='#bilingual'));assert.ok(all('.sidebar .nav-item').some(a=>a.getAttribute('href')==='#inline'))});
+
+// Regression coverage for interrupted, repeated and restored flow interactions.
+const editInline = (id, field, value, event='input') => {
+  const input=q(`[data-flow-inline="${field}"][data-flow-id="${id}"]`);
+  input.value=value;
+  input.dispatchEvent(new w.Event(event,{bubbles:true}));
+  return input;
+};
+const typing=editInline(1,'stock','67');typing.focus();typing.setSelectionRange(1,1);
+check('Inline input immediately updates dirty controls without losing focus or selection',()=>{
+  typing.dispatchEvent(new w.Event('input',{bubbles:true}));
+  assert.ok(q('[data-flow="inline-save"][data-flow-id="1"]'));
+  assert.match(q('.panel-head p').textContent,/1 行/);
+  assert.equal(d.activeElement,typing);assert.equal(typing.selectionStart,1);
+});
+const saveTarget=q('[data-flow="inline-save"][data-flow-id="1"]');
+check('Inline change keeps both form control and pending click target connected',()=>{
+  typing.dispatchEvent(new w.Event('change',{bubbles:true}));
+  assert.equal(typing.isConnected,true);assert.equal(saveTarget.isConnected,true);
+  assert.equal(q('[data-flow="inline-save"][data-flow-id="1"]'),saveTarget);
+});
+editInline(2,'note','未保存备注');click('[data-flow="inline-reset"]');
+check('Discard all restores last saved values for every dirty row',()=>{
+  assert.equal(q('[data-flow-inline="stock"][data-flow-id="1"]').value,'58');
+  assert.equal(q('[data-flow-inline="note"][data-flow-id="2"]').value,'');
+  assert.equal(q('.inline-row-dirty'),null);
+});
+editInline(1,'stock','-3');click('[data-flow="inline-save"][data-flow-id="1"]');
+check('Invalid inline save retains focus and exposes the associated error',()=>{
+  const input=q('[data-flow-inline="stock"][data-flow-id="1"]');
+  assert.equal(d.activeElement,input);assert.equal(input.getAttribute('aria-invalid'),'true');
+  assert.match(d.getElementById(input.getAttribute('aria-describedby')).textContent,/库存需为/);
+});
+editInline(1,'stock','9007199254740992');click('[data-flow="inline-save"][data-flow-id="1"]');
+check('Unsafe integer stock remains unsaved',()=>assert.ok(q('[data-flow="inline-save"][data-flow-id="1"]')));
+editInline(1,'stock','60');click('[data-flow="inline-save"][data-flow-id="1"]');
+editInline(1,'stock','70');click('[data-flow="inline-revert"][data-flow-id="1"]');
+check('Row revert restores the latest successful save',()=>assert.equal(q('[data-flow-inline="stock"][data-flow-id="1"]').value,'60'));
+editInline(1,'status','停售','change');click('[data-flow="inline-reset"]');
+check('Discard restores a changed select without altering the saved stock',()=>{
+  assert.equal(q('[data-flow-inline="status"][data-flow-id="1"]').value,'正常');
+  assert.equal(q('[data-flow-inline="stock"][data-flow-id="1"]').value,'60');
+});
+await route('columns');click('[data-flow="col-toggle"][data-flow-key="owner"]');
+check('Hidden columns retain an unchecked control and can be shown again',()=>{
+  const hidden=q('[data-flow="col-toggle"][data-flow-key="owner"]');assert.ok(hidden);assert.equal(hidden.checked,false);
+  hidden.click();assert.equal(all('.demo-columns-table th').length,6);
+});
+click('[data-flow="col-toggle"][data-flow-key="owner"]');click('[data-flow="col-up"][data-flow-key="status"]');
+await checkA('Reload restores the exact visible column subset and order',async()=>{
+  const saved=w.localStorage.getItem('nova-view-columns');
+  const restored=await createApp({url:'https://example.test/#columns',storage:{'nova-view-columns':saved}});
+  try {assert.equal(restored.d.querySelectorAll('.demo-columns-table th').length,5);
+    assert.equal(restored.d.querySelectorAll('.demo-columns-table th')[2].textContent,'状态');
+    assert.equal(restored.d.querySelector('[data-flow-key="owner"]').checked,false);
+  } finally {restored.close();}
+});
+for(const key of ['customer','status','amount','date'])click(`[data-flow="col-toggle"][data-flow-key="${key}"]`);
+check('The last visible column cannot be hidden',()=>{click('[data-flow="col-toggle"][data-flow-key="order"]');assert.equal(all('.demo-columns-table th').length,1);assert.equal(q('[data-flow-key="order"]').checked,true)});
+await checkA('Invalid stored column configurations recover to defaults',async()=>{
+  for(const value of ['null','[]','["owner","owner"]','["not-a-column"]','{']) {
+    const app=await createApp({url:'https://example.test/#columns',storage:{'nova-view-columns':value}});
+    try {assert.equal(app.d.querySelectorAll('.demo-columns-table th').length,6);} finally {app.close();}
+  }
+});
+await checkA('Denied column persistence is reported while retaining current-page controls',async()=>{
+  const app=await createApp({url:'https://example.test/#columns',beforeLoad(w){w.Storage.prototype.setItem=()=>{throw Error('quota')};}});
+  try {app.d.querySelector('[data-flow-key="owner"]').click();assert.equal(app.d.querySelectorAll('.demo-columns-table th').length,5);assert.match(app.d.querySelector('.toast').textContent,/未能保存/);} finally {app.close();}
+});
+await checkA('Denied preference removal still resets current-page columns and reports the limit',async()=>{
+  const app=await createApp({url:'https://example.test/#columns',storage:{'nova-view-columns':'["order","customer"]'},beforeLoad(w){w.Storage.prototype.removeItem=()=>{throw Error('denied')};}});
+  try {app.d.querySelector('[data-flow="col-reset"]').click();assert.equal(app.d.querySelectorAll('.demo-columns-table th').length,6);assert.match(app.d.querySelector('.toast').textContent,/未能清除/);assert.equal(app.w.localStorage.getItem('nova-view-columns'),'["order","customer"]');} finally {app.close();}
+});
+await route('tree');click('[data-flow="tree-collapse-all"]');click('[data-flow="tree-expand-all"]');
+check('Expand all after full collapse includes nested grandchildren',()=>{assert.equal(all('.tree-table tbody tr').length,13);assert.equal(q('[data-flow="tree-toggle"][data-flow-id="33"]').getAttribute('aria-expanded'),'true')});
+click('[data-flow="tree-collapse-all"]');click('[data-flow="tree-expand-all"]');
+check('Repeated full collapse and expand remain idempotent',()=>assert.equal(all('.tree-table tbody tr').length,13));
+await route('calendar');click('.cal-dots i');click('[data-flow="cal-next"]');
+check('Changing months selects a date in the displayed month',()=>{
+  const selected=q('.cal-cell[aria-pressed="true"]');assert.ok(selected);
+  assert.match(q('.cal-day-panel h2').textContent,new RegExp(selected.dataset.flowDate));
+});
+await route('tasks');click('[data-flow="task-start"][data-flow-id="2"]');fireTicks(1);
+const taskPercent=qAll=>qAll[1].getAttribute('aria-valuenow');
+const pausedPercent=taskPercent(all('.task-progress'));
+await route('calendar');
+check('Leaving tasks clears the running timer immediately',()=>assert.equal(timers.size,0));
+await route('tasks');fireTicks(3);
+check('Returning keeps the task paused until explicitly resumed',()=>{
+  assert.equal(taskPercent(all('.task-progress')),pausedPercent);
+  assert.match(all('.task-row')[1].textContent,/已暂停/);
+});
+click('[data-flow="task-start"][data-flow-id="2"]');fireTicks(1);
+check('Paused tasks resume progress with a single timer',()=>{assert.equal(timers.size,1);assert.ok(Number(taskPercent(all('.task-progress')))>Number(pausedPercent))});
+await route('settings');click('[data-action="reset-demo"]');click('[data-action="confirm-reset-demo"]');
+await route('columns');
+check('Global reset clears the in-memory column cache as well as storage',()=>{assert.equal(all('.demo-columns-table th').length,6);assert.equal(w.localStorage.getItem('nova-view-columns'),null)});
+await route('inline');
+check('Global reset restores inline values and validation baseline',()=>{assert.equal(q('[data-flow-inline="stock"][data-flow-id="1"]').value,'42');assert.equal(q('.inline-row-dirty'),null)});
+await route('tasks');
+check('Global reset restores queued tasks and clears every timer',()=>{assert.equal(timers.size,0);assert.ok(all('.task-progress').every(x=>x.getAttribute('aria-valuenow')==='0'));assert.ok(all('.task-row').every(x=>x.textContent.includes('排队中')))});
+await route('recycle');
+check('Global reset restores both sides of the recycle demo',()=>assert.deepEqual(all('.demo-recycle-layout .pill').map(x=>x.textContent),['3 项','4 项']));
+await route('approvals');
+check('Global reset restores initial approvals and notification unread count',()=>{assert.equal(all('.approval-table tbody tr').length,4);assert.match(all('.approval-table tbody tr')[1].textContent,/待审批/);assert.equal(q('.notice-badge').textContent,'3');assert.equal(q('.notice-badge').hidden,false)});
+
 console.log('TOTAL',n,'flow demo checks passed');close()})().catch(e=>{console.error(e);process.exitCode=1});

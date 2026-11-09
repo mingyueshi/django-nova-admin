@@ -80,7 +80,7 @@ def theme(request):
         "nova_admin_palette": selected_palette(request),
         "nova_admin_navigation": bool(getattr(settings, "NOVA_ADMIN_NAVIGATION", False)),
         "nova_admin_print": bool(getattr(settings, "NOVA_ADMIN_PRINT", False)),
-        "nova_admin_markdown": bool(getattr(settings, "NOVA_ADMIN_MARKDOWN", False)),
+        "nova_admin_markdown": getattr(settings, "NOVA_ADMIN_MARKDOWN", False) is True,
         "nova_admin_markdown_labels": {
             "toolbar": _("Markdown formatting"),
             "bold": _("Bold"),

@@ -597,7 +597,7 @@ function columnLoad() {
       saved.every((x) => COLUMN_FIELDS.some(([key]) => key === x)) &&
       new Set(saved).size === saved.length
     ) {
-      columnState = [...saved, ...COLUMN_DEFAULTS.order.filter((key) => !saved.includes(key))];
+      columnState = [...saved];
       return columnState;
     }
   } catch {}
@@ -607,7 +607,9 @@ function columnLoad() {
 function columnSave() {
   try {
     localStorage.setItem('nova-view-columns', JSON.stringify(columnState));
-  } catch {}
+  } catch {
+    ui.toast('列设置已在当前页应用，浏览器未能保存偏好', 'error');
+  }
 }
 export function renderColumns() {
   const order = columnLoad();
@@ -616,10 +618,10 @@ export function renderColumns() {
     (row) =>
       `<tr>${order.map((key) => (key === 'amount' ? `<td class="numeric">${row[key]}</td>` : `<td>${esc(row[key])}</td>`)).join('')}</tr>`,
   ).join('');
-  const controls = order
+  const controls = [...order, ...COLUMN_DEFAULTS.order.filter((key) => !order.includes(key))]
     .map(
       (key, index) =>
-        `<div class="column-rule"><label class="check-label"><input class="checkbox" type="checkbox" data-flow="col-toggle" data-flow-key="${key}" checked>${label(key)}</label><span class="tree-actions"><button class="btn subtle" data-flow="col-up" data-flow-key="${key}" ${index === 0 ? 'disabled' : ''} aria-label="左移${label(key)}">↑</button><button class="btn subtle" data-flow="col-down" data-flow-key="${key}" ${index === order.length - 1 ? 'disabled' : ''} aria-label="右移${label(key)}">↓</button></span></div>`,
+        `<div class="column-rule"><label class="check-label"><input class="checkbox" type="checkbox" data-flow="col-toggle" data-flow-key="${key}" ${order.includes(key) ? 'checked' : ''}>${label(key)}</label>${order.includes(key) ? `<span class="tree-actions"><button class="btn subtle" data-flow="col-up" data-flow-key="${key}" ${index === 0 ? 'disabled' : ''} aria-label="左移${label(key)}">↑</button><button class="btn subtle" data-flow="col-down" data-flow-key="${key}" ${index === order.length - 1 ? 'disabled' : ''} aria-label="右移${label(key)}">↓</button></span>` : ''}</div>`,
     )
     .join('');
   return (
@@ -696,8 +698,10 @@ function taskTick() {
     taskTimer = null;
     return;
   }
-  if (getView() !== 'tasks') return;
-  (window.__tickLog = window.__tickLog || []).push('tick from=' + tasks[0].percent);
+  if (getView() !== 'tasks') {
+    pauseFlowTasks();
+    return;
+  }
   let changed = false;
   for (const task of tasks) {
     if (task.status !== 'running') continue;
@@ -733,8 +737,14 @@ function taskRefresh() {
   const count = document.getElementById('task-running-count');
   if (count) count.textContent = `${tasks.filter((t) => t.status === 'running').length} 个运行中`;
 }
+export function pauseFlowTasks() {
+  clearInterval(taskTimer);
+  taskTimer = null;
+  tasks.forEach((task) => {
+    if (task.status === 'running') task.status = 'paused';
+  });
+}
 export function renderTasks() {
-  const running = tasks.some((t) => t.status === 'running');
   return (
     ui.intro('任务进度中心', '批量任务的真实进度语义：排队、运行、暂停、失败与重试。', '') +
     hint('模拟进度 · 离开本页自动暂停 · 不执行真实导出或通知') +
@@ -922,7 +932,8 @@ function inlineDirty(row) {
 }
 function inlineError(row) {
   const value = (row.stock || '').trim();
-  if (value === '' || !/^-?\d+$/.test(value) || Number(value) < 0) return '库存需为不小于 0 的整数';
+  if (value === '' || !/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)))
+    return '库存需为不小于 0 的整数';
   return '';
 }
 export function renderInline() {
@@ -938,10 +949,32 @@ export function renderInline() {
       .map((row) => {
         const dirty = inlineDirty(row);
         const error = inlineError(row);
-        return `<tr class="${dirty ? 'inline-row-dirty' : ''}"><td><strong>${esc(row.name)}</strong></td><td><input class="inline-input inline-stock" data-flow-inline="stock" data-flow-id="${row.id}" value="${esc(row.stock)}" inputmode="numeric" aria-label="${esc(row.name)}库存"><small class="error">${error}</small></td><td><select class="inline-input" data-flow-inline="status" data-flow-id="${row.id}" aria-label="${esc(row.name)}状态">${INLINE_STATUSES.map((s) => `<option ${s === row.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td><td><input class="inline-input" data-flow-inline="note" data-flow-id="${row.id}" value="${esc(row.note)}" maxlength="40" aria-label="${esc(row.name)}备注" placeholder="补充说明…"></td><td>${dirty ? `<span class="tree-actions"><button class="btn subtle" data-flow="inline-revert" data-flow-id="${row.id}">还原</button><button class="btn primary" data-flow="inline-save" data-flow-id="${row.id}">${icon('check')}保存</button></span>` : '<span class="muted inline-saved">已保存</span>'}</td></tr>`;
+        return `<tr class="${dirty ? 'inline-row-dirty' : ''}"><td><strong>${esc(row.name)}</strong></td><td><input class="inline-input inline-stock" data-flow-inline="stock" data-flow-id="${row.id}" value="${esc(row.stock)}" inputmode="numeric" aria-invalid="${!!error}" aria-describedby="inline-error-${row.id}" aria-label="${esc(row.name)}库存"><small class="error" id="inline-error-${row.id}">${error}</small></td><td><select class="inline-input" data-flow-inline="status" data-flow-id="${row.id}" aria-label="${esc(row.name)}状态">${INLINE_STATUSES.map((s) => `<option ${s === row.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td><td><input class="inline-input" data-flow-inline="note" data-flow-id="${row.id}" value="${esc(row.note)}" maxlength="40" aria-label="${esc(row.name)}备注" placeholder="补充说明…"></td><td>${inlineActions(row)}</td></tr>`;
       })
       .join('')}</tbody></table></div></section>`
   );
+}
+function inlineActions(row) {
+  return inlineDirty(row)
+    ? `<span class="tree-actions"><button class="btn subtle" data-flow="inline-revert" data-flow-id="${row.id}">还原</button><button class="btn primary" data-flow="inline-save" data-flow-id="${row.id}">${icon('check')}保存</button></span>`
+    : '<span class="muted inline-saved">已保存</span>';
+}
+function inlineSync(input, row) {
+  const tr = input.closest('tr');
+  const dirty = inlineDirty(row);
+  // Preserve input, focus, selection and existing buttons through input/change.
+  if (tr.classList.contains('inline-row-dirty') !== dirty) {
+    tr.classList.toggle('inline-row-dirty', dirty);
+    tr.lastElementChild.innerHTML = inlineActions(row);
+  }
+  const error = inlineError(row);
+  tr.querySelector('.error').textContent = error;
+  tr.querySelector('.inline-stock').setAttribute('aria-invalid', String(!!error));
+  const count = inlineRows.filter(inlineDirty).length;
+  const head = tr.closest('.panel').querySelector('.panel-head');
+  head.querySelector('p').textContent = count ? `${count} 行有未保存修改` : '没有未保存的修改';
+  head.querySelector('.pill').textContent = count ? '有未保存更改' : '全部已保存';
+  head.querySelector('.pill').classList.toggle('status-pending', !!count);
 }
 function inlineRevert(id) {
   const base = inlineBaseline.find((b) => b.id === id);
@@ -950,18 +983,19 @@ function inlineRevert(id) {
 }
 function inlineSave(id) {
   const row = inlineRows.find((r) => r.id === id);
-  if (!row) return;
+  if (!row) return false;
   const error = inlineError(row);
   if (error) {
     ui.toast(`${row.name}：${error}`);
     document.querySelector(`[data-flow-inline="stock"][data-flow-id="${id}"]`)?.focus();
-    return;
+    return false;
   }
   row.stock = row.stock.trim();
   const base = inlineBaseline.find((b) => b.id === id);
   if (base) Object.assign(base, { stock: row.stock, status: row.status, note: row.note });
   recordAudit('行内编辑', `${row.name} 库存 ${row.stock} · ${row.status}`);
   ui.toast(`${row.name} 已保存`);
+  return true;
 }
 
 /* ---------------------------------------------------------------- 事件分发 */
@@ -1003,7 +1037,7 @@ function flowsInput(event) {
   const row = inlineRows.find((r) => r.id === Number(input.dataset.flowId));
   if (!row) return false;
   row[input.dataset.flowInline] = input.value;
-  if (event.type === 'change') rerender();
+  inlineSync(input, row);
   return true;
 }
 
@@ -1093,9 +1127,14 @@ export function flowsClick(event) {
     return true;
   }
   if (action === 'tree-expand-all') {
-    treeFlatten(treeNodes).forEach(({ node }) => {
-      if (node.children.length) treeExpanded.add(node.id);
-    });
+    const expand = (nodes) =>
+      nodes.forEach((node) => {
+        if (node.children.length) {
+          treeExpanded.add(node.id);
+          expand(node.children);
+        }
+      });
+    expand(treeNodes);
     rerender();
     return true;
   }
@@ -1116,6 +1155,7 @@ export function flowsClick(event) {
   }
   if (action === 'cal-prev' || action === 'cal-next') {
     calendarCursor = calendarShift(calendarCursor, action === 'cal-prev' ? -1 : 1);
+    calendarSelected = null;
     rerender();
     return true;
   }
@@ -1156,11 +1196,12 @@ export function flowsClick(event) {
     return true;
   }
   if (action === 'col-reset') {
-    columnState = null;
+    columnState = [...COLUMN_DEFAULTS.order];
     try {
       localStorage.removeItem('nova-view-columns');
-    } catch {}
-    columnLoad();
+    } catch {
+      ui.toast('列设置已在当前页恢复默认，浏览器未能清除已保存偏好', 'error');
+    }
     rerender();
     return true;
   }
@@ -1252,8 +1293,7 @@ export function flowsClick(event) {
     return true;
   }
   if (action === 'inline-save') {
-    inlineSave(Number(el.dataset.flowId));
-    rerender();
+    if (inlineSave(Number(el.dataset.flowId))) rerender();
     return true;
   }
   if (action === 'inline-revert') {
@@ -1262,7 +1302,7 @@ export function flowsClick(event) {
     return true;
   }
   if (action === 'inline-reset') {
-    inlineBaseline = structuredClone(inlineRows);
+    inlineRows = structuredClone(inlineBaseline);
     rerender();
     ui.toast('已放弃全部未保存修改');
     return true;
@@ -1312,4 +1352,30 @@ export function flowsDragStart(event) {
     event.dataTransfer.effectAllowed = 'move';
   }
   return true;
+}
+
+const initialFlows = structuredClone({
+  importState,
+  kanbanCards,
+  approvals,
+  treeNodes,
+  recycleItems,
+  recycleLive,
+  tasks,
+  notices,
+  inlineRows,
+});
+export function resetFlows() {
+  pauseFlowTasks();
+  const initial = structuredClone(initialFlows);
+  Object.assign(importState, initial.importState);
+  ({ kanbanCards, approvals, treeNodes, recycleItems, recycleLive, tasks, notices, inlineRows } =
+    initial);
+  inlineBaseline = structuredClone(inlineRows);
+  treeExpanded = new Set([1, 2, 3, 33]);
+  kanbanDragId = null;
+  approvalFilter = noticeFilter = '全部';
+  calendarCursor = calendarSelected = columnState = null;
+  bilingualLanguage = 'zh';
+  syncNoticeBadge();
 }

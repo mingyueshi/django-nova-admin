@@ -73,7 +73,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':304,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':309,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -142,7 +142,7 @@ class FrontendContractTests(unittest.TestCase):
         names = support.frontend_contract()
         self.assertEqual(len(names), 21)
         self.assertEqual(names[-7:], ['icons', 'analytics', 'chart-libraries', 'analysis-lab', 'shared-css', 'navigation', 'flows'])
-        self.assertEqual(support.FRONTEND_TOTAL, 1540)
+        self.assertEqual(support.FRONTEND_TOTAL, 1564)
 
     def altered_package(self, mutation):
         with tempfile.TemporaryDirectory() as tmp:
@@ -194,12 +194,12 @@ TOTAL 77 chart library checks passed
 TOTAL 63 analysis lab checks passed
 TOTAL 4 shared login CSS checks passed
 TOTAL 24 preview navigation scenarios passed
-TOTAL 51 flow demo checks passed
+TOTAL 75 flow demo checks passed
 """
     GROUP_LOGS = {
         'frontend': FRONTEND_LOG,
         'navigation': '123 navigation DOM scenarios passed (3 Django script versions).\n25 command palette DOM scenarios passed.\n24 appearance DOM scenarios passed (3 Django script versions).\n',
-        'enhancements': 'TOTAL 38 changelist enhancement tests passed\n26 print DOM scenarios passed.\n26 message DOM scenarios passed.\n10 markdown DOM scenarios passed.\n',
+        'enhancements': 'TOTAL 38 changelist enhancement tests passed\n26 print DOM scenarios passed.\n26 message DOM scenarios passed.\n15 markdown DOM scenarios passed.\n',
         'captcha': 'TOTAL 16 CAPTCHA enhancement tests passed\n',
         'captcha-dialog': 'TAP version 13\n1..16\n# tests 16\n# pass 16\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n',
     }
@@ -223,17 +223,17 @@ TOTAL 51 flow demo checks passed
     def collect(self, root):
         return support.collect_node(root / 'logs', root / 'output', COMMIT, '24.21.0', '11.19.0')
 
-    def test_current_log_fixture_records_all_1540_checks_in_twenty_one_suites(self):
+    def test_current_log_fixture_records_all_1564_checks_in_twenty_one_suites(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.logs(root)
             result = self.collect(root)
-            self.assertEqual(result['frontend'], 1540)
-            self.assertEqual(result['theme_js'], 304)
+            self.assertEqual(result['frontend'], 1564)
+            self.assertEqual(result['theme_js'], 309)
             self.assertEqual(len(result['frontend_suites']), 21)
             self.assertEqual(result['frontend_suites']['users-data'], 62)
             self.assertEqual(result['frontend_suites']['palettes'], 246)
-            self.assertEqual(sum(result['frontend_suites'].values()), 1540)
+            self.assertEqual(sum(result['frontend_suites'].values()), 1564)
             self.assertEqual(json.loads((root / 'output/report.json').read_text()), result)
 
     def test_every_frontend_suite_requires_exactly_one_success_summary(self):
@@ -416,7 +416,7 @@ TOTAL 51 flow demo checks passed
                 (logs / name).unlink()
             result = support.check_node_summaries(logs)
             self.assertEqual(result['kind'], 'node-suite-contract')
-            self.assertEqual(result['frontend'], 1540)
+            self.assertEqual(result['frontend'], 1564)
             self.assertIn('no install, runtime, step', result['boundary'])
             self.assertNotIn('commit', result)
             self.assertNotIn('node', result)

@@ -32,7 +32,12 @@ Behavior and boundaries:
   inline script and no CSP exception is needed.
 - The toolbar is injected by `markdown.js` only for `body.nova-admin` pages
   that are not popups. Disabled and readonly textareas never change. Re-running
-  the script is idempotent.
+  the script is idempotent. Fields locked after enhancement remain unchanged by
+  toolbar actions, including fields in disabled fieldsets. Each marked textarea
+  gets its own toolbar, even when several share one form row.
+- Dynamically added Django inline rows are enhanced on `formset:added`. The
+  hidden `.empty-form` template stays untouched so cloned rows receive working
+  buttons only after Django assigns their field IDs.
 - Without JavaScript nothing renders: the form degrades to the plain textarea,
   and the saved value stays the same text either way. The host remains
   responsible for parsing and rendering Markdown server-side.
@@ -43,7 +48,8 @@ Behavior and boundaries:
   every palette and the light/dark appearance without extra mapping. No editor
   asset is rendered in `native` mode, popups, or when the theme is disabled.
 - A malformed setting fails loudly: `NOVA_ADMIN_MARKDOWN` must be a boolean,
-  reported as `nova_admin.W004` by the system check.
+  reported as `nova_admin.W004` by the system check. Only the boolean `True`
+  enables the toolbar; malformed values leave it off.
 
 ## Path 2 · rich text editors brought by the host
 

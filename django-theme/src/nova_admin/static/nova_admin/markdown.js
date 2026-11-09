@@ -23,6 +23,8 @@
         { key: 'quote', glyph: '❝', prefix: '> ', suffix: '', placeholder: '' },
     ];
     function apply(textarea, action) {
+        // Hosts may lock a field after the toolbar has already been attached.
+        if (textarea.matches(':disabled') || textarea.readOnly) return;
         const start = textarea.selectionStart ?? textarea.value.length;
         const end = textarea.selectionEnd ?? start;
         const chosen = textarea.value.slice(start, end) || action.placeholder;
@@ -34,8 +36,8 @@
         textarea.focus();
     }
     function enhance(textarea) {
-        if (textarea.dataset.novaMdReady || textarea.disabled || textarea.readOnly ||
-            textarea.closest('.nova-md-field')) return;
+        if (textarea.dataset.novaMdReady || textarea.matches(':disabled') || textarea.readOnly ||
+            textarea.closest('.empty-form')) return;
         textarea.dataset.novaMdReady = 'true';
         const bar = document.createElement('div');
         bar.className = 'nova-md-toolbar';
@@ -53,15 +55,19 @@
         textarea.closest('.form-row, .field, div')?.classList.add('nova-md-field');
         textarea.before(bar);
     }
-    function scan() {
-        document.querySelectorAll('textarea[data-nova-markdown]').forEach(enhance);
+    function scan(root = document) {
+        if (root.matches?.('textarea[data-nova-markdown]')) enhance(root);
+        root.querySelectorAll('textarea[data-nova-markdown]').forEach(enhance);
     }
+    // Keep Django's empty template pristine: cloned native listeners are lost.
+    // Enhance each real row only after Django has assigned its field IDs.
+    document.addEventListener('formset:added', event => scan(event.target));
     // Deferred scripts run after parsing with body present; an async script may
     // still be mid-document. scan() is idempotent, so both paths are safe.
     if (document.body) {
         scan();
     }
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', scan, { once: true });
+        document.addEventListener('DOMContentLoaded', () => scan(), { once: true });
     }
 })();

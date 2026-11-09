@@ -12,7 +12,14 @@ import { pagination, submitPageJump } from './pagination.js';
 import { searchShortcut } from './presentation.js';
 import { initMedia, thumbnail, imageSpec, restoreMedia } from './media.js';
 import { initNews, newsRouteLabel, renderNews, resetNews, syncNewsSelection } from './news.js';
-import { initFlows, renderFlow, renderNotificationCenter, unreadNoticeTotal } from './flows.js';
+import {
+  initFlows,
+  renderFlow,
+  renderNotificationCenter,
+  unreadNoticeTotal,
+  pauseFlowTasks,
+  resetFlows,
+} from './flows.js';
 import { enhanceControls } from './controls.js';
 import {
   initNativeSamples,
@@ -340,6 +347,7 @@ function intro(title, subtitle, actions, cls = '') {
   return `<div class="page-intro ${cls}"><div><h1>${title}</h1><p>${subtitle}</p></div><div class="page-actions">${actions}</div></div>`;
 }
 function renderView() {
+  if (state.view !== 'tasks') pauseFlowTasks();
   disposeChartLab();
   disposeAnalysisLab();
   const view = {
@@ -931,6 +939,7 @@ const actions = {
     }
     resetCatalog();
     resetNews();
+    resetFlows();
     mainFormDirty = false;
     resetAudit();
     unsavedRole = false;
