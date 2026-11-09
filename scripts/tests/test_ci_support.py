@@ -137,6 +137,28 @@ class MatrixTests(unittest.TestCase):
                         self.assertEqual(rows[0]['filters_sha256'],support.digest(root/'scripts'/rows[0]['filters_file']))
 
 
+class WorkflowWiringTests(unittest.TestCase):
+    def test_matrix_driver_preserves_the_exact_target_interpreter(self):
+        workflow = (ROOT / '.github/workflows/ci.yml').read_text()
+        job = workflow.split('\n  python:\n', 1)[1].split('\n  node:\n', 1)[0]
+        self.assertIn('- id: target-python', job)
+        self.assertIn('python-version: ${{ matrix.python }}', job)
+        self.assertIn("python-version: '3.12.15'", job)
+        self.assertIn('TARGET_PYTHON: ${{ steps.target-python.outputs.python-path }}', job)
+        self.assertIn('--python "$PYTHON_VERSION=$TARGET_PYTHON"', job)
+        self.assertNotIn('--python "$PYTHON_VERSION=$(command -v python)"', job)
+
+    def test_security_downloads_use_the_verified_sdist_only_wheel(self):
+        workflow = (ROOT / '.github/workflows/ci.yml').read_text()
+        job = workflow.split('\n  security:\n', 1)[1].split('\n  verify:\n', 1)[0]
+        download = next(line for line in job.splitlines() if 'pip download' in line)
+        self.assertIn('--find-links "$RUNNER_TEMP/test-support"', download)
+        self.assertIn('--only-binary=:all:', download)
+        self.assertIn('--no-deps', download)
+        self.assertIn('artifact-ids: ${{ needs.build.outputs.support }}', job)
+        self.assertIn('digest-mismatch: error', job)
+
+
 class FrontendContractTests(unittest.TestCase):
     def test_checkout_npm_test_sequence_matches_the_registered_contract(self):
         names = support.frontend_contract()

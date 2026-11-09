@@ -21,12 +21,21 @@ The workflow pages are synthetic previews, not production Django workflow endpoi
 - Theme JavaScript: 309 checks passed, including three installed Django sidebar versions, command palette, appearance, changelist, print, messages, Markdown (10 → 15), CAPTCHA and dialog tests.
 - Python 3.12.14 with Django 5.2.17, 6.0.8 and 6.1.1: each core source run discovered 444 tests, with 441 passing and three optional-integration skips. The new Markdown wiring test is included. No claim of the complete supported Python/wheel/CAPTCHA matrix is made.
 - Actual Django jQuery and inline scripts from all three versions were exercised with two newly added Markdown inline rows: independent field IDs, management counts and formatting actions passed without altering the empty template or original row.
-- CI/support script tests: 105 passed. Matrix runner tests: 25 passed.
+- CI/support script tests: 107 passed (including two workflow-wiring regressions). Matrix runner tests: 25 passed.
 - Palette role-contrast checks: 4,575 passed. CSS budget passed without CSS changes.
 - Export safety: 23 tests passed after correcting the stale inventory. Export checker verified 207 HTML pages, 4,522 inert controls, 660 inert forms, zero functional forms/scripts/live endpoints/external requests.
 - Independent review of implementation changes found no blocking regression. Local DOM tests are not a browser rendering or assistive-technology certification.
 
 The cloud browser could not reach the container's loopback preview (`ERR_CONNECTION_REFUSED`). Real browser acceptance is therefore outstanding rather than reported as passed. The CI matrix uses different pinned runtime patch versions and must be checked on the eventual pushed commit separately.
+
+## Follow-up CI repair
+
+The first pushed revision `c0a5283` passed the build, Node 24.21.0 suite and the Python 3.11.17/5.2.17, 3.12.15/6.0.8 and 3.14.8/6.1.1 cells in [run 42542593569](https://github.com/mingyueshi/django-nova-admin/actions/runs/42542593569). Its overall gate failed on two pre-existing workflow wiring problems exposed once export validation passed:
+
+- Python 3.10 was used to run the artifact/matrix driver, which explicitly requires Python 3.11+ (`tomllib`). The workflow now captures the exact target interpreter separately, uses Python 3.12.15 for orchestration, and still runs the unchanged Python 3.10 test cell against its exact interpreter.
+- Security preparation requested a binary-only download of the sdist-only `django-ranged-response`. Its checksum-built wheel was already available in the verified test-support artifact; the download now searches that directory as the test runner already does.
+
+No matrix cell, dependency pin, integrity check or security test was removed. The follow-up workflow must still pass its own online run; the previous partial successes do not constitute a green final gate.
 
 ## Local acceptance on Mac mini
 

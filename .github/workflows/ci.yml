@@ -126,9 +126,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - id: target-python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python }}
+      # The stdlib-only matrix/artifact driver requires Python 3.11+.
+      # Keep the exact target interpreter separate, including Python 3.10.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12.15'
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           artifact-ids: ${{ needs.build.outputs.artifact }}
@@ -142,6 +148,7 @@ jobs:
       - name: Verify artifact and run isolated source/wheel profiles
         env:
           PYTHON_VERSION: ${{ matrix.python }}
+          TARGET_PYTHON: ${{ steps.target-python.outputs.python-path }}
           DJANGO_VERSION: ${{ matrix.django }}
           WITH_CAPTCHA: ${{ matrix.captcha }}
         run: |
@@ -149,7 +156,7 @@ jobs:
           wheel=("$RUNNER_TEMP/artifact/"*.whl)
           args=()
           if [[ "$WITH_CAPTCHA" == 'true' ]]; then args+=(--with-captcha); fi
-          python django-theme/scripts/test-matrix.py --cell "$PYTHON_VERSION/$DJANGO_VERSION" --python "$PYTHON_VERSION=$(command -v python)" --root "$RUNNER_TEMP/matrix" --wheel "${wheel[0]}" --find-links "$RUNNER_TEMP/test-support" "${args[@]}"
+          python django-theme/scripts/test-matrix.py --cell "$PYTHON_VERSION/$DJANGO_VERSION" --python "$PYTHON_VERSION=$TARGET_PYTHON" --root "$RUNNER_TEMP/matrix" --wheel "${wheel[0]}" --find-links "$RUNNER_TEMP/test-support" "${args[@]}"
           "$RUNNER_TEMP/matrix/python-$PYTHON_VERSION/django-$DJANGO_VERSION/core/source/venv/bin/python" scripts/template_drift.py --output "$RUNNER_TEMP/template-drift"
           python scripts/ci_support.py collect-python --run-root "$RUNNER_TEMP/matrix" --output "$RUNNER_TEMP/python-report" --commit "$GITHUB_SHA" --cell "$PYTHON_VERSION/$DJANGO_VERSION" --captcha "$WITH_CAPTCHA"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -259,7 +266,7 @@ jobs:
           mapfile -t pins < <(python scripts/ci_support.py dependency-pins --scope "$SCOPE" --profile core --profile captcha --profile security)
           # Different Django versions are independent wheel downloads.
           for pin in "${pins[@]}"; do
-            python -m pip download --no-deps --only-binary=:all: --index-url https://pypi.org/simple --dest "$RUNNER_TEMP/security-wheels" "$pin"
+            python -m pip download --no-deps --only-binary=:all: --index-url https://pypi.org/simple --find-links "$RUNNER_TEMP/test-support" --dest "$RUNNER_TEMP/security-wheels" "$pin"
           done
           mapfile -t versions < <(python -c 'import json,os; v=list(dict.fromkeys(c["django"] for c in json.load(open("django-theme/scripts/test-matrix.json"))["cells"])); print("\n".join(v if os.environ["SCOPE"] == "full" else v[-1:]))')
           wheel=("$RUNNER_TEMP/artifact/"*.whl)
