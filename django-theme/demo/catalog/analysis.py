@@ -104,8 +104,8 @@ def product_analysis(request, owner):
             raise Http404
     allowed_filters = {"chart_window", "chart_days", "chart_start", "chart_end", "chart_day", "chart_status",
                        "chart_category", "chart_tag", "chart_tag_mode", "chart_tag_min", "chart_tag_max",
-                       "chart_tag_counts", "chart_tag_exclude", "chart_tag_exclude_mode", "chart_tag_exclude_min",
-                       "chart_tag_exclude_max", "chart_tag_exclude_counts", "page"}
+                       "chart_tag_counts", "chart_tag_ranges", "chart_tag_exclude", "chart_tag_exclude_mode", "chart_tag_exclude_min",
+                       "chart_tag_exclude_max", "chart_tag_exclude_counts", "chart_tag_exclude_ranges", "page"}
     if set(request.GET) - allowed_filters:
         raise Http404
     category = ranking_selection(request.GET, "chart_category", UNCATEGORIZED, DIRECT_PREFIX)

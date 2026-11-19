@@ -35,6 +35,17 @@ class TagRule(NamedTuple):
     minimum: int | None = None
     maximum: int | None = None
     counts: tuple[int, ...] = ()
+    ranges: tuple[tuple[int, int], ...] = ()
+
+    @property
+    def ranges_text(self):
+        return ", ".join(f"{low}-{high}" for low, high in self.ranges)
+
+    @property
+    def match_counts(self):
+        if self.ranges:
+            return tuple(n for low, high in self.ranges for n in range(low, high + 1))
+        return self.counts
 
     @property
     def match_maximum(self):
@@ -46,6 +57,8 @@ class TagRule(NamedTuple):
 
     @property
     def count_label(self):
+        if self.ranges:
+            return pgettext("Nova demo", "Match any of these ranges (%(ranges)s)") % {"ranges": self.ranges_text}
         if self.counts:
             if self.negated:
                 label = pgettext("Nova demo", "Match none of these counts (%(counts)s)")
@@ -79,6 +92,8 @@ class TagRule(NamedTuple):
             query[parameter + "_max"] = str(self.maximum)
         if self.counts:
             query.setlist(parameter + "_counts", [str(n) for n in self.counts])
+        if self.ranges:
+            query[parameter + "_ranges"] = self.ranges_text
 
 
 def _count_bound(value, lowest, key_count):
@@ -91,24 +106,52 @@ def _count_bound(value, lowest, key_count):
     return bound
 
 
+def _count_ranges(value, key_count):
+    intervals = []
+    for part in re.split("[,，、]", value):
+        pair = re.fullmatch(r"([0-9]+)\s*(?:-|到)\s*([0-9]+)", part.strip())
+        if not pair:
+            raise Http404
+        low = _count_bound(pair[1], 0, key_count)
+        high = _count_bound(pair[2], low, key_count)
+        intervals.append((low, high))
+
+    merged = []
+    for low, high in sorted(intervals):
+        if merged and low <= merged[-1][1]:
+            start, end = merged[-1]
+            merged[-1] = (start, max(end, high))
+        else:
+            merged.append((low, high))
+    return tuple(merged)
+
+
 def _tag_rule(query, parameter, *, exporting):
     keys = list(dict.fromkeys(ranking_key(value, UNTAGGED) for value in query.getlist(parameter)))
     modes = query.getlist(parameter + "_mode")
     lower = query.getlist(parameter + "_min")
     upper = query.getlist(parameter + "_max")
     counts = query.getlist(parameter + "_counts")
+    ranges = query.getlist(parameter + "_ranges")
     valid_modes = ([], ["any"], ["all"], ["at_least"], ["at_most"], ["exact"], ["not_exact"],
-                   ["range"], ["not_range"], ["one_of"], ["not_one_of"])
-    if modes not in valid_modes or len(lower) > 1 or len(upper) > 1:
+                   ["range"], ["not_range"], ["one_of"], ["not_one_of"], ["any_range"])
+    if modes not in valid_modes or len(lower) > 1 or len(upper) > 1 or len(ranges) > 1:
         raise Http404
     mode = modes[0] if modes else ""
     is_range = mode in ("range", "not_range")
     uses_lower = is_range or mode in ("at_least", "exact", "not_exact")
     uses_upper = is_range or mode == "at_most"
     uses_counts = mode in ("one_of", "not_one_of")
+    uses_ranges = mode == "any_range"
     # Plain HTML can send inactive bounds. Export URLs must only carry active ones.
-    if (exporting or not mode) and ((upper and not uses_upper) or (lower and not uses_lower) or (counts and not uses_counts)):
-        raise Http404
+    if exporting or not mode:
+        if ((upper and not uses_upper) or (lower and not uses_lower) or
+                (counts and not uses_counts) or (ranges and not uses_ranges)):
+            raise Http404
+    if uses_ranges:
+        if not keys or not ranges:
+            raise Http404
+        return TagRule(keys, mode, ranges=_count_ranges(ranges[0], len(keys)))
     if uses_counts:
         if not keys or not counts:
             raise Http404
@@ -133,8 +176,9 @@ def _tag_rule(query, parameter, *, exporting):
 
 
 def tag_selection(query, *, exporting):
-    rule_params = ("chart_tag_mode", "chart_tag_min", "chart_tag_max", "chart_tag_counts", "chart_tag_exclude",
-                   "chart_tag_exclude_mode", "chart_tag_exclude_min", "chart_tag_exclude_max", "chart_tag_exclude_counts")
+    rule_params = ("chart_tag_mode", "chart_tag_min", "chart_tag_max", "chart_tag_counts", "chart_tag_ranges", "chart_tag_exclude",
+                   "chart_tag_exclude_mode", "chart_tag_exclude_min", "chart_tag_exclude_max", "chart_tag_exclude_counts",
+                   "chart_tag_exclude_ranges")
     if not any(name in query for name in rule_params):
         key = ranking_selection(query, "chart_tag", UNTAGGED)
         return TagRule([key] if key else []), TagRule([])
@@ -161,13 +205,14 @@ def _positive_tag_match(memberships, keys, count_filter, *, matches_one):
 
 def _tag_match(memberships, rule):
     maximum = rule.match_maximum
-    if rule.counts:
-        allowed = Q(matched__in=rule.counts)
-        if 0 in rule.counts:
+    counts = rule.match_counts
+    if counts:
+        allowed = Q(matched__in=counts)
+        if 0 in counts:
             # Rows with zero hits have no group. Remove only the disallowed positive counts.
-            condition = ~_positive_tag_match(memberships, rule.keys, ~allowed, matches_one=1 not in rule.counts)
+            condition = ~_positive_tag_match(memberships, rule.keys, ~allowed, matches_one=1 not in counts)
         else:
-            condition = _positive_tag_match(memberships, rule.keys, allowed, matches_one=1 in rule.counts)
+            condition = _positive_tag_match(memberships, rule.keys, allowed, matches_one=1 in counts)
     elif rule.mode == "at_most" or rule.minimum == 0:
         # Products with no matching assignments have no group in the through table.
         # Within the visible queryset, 0..M is the complement of at least M+1.

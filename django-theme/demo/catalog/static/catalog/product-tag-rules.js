@@ -4,13 +4,24 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
   const mode = fields.namedItem(minimum.dataset.minimumFor + "_mode");
   const maximum = fields.namedItem(minimum.dataset.minimumFor + "_max");
   const counts = fields.namedItem(minimum.dataset.minimumFor + "_counts");
+  const ranges = fields.namedItem(minimum.dataset.minimumFor + "_ranges");
+
+  function validateRanges() {
+    const tagCount = tags.selectedOptions.length;
+    const valid = ranges.disabled || !ranges.value || ranges.value.split(/[,，、]/).every((part) => {
+      const pair = /^(0|[1-9][0-9]*)\s*(?:-|到)\s*(0|[1-9][0-9]*)$/.exec(part.trim());
+      return pair && Number(pair[1]) <= Number(pair[2]) && Number(pair[2]) <= tagCount;
+    });
+    ranges.setCustomValidity(valid ? "" : ranges.dataset.rangeError);
+  }
 
   function update() {
     const range = mode.value === "range" || mode.value === "not_range";
     const usesMinimum = range || ["exact", "not_exact", "at_least"].includes(mode.value);
     const usesMaximum = range || mode.value === "at_most";
     const usesCounts = mode.value === "one_of" || mode.value === "not_one_of";
-    tags.required = usesMinimum || usesMaximum || usesCounts;
+    const usesRanges = mode.value === "any_range";
+    tags.required = usesMinimum || usesMaximum || usesCounts || usesRanges;
     minimum.required = usesMinimum;
     minimum.disabled = !usesMinimum;
     minimum.closest("label").hidden = !usesMinimum;
@@ -32,11 +43,16 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
       if (option.selected && tooLarge) outOfRange = true;
     }
     counts.setCustomValidity(usesCounts && outOfRange ? counts.dataset.rangeError : "");
+    ranges.required = usesRanges;
+    ranges.disabled = !usesRanges;
+    ranges.closest("label").hidden = !usesRanges;
+    validateRanges();
   }
 
   mode.addEventListener("change", update);
   tags.addEventListener("change", update);
   counts.addEventListener("change", update);
+  ranges.addEventListener("input", validateRanges);
   minimum.addEventListener("input", update);
   window.addEventListener("pageshow", update);
   update();
