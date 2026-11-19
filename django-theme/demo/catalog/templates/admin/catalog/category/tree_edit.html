@@ -1,0 +1,38 @@
+{% extends "admin/catalog/category/tree.html" %}
+{% load admin_urls %}
+
+{% block tree_breadcrumb %}
+  &rsaquo; <a href="{% url opts|admin_urlname:'tree' %}">商品分类树</a>
+  &rsaquo; {{ title }}
+{% endblock %}
+{% block content %}
+  {% if error %}<p class="errornote" role="alert">{{ error }}</p>{% endif %}
+  <section class="category-tree-controls" aria-label="调整分类位置">
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="version" value="{{ version }}">
+      <label for="category-parent">父分类</label>
+      <select id="category-parent" name="parent">
+        <option value=""{% if not node.parent_id %} selected{% endif %}>顶级分类</option>
+        {% for parent in parents %}
+          <option value="{{ parent.pk|stringformat:'d' }}"{% if node.parent_id == parent.pk %} selected{% endif %}>{{ parent.label }}</option>
+        {% endfor %}
+      </select>
+      <button class="button" name="action" value="parent" type="submit">保存父分类</button>
+    </form>
+    {% if neighbors %}
+      <h2>同级顺序</h2>
+      {% for direction,peer in neighbors.items %}
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="version" value="{{ version }}">
+          <input type="hidden" name="neighbor" value="{{ peer.pk|stringformat:'d' }}">
+          <button class="button" name="action" value="{{ direction }}" type="submit">
+            {% if direction == "up" %}上移到「{{ peer.name }}」之前{% else %}下移到「{{ peer.name }}」之后{% endif %}
+          </button>
+        </form>
+      {% endfor %}
+    {% endif %}
+    <p><a href="{% url opts|admin_urlname:'tree' %}#category-{{ node.pk|stringformat:'d' }}">返回分类树</a></p>
+  </section>
+{% endblock %}

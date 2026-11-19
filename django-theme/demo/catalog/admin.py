@@ -8,6 +8,7 @@ from django.utils.html import format_html
 from django.utils import timezone
 from nova_admin.columns import ColumnPreferencesMixin
 from .models import Category, MemberProfile, NewsItem, Product, ProductPublicationRequest, ProductVariant, Tag
+from .category_tree import can_view_tree, category_tree, edit_category_tree
 from .charts import ProductActivityDayFilter
 from .media import DemoMediaAdminMixin
 from .pagination import BoundedPaginationAdminMixin
@@ -21,6 +22,36 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = ["name", "slug"]
     search_fields = ["name", "slug"]
     prepopulated_fields = {"slug": ["name"]}
+    change_list_template = "admin/catalog/category/change_list.html"
+    fields = ("name", "slug")
+
+    def get_urls(self):
+        def wrap(view):
+            wrapped = self.admin_site.admin_view(view)
+            wrapped.model_admin = self
+            return wrapped
+
+        return [
+            path("tree/", wrap(self.tree_view), name="catalog_category_tree"),
+            path("tree/<int:pk>/", wrap(self.edit_tree_view), name="catalog_category_tree_edit"),
+            *super().get_urls(),
+        ]
+
+    def tree_view(self, request):
+        return category_tree(request, self)
+
+    def edit_tree_view(self, request, pk):
+        return edit_category_tree(request, self, pk)
+
+    def changelist_view(self, request, extra_context=None):
+        return super().changelist_view(request, {**(extra_context or {}), "show_category_tree": can_view_tree(request, self)})
+
+    def save_model(self, request, obj, form, change):
+        if change:
+            # A concurrent tree move must survive an ordinary rename.
+            obj.save(update_fields=self.fields)
+        else:
+            super().save_model(request, obj, form, change)
 
 
 @admin.register(Tag)

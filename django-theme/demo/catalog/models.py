@@ -1,7 +1,9 @@
 from decimal import Decimal
+from uuid import uuid4
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
-from django.db import models
+from django.db import models, router, transaction
 from .media import MEDIA_CHOICES
 
 
@@ -9,13 +11,63 @@ class Category(models.Model):
     name = models.CharField("分类名称", max_length=80)
     slug = models.SlugField("分类标识", max_length=80, unique=True)
 
+    parent = models.ForeignKey(
+        "self", verbose_name="父分类", related_name="children", on_delete=models.PROTECT,
+        null=True, blank=True, editable=False,
+    )
+    # Tree moves exchange these slots. New categories use their own unique PK as a slot.
+    position = models.PositiveBigIntegerField("同级顺序", null=True, editable=False)
+
     class Meta:
+        constraints = [models.CheckConstraint(condition=~models.Q(parent=models.F("pk")), name="catalog_category_not_self")]
         verbose_name = "分类"
         verbose_name_plural = "分类"
         ordering = ["name", "pk"]
 
+    def clean(self):
+        super().clean()
+        self.validate_parent(self._state.db or router.db_for_read(Category, instance=self))
+
+    def validate_parent(self, db):
+        if self.parent_id is None:
+            return
+        seen = {self.pk}
+        parents = dict(Category.objects.using(db).order_by().values_list("pk", "parent_id"))
+        ancestor = self.parent_id
+        while ancestor is not None:
+            if ancestor in seen:
+                raise ValidationError("分类不能位于自身或其下级分类之下。")
+            seen.add(ancestor)
+            ancestor = parents.get(ancestor)
+
+    def save(self, *args, **kwargs):
+        fields = kwargs.get("update_fields")
+        if ((self._state.adding and self.parent_id is None and self.position is None)
+                or (fields is not None and {"parent", "parent_id", "position"}.isdisjoint(fields))):
+            return super().save(*args, **kwargs)
+        db = kwargs.get("using") or router.db_for_write(Category, instance=self)
+        with transaction.atomic(using=db):
+            # Normal ORM saves of structural fields share the admin's tree lock.
+            states = CategoryTreeState.objects.using(db)
+            if not states.filter(pk=1).update(version=uuid4()):
+                states.get_or_create(pk=1)
+            self.validate_parent(db)
+            return super().save(*args, **kwargs)
+
+    @property
+    def tree_position(self):
+        return self.pk if self.position is None else self.position
+
     def __str__(self):
         return self.name
+
+
+class CategoryTreeState(models.Model):
+    # A shared revision serializes structural edits, including moves between branches.
+    version = models.UUIDField(default=uuid4, editable=False)
+
+    class Meta:
+        default_permissions = ()
 
 
 class Tag(models.Model):

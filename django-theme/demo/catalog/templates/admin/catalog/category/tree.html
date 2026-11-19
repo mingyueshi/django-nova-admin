@@ -1,0 +1,36 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls i18n static project_admin %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'catalog/category-tree.css' %}" {% project_nonce %}>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">分类列表</a>
+    {% block tree_breadcrumb %}&rsaquo; {{ title }}{% endblock %}
+  </div>
+{% endblock %}
+
+{% block content %}
+  <ul class="category-tree" aria-label="商品分类层级">
+    {% for row in rows %}
+      {% if row %}
+        <li id="category-{{ row.category.pk|stringformat:'d' }}">
+          {% if row.branch %}
+            <details{% if row.root %} open{% endif %}>
+              <summary>{{ row.category.name }}</summary>
+          {% else %}<span>{{ row.category.name }}</span>{% endif %}
+          {% if row.editable %}
+            <a class="category-tree-edit" href="{% url opts|admin_urlname:'tree_edit' row.category.pk %}" aria-label="调整「{{ row.category.name }}」的位置">调整位置</a>
+          {% endif %}
+          {% if row.branch %}<ul>{% else %}</li>{% endif %}
+      {% else %}</ul></details></li>{% endif %}
+    {% empty %}
+      <li>暂无可查看的分类。</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

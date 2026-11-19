@@ -1,0 +1,6 @@
+{% extends "admin/change_list.html" %}
+{% load admin_urls %}
+{% block object-tools-items %}
+  {{ block.super }}
+  {% if show_category_tree and not is_popup %}<li><a href="{% url opts|admin_urlname:'tree' %}">商品分类树</a></li>{% endif %}
+{% endblock %}
