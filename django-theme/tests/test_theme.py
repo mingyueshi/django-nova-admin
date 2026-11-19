@@ -10,6 +10,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from catalog.admin import ProductAdmin
+from catalog.charts import ProductActivityDayFilter
 from catalog.models import Product
 from nova_admin.preferences import SESSION_KEY
 
@@ -40,7 +41,7 @@ class ThemeIntegrationTests(TestCase):
     def test_same_admin_registration_is_used(self):
         self.assertIsInstance(admin.site.get_model_admin(Product), ProductAdmin)
         self.assertEqual(admin.site.get_model_admin(Product).search_fields, ["name", "sku"])
-        self.assertEqual(admin.site.get_model_admin(Product).list_filter, ["status"])
+        self.assertEqual(admin.site.get_model_admin(Product).list_filter, [ProductActivityDayFilter, "status"])
 
     @override_settings(NOVA_ADMIN_DEFAULT_MODE="dark")
     def test_dark_default_and_original_assets_remain(self):

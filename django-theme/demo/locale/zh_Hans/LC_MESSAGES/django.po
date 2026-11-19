@@ -128,3 +128,38 @@ msgstr "近 30 天"
 msgctxt "Nova demo"
 msgid "Choose a range of 7 or 30 days."
 msgstr "请选择近 7 天或近 30 天。"
+
+msgctxt "Nova demo"
+msgid "Last update date"
+msgstr "最近更新日期"
+
+msgctxt "Nova demo"
+msgid "Daily values and product lists"
+msgstr "每日数据与商品明细"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "View products for %(day)s"
+msgstr "查看 %(day)s 的商品"
+
+msgctxt "Nova demo"
+msgid "Products for the selected date"
+msgstr "所选日期的商品"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Products last updated on %(day)s"
+msgstr "%(day)s 最近更新的商品"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Chart timezone: %(zone)s. Data cutoff: %(cutoff)s."
+msgstr "图表时区 %(zone)s，数据截至 %(cutoff)s。"
+
+msgctxt "Nova demo"
+msgid "No visible products match this date and the current filters."
+msgstr "当天没有符合当前筛选条件的可见商品。"
+
+msgctxt "Nova demo"
+msgid "Back to chart"
+msgstr "返回图表"

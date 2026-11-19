@@ -12,9 +12,9 @@
     <div class="nova-chart-plot" hidden aria-hidden="true"></div>
     <p class="nova-chart-load-error" hidden>{% translate 'The chart could not be drawn. The daily values are available below.' context 'Nova Admin' %}</p>
     <details open>
-      <summary>{% translate 'Daily values' context 'Nova Admin' %}</summary>
+      <summary>{% block chart_table_summary %}{% translate 'Daily values' context 'Nova Admin' %}{% endblock %}</summary>
       <table><thead><tr><th scope="col">{% translate 'Date' %}</th><th scope="col">{% translate 'Value' context 'Nova Admin' %}</th></tr></thead>
-        <tbody>{% for point in chart.snapshot.points %}<tr><th scope="row">{{ point.date }}</th><td>{% if point.value == None %}{% translate 'No data' context 'Nova Admin' %}{% else %}{{ point.value }}{% endif %}</td></tr>{% endfor %}</tbody>
+        <tbody>{% for point in chart.snapshot.points %}<tr><th scope="row">{% block chart_date %}{{ point.date }}{% endblock %}</th><td>{% if point.value == None %}{% translate 'No data' context 'Nova Admin' %}{% else %}{{ point.value }}{% endif %}</td></tr>{% endfor %}</tbody>
       </table>
     </details>
     {{ chart.snapshot|json_script }}

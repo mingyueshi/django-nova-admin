@@ -1,19 +1,87 @@
 """Host-owned metric: count visible products by the date of their latest update."""
-from datetime import datetime, time, timedelta, timezone as dt_timezone
+import json
+from datetime import date, datetime, time, timedelta, timezone as dt_timezone
+from urllib.parse import urlencode
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.conf import settings
+from django.contrib import admin
+from django.core import signing
+from django.core.exceptions import PermissionDenied
 from django.db import DatabaseError
 from django.db.models import Count
 from django.db.models.functions import TruncDate
+from django.http import Http404
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import pgettext_lazy
 
 from .navigation import visible_product_admin
 
 
+def _activity_admin(request, app_list):
+    owner = visible_product_admin(request, app_list)
+    if owner is not None and "updated_at" in owner.get_list_display(request):
+        return owner
+    return None
+
+
+def _in_window(queryset, start, end, zone, cutoff):
+    lower = datetime.combine(start, time.min, tzinfo=zone)
+    upper = datetime.combine(end, time.min, tzinfo=zone)
+    if not settings.USE_TZ:
+        lower, upper = lower.replace(tzinfo=None), upper.replace(tzinfo=None)
+        cutoff = cutoff.astimezone(zone).replace(tzinfo=None)
+    return queryset.filter(updated_at__gte=lower, updated_at__lt=upper, updated_at__lte=cutoff)
+
+
+def _window_signer(request):
+    # Bind the signed chart coordinates to the account, site and storage convention.
+    # Row visibility always comes from the ModelAdmin handling the new request.
+    scope = (
+        request.user._meta.label_lower, str(request.user.pk), request.resolver_match.namespace,
+        "aware" if settings.USE_TZ else settings.TIME_ZONE,
+    )
+    return signing.Signer(salt="catalog.product_activity.v1:" + json.dumps(scope))
+
+
+def _site_url(request, name):
+    return reverse(f"{request.resolver_match.namespace}:{name}", urlconf=getattr(request, "urlconf", None))
+
+
+class ProductActivityDayFilter(admin.SimpleListFilter):
+    parameter_name = "activity_day"
+    title = pgettext_lazy("Nova demo", "Last update date")
+
+    def lookups(self, request, model_admin):
+        values = request.GET.getlist(self.parameter_name)
+        if not values:
+            return ()
+        if _activity_admin(request, model_admin.admin_site.get_app_list(request)) is not model_admin:
+            raise PermissionDenied
+        if len(values) != 1:
+            raise Http404
+        try:
+            day, token = values[0].split("~", 1)
+            stamp, zone, days = _window_signer(request).unsign_object(token)
+            self.zone = ZoneInfo(zone)
+            self.cutoff = datetime.fromisoformat(stamp)
+            self.day = date.fromisoformat(day)
+            last = self.cutoff.astimezone(self.zone).date()
+            if day != self.day.isoformat() or not 0 <= (last - self.day).days < days:
+                raise ValueError("Date outside chart window")
+        except (ValueError, signing.BadSignature, ZoneInfoNotFoundError) as exc:
+            raise Http404 from exc
+        self.return_url = _site_url(request, "index") + "?" + urlencode({"chart_days": days}) + "#product-activity-range"
+        return [(self.value(), f"{day} · {self.zone.key}")]
+
+    def queryset(self, request, queryset):
+        return _in_window(queryset, self.day, self.day + timedelta(days=1), self.zone, self.cutoff).distinct()
+
+
 def product_activity_chart(request, app_list):
-    model_admin = visible_product_admin(request, app_list)
-    if model_admin is None or "updated_at" not in model_admin.get_list_display(request):
+    model_admin = _activity_admin(request, app_list)
+    if model_admin is None:
         return None
     periods = request.GET.getlist("chart_days")
     if periods and periods not in (["7"], ["30"]):
@@ -27,21 +95,13 @@ def product_activity_chart(request, app_list):
     now = datetime.now(dt_timezone.utc)
     end = now.astimezone(zone).date() + timedelta(days=1)
     start = end - timedelta(days=days)
-    lower = datetime.combine(start, time.min, tzinfo=zone)
-    upper = datetime.combine(end, time.min, tzinfo=zone)
-    cutoff = now
-    if not settings.USE_TZ:
-        lower, upper = lower.replace(tzinfo=None), upper.replace(tzinfo=None)
-        cutoff = now.astimezone(zone).replace(tzinfo=None)
     snapshot = {
         "schema_version": 1, "metric": "catalog.products_last_updated",
         "as_of": now.isoformat(), "timezone": zone.key,
         "start": start.isoformat(), "end": end.isoformat(), "state": "empty", "points": [],
     }
     try:
-        queryset = model_admin.get_queryset(request).filter(
-            updated_at__gte=lower, updated_at__lt=upper, updated_at__lte=cutoff,
-        )
+        queryset = _in_window(model_admin.get_queryset(request), start, end, zone, now)
         buckets = queryset.order_by().values(day=TruncDate("updated_at", tzinfo=zone)).annotate(
             total=Count("pk", distinct=True)
         )
@@ -54,4 +114,8 @@ def product_activity_chart(request, app_list):
             snapshot.update(state="ready", points=[
                 {"date": day.isoformat(), "value": counts.get(day, 0)} for day in dates
             ])
-    return {"days": days, "snapshot": snapshot}
+    activity = {"days": days, "snapshot": snapshot}
+    if snapshot["state"] == "ready" and ProductActivityDayFilter in model_admin.get_list_filter(request):
+        activity["list_url"] = _site_url(request, "catalog_product_changelist")
+        activity["window"] = _window_signer(request).sign_object([snapshot["as_of"], zone.key, days])
+    return activity

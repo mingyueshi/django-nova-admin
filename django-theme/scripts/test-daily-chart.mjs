@@ -5,17 +5,22 @@ const points = [{date: '2026-05-01', value: 0}, {date: '2026-05-02', value: null
 const stub = `export function init(plot) {
     return {
         setOption(options) { plot.options = options; },
+        on(name, callback) { if (name === 'click') plot.clickLabel = callback; },
+        getZr() { return { on(name, callback) { if (name === 'click') plot.clickGrid = callback; } }; },
+        containPixel(grid, [x, y]) { return grid.gridIndex === 0 && x >= 0 && y >= 0; },
+        convertFromPixel(grid, [x, y]) { return [x, y]; },
         resize() { plot.resized = true; },
         dispose() { plot.disposed = true; },
     };
 }`;
-function card(id, module) {
+function card(id, module, rows = '') {
     return `<section class="nova-daily-chart" id="${id}" aria-label="Daily count">
         <div class="nova-chart-plot" hidden></div><p class="nova-chart-load-error" hidden></p>
-        <details open></details><script type="application/json">${JSON.stringify({schema_version: 1, state: 'ready', points})}</script>
+        <details open><summary>Daily values</summary>${rows}</details><script type="application/json">${JSON.stringify({schema_version: 1, state: 'ready', points})}</script>
         <script data-nova-echarts="data:text/javascript,${encodeURIComponent(module)}"></script></section>`;
 }
-const dom = new JSDOM(card('ready', stub) + card('failed', 'throw Error("load failure")'));
+const dayLink = '<a href="/catalog/product/?day=1" data-nova-chart-day="2026-05-01">2026-05-01</a>';
+const dom = new JSDOM(card('ready', stub, dayLink) + card('plain', stub) + card('failed', 'throw Error("load failure")', dayLink));
 const {document} = dom.window;
 Object.defineProperty(dom.window.HTMLElement.prototype, 'clientHeight', {get: () => 220});
 const globals = {window: dom.window, document, getComputedStyle: el => dom.window.getComputedStyle(el)};
@@ -40,6 +45,24 @@ try {
             assert.equal(failureMessage.hidden, false);
             assert.equal(document.querySelector('#failed details').open, true);
             assert.equal(document.querySelector('#failed .nova-chart-plot').hidden, true);
+            assert.equal(document.querySelector('#failed details a').getAttribute('href'), '/catalog/product/?day=1');
+        }],
+        ['Day columns and date labels open the native link, including zero-valued days', () => {
+            const anchor = document.querySelector('#ready details a');
+            let visits = 0;
+            anchor.addEventListener('click', event => { event.preventDefault(); visits++; });
+            ready.clickGrid({offsetX: 0, offsetY: 10});
+            ready.clickLabel({componentType: 'xAxis', targetType: 'axisLabel', value: points[0].date});
+            assert.equal(visits, 2);
+            ready.clickGrid({offsetX: 1, offsetY: 10}); // Missing observation has no link.
+            ready.clickGrid({offsetX: 0, offsetY: -1});
+            ready.clickLabel({componentType: 'series', value: 0});
+            assert.equal(visits, 2);
+        }],
+        ['Cards without host links retain the plain chart', () => {
+            const plain = document.querySelector('#plain .nova-chart-plot');
+            assert.equal(plain.options.xAxis.triggerEvent, false);
+            assert.equal(plain.clickGrid, undefined);
         }],
         ['Page exit releases the chart and resize listener', () => {
             dom.window.dispatchEvent(new dom.window.Event('resize'));

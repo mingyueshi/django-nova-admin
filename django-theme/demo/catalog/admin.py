@@ -4,6 +4,7 @@ from django.utils.html import format_html
 from django.utils import timezone
 from nova_admin.columns import ColumnPreferencesMixin
 from .models import Category, MemberProfile, NewsItem, Product, ProductVariant, Tag
+from .charts import ProductActivityDayFilter
 from .media import DemoMediaAdminMixin
 from .pagination import BoundedPaginationAdminMixin
 
@@ -35,7 +36,7 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
     list_editable = ["featured"]
     search_fields = ["name", "sku"]
     search_help_text = "搜索商品名称或 SKU"
-    list_filter = ["status"]
+    list_filter = [ProductActivityDayFilter, "status"]
     readonly_fields = ["updated_at"]
     autocomplete_fields = ["category"]
     filter_horizontal = ["tags"]

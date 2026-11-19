@@ -14,6 +14,8 @@ async function mount(card, url) {
         plot.hidden = false;
         if (!plot.clientHeight) throw new Error();
         chart = echarts.init(plot);
+        const dayLinks = new Map(Array.from(card.querySelectorAll('a[data-nova-chart-day]'),
+            anchor => [anchor.dataset.novaChartDay, anchor]));
         const style = getComputedStyle(card);
         chart.setOption({
             animation: false,
@@ -21,7 +23,7 @@ async function mount(card, url) {
             textStyle: {color: style.color},
             grid: {left: 12, right: 16, top: 16, bottom: 12, containLabel: true},
             tooltip: {trigger: 'axis', renderMode: 'richText', confine: true},
-            xAxis: {type: 'category', data: data.points.map(point => point.date), axisLabel: {hideOverlap: true, color: style.color}},
+            xAxis: {type: 'category', triggerEvent: dayLinks.size > 0, data: data.points.map(point => point.date), axisLabel: {hideOverlap: true, color: style.color}},
             yAxis: {
                 type: 'value',
                 minInterval: data.points.every(point => point.value === null || Number.isInteger(point.value)) ? 1 : undefined,
@@ -30,6 +32,21 @@ async function mount(card, url) {
             },
             series: [{type: 'bar', name: card.getAttribute('aria-label'), data: data.points.map(point => point.value)}],
         });
+        if (dayLinks.size) {
+            chart.on('click', event => {
+                if (event.componentType === 'xAxis' && event.targetType === 'axisLabel') {
+                    dayLinks.get(event.value)?.click();
+                }
+            });
+            // Hit-test the whole day column so a zero-height bar is also selectable.
+            const grid = {gridIndex: 0};
+            chart.getZr().on('click', event => {
+                const pixel = [event.offsetX, event.offsetY];
+                if (!chart.containPixel(grid, pixel)) return;
+                const [index] = chart.convertFromPixel(grid, pixel);
+                dayLinks.get(data.points[index]?.date)?.click();
+            });
+        }
         const resize = () => chart.resize();
         const observer = window.ResizeObserver ? new ResizeObserver(resize) : null;
         if (observer) observer.observe(plot);
