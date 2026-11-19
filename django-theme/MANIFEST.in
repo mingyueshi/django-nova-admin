@@ -1,6 +1,7 @@
 recursive-include src/nova_admin/templates *.html
 recursive-include src/nova_admin/static *.css *.js
 include src/nova_admin/static/nova_admin/vendor/echarts/*
+include src/nova_admin/static/nova_admin/vendor/chartjs/*
 recursive-include src/nova_admin/locale *.po *.mo
 recursive-include demo *.py *.html *.css *.webp *.svg *.json *.po *.mo *.txt
 recursive-include tests *.py *.json

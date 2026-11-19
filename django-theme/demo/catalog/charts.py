@@ -1,4 +1,4 @@
-"""Host-owned metric: count visible products by the date of their latest update."""
+"""Host-owned charts and native list drilldowns for visible products."""
 import json
 from datetime import date, datetime, time, timedelta, timezone as dt_timezone
 from typing import NamedTuple
@@ -10,14 +10,15 @@ from django.contrib import admin
 from django.core import signing
 from django.core.exceptions import PermissionDenied
 from django.db import DatabaseError
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
 from django.http import Http404
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import pgettext_lazy
 
-from .navigation import visible_product_admin
+from .models import Product
+from .navigation import visible_product_admin, visible_products
 
 
 def _activity_admin(request, app_list):
@@ -132,3 +133,36 @@ def product_activity_chart(request, app_list):
         activity["list_url"] = _site_url(request, "catalog_product_changelist")
         activity["window"] = _window_signer(request).sign_object([snapshot["as_of"], zone.key, days])
     return activity
+
+
+def can_chart_status(request, owner):
+    display = owner.get_list_display(request)
+    return (owner.has_module_permission(request) and owner.has_view_or_change_permission(request)
+            and ("status" in display or "status_badge" in display)
+            and any((spec[0] if isinstance(spec, (tuple, list)) else spec) == "status"
+                    for spec in owner.get_list_filter(request)))
+
+
+def product_status_chart(request, app_list):
+    owner = visible_product_admin(request, app_list)
+    if owner is None or not can_chart_status(request, owner):
+        return None
+    snapshot = {
+        "schema_version": 1, "metric": "catalog.products_by_status", "dimension": "category",
+        "as_of": datetime.now(dt_timezone.utc).isoformat(),
+        "timezone": timezone.get_current_timezone_name() if settings.USE_TZ else settings.TIME_ZONE,
+        "state": "empty", "points": [],
+    }
+    try:
+        products = visible_products(request, owner, owner.get_queryset(request))
+        counts = products.aggregate(**{
+            key: Count("pk", filter=Q(status=key), distinct=True) for key in Product.Status.values
+        })
+    except DatabaseError:
+        snapshot["state"] = "error"
+    else:
+        if any(counts.values()):
+            snapshot.update(state="ready", points=[
+                {"key": key, "label": str(label), "value": counts[key]} for key, label in Product.Status.choices
+            ])
+    return {"snapshot": snapshot, "list_url": _site_url(request, "catalog_product_changelist")}

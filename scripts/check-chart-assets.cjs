@@ -36,4 +36,20 @@ function verifyThemeECharts() {
  }
 }
 module.exports={verifyChartAssets};
-if(require.main===module){try{verifyThemeECharts();console.log(JSON.stringify(verifyChartAssets()));}catch(error){console.error(error.message);process.exitCode=1;}}
+function verifyThemeChartJS() {
+ const preview = path.join(root, 'chartjs');
+ const theme = path.resolve(__dirname, '../django-theme/src/nova_admin/static/nova_admin/vendor/chartjs');
+ const files = fs.readdirSync(preview).sort();
+ if (JSON.stringify(fs.readdirSync(theme).sort()) !== JSON.stringify(files)) throw Error('Unexpected theme Chart.js inventory');
+ for (const name of files) {
+  let expected = fs.readFileSync(path.join(preview, name));
+  if (name === 'chart.umd.min.js') {
+   // ManifestStaticFilesStorage resolves source maps, which the distribution omits.
+   const trailer = Buffer.from('//# sourceMappingURL=chart.umd.min.js.map\n');
+   if (!expected.subarray(-trailer.length).equals(trailer)) throw Error('Unexpected Chart.js source map reference');
+   expected = expected.subarray(0, -trailer.length);
+  }
+  if (!fs.readFileSync(path.join(theme, name)).equals(expected)) throw Error('Theme Chart.js asset mismatch: ' + name);
+ }
+}
+if(require.main===module){try{verifyThemeECharts();verifyThemeChartJS();console.log(JSON.stringify(verifyChartAssets()));}catch(error){console.error(error.message);process.exitCode=1;}}

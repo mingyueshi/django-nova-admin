@@ -48,10 +48,11 @@ PRINT_TOTAL = 26
 MESSAGE_TOTAL = 26
 MARKDOWN_TOTAL = 15
 DAILY_CHART_TOTAL = 5
+CATEGORY_CHART_TOTAL = 4
 APPEARANCE_TOTAL = 24
 CAPTCHA_TOTAL = 16
 CAPTCHA_DIALOG_TOTAL = 16
-THEME_JS_TOTAL = NAVIGATION_TOTAL + COMMAND_PALETTE_TOTAL + APPEARANCE_TOTAL + ENHANCEMENT_TOTAL + PRINT_TOTAL + MESSAGE_TOTAL + MARKDOWN_TOTAL + DAILY_CHART_TOTAL + CAPTCHA_TOTAL + CAPTCHA_DIALOG_TOTAL
+THEME_JS_TOTAL = NAVIGATION_TOTAL + COMMAND_PALETTE_TOTAL + APPEARANCE_TOTAL + ENHANCEMENT_TOTAL + PRINT_TOTAL + MESSAGE_TOTAL + MARKDOWN_TOTAL + DAILY_CHART_TOTAL + CATEGORY_CHART_TOTAL + CAPTCHA_TOTAL + CAPTCHA_DIALOG_TOTAL
 
 def read(path):
     return json.loads(Path(path).read_text())
@@ -85,12 +86,13 @@ def check_node_summaries(logs):
             f'{COMMAND_PALETTE_TOTAL} command palette DOM scenarios passed.',
             f'{APPEARANCE_TOTAL} appearance DOM scenarios passed (3 Django script versions).',
         ]),
-        ('enhancements', r'^(?:TOTAL\b.*|\d+ (?:print|message|markdown|daily chart) DOM scenarios .+)$', [
+        ('enhancements', r'^(?:TOTAL\b.*|\d+ (?:print|message|markdown|daily chart|category chart) DOM scenarios .+)$', [
             f'TOTAL {ENHANCEMENT_TOTAL} changelist enhancement tests passed',
             f'{PRINT_TOTAL} print DOM scenarios passed.',
             f'{MESSAGE_TOTAL} message DOM scenarios passed.',
             f'{MARKDOWN_TOTAL} markdown DOM scenarios passed.',
             f'{DAILY_CHART_TOTAL} daily chart DOM scenarios passed.',
+            f'{CATEGORY_CHART_TOTAL} category chart DOM scenarios passed.',
         ]),
         ('captcha', r'^TOTAL\b.*$', [f'TOTAL {CAPTCHA_TOTAL} CAPTCHA enhancement tests passed']),
         ('captcha-dialog', r'^(?:1\.\.\d+|# (?:tests|pass|fail|cancelled|skipped|todo) \d+)$', [

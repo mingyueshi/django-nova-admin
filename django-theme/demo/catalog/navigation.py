@@ -1,5 +1,5 @@
 """Shared product visibility checks for the Demo admin."""
-from django.contrib.admin import AdminSite
+from django.contrib.admin import AdminSite, ModelAdmin
 from django.contrib.admin.exceptions import NotRegistered
 
 from .models import Product
@@ -40,9 +40,17 @@ def demo_product_badges(request, available_apps):
     return {"catalog.product": model_admin.get_queryset(request).count()}
 
 
-def visible_product_ids(request, owner, product_ids, db):
-    scope = owner.get_queryset(request).using(db)
-    candidates = scope.filter(pk__in=product_ids).order_by("pk").distinct()
+def visible_products(request, owner, scope):
+    # Django's default hooks grant model-wide permissions. Keep aggregation in SQL
+    # unless the registration has supplied an object-aware permission policy.
+    hooks = ("has_view_or_change_permission", "has_view_permission", "has_change_permission")
+    if all(getattr(getattr(owner, hook), "__func__", None) is getattr(ModelAdmin, hook) for hook in hooks):
+        return scope if owner.has_view_or_change_permission(request) else scope.none()
+    candidates = scope.order_by("pk").distinct()
     allowed = [p.pk for p in candidates.iterator(chunk_size=500) if owner.has_view_or_change_permission(request, p)]
-    # Keep the live site scope in the final query, including a read-state UPDATE after the object checks.
-    return scope.filter(pk__in=allowed).order_by().values("pk")
+    return scope.filter(pk__in=allowed)
+
+
+def visible_product_ids(request, owner, product_ids, db):
+    scope = owner.get_queryset(request).using(db).filter(pk__in=product_ids)
+    return visible_products(request, owner, scope).order_by().values("pk")

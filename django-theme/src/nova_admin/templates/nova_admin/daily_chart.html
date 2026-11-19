@@ -1,6 +1,6 @@
 {% load i18n static nova_tags %}
 {% nova_chart_data chart_snapshot as chart %}
-<section class="nova-daily-chart" aria-label="{{ chart_title|force_escape }}">
+<section class="nova-chart-card nova-daily-chart" aria-label="{{ chart_title|force_escape }}">
   <header>
     <h2>{{ chart_title|force_escape }}</h2>
     {% block chart_controls %}{% endblock %}

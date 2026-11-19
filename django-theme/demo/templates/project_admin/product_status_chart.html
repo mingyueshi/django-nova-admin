@@ -1,0 +1,9 @@
+{% extends "nova_admin/category_chart.html" %}
+{% load i18n %}
+{% block category_heading %}{% translate 'Status' context 'Nova demo' %}{% endblock %}
+{% block category_label %}
+  {% if point.value != None %}
+    <a data-nova-category="{{ point.key }}" href="{{ status_chart.list_url }}?status__exact={{ point.key|urlencode }}">{{ point.label|force_escape }}</a>
+  {% else %}{{ point.label|force_escape }}{% endif %}
+{% endblock %}
+{% block category_empty %}{% translate 'No visible products.' context 'Nova demo' %}{% endblock %}

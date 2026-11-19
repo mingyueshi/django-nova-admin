@@ -1,3 +1,5 @@
+from functools import cached_property
+
 from django.contrib import admin
 from django import forms
 from django.core.exceptions import PermissionDenied
@@ -11,8 +13,9 @@ from nova_admin.columns import ColumnPreferencesMixin
 from .models import Category, MemberProfile, NewsItem, Product, ProductPublicationRequest, ProductVariant, Tag
 from .category_tree import can_view_tree, category_tree, edit_category_tree
 from .batch_tasks import publication_task_action, product_batch_tasks
-from .charts import ProductActivityDayFilter
+from .charts import ProductActivityDayFilter, can_chart_status
 from .media import DemoMediaAdminMixin
+from .navigation import visible_products
 from .notifications import product_notifications
 from .pagination import BoundedPaginationAdminMixin
 from .product_board import can_view_board, product_publication, product_status_board
@@ -211,6 +214,25 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
 
     def status_board_view(self, request):
         return product_status_board(request, self)
+
+    def get_changelist(self, request, **kwargs):
+        base = super().get_changelist(request, **kwargs)
+        if "status__exact" not in request.GET:
+            return base
+        if not can_chart_status(request, self):
+            raise PermissionDenied
+
+        class StatusChangeList(base):
+            @cached_property
+            def visible_scope(self):
+                return visible_products(request, self.model_admin, self.root_queryset).distinct()
+
+            def get_queryset(self, request, *args, **kwargs):
+                # Scope the root before Django computes rows, totals and optional facets.
+                self.root_queryset = self.visible_scope
+                return super().get_queryset(request, *args, **kwargs)
+
+        return StatusChangeList
 
     def get_changelist_instance(self, request):
         zone = timezone.get_current_timezone()

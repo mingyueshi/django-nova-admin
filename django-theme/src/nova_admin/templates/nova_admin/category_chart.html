@@ -1,0 +1,23 @@
+{% load i18n static nova_tags %}
+{% nova_category_snapshot chart_snapshot as snapshot %}
+<section class="nova-chart-card nova-category-chart" aria-label="{{ chart_title|force_escape }}">
+  <header><h2>{{ chart_title|force_escape }}</h2></header>
+  {% if snapshot.state == "ready" %}
+    <div class="nova-chart-plot" aria-hidden="true" hidden><canvas></canvas></div>
+    <p class="nova-chart-load-error" hidden>{% translate 'The chart could not be drawn. Use the table below.' context 'Nova Admin' %}</p>
+    <table>
+      <thead><tr><th scope="col">{% block category_heading %}{% translate 'Category' context 'Nova Admin' %}{% endblock %}</th><th scope="col">{% translate 'Count' context 'Nova Admin' %}</th></tr></thead>
+      <tbody>{% for point in snapshot.points %}
+        <tr><th scope="row">{% block category_label %}{{ point.label|force_escape }}{% endblock %}</th>
+          <td>{% if point.value == None %}{% translate 'No data' context 'Nova Admin' %}{% else %}{{ point.value }}{% endif %}</td></tr>
+      {% endfor %}</tbody>
+    </table>
+    {{ snapshot|json_script }}
+    <script defer src="{% static 'nova_admin/vendor/chartjs/chart.umd.min.js' %}" {% nova_nonce %}></script>
+    <script defer src="{% static 'nova_admin/category-chart.js' %}" {% nova_nonce %}></script>
+  {% elif snapshot.state == "empty" %}
+    <p>{% block category_empty %}{% translate 'No data' context 'Nova Admin' %}{% endblock %}</p>
+  {% else %}
+    <p>{% translate 'Chart data is temporarily unavailable. Reload to retry.' context 'Nova Admin' %}</p>
+  {% endif %}
+</section>

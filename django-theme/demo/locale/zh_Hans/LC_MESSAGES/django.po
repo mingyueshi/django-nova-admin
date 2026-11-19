@@ -177,3 +177,15 @@ msgstr "请将筛选结果缩小至 %(limit)s 件商品以内，再导出 CSV。
 msgctxt "Nova demo"
 msgid "Includes SKU, product name and update time across all matching pages, up to %(limit)s products."
 msgstr "导出所有匹配页的 SKU、商品名称和更新时间，最多 %(limit)s 件商品。"
+
+msgctxt "Nova demo"
+msgid "Status"
+msgstr "状态"
+
+msgctxt "Nova demo"
+msgid "Visible products by status"
+msgstr "可见商品状态分布"
+
+msgctxt "Nova demo"
+msgid "No visible products."
+msgstr "暂无可见商品。"

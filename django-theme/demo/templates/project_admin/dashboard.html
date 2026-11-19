@@ -9,4 +9,9 @@
     {% translate 'Visible products by last update date' context 'Nova demo' as chart_title %}
     {% include "project_admin/product_activity_chart.html" with chart_snapshot=activity.snapshot %}
   {% endif %}
+  {% product_status_chart request app_list as status_chart %}
+  {% if status_chart %}
+    {% translate 'Visible products by status' context 'Nova demo' as chart_title %}
+    {% include "project_admin/product_status_chart.html" with chart_snapshot=status_chart.snapshot %}
+  {% endif %}
 {% endblock %}

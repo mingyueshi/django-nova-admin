@@ -10,7 +10,7 @@ from django.utils.encoding import iri_to_uri
 from django.utils.html import format_html
 from django.utils.translation import pgettext
 
-from nova_admin.charts import validate_daily_snapshot
+from nova_admin.charts import validate_category_snapshot, validate_daily_snapshot
 
 register = template.Library()
 
@@ -22,6 +22,14 @@ def nova_chart_data(snapshot):
     except ValueError:
         return {}
     return {"snapshot": valid, "through": (date.fromisoformat(valid["end"]) - timedelta(days=1)).isoformat()}
+
+
+@register.simple_tag
+def nova_category_snapshot(snapshot):
+    try:
+        return validate_category_snapshot(snapshot)
+    except ValueError:
+        return None
 
 
 @register.filter

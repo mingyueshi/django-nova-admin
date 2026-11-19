@@ -11,3 +11,5 @@ Django 和可选 CAPTCHA、Pillow、Axes 等依赖分别安装，保留各自许
 ## 首页图表
 
 运行包附带 Apache ECharts 6.1.0 的官方 ES module 文件 `package/dist/echarts.esm.min.js`，用于有数据的可选每日图表。该文件 SHA-256 为 `28515f26aa57f87eb1e4ed4eb446927eaf329b5f5e02b4bfd4b0264fea40d1da`。原始 npm 压缩包的版本及摘要见仓库 `dist/vendor/charts/manifest.json`。wheel 与 sdist 在 `static/nova_admin/vendor/echarts/` 中一起分发 Apache-2.0 LICENSE、NOTICE，以及 d3、zrender 和 tslib 的许可与版权声明。
+
+状态图附带 Chart.js 4.6.1 UMD 运行文件，以及 Chart.js 和 @kurkle/color 的 MIT 许可证。文件来自仓库已固定版本的 `dist/vendor/charts/chartjs/`。为兼容 Django 的哈希静态资源存储，运行文件移除了末尾指向未分发 source map 的注释。构建检查逐字节核对运行代码和许可证。
