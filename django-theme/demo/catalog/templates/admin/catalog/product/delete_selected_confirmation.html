@@ -1,0 +1,9 @@
+{% extends "admin/delete_selected_confirmation.html" %}
+
+{% block content %}
+  {% if perms_lacking or protected %}
+    {{ block.super }}
+  {% else %}
+    {% include "admin/catalog/product/recycle_confirmation.html" with bulk=True %}
+  {% endif %}
+{% endblock %}

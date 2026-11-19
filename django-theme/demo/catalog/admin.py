@@ -2,7 +2,7 @@ from django.contrib import admin
 from django import forms
 from django.core.exceptions import PermissionDenied
 from django.db import router, transaction
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.urls import path
 from django.utils.html import format_html
 from django.utils import timezone
@@ -15,6 +15,7 @@ from .pagination import BoundedPaginationAdminMixin
 from .product_board import can_edit_status, can_view_board, product_publication, product_status_board
 from .publication import PublicationConflict, lock_status, submit_publication
 from .publication_calendar import publication_calendar
+from .recycle_bin import can_view_recycle_bin, product_recycle_bin, restore_product
 from .product_csv import MAX_EXPORT_ROWS, can_export_product_day, export_product_day
 
 
@@ -96,10 +97,52 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
 
         return [
             path("status-board/", admin_view(self.status_board_view), name="catalog_product_status_board"),
+            path("recycle-bin/", admin_view(self.recycle_bin_view), name="catalog_product_recycle_bin"),
+            path("recycle-bin/<int:entry_id>/restore/", admin_view(self.restore_view), name="catalog_product_restore"),
             path("publication-calendar/", admin_view(self.publication_calendar_view), name="catalog_product_publication_calendar"),
             path("<int:product_id>/publication/", admin_view(self.publication_view), name="catalog_product_publication"),
             *super().get_urls(),
         ]
+
+    def get_queryset(self, request):
+        if getattr(request, "product_recycle_bin", False):
+            return Product.all_objects.filter(recycle_entry__isnull=False)
+        return super().get_queryset(request)
+
+    def recycle_bin_view(self, request):
+        return product_recycle_bin(request, self)
+
+    def restore_view(self, request, entry_id):
+        return restore_product(request, self, entry_id)
+
+    def has_restore_permission(self, request, obj=None):
+        return request.user.has_perm("catalog.restore_product")
+
+    def get_deleted_objects(self, objs, request):
+        # Only products move to the bin. Related objects need neither deletion nor delete permission.
+        names = []
+        for product in objs:
+            if not self.has_view_or_change_permission(request, product) or not self.has_delete_permission(request, product):
+                raise PermissionDenied
+            names.append(str(product))
+        return names, {self.opts.verbose_name_plural: len(names)}, set(), []
+
+    def delete_model(self, request, obj):
+        if not obj.delete()[0]:
+            raise Http404("商品已移入回收站。")
+
+    def delete_queryset(self, request, queryset):
+        # The native action already materialized and authorized these products for its audit log.
+        # A row which starts matching a select-across filter later must not join this deletion.
+        selected = {product.pk for product in queryset}
+        moved, _ = queryset.filter(pk__in=selected).delete()
+        if moved != len(selected):
+            raise Http404("所选商品已变化，请刷新列表。")
+
+    def response_action(self, request, queryset, *args, **kwargs):
+        # Django logs bulk deletions before delete_queryset. Commit both together.
+        with transaction.atomic(using=router.db_for_write(Product)):
+            return super().response_action(request, queryset, *args, **kwargs)
 
     def publication_calendar_view(self, request):
         return publication_calendar(request, self)
@@ -189,7 +232,11 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
     def changelist_view(self, request, extra_context=None):
         if request.method == "POST" and "_export_day_csv" in request.POST:
             return export_product_day(request, self)
-        extra_context = {**(extra_context or {}), "show_product_board": can_view_board(request, self)}
+        extra_context = {
+            **(extra_context or {}),
+            "show_product_board": can_view_board(request, self),
+            "show_product_recycle_bin": can_view_recycle_bin(request, self),
+        }
         if ProductActivityDayFilter.parameter_name in request.GET and self.has_view_or_change_permission(request):
             if can_export_product_day(request, self):
                 extra_context["product_csv_limit"] = MAX_EXPORT_ROWS

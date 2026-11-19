@@ -1,0 +1,15 @@
+{% load admin_urls l10n %}
+<p>确认将以下商品移入回收站？还原后，商品会带着原有库存、规格和审批记录重新出现在列表中。</p>
+<ul>{% if bulk %}{% for product in queryset %}<li>{{ product }}</li>{% endfor %}{% else %}<li>{{ object }}</li>{% endif %}</ul>
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="post" value="yes">
+  {% if bulk %}
+    <input type="hidden" name="action" value="delete_selected">
+    {% for product in queryset %}<input type="hidden" name="{{ action_checkbox_name }}" value="{{ product.pk|unlocalize }}">{% endfor %}
+  {% else %}
+    {% if is_popup %}<input type="hidden" name="{{ is_popup_var }}" value="1">{% endif %}
+    {% if to_field %}<input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}">{% endif %}
+  {% endif %}
+  <input type="submit" value="移入回收站">
+  <a href="{% url opts|admin_urlname:'changelist' %}" class="button cancel-link">取消</a>
+</form>

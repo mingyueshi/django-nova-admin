@@ -262,7 +262,7 @@ class NativeAdminWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["results"][0]["id"], str(self.category.pk))
 
-    def test_batch_delete_requires_confirmation_and_deletes_selected_only(self):
+    def test_batch_delete_requires_confirmation_and_recycles_selected_only(self):
         for mode in MODES:
             with self.subTest(mode=mode):
                 self.set_mode(mode)
@@ -279,7 +279,8 @@ class NativeAdminWorkflowTests(TestCase):
                 response = self.client.post(self.list_url, {**data, "post": "yes"})
                 self.assertRedirects(response, self.list_url)
                 self.assertFalse(Product.objects.filter(pk=selected.pk).exists())
-                self.assertFalse(ProductVariant.objects.filter(pk=variant.pk).exists())
+                self.assertTrue(Product.all_objects.filter(pk=selected.pk, recycle_entry__isnull=False).exists())
+                self.assertTrue(ProductVariant.objects.filter(pk=variant.pk).exists())
                 self.assertTrue(Product.objects.filter(pk=self.product.pk).exists())
                 self.assertTrue(LogEntry.objects.filter(object_id=str(selected.pk), action_flag=DELETION).exists())
 

@@ -1,0 +1,36 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">商品列表</a>
+    &rsaquo; {{ title }}
+  </div>
+{% endblock %}
+
+{% block content %}
+  {% if rows %}
+    <table aria-label="回收站商品">
+      <thead><tr><th scope="col">商品名称</th><th scope="col">删除时间</th>{% if can_restore %}<th scope="col">操作</th>{% endif %}</tr></thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <th scope="row">{{ row.product.name }}</th>
+            <td><time datetime="{{ row.entry.deleted_at|date:'c' }}">{{ row.entry.deleted_at|date:"Y-m-d H:i:s" }}</time></td>
+            {% if can_restore %}
+              <td>{% if row.can_restore %}
+                <form method="post" action="{% url opts|admin_urlname:'restore' row.entry.pk|admin_urlquote %}">
+                  {% csrf_token %}<button type="submit" aria-label="还原「{{ row.product.name }}」">还原</button>
+                </form>
+              {% endif %}</td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>回收站中暂无可查看的商品。</p>
+  {% endif %}
+{% endblock %}

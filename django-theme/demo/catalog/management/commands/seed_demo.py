@@ -53,7 +53,7 @@ class Command(BaseCommand):
                 counts["tags"] += created
                 tags.append(tag)
             for index, (key, name, price, image_key) in enumerate(PRODUCTS):
-                product, created = Product.objects.get_or_create(
+                product, created = Product.all_objects.get_or_create(
                     sku=f"NOVA-DEMO-{key}",
                     defaults={"name": name, "price": Decimal(price), "stock": 0 if index == 6 else 12 * (index + 1),
                               "image_key": image_key, "category": category, "featured": index % 2 == 0,

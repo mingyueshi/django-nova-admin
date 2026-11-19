@@ -102,6 +102,15 @@ class SeedDemoTests(TestCase):
         self.assertFalse(product.variants.exists())
         self.assertEqual(get_user_model().objects.count(), 0)
 
+    def test_recycled_product_keeps_its_reserved_sku_on_reseed(self):
+        seed()
+        product = Product.objects.get(sku="NOVA-DEMO-KEYBOARD")
+        product.delete()
+        self.assertIn("products=0", seed())
+        self.assertFalse(Product.objects.filter(pk=product.pk).exists())
+        self.assertEqual(Product.all_objects.get(sku=product.sku).pk, product.pk)
+        self.assertEqual(product.variants.count(), 2)
+
     def test_disabled_debug_refuses_without_writes(self):
         with override_settings(DEBUG=False), self.assertRaises(CommandError):
             seed()

@@ -83,7 +83,35 @@ class Tag(models.Model):
         return self.name
 
 
+class ProductQuerySet(models.QuerySet):
+    def delete(self):
+        self._not_support_combined_queries("delete")
+        if self.query.is_sliced or self.query.distinct_fields or self._fields is not None:
+            raise TypeError("Delete requires an unsliced queryset of product instances.")
+        db = self._db or router.db_for_write(self.model, **self._hints)
+        entries = ProductRecycleEntry.objects.using(db)
+        count = 0
+        with transaction.atomic(using=db):
+            ids = self.using(db).filter(recycle_entry__isnull=True).order_by("pk").values_list("pk", flat=True).distinct()
+            for pk in ids:
+                _, created = entries.get_or_create(product_id=pk)
+                count += created
+        self._result_cache = None
+        return count, {self.model._meta.label: count} if count else {}
+
+    delete.alters_data = True
+    delete.queryset_only = True
+
+
+class LiveProductManager(models.Manager.from_queryset(ProductQuerySet)):
+    def get_queryset(self):
+        return super().get_queryset().filter(recycle_entry__isnull=True)
+
+
 class Product(models.Model):
+    objects = LiveProductManager()
+    all_objects = ProductQuerySet.as_manager()
+
     class Status(models.TextChoices):
         DRAFT = "draft", "草稿"
         ACTIVE = "active", "已上架"
@@ -109,11 +137,38 @@ class Product(models.Model):
         permissions = [
             ("export_product", "可导出按日期筛选的商品 CSV"),
             ("approve_product", "可审批商品上架"),
+            ("restore_product", "可从回收站还原商品"),
         ]
         ordering = ["-updated_at"]
 
     def __str__(self):
         return self.name
+
+    def validate_unique(self, exclude=None):
+        super().validate_unique(exclude)
+        # Django checks uniqueness through the live manager. A recycled SKU is still reserved.
+        if exclude and "sku" in exclude:
+            return
+        recycled = Product.all_objects.filter(sku=self.sku, recycle_entry__isnull=False)
+        if self.sku and recycled.exclude(pk=self.pk).exists():
+            raise ValidationError({"sku": self.unique_error_message(Product, ("sku",))})
+
+    def delete(self, using=None, keep_parents=False):
+        if not self._is_pk_set():
+            raise ValueError("Cannot delete a product without a primary key.")
+        db = using or router.db_for_write(type(self), instance=self)
+        return Product.all_objects.using(db).filter(pk=self.pk).delete()
+
+    delete.alters_data = True
+
+
+class ProductRecycleEntry(models.Model):
+    # A new primary key for each deletion keeps old restore forms from reviving a later deletion.
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name="recycle_entry")
+    deleted_at = models.DateTimeField("删除时间", auto_now_add=True)
+
+    class Meta:
+        default_permissions = ()
 
 
 class ProductPublicationRequest(models.Model):
