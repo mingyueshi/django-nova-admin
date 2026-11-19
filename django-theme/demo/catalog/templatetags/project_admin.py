@@ -8,9 +8,11 @@ from django.db import DatabaseError
 from django.utils.html import format_html
 from django.utils.translation import pgettext
 
+from catalog.charts import product_activity_chart
 from catalog.forms import chinese_admin, chinese_label
 
 register = template.Library()
+register.simple_tag(product_activity_chart)
 register.filter("project_label", chinese_label)
 
 

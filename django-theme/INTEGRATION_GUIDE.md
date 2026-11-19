@@ -90,6 +90,18 @@ Demo 的合成 static 图集只用于 list_display 样式，不是私有媒体�
 
 [Demo 首页模板](demo/templates/project_admin/dashboard.html)显示“可见商品数”。[数据钩子](demo/catalog/navigation.py)核对当前 AdminSite 的应用列表、模型列表权限和注册实例，从该实例的 `get_queryset(request)` 计数。宿主有租户、对象或字段限制时，先用与业务列表相同的授权查询限定统计范围，再提供指标；未获授权的指标应直接省略。
 
+### 首页图表
+
+宿主按当前用户权限聚合数据后，在首页模板中加载每日图表。例如，`activity` 由宿主数据钩子返回，只有有权查看指标时才提供。
+
+```django
+{% if activity %}
+  {% include "nova_admin/daily_chart.html" with chart_snapshot=activity.snapshot chart_title="每日更新商品数" %}
+{% endif %}
+```
+
+图表和键盘可展开的数据表共用同一份数据。商品示例按当前站点的商品查询集统计近 7 或 30 天的最近更新日期，使用一次分组查询。[快照契约与日期口径](CHART_SNAPSHOTS.md)
+
 ### 列表列偏好
 
 将 mixin 放在已有 ModelAdmin 基类之前，声明允许用户调整的列。例如：

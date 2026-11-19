@@ -20,5 +20,20 @@ function verifyChartAssets(directory=root){
  for(const required of ['echarts','chartjs','uplot','color','zrender','tslib'])if(!ids.has(required))throw Error('Missing chart runtime or license: '+required);
  return {status:'passed',chartLibraries:3,upstreamPackages:ids.size,files:seen.size};
 }
+function verifyThemeECharts() {
+ const preview = path.join(root, 'echarts');
+ const theme = path.resolve(__dirname, '../django-theme/src/nova_admin/static/nova_admin/vendor/echarts');
+ const moduleName = 'echarts.esm.min.js';
+ const expected = new Set(fs.readdirSync(preview).filter(name => name !== 'echarts.min.js'));
+ expected.add(moduleName);
+ const files = fs.readdirSync(theme);
+ if (files.length !== expected.size || files.some(name => !expected.has(name))) throw Error('Unexpected theme ECharts inventory');
+ for (const name of files) {
+  const bytes = fs.readFileSync(path.join(theme, name));
+  if (name === moduleName) {
+   if (crypto.createHash('sha256').update(bytes).digest('hex') !== '28515f26aa57f87eb1e4ed4eb446927eaf329b5f5e02b4bfd4b0264fea40d1da') throw Error('Theme ECharts module checksum mismatch');
+  } else if (!bytes.equals(fs.readFileSync(path.join(preview, name)))) throw Error('Theme ECharts notice mismatch: ' + name);
+ }
+}
 module.exports={verifyChartAssets};
-if(require.main===module){try{console.log(JSON.stringify(verifyChartAssets()));}catch(error){console.error(error.message);process.exitCode=1;}}
+if(require.main===module){try{verifyThemeECharts();console.log(JSON.stringify(verifyChartAssets()));}catch(error){console.error(error.message);process.exitCode=1;}}

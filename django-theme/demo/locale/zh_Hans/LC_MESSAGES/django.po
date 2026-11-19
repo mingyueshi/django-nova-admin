@@ -108,3 +108,23 @@ msgstr "跳转"
 msgctxt "Nova demo"
 msgid "Visible products"
 msgstr "可见商品数"
+
+msgctxt "Nova demo"
+msgid "Visible products by last update date"
+msgstr "可见商品最近更新日期分布"
+
+msgctxt "Nova demo"
+msgid "Date range"
+msgstr "日期范围"
+
+msgctxt "Nova demo"
+msgid "Last 7 days"
+msgstr "近 7 天"
+
+msgctxt "Nova demo"
+msgid "Last 30 days"
+msgstr "近 30 天"
+
+msgctxt "Nova demo"
+msgid "Choose a range of 7 or 30 days."
+msgstr "请选择近 7 天或近 30 天。"

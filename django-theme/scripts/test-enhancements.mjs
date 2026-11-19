@@ -358,3 +358,4 @@ console.log(`TOTAL ${count} changelist enhancement tests passed`);
 await import('./test-print.mjs');
 await import('./test-messages.mjs');
 await import('./test-markdown.mjs');
+await import('./test-daily-chart.mjs');

@@ -2,6 +2,7 @@
 import json
 import re
 from collections import Counter
+from datetime import date, timedelta
 
 from django import template
 from django.utils.crypto import salted_hmac
@@ -9,7 +10,18 @@ from django.utils.encoding import iri_to_uri
 from django.utils.html import format_html
 from django.utils.translation import pgettext
 
+from nova_admin.charts import validate_daily_snapshot
+
 register = template.Library()
+
+
+@register.simple_tag
+def nova_chart_data(snapshot):
+    try:
+        valid = validate_daily_snapshot(snapshot)
+    except ValueError:
+        return {}
+    return {"snapshot": valid, "through": (date.fromisoformat(valid["end"]) - timedelta(days=1)).isoformat()}
 
 
 @register.filter
