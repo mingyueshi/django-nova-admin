@@ -56,13 +56,13 @@ class TagRule(NamedTuple):
             query[parameter + "_max"] = str(self.maximum)
 
 
-def _count_bound(values, key_count):
+def _count_bound(values, lowest, key_count):
     value = values[0] if values else ""
     # Bound the input before integer conversion and count distinct selected options.
-    if len(value) > len(str(key_count)) or not re.fullmatch(r"[1-9][0-9]*", value):
+    if len(value) > len(str(key_count)) or not re.fullmatch(r"0|[1-9][0-9]*", value):
         raise Http404
     bound = int(value)
-    if bound > key_count:
+    if not lowest <= bound <= key_count:
         raise Http404
     return bound
 
@@ -79,10 +79,10 @@ def _tag_rule(query, parameter, *, exporting):
     if (exporting or not mode) and upper and mode != "range":
         raise Http404
     if mode in ("at_least", "range"):
-        minimum = _count_bound(lower, len(keys))
-        maximum = _count_bound(upper, len(keys)) if mode == "range" else None
-        if maximum is not None and minimum > maximum:
+        if not keys:
             raise Http404
+        minimum = _count_bound(lower, 0 if mode == "range" else 1, len(keys))
+        maximum = _count_bound(upper, minimum, len(keys)) if mode == "range" else None
         return TagRule(keys, mode, minimum, maximum)
 
     if lower and (exporting or not mode):
@@ -111,19 +111,27 @@ def tag_selection(query, *, exporting):
     return included, excluded
 
 
-def _tag_match(memberships, rule):
-    required = len(rule.keys) if rule.mode == "all" else (rule.minimum or 1)
-    named = [key for key in rule.keys if key != UNTAGGED]
+def _positive_tag_match(memberships, keys, minimum, maximum=None):
+    named = [key for key in keys if key != UNTAGGED]
     # Group on the through table so host joins cannot multiply or hide matches.
     matches = memberships.filter(tag_id__in=named).order_by().values("product_id")
-    if rule.maximum is not None:
-        matches = matches.alias(matched=Count("tag_id", distinct=True)).filter(matched__range=(required, rule.maximum))
-    elif required > 1:
-        matches = matches.alias(matched=Count("tag_id", distinct=True)).filter(matched__gte=required)
+    if maximum is not None:
+        matches = matches.alias(matched=Count("tag_id", distinct=True)).filter(matched__range=(minimum, maximum))
+    elif minimum > 1:
+        matches = matches.alias(matched=Count("tag_id", distinct=True)).filter(matched__gte=minimum)
     condition = Q(pk__in=matches)
-    if required == 1 and UNTAGGED in rule.keys:
+    if minimum == 1 and UNTAGGED in keys:
         condition |= ~Exists(memberships.filter(product_id=OuterRef("pk")))
     return condition
+
+
+def _tag_match(memberships, rule):
+    if rule.minimum == 0:
+        # Products with no matching assignments have no group in the through table.
+        # Within the visible queryset, 0..M is the complement of at least M+1.
+        return ~_positive_tag_match(memberships, rule.keys, rule.maximum + 1)
+    minimum = len(rule.keys) if rule.mode == "all" else (rule.minimum or 1)
+    return _positive_tag_match(memberships, rule.keys, minimum, rule.maximum)
 
 
 def select_tags(products, tags, included, excluded, period):

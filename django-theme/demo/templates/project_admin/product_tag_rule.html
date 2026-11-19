@@ -16,9 +16,9 @@
 </label>
 <label>
   {% if parameter == 'chart_tag' %}{% translate 'Minimum included tags' context 'Nova demo' %}{% else %}{% translate 'Minimum excluded tags' context 'Nova demo' %}{% endif %}
-  <input type="number" name="{{ parameter }}_min" min="1" step="1" value="{{ rule.minimum|default:1|unlocalize }}" data-minimum-for="{{ parameter }}">
+  <input type="number" name="{{ parameter }}_min" min="0" step="1" value="{{ rule.minimum|default_if_none:1|unlocalize }}" data-minimum-for="{{ parameter }}">
 </label>
 <label>
   {% if parameter == 'chart_tag' %}{% translate 'Maximum included tags' context 'Nova demo' %}{% else %}{% translate 'Maximum excluded tags' context 'Nova demo' %}{% endif %}
-  <input type="number" name="{{ parameter }}_max" min="1" step="1" value="{{ rule.maximum|default:rule.minimum|default:1|unlocalize }}">
+  <input type="number" name="{{ parameter }}_max" min="0" step="1" value="{{ rule.maximum|default_if_none:rule.minimum|default_if_none:1|unlocalize }}">
 </label>

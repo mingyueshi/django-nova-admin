@@ -39,7 +39,7 @@
       <p>
         {% if filters.category %}{{ category_label }} · {% if direct_only %}{% translate 'Directly assigned products' context 'Nova demo' %} · {% endif %}{% endif %}
         {% if filters.included_tags.keys %}
-          {% if filters.included_tags.minimum %}{{ filters.included_tags.count_label }}{% elif filters.included_tags.mode == 'all' %}{% translate 'Match all tags' context 'Nova demo' %}{% elif filters.included_tags.mode == 'any' %}{% translate 'Match any tag' context 'Nova demo' %}{% else %}{% translate 'Tag' context 'Nova demo' %}{% endif %}
+          {% if filters.included_tags.minimum is not None %}{{ filters.included_tags.count_label }}{% elif filters.included_tags.mode == 'all' %}{% translate 'Match all tags' context 'Nova demo' %}{% elif filters.included_tags.mode == 'any' %}{% translate 'Match any tag' context 'Nova demo' %}{% else %}{% translate 'Tag' context 'Nova demo' %}{% endif %}
           · {{ tag_labels|join:", " }} ·
         {% endif %}
         {% if excluded_tag_labels %}{{ exclusion_label }} · {{ excluded_tag_labels|join:", " }} · {% endif %}
