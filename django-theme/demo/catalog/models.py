@@ -136,7 +136,7 @@ class Product(models.Model):
         verbose_name = "商品"
         verbose_name_plural = "商品"
         permissions = [
-            ("export_product", "可导出按日期筛选的商品 CSV"),
+            ("export_product", "可导出按日期或状态筛选的商品 CSV"),
             ("approve_product", "可审批商品上架"),
             ("restore_product", "可从回收站还原商品"),
         ]

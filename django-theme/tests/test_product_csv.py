@@ -28,7 +28,8 @@ class SpreadsheetTextTests(SimpleTestCase):
             self.assertEqual(spreadsheet_text(value), value)
 
 
-class ProductDayCSVTests(ProductDayTestCase):
+class ProductCSVAssertions:
+    export_action = "_export_day_csv"
     stamp = "2026-11-19T01:00:00+00:00"
     headers = ["SKU", "商品名称", "更新时间 (Asia/Shanghai)"]
 
@@ -36,11 +37,11 @@ class ProductDayCSVTests(ProductDayTestCase):
         self.reader.user_permissions.add(Permission.objects.get(codename="export_product", content_type__app_label="catalog"))
 
     def form(self, result):
-        button = BeautifulSoup(result.content, "html.parser").select_one('button[name="_export_day_csv"]')
+        button = BeautifulSoup(result.content, "html.parser").select_one(f'button[name="{self.export_action}"]')
         return button.find_parent("form") if button else None
 
     def download(self, url, **post):
-        return self.client.post(url, {"_export_day_csv": "1", **post})
+        return self.client.post(url, {self.export_action: "1", **post})
 
     def csv_rows(self, response):
         self.assertEqual(response.status_code, 200)
@@ -49,6 +50,8 @@ class ProductDayCSVTests(ProductDayTestCase):
         self.assertIn("no-store", response["Cache-Control"])
         return list(csv.reader(StringIO(response.content.decode("utf-8-sig"), newline=""), strict=True))
 
+
+class ProductDayCSVTests(ProductCSVAssertions, ProductDayTestCase):
     def test_view_change_and_export_grants_are_independent_and_rechecked(self):
         self.product("visible", self.stamp)
         url = self.link(self.chart(), "2026-11-19", 1)
@@ -221,3 +224,137 @@ class ProductDayCSVTests(ProductDayTestCase):
         self.csv_rows(self.download(url, csrfmiddlewaretoken=token, _save="1", **{"form-0-featured": "on"}))
         product.refresh_from_db()
         self.assertFalse(product.featured)
+
+
+class ProductStatusCSVTests(ProductCSVAssertions, ProductDayTestCase):
+    export_action = "_export_status_csv"
+
+    def status_url(self, status, site="admin"):
+        page = BeautifulSoup(self.client.get(reverse(f"{site}:index")).content, "html.parser")
+        return page.select_one(f'.nova-category-chart a[data-nova-category="{status}"]')["href"]
+
+    def test_readonly_exports_current_search_filters_order_and_all_pages(self):
+        self.grant_export()
+        Product.objects.bulk_create([
+            Product(sku=f"match-{i:02}", name="样品", price=10, status="active") for i in range(12)
+        ] + [
+            Product(sku="match-draft", name="草稿", price=10),
+            Product(sku="match-cheap", name="低价", price=1, status="active"),
+            Product(sku="unrelated", name="其他", price=10, status="active"),
+        ])
+        url = self.status_url("active")
+        column = self.client.get(url).context["cl"].list_display.index("sku")
+        filtered = url + f"&q=match&price__gte=10&o=-{column}&_nova_page_size=10&p=2"
+        listing = self.client.get(filtered)
+        self.assertIsNone(listing.context["cl"].formset)
+        self.assertEqual(len(listing.context["cl"].result_list), 2)
+        form = self.form(listing)
+        self.assertEqual(form["method"], "post")
+        self.assertIsNone(form.find_parent("form"))
+        action = urljoin(filtered, form["action"])
+        query = parse_qs(urlsplit(action).query)
+        self.assertNotIn("p", query)
+        self.assertEqual(query["status__exact"], ["active"])
+        response = self.download(action, fields="price,stock", status__exact="draft", _selected_action="0")
+        self.assertEqual(response["Content-Disposition"], 'attachment; filename="products-status-active.csv"')
+        rows = self.csv_rows(response)
+        self.assertEqual(rows[0], self.headers)
+        self.assertTrue(all(len(row) == 3 for row in rows))
+        self.assertEqual([row[0] for row in rows[1:]], [f"match-{i:02}" for i in reversed(range(12))])
+
+    def test_status_and_visibility_rechecked_at_download_and_empty_results_keep_headers(self):
+        self.grant_export()
+        valid, changed, scoped, denied, removed = [self.product(sku, self.stamp) for sku in
+                                                   ("valid", "changed", "scoped", "denied", "removed")]
+        url = self.status_url("draft")
+        Product.objects.filter(pk=changed.pk).update(status="archived")
+        removed.delete()
+        with patch.object(self.owner, "get_queryset", return_value=Product.objects.exclude(pk=scoped.pk)), patch.object(
+            self.owner, "has_view_or_change_permission", side_effect=lambda req, obj=None: obj != denied
+        ):
+            self.assertEqual([r[0] for r in self.csv_rows(self.download(url))[1:]], [valid.sku])
+            self.assertEqual(self.csv_rows(self.download(url + "&q=denied")), [self.headers])
+        empty = self.status_url("active")
+        self.assertIsNotNone(self.form(self.client.get(empty)))
+        self.assertEqual(self.csv_rows(self.download(empty)), [self.headers])
+        with patch.object(self.owner, "get_queryset", return_value=Product.objects.none()):
+            self.assertEqual(self.csv_rows(self.download(url)), [self.headers])
+
+    def test_export_permission_columns_and_status_visibility_rechecked(self):
+        self.product("sample", self.stamp)
+        url = self.status_url("draft")
+        for editing in (False, True):
+            if editing:
+                self.reader.user_permissions.add(Permission.objects.get(codename="change_product"))
+            self.assertIsNone(self.form(self.client.get(url)))
+            self.assertEqual(self.download(url).status_code, 403)
+        self.grant_export()
+        self.assertIsNotNone(self.form(self.client.get(url)))
+        for display in (["name", "updated_at", "status_badge"], ["sku", "name", "updated_at"]):
+            with patch.object(self.owner, "get_list_display", return_value=display):
+                self.assertIsNone(self.form(self.client.get(url)))
+                self.assertEqual(self.download(url).status_code, 403)
+        with patch.object(self.owner, "has_module_permission", return_value=False):
+            self.assertEqual(self.download(url).status_code, 403)
+        self.reader.user_permissions.clear()
+        self.grant_export()
+        self.assertEqual(self.download(url).status_code, 403)
+
+    def test_only_a_single_known_status_and_csrf_protected_post_can_download(self):
+        self.grant_export()
+        self.product("sample", self.stamp)
+        base = reverse("admin:catalog_product_changelist")
+        url = self.status_url("draft")
+        for query in ("", "?status__exact=", "?status__in=draft,active", "?status__exact=other",
+                      "?status__exact=draft&status__exact=active", "?status__exact=draft&_popup=1"):
+            with self.subTest(query=query):
+                response = self.download(base + query, status__exact="draft")
+                self.assertEqual(response.status_code, 404)
+                self.assertNotIn("Content-Disposition", response)
+        self.assertEqual(self.download(url + "&unexpected_filter=1").status_code, 400)
+        self.assertEqual(self.download(url, _export_day_csv="1").status_code, 404)
+        self.assertEqual(self.download(url + "&activity_day=invalid").status_code, 404)
+        self.client = Client(enforce_csrf_checks=True)
+        self.client.force_login(self.reader)
+        form = self.form(self.client.get(url))
+        self.assertEqual(self.download(url).status_code, 403)
+        token = form.select_one('[name="csrfmiddlewaretoken"]')["value"]
+        self.assertEqual(len(self.csv_rows(self.download(url, csrfmiddlewaretoken=token))), 2)
+
+    def test_formula_safety_and_list_timezone_in_actual_file(self):
+        self.grant_export()
+        product = self.product("  ＝1", self.stamp)
+        Product.objects.filter(pk=product.pk).update(name='@商品,"灯"\n第二行')
+        with timezone.override(ZoneInfo("America/New_York")):
+            url = self.status_url("draft") + "&updated_at__date=2026-11-18"
+            self.assertEqual(self.client.get(url).context["cl"].result_count, 1)
+            self.assertEqual(self.csv_rows(self.download(url)), [
+                ["SKU", "商品名称", "更新时间 (America/New_York)"],
+                ["TEXT:   ＝1", 'TEXT: @商品,"灯"\n第二行', "2026-11-18T20:00:00-05:00"],
+            ])
+
+    def test_status_row_cap_after_filtering(self):
+        self.grant_export()
+        Product.objects.bulk_create([Product(sku=f"d{i}", name="样品", price=1) for i in range(MAX_EXPORT_ROWS)])
+        other = Product.objects.create(sku="extra", name="上架商品", price=1, status="active")
+        url = self.status_url("draft")
+        self.assertEqual(len(self.csv_rows(self.download(url))) - 1, MAX_EXPORT_ROWS)
+        Product.objects.filter(pk=other.pk).update(status="draft")
+        self.assertIsNone(self.form(self.client.get(url)))
+        response = self.download(url, limit=MAX_EXPORT_ROWS + 1)
+        self.assertEqual(response.status_code, 400)
+        self.assertNotIn("Content-Disposition", response)
+        self.assertEqual(self.csv_rows(self.download(url + "&q=extra"))[1][0], "extra")
+
+    @override_settings(ROOT_URLCONF="tests.multisite_urls", NOVA_ADMIN_URL_NAMESPACES={})
+    def test_target_site_uses_its_own_product_scope(self):
+        from tests.multisite_urls import warehouse_site
+
+        self.grant_export()
+        visible = self.product("warehouse", self.stamp)
+        self.product("another-site", self.stamp)
+        with patch.object(warehouse_site, "index_template", "project_admin/dashboard.html"), patch.object(
+            warehouse_site.get_model_admin(Product), "get_queryset", return_value=Product.objects.filter(pk=visible.pk)
+        ):
+            url = self.status_url("draft", "warehouse")
+            self.assertEqual([r[0] for r in self.csv_rows(self.download(url))[1:]], ["warehouse"])

@@ -23,7 +23,7 @@ from .product_names import ProductNameConflict, ProductNameForm
 from .publication import PublicationConflict, lock_status
 from .publication_calendar import publication_calendar
 from .recycle_bin import can_view_recycle_bin, product_recycle_bin, restore_product
-from .product_csv import MAX_EXPORT_ROWS, can_export_product_day, export_product_day
+from .product_csv import CSV_ACTIONS, MAX_EXPORT_ROWS, can_export_products, export_products, product_csv_action
 
 
 @admin.register(Category)
@@ -275,16 +275,17 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
         return super().get_changelist_formset(request, formset=ProductListFormSet, **kwargs)
 
     def changelist_view(self, request, extra_context=None):
-        if request.method == "POST" and "_export_day_csv" in request.POST:
-            return export_product_day(request, self)
+        if request.method == "POST" and CSV_ACTIONS.intersection(request.POST):
+            return export_products(request, self)
         extra_context = {
             **(extra_context or {}),
             "show_product_board": can_view_board(request, self),
             "show_product_recycle_bin": can_view_recycle_bin(request, self),
         }
+        action = product_csv_action(request.GET)
+        if action and can_export_products(request, self):
+            extra_context.update(product_csv_action=action, product_csv_limit=MAX_EXPORT_ROWS)
         if ProductActivityDayFilter.parameter_name in request.GET and self.has_view_or_change_permission(request):
-            if can_export_product_day(request, self):
-                extra_context["product_csv_limit"] = MAX_EXPORT_ROWS
             # Django constructs the page formset after creating the changelist.
             with timezone.override(ProductActivityDayFilter.signed_window(request).zone):
                 return super().changelist_view(request, extra_context)
