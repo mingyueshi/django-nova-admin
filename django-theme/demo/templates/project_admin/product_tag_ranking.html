@@ -1,0 +1,22 @@
+{% load i18n %}
+<section id="product-tag-ranking" aria-labelledby="product-tags-title" tabindex="-1">
+  <h2 id="product-tags-title">{% translate 'Product tag ranking' context 'Nova demo' %}</h2>
+  {% if filters.tag %}
+    <p>{{ tag_label }} · <a href="{% querystring filters.query chart_tag=None %}#product-tag-ranking">{% translate 'Clear tag filter' context 'Nova demo' %}</a></p>
+  {% endif %}
+  {% if tag_rows %}
+    <table aria-labelledby="product-tags-title">
+      <thead><tr><th scope="col">{% translate 'Tag' context 'Nova demo' %}</th><th scope="col">{% translate 'Visible products' context 'Nova demo' %}</th></tr></thead>
+      <tbody>{% for row in tag_rows %}
+        <tr>
+          <th scope="row">
+            {% if row.key == filters.tag %}<span aria-current="true">{{ row.label }}</span>{% else %}<a href="{% querystring filters.query chart_tag=row.key %}#product-tag-ranking">{{ row.label }}</a>{% endif %}
+          </th>
+          <td>{{ row.total }}</td>
+        </tr>
+      {% endfor %}</tbody>
+    </table>
+  {% else %}
+    <p>{% translate 'No tags have matching products.' context 'Nova demo' %}</p>
+  {% endif %}
+</section>

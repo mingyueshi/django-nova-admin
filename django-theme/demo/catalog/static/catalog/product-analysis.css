@@ -10,10 +10,12 @@
 .product-analysis-table table {
   width: 100%;
 }
-#product-category-ranking {
+#product-category-ranking,
+#product-tag-ranking {
   margin-block-end: 1.5rem;
 }
-#product-category-ranking td {
+#product-category-ranking td,
+#product-tag-ranking td {
   text-align: end;
   font-variant-numeric: tabular-nums;
 }

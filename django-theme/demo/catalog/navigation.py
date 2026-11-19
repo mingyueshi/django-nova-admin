@@ -40,7 +40,7 @@ def demo_product_badges(request, available_apps):
     return {"catalog.product": model_admin.get_queryset(request).count()}
 
 
-def visible_products(request, owner, scope):
+def visible_admin_objects(request, owner, scope):
     # Django's default hooks grant model-wide permissions. Keep aggregation in SQL
     # unless the registration has supplied an object-aware permission policy.
     hooks = ("has_view_or_change_permission", "has_view_permission", "has_change_permission")
@@ -49,6 +49,10 @@ def visible_products(request, owner, scope):
     candidates = scope.order_by("pk").distinct()
     allowed = [p.pk for p in candidates.iterator(chunk_size=500) if owner.has_view_or_change_permission(request, p)]
     return scope.filter(pk__in=allowed)
+
+
+def visible_products(request, owner, scope):
+    return visible_admin_objects(request, owner, scope)
 
 
 def visible_product_ids(request, owner, product_ids, db):

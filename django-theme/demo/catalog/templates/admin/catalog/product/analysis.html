@@ -7,7 +7,7 @@
 {% endblock %}
 {% block breadcrumbs %}
   <div class="breadcrumbs">
-    <a href="{% url 'admin:index' %}{% if filters.query and filters.custom_dates %}{% querystring filters.query chart_start=None chart_end=None chart_day=None chart_category=None %}{% elif filters.query %}{% querystring filters.query chart_category=None %}{% endif %}">{% translate 'Home' %}</a>
+    <a href="{% url 'admin:index' %}{% if filters.query and filters.custom_dates %}{% querystring filters.query chart_start=None chart_end=None chart_day=None chart_category=None chart_tag=None %}{% elif filters.query %}{% querystring filters.query chart_category=None chart_tag=None %}{% endif %}">{% translate 'Home' %}</a>
     &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural }}</a>
     &rsaquo; {{ title }}
   </div>
@@ -23,6 +23,7 @@
     <p>{% translate 'Choose a date in the selected range.' context 'Nova demo' %}</p>
   {% else %}
   {% if category_rows != None and not detail_error %}{% include "project_admin/product_category_ranking.html" %}{% endif %}
+  {% if tag_rows != None and not detail_error %}{% include "project_admin/product_tag_ranking.html" %}{% endif %}
   <div class="product-analysis-charts">
     {% include "project_admin/product_charts.html" with app_list=available_apps %}
   </div>
@@ -31,7 +32,12 @@
     {% if detail_error %}
       <p>{{ detail_error }}</p>
     {% elif page != None %}
-      <p>{% if filters.category %}{{ category_label }} · {% if direct_only %}{% translate 'Directly assigned products' context 'Nova demo' %} · {% endif %}{% endif %}{% if filters.custom_dates %}{{ filters.detail_dates.first.isoformat }} – {{ filters.detail_dates.last.isoformat }}{% if filters.status_label %} · {{ filters.status_label }}{% endif %} · {% endif %}{% blocktranslate with zone=filters.period.zone.key context 'Nova demo' %}Chart timezone: {{ zone }}. Data cutoff: {{ cutoff }}.{% endblocktranslate %}</p>
+      <p>
+        {% if filters.category %}{{ category_label }} · {% if direct_only %}{% translate 'Directly assigned products' context 'Nova demo' %} · {% endif %}{% endif %}
+        {% if filters.tag %}{% translate 'Tag' context 'Nova demo' %} · {{ tag_label }} · {% endif %}
+        {% if filters.custom_dates %}{{ filters.detail_dates.first.isoformat }} – {{ filters.detail_dates.last.isoformat }}{% if filters.status_label %} · {{ filters.status_label }}{% endif %} · {% endif %}
+        {% blocktranslate with zone=filters.period.zone.key context 'Nova demo' %}Chart timezone: {{ zone }}. Data cutoff: {{ cutoff }}.{% endblocktranslate %}
+      </p>
       {% if page.object_list %}
         <div class="product-analysis-table">
           <table aria-labelledby="product-details-title">
