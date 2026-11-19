@@ -10,6 +10,9 @@
 
 {% block extrahead %}
   {{ block.super }}
+  {% if nova_admin_active and nova_columns %}
+    <script src="{% static 'nova_admin/columns.js' %}" defer {% nova_nonce %}></script>
+  {% endif %}
   {% if nova_admin_active and has_permission and not is_popup and nova_admin_print %}
     <script src="{% static 'nova_admin/print.js' %}" defer {% nova_nonce %}></script>
   {% endif %}
@@ -28,5 +31,12 @@
               data-unsaved="{% translate 'Visible editable values may be unsaved. Printing does not save changes.' context 'Nova Admin' %}"
               data-yes="{% translate 'Yes' %}" data-no="{% translate 'No' %}">{% translate 'Print current page' context 'Nova Admin' %}</button>
     </li>
+  {% endif %}
+{% endblock %}
+
+{% block search %}
+  {{ block.super }}
+  {% if nova_admin_active and nova_columns %}
+    {% include "nova_admin/columns.html" %}
   {% endif %}
 {% endblock %}

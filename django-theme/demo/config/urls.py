@@ -6,6 +6,7 @@ from nova_admin.urls import for_admin
 admin.site.site_header = "Nova · 管理中心"
 admin.site.site_title = "Nova Admin"
 admin.site.index_title = "工作台"
+admin.site.index_template = "project_admin/dashboard.html"
 
 urlpatterns = [
     path("admin/_theme/", include(for_admin(admin.site))),

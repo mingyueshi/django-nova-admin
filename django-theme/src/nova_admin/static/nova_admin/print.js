@@ -11,7 +11,7 @@
         getComputedStyle(button).getPropertyValue('--nova-print-available').trim() !== '1') return;
     button.dataset.novaPrintReady = 'true';
     const media = window.matchMedia('print');
-    const excluded = '[hidden],[inert],[aria-hidden="true"],[data-nova-no-print],[data-nova-print-exclude],.visually-hidden,.sr-only,.action-checkbox,.action-checkbox-column,.sortoptions,script,style,template,button,input[type="hidden"],input[type="password"],input[type="file"]';
+    const excluded = '[hidden],[inert],[aria-hidden="true"],[data-nova-no-print],[data-nova-print-exclude],[data-nova-column-hidden],.visually-hidden,.sr-only,.action-checkbox,.action-checkbox-column,.sortoptions,script,style,template,button,input[type="hidden"],input[type="password"],input[type="file"]';
     let screenNodes = new WeakSet();
     let sheet = null;
     let opener = null;
@@ -123,7 +123,7 @@
     }
     const observer = new MutationObserver(scheduleScreen);
     observer.observe(list, {subtree: true, childList: true, attributes: true,
-        attributeFilter: ['class', 'style', 'hidden', 'inert', 'aria-hidden', 'data-nova-no-print', 'data-nova-print-exclude']});
+        attributeFilter: ['class', 'style', 'hidden', 'inert', 'aria-hidden', 'data-nova-no-print', 'data-nova-print-exclude', 'data-nova-column-hidden']});
     window.addEventListener('resize', scheduleScreen);
     window.addEventListener('beforeprint', prepare);
     window.addEventListener('afterprint', cleanup);

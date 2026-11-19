@@ -104,3 +104,7 @@ msgctxt "Nova pagination"
 msgid "Go"
 msgstr "跳转"
 
+
+msgctxt "Nova demo"
+msgid "Visible products"
+msgstr "可见商品数"

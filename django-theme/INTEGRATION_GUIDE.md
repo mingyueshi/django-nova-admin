@@ -84,7 +84,29 @@ Demo 的合成 static 图集只用于 list_display 样式，不是私有媒体�
 
 ## 仪表盘、行操作与分页
 
-可通过现有 `AdminSite.index_template` 自定义首页，再保留原生应用入口；统计必须从同一权限过滤的业务服务取得，避免给只读/受限人员显示越权汇总。卡片没有数据时显示明确空态，不能复用 Mock KPI 冒充实时数据。[AdminSite 扩展点](https://docs.djangoproject.com/en/6.1/ref/contrib/admin/#adminsite-objects)
+### 首页 KPI
+
+主题首页提供 `nova_dashboard` 模板块。宿主可以在自己的 `AdminSite.index()` 里通过 `extra_context["nova_kpis"]` 传入一组 `{"label": ..., "value": ...}` 卡片，也可以用 `AdminSite.index_template` 指定继承 `admin/index.html` 的模板，在这个块里调用宿主的数据钩子。默认首页保留应用入口与最近操作。未传入指标时省略区块，传入空列表显示空态；指标值 `0` 显示为零，`None` 显示“暂无数据”。宿主读取失败可向 `nova_admin/kpi_cards.html` 传入 `unavailable=True` 显示加载失败。
+
+[Demo 首页模板](demo/templates/project_admin/dashboard.html)显示“可见商品数”。[数据钩子](demo/catalog/navigation.py)核对当前 AdminSite 的应用列表、模型列表权限和注册实例，从该实例的 `get_queryset(request)` 计数。宿主有租户、对象或字段限制时，先用与业务列表相同的授权查询限定统计范围，再提供指标；未获授权的指标应直接省略。
+
+### 列表列偏好
+
+将 mixin 放在已有 ModelAdmin 基类之前，声明允许用户调整的列。例如：
+
+```python
+from django.contrib import admin
+from nova_admin.columns import ColumnPreferencesMixin
+
+class ProductAdmin(ColumnPreferencesMixin, admin.ModelAdmin):
+    list_display = ("name", "sku", "stock", "featured")
+    list_editable = ("featured",)
+    nova_preference_columns = ("sku", "stock")
+```
+
+“列表列设置”提供显隐、上下移动和恢复默认。偏好保存在当前 Django session，按用户、完整 AdminSite 命名空间和模型隔离。每次打开列表和保存时，都与该请求的实际 `list_display` 取交集。候选列使用稳定的字符串标识；第一列、详情链接、操作选择框和可编辑列保留在原位。宿主应在 `get_list_display(request)` 等服务端钩子中过滤受限字段，列显隐只是用户的显示选择。退出登录或 session 到期后恢复默认，不跨设备同步。
+
+列偏好使用独立的 CSRF POST，只提交布局，保留待保存的行内值。排序继续使用 Django 原生链接。原生外观、弹窗及无 JavaScript 环境使用标准列表。
 
 行操作可用 `@admin.display` 与 `format_html` 生成所属 AdminSite 的原生 change/delete 链接，并逐对象调用权限 hook。删除继续使用原生确认与 CSRF POST，不能以 GET 完成操作。跳页/每页条数由 ModelAdmin/paginator 的业务容量与查询成本决定；设置有限允许值，不能信任无限 page_size。`date_hierarchy` 可按模型已有日期字段启用；新闻发布校验、缺货警示由业务规则决定，不是主题自动推断。
 

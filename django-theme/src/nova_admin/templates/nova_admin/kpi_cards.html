@@ -1,0 +1,14 @@
+{% load i18n %}
+<section class="nova-kpis" aria-labelledby="nova-kpi-title">
+  <h2 id="nova-kpi-title">{% translate 'Key metrics' context 'Nova Admin' %}</h2>
+  {% if unavailable %}
+    <p>{% translate 'Metrics are temporarily unavailable.' context 'Nova Admin' %}</p>
+  {% elif nova_kpis %}
+    <dl>{% for card in nova_kpis %}<div>
+      <dt>{{ card.label|force_escape }}</dt>
+      <dd>{% if card.value != None %}{{ card.value|force_escape }}{% else %}{% translate 'No data' context 'Nova Admin' %}{% endif %}</dd>
+    </div>{% endfor %}</dl>
+  {% else %}
+    <p>{% translate 'No metrics available.' context 'Nova Admin' %}</p>
+  {% endif %}
+</section>

@@ -1,0 +1,21 @@
+{% load i18n %}
+<details class="nova-columns" hidden>
+  <summary>{% translate 'List columns' context 'Nova Admin' %}</summary>
+  <form method="post" data-saved="{% translate 'Column preferences saved.' context 'Nova Admin' %}"
+        data-error="{% translate 'Could not save column preferences. Reload to check the available columns.' context 'Nova Admin' %}">
+    {% csrf_token %}
+    <ol>
+      {% for col in nova_columns %}
+        <li data-default-index="{{ col.default_index }}">
+          <input type="hidden" name="order" value="{{ col.key }}">
+          <label><input type="checkbox" name="visible" value="{{ col.key }}"{% if col.visible %} checked{% endif %}> {{ col.label }}</label>
+          <button type="button" data-move="-1" aria-label="{% blocktranslate with label=col.label context 'Nova Admin' %}Move {{ label }} up{% endblocktranslate %}">↑</button>
+          <button type="button" data-move="1" aria-label="{% blocktranslate with label=col.label context 'Nova Admin' %}Move {{ label }} down{% endblocktranslate %}">↓</button>
+        </li>
+      {% endfor %}
+    </ol>
+    <button type="submit" name="_nova_columns" value="save">{% translate 'Apply' context 'Nova Admin' %}</button>
+    <button type="submit" name="_nova_columns" value="reset">{% translate 'Restore default columns' context 'Nova Admin' %}</button>
+    <span role="status" aria-live="polite"></span>
+  </form>
+</details>

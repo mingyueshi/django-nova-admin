@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
+import {testColumns} from './test-columns.mjs';
 const require = createRequire(import.meta.url);
 const {JSDOM} = require('jsdom');
 const script = readFileSync(new URL('../src/nova_admin/static/nova_admin/enhancements.js', import.meta.url), 'utf8');
@@ -352,6 +353,7 @@ sorting({name:'商品名称及所属业务分组的长列名 LongUnbrokenColumnH
     assert.ok(d.querySelector('.column-name .nova-sort-heading--long'));
     assert.equal(d.querySelector('.column-price .nova-sort-heading--long'), null);
 });
+count += await testColumns();
 console.log(`TOTAL ${count} changelist enhancement tests passed`);
 await import('./test-print.mjs');
 await import('./test-messages.mjs');

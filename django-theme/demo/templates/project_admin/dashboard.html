@@ -1,0 +1,7 @@
+{% extends "admin/index.html" %}
+{% load project_admin %}
+
+{% block nova_dashboard %}
+  {% product_kpis request app_list as metrics %}
+  {% include "nova_admin/kpi_cards.html" with nova_kpis=metrics.cards unavailable=metrics.unavailable only %}
+{% endblock %}

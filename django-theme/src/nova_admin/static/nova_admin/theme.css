@@ -1249,3 +1249,27 @@ body.nova-admin .nova-results-scrollbar:focus-visible { outline: 2px solid var(-
 
 /* Bundled SVGs keep their requested dimensions; navigation requests 16px. */
 body.nova-admin .nova-icon { display: inline-block; flex: none; vertical-align: -.2em; }
+
+body.nova-admin .nova-kpis { margin-block: 0 1.5rem; }
+body.nova-admin .nova-kpis dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: .75rem;
+  margin: 0;
+}
+body.nova-admin .nova-kpis dl > div {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--hairline-color);
+  border-radius: .65rem;
+  background: var(--body-bg);
+}
+body.nova-admin .nova-kpis dt { color: var(--body-quiet-color); }
+body.nova-admin .nova-kpis dd { margin: .25rem 0 0; font-size: 1.5rem; font-weight: 600; }
+
+body.nova-admin .nova-columns { margin: .5rem 0 1rem; }
+body.nova-admin .nova-columns summary { cursor: pointer; font-weight: 600; }
+body.nova-admin .nova-columns ol { padding: 0; margin: .75rem 0; list-style: none; }
+body.nova-admin .nova-columns li { display: flex; align-items: center; gap: .5rem; max-width: 28rem; margin-block: .25rem; }
+body.nova-admin .nova-columns label { flex: 1; }
+body.nova-admin .nova-columns button { min-height: 2rem; }
+body.nova-admin #result_list [data-nova-column-hidden] { display: none; }

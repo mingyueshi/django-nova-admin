@@ -15,6 +15,7 @@ def health(request):
     return HttpResponse("ok", content_type="text/plain")
 
 
+admin.site.index_template = "project_admin/dashboard.html"
 urlpatterns = [path("_health/", health)]
 if settings.NOVA_EXAMPLE_CAPTCHA:
     from nova_admin.captcha import CaptchaAdminAuthenticationForm, captcha_refresh

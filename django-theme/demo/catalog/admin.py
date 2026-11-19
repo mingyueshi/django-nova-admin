@@ -2,6 +2,7 @@ from django.contrib import admin
 from django import forms
 from django.utils.html import format_html
 from django.utils import timezone
+from nova_admin.columns import ColumnPreferencesMixin
 from .models import Category, MemberProfile, NewsItem, Product, ProductVariant, Tag
 from .media import DemoMediaAdminMixin
 from .pagination import BoundedPaginationAdminMixin
@@ -27,7 +28,8 @@ class VariantInline(admin.TabularInline):
 
 
 @admin.register(Product)
-class ProductAdmin(BoundedPaginationAdminMixin, DemoMediaAdminMixin, admin.ModelAdmin):
+class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMediaAdminMixin, admin.ModelAdmin):
+    nova_preference_columns = ("image_thumbnail", "sku", "price", "stock", "status_badge", "updated_at")
     change_list_template = "admin/catalog/product/change_list.html"
     list_display = ["name", "image_thumbnail", "sku", "price", "stock", "status_badge", "featured", "updated_at"]
     list_editable = ["featured"]
@@ -70,7 +72,8 @@ class ProductAdmin(BoundedPaginationAdminMixin, DemoMediaAdminMixin, admin.Model
 
 
 @admin.register(MemberProfile)
-class MemberProfileAdmin(BoundedPaginationAdminMixin, DemoMediaAdminMixin, admin.ModelAdmin):
+class MemberProfileAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMediaAdminMixin, admin.ModelAdmin):
+    nova_preference_columns = ("image_thumbnail", "member_code", "tier", "active", "joined_at")
     media_kind = "avatar"
     media_field = "avatar_key"
     media_column_label = "头像"
@@ -82,7 +85,8 @@ class MemberProfileAdmin(BoundedPaginationAdminMixin, DemoMediaAdminMixin, admin
 
 
 @admin.register(NewsItem)
-class NewsItemAdmin(BoundedPaginationAdminMixin, DemoMediaAdminMixin, admin.ModelAdmin):
+class NewsItemAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMediaAdminMixin, admin.ModelAdmin):
+    nova_preference_columns = ("image_thumbnail", "section", "status", "published_on")
     media_kind = "cover"
     media_field = "cover_key"
     media_label_field = "title"

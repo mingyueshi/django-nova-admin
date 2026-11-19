@@ -9,6 +9,15 @@
   {% endif %}
 {% endblock %}
 
+{% block content %}
+  {% if nova_admin_active and has_permission and not is_popup %}
+    {% block nova_dashboard %}
+      {% if nova_kpis != None %}{% include "nova_admin/kpi_cards.html" %}{% endif %}
+    {% endblock %}
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
+
 {% block content_title %}
   {% if nova_admin_active %}
     <h1>{% translate 'Site overview' context 'Nova Admin' %}</h1>

@@ -4,12 +4,27 @@ from hashlib import sha256
 from importlib.resources import files
 
 from django import template
+from django.db import DatabaseError
 from django.utils.html import format_html
+from django.utils.translation import pgettext
 
 from catalog.forms import chinese_admin, chinese_label
 
 register = template.Library()
 register.filter("project_label", chinese_label)
+
+
+@register.simple_tag
+def product_kpis(request, app_list):
+    from catalog.navigation import demo_product_badges
+
+    try:
+        counts = demo_product_badges(request, app_list)
+    except DatabaseError:
+        return {"unavailable": True}
+    if "catalog.product" not in counts:
+        return {"cards": []}
+    return {"cards": [{"label": pgettext("Nova demo", "Visible products"), "value": counts["catalog.product"]}]}
 
 
 # Full native-template signatures, reviewed alongside ci/template-baselines.json.

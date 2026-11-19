@@ -9,6 +9,7 @@ warehouse_site = AdminSite(name="warehouse")
 warehouse_site.site_header = "Nova · 仓库示例"
 warehouse_site.site_title = "Nova Warehouse"
 warehouse_site.index_title = "仓库工作台"
+warehouse_site.index_template = "project_admin/dashboard.html"
 warehouse_site.register(Category, CategoryAdmin)
 warehouse_site.register(Tag, TagAdmin)
 warehouse_site.register(Product, ProductAdmin)

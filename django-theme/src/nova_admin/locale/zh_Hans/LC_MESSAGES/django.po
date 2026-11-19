@@ -502,3 +502,45 @@ msgstr "更改仅在点击“应用”后生效。"
 msgctxt "Nova Admin"
 msgid "Verification is temporarily unavailable. Please reload the page and try again."
 msgstr "验证服务暂不可用，请重新加载页面后重试。"
+
+msgctxt "Nova Admin"
+msgid "Key metrics"
+msgstr "关键指标"
+
+msgctxt "Nova Admin"
+msgid "Metrics are temporarily unavailable."
+msgstr "指标暂时无法加载。"
+
+msgctxt "Nova Admin"
+msgid "No metrics available."
+msgstr "暂无可展示的指标。"
+
+msgctxt "Nova Admin"
+msgid "No data"
+msgstr "暂无数据"
+
+msgctxt "Nova Admin"
+msgid "List columns"
+msgstr "列表列设置"
+
+msgctxt "Nova Admin"
+msgid "Restore default columns"
+msgstr "恢复默认列"
+
+msgctxt "Nova Admin"
+msgid "Column preferences saved."
+msgstr "列偏好已保存。"
+
+msgctxt "Nova Admin"
+msgid "Could not save column preferences. Reload to check the available columns."
+msgstr "列偏好保存失败，请刷新后确认当前可选列。"
+
+#, python-format
+msgctxt "Nova Admin"
+msgid "Move %(label)s up"
+msgstr "上移%(label)s"
+
+#, python-format
+msgctxt "Nova Admin"
+msgid "Move %(label)s down"
+msgstr "下移%(label)s"
