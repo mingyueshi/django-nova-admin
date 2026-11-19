@@ -349,3 +349,27 @@ msgstr "清除标签筛选"
 msgctxt "Nova demo"
 msgid "No tags have matching products."
 msgstr "当前筛选条件下没有可排行的标签。"
+
+msgctxt "Nova demo"
+msgid "Combine tags"
+msgstr "组合筛选标签"
+
+msgctxt "Nova demo"
+msgid "Select one or more tags"
+msgstr "选择一个或多个标签"
+
+msgctxt "Nova demo"
+msgid "Match rule"
+msgstr "匹配方式"
+
+msgctxt "Nova demo"
+msgid "Match any tag"
+msgstr "匹配任一标签"
+
+msgctxt "Nova demo"
+msgid "Match all tags"
+msgstr "匹配全部标签"
+
+msgctxt "Nova demo"
+msgid "Untagged (no assigned tags)"
+msgstr "未打标签（没有任何标签）"

@@ -13,7 +13,10 @@ def ranking_selection(query, parameter, empty_key, prefix=""):
         return ""
     if len(values) != 1 or not query.get("chart_window"):
         raise Http404
-    key = values[0]
+    return ranking_key(values[0], empty_key, prefix)
+
+
+def ranking_key(key, empty_key, prefix=""):
     if key == empty_key:
         return key
     pk = key.removeprefix(prefix)

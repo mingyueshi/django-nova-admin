@@ -39,6 +39,17 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                 return urljoin(url, a["href"])
         self.fail(f"Missing tag link for {key}")
 
+    def combination(self, page, current, keys, mode):
+        form = page.select_one("#product-tag-ranking form")
+        selector = form.select_one('select[name="chart_tag"][multiple][required]')
+        choices = {opt["value"] for opt in selector.select("option")}
+        self.assertTrue(set(map(str, keys)) <= choices)
+        self.assertIn(mode, [opt["value"] for opt in form.select('[name="chart_tag_mode"] option')])
+        params = [(n["name"], n["value"]) for n in form.select('input[type="hidden"]')]
+        params.extend((selector["name"], str(key)) for key in keys)
+        params.append(("chart_tag_mode", mode))
+        return urlsplit(urljoin(current, form["action"]))._replace(query=urlencode(params)).geturl()
+
     def test_multitag_counts_and_drilldown_preserve_direct_scope_window_and_full_csv(self):
         extra = Tag.objects.create(name="手工", slug="handmade")
         self.item("@first", self.popular, self.sale, extra, category=self.root, stamp="2026-10-31T04:00:00+00:00")
@@ -180,6 +191,132 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         self.assertEqual(self.download(selected).status_code, 404)
         self.reader.user_permissions.remove(Permission.objects.get(codename="export_product"))
         self.assertEqual(self.download(url + "&chart_tag=untagged").status_code, 403)
+
+    def test_any_all_rank_charts_pagination_and_csv_share_the_scoped_product_ids(self):
+        extra = Tag.objects.create(name="手工", slug="handmade")
+        self.item("@both", self.popular, self.sale, extra, category=self.root)
+        self.item("only-a", self.popular, category=self.root, stamp="2026-10-31T04:00:00+00:00")
+        self.item("only-b", self.sale, category=self.root, stamp="2026-11-01T05:30:00+00:00")
+        self.item("only-c", extra, category=self.root)
+        self.item("listed", self.popular, self.sale, category=self.root, status="active")
+        self.item("child", self.popular, self.sale, category=self.child)
+        self.item("other", self.popular, self.sale)
+        self.item("late", self.popular, self.sale, category=self.root, stamp="2026-11-01T06:30:00.000001+00:00")
+        self.item("before", self.popular, self.sale, category=self.root, stamp="2026-10-31T03:59:59.999999+00:00")
+        denied = self.item("private", self.popular, self.sale, category=self.root)
+        self.item("outside", self.popular, self.sale, category=self.root)
+        self.item("deleted", self.popular, self.sale, category=self.root).delete()
+        scope = Product.objects.filter(tags__in=[self.popular, self.sale, extra]).exclude(sku="outside")
+        url = self.entry() + "&chart_start=2026-10-31&chart_end=2026-11-01&chart_status=draft"
+        keys = [str(self.popular.pk), str(self.sale.pk)]
+        with timezone.override(ZoneInfo("Asia/Tokyo")), patch.object(self.owner, "list_per_page", 1), patch.object(
+            self.owner, "get_queryset", return_value=scope
+        ), patch.object(self.owner, "has_view_permission", side_effect=lambda req, obj=None: obj != denied):
+            root_url = urljoin(url, self.open_page(url).find("a", string="灯具")["href"])
+            direct = urljoin(root_url, self.open_page(root_url).find("a", string="本级直属商品")["href"])
+            branch = self.open_page(direct)
+            any_url = self.combination(branch, direct, keys, "any")
+            page = self.open_page(any_url)
+            self.assertIsNone(page.select_one('#product-details form, [name="_save"]'))
+            self.assertEqual(self.download(any_url).status_code, 403)
+            self.grant_export()
+            for mode, expected_rank, daily_counts, draft, skus in (
+                ("any", [("人气", 2), ("促销", 2), ("手工", 1)], [1, 2], 3, ["TEXT: @both", "only-b", "only-a"]),
+                ("all", [("人气", 1), ("促销", 1), ("手工", 1)], [0, 1], 1, ["TEXT: @both"]),
+            ):
+                with self.subTest(mode=mode):
+                    selected = self.combination(page, any_url, keys, mode)
+                    result = self.open_page(selected)
+                    self.assertEqual(self.ranking(result), expected_rank)
+                    self.assertEqual(result.select_one("#product-category-ranking tbody td").get_text(strip=True), str(draft))
+                    self.assertEqual([e["value"] for e in result.select('#product-chart-filters [name="chart_tag"]')], keys)
+                    self.assertEqual(result.select_one('#product-chart-filters [name="chart_tag_mode"]')["value"], mode)
+                    daily, status = [json.loads(n.string) for n in result.select('.product-analysis-charts [type="application/json"]')]
+                    self.assertTrue(all((s["as_of"], s["timezone"]) == (self.cutoff, self.zone) for s in (daily, status)))
+                    self.assertEqual([p["value"] for p in daily["points"]], daily_counts)
+                    self.assertEqual([p["value"] for p in status["points"]], [draft, 1, 0])
+                    self.assertIn(f"({draft})", result.select_one("#product-details-title").get_text())
+                    self.assertEqual(result.select_one("#product-details tbody th a").string, "@both")
+                    rows = self.csv_rows(self.download(urljoin(selected, result.select_one("#product-details form")["action"])))
+                    self.assertEqual(rows[0], ["SKU", "商品名称", "更新时间 (America/New_York)"])
+                    self.assertEqual([r[0] for r in rows[1:]], skus)
+                    self.assertEqual(rows[1][2], "2026-11-01T01:30:00-05:00")
+                    back = urljoin(selected, result.find("a", string="返回整棵子树")["href"])
+                    self.assertCountEqual([r[0] for r in self.csv_rows(self.download(back))[1:]], [*skus, "child"])
+                    day = self.chart_link(result, selected, 'a[data-nova-chart-day="2026-11-01"]')
+                    active = self.chart_link(self.open_page(day), day, 'a[data-nova-category="active"]')
+                    self.assertEqual([r[0] for r in self.csv_rows(self.download(active))[1:]], ["listed"])
+                    self.assertEqual(parse_qs(urlsplit(active).query)["chart_tag"], keys)
+                    clear = urljoin(selected, result.find("a", string="清除标签筛选")["href"])
+                    self.assertEqual(parse_qs(urlsplit(clear).query), parse_qs(urlsplit(direct).query))
+            second = self.chart_link(page, any_url, '#product-details a[rel="next"]')
+            page_two = self.open_page(second)
+            self.assertEqual(page_two.select_one("#product-details tbody th a").string, "only-b")
+            export = urljoin(second, page_two.select_one("#product-details form")["action"])
+            self.assertEqual(parse_qs(urlsplit(export).query), parse_qs(urlsplit(any_url).query))
+            self.assertEqual(len(self.csv_rows(self.download(export))), 4)
+            duplicate = self.combination(page_two, second, [*keys, keys[0]], "all")
+            canonical = self.open_page(duplicate).select_one("#product-details form")["action"]
+            self.assertEqual(parse_qs(urlsplit(canonical).query)["chart_tag"], keys)
+            self.assertEqual([r[0] for r in self.csv_rows(self.download(duplicate))[1:]], ["TEXT: @both"])
+
+    def test_untagged_union_and_empty_intersections_remain_editable(self):
+        self.grant_export()
+        named = Tag.objects.create(name="未打标签", slug="named")
+        self.item("plain")
+        self.item("named", named)
+        self.item("sale", self.sale)
+        url = self.entry()
+        page = self.open_page(url)
+        keys = [str(named.pk), "untagged"]
+        choices = page.select_one('#product-tag-ranking select[multiple]')
+        self.assertNotEqual(choices.find("option", value=str(named.pk)).string, choices.find("option", value="untagged").string)
+        combined = self.combination(page, url, keys, "any")
+        self.assertCountEqual([r[0] for r in self.csv_rows(self.download(combined))[1:]], ["plain", "named"])
+        for selection in (keys, [str(named.pk), str(self.sale.pk)]):
+            selected = self.combination(page, url, selection, "all")
+            empty = self.open_page(selected)
+            self.assertEqual(self.ranking(empty), [])
+            self.assertIsNone(empty.select_one('.product-analysis-charts [type="application/json"], #product-details tbody tr'))
+            self.assertIn("没有可查看的商品", empty.select_one("#product-details").get_text())
+            self.assertEqual(self.csv_rows(self.download(selected)), [["SKU", "商品名称", "更新时间 (America/New_York)"]])
+            choices = empty.select('#product-tag-ranking select[multiple] option[selected]')
+            self.assertCountEqual([e["value"] for e in choices], selection)
+            changed = self.combination(empty, selected, [self.sale.pk], "all")
+            self.assertEqual([r[0] for r in self.csv_rows(self.download(changed))[1:]], ["sale"])
+        historical = urlsplit(combined)._replace(fragment="").geturl() + "&chart_start=2026-10-01&chart_end=2026-10-01"
+        outside = self.open_page(historical)
+        self.assertEqual(self.ranking(outside), [])
+        self.assertCountEqual([o["value"] for o in outside.select("#product-tag-ranking select[multiple] option[selected]")], keys)
+
+    def test_partial_tag_authorization_and_invalid_modes_never_widen_exports(self):
+        self.grant_export()
+        shared = self.item("shared", self.popular, self.sale)
+        self.item("keep", self.popular)
+        url = self.entry()
+        page = self.open_page(url)
+        any_url = self.combination(page, url, [self.popular.pk, self.sale.pk], "any")
+        all_url = self.combination(page, url, [self.popular.pk, self.sale.pk], "all")
+        with patch.object(self.owner, "get_queryset", return_value=Product.objects.exclude(pk=shared.pk)):
+            for selected in (any_url, all_url):
+                self.assertEqual(self.client.get(selected).status_code, 404)
+                denied = self.download(selected)
+                self.assertEqual(denied.status_code, 404)
+                self.assertNotIn("Content-Disposition", denied)
+        self.reader.user_permissions.add(Permission.objects.get(codename="view_tag"))
+        tag_admin = self.owner.admin_site.get_model_admin(Tag)
+        with patch.object(tag_admin, "get_queryset", return_value=Tag.objects.exclude(pk=self.sale.pk)):
+            for selected in (any_url, all_url, url + f"&chart_tag_mode=all&chart_tag=untagged&chart_tag={self.sale.pk}"):
+                self.assertEqual(self.download(selected).status_code, 404)
+        for suffix in ("&chart_tag_mode=all", "&chart_tag_mode=any&chart_tag=", "&chart_tag=1&chart_tag_mode=bad",
+                       "&chart_tag=1&chart_tag_mode=any&chart_tag_mode=all", "&chart_tag_mode=any&chart_tag=1&chart_tag=01"):
+            rejected = self.download(url + suffix)
+            self.assertEqual(rejected.status_code, 404)
+            self.assertNotIn("Content-Disposition", rejected)
+        unsigned = urlsplit(url).path + f"?chart_tag_mode=any&chart_tag={self.popular.pk}"
+        self.assertEqual(self.client.get(unsigned).status_code, 404)
+        self.reader.user_permissions.remove(Permission.objects.get(codename="export_product"))
+        self.assertEqual(self.download(all_url).status_code, 403)
 
     @override_settings(ROOT_URLCONF="tests.multisite_urls", NOVA_ADMIN_URL_NAMESPACES={})
     def test_tag_coordinates_require_one_valid_value_and_the_same_account_and_site(self):

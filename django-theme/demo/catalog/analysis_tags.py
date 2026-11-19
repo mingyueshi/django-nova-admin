@@ -1,9 +1,10 @@
 """Count distinct visible products for each tag on their product records."""
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef, Q
 from django.http import Http404
 from django.utils.translation import pgettext
 
-from .models import Tag
+from .analysis_filters import ranking_key, ranking_selection
+from .models import Product, Tag
 from .navigation import visible_admin_objects
 
 
@@ -25,16 +26,45 @@ def readable_tags(request, owner, db):
     return tags
 
 
-def select_tag(products, tags, key, period):
-    if key == UNTAGGED:
-        return products.filter(tags__isnull=True), pgettext("Nova demo", "Untagged")
-    # Verify the label through this account's readable products at the cutoff.
-    # Changing a category, date or status can then legitimately yield zero rows.
-    visible = period.products_in(products, None).order_by().values("pk")
-    label = tags.filter(pk=key, products__in=visible).values_list("name", flat=True).first()
-    if label is None:
+def tag_selection(query):
+    modes = query.getlist("chart_tag_mode")
+    if not modes:
+        key = ranking_selection(query, "chart_tag", UNTAGGED)
+        return ([key] if key else []), ""
+    values = query.getlist("chart_tag")
+    if modes not in (["any"], ["all"]) or not values or not query.get("chart_window"):
         raise Http404
-    return products.filter(tags=key), label
+    keys = list(dict.fromkeys(ranking_key(value, UNTAGGED) for value in values))
+    return keys, modes[0]
+
+
+def select_tags(products, tags, keys, mode, period):
+    named = [key for key in keys if key != UNTAGGED]
+    labels = {}
+    if named:
+        # Authorize every requested tag, even if their intersection will be empty.
+        visible = period.products_in(products, None).order_by().values("pk")
+        names = tags.filter(pk__in=named, products__in=visible).order_by().values_list("pk", "name").distinct()
+        labels = {str(pk): name for pk, name in names}
+        if len(labels) != len(named):
+            raise Http404
+    if UNTAGGED in keys:
+        labels[UNTAGGED] = pgettext("Nova demo", "Untagged (no assigned tags)") if mode else pgettext("Nova demo", "Untagged")
+        if not named:
+            return products.filter(tags__isnull=True), labels
+        if mode == "all":
+            return products.none(), labels
+
+    # Group assignments separately from host joins. Each matching product ID
+    # contributes once, including when several selected tags occur on one row.
+    memberships = Product.tags.through.objects.using(products.db)
+    matches = memberships.filter(tag_id__in=named).order_by().values("product_id")
+    if mode == "all" and len(named) > 1:
+        matches = matches.alias(matched=Count("tag_id", distinct=True)).filter(matched=len(named))
+    condition = Q(pk__in=matches)
+    if UNTAGGED in keys:
+        condition |= ~Exists(memberships.filter(product_id=OuterRef("pk")))
+    return products.filter(condition), labels
 
 
 def tag_ranking(products, tags):
