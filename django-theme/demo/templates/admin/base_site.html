@@ -9,3 +9,11 @@
     {% endif %}
   {% endif %}
 {% endblock %}
+
+{% block userlinks %}
+  {% if has_permission and not is_popup %}
+    {% notification_link as inbox %}
+    {% if inbox %}<a href="{{ inbox.url }}">通知中心{% if inbox.unread != None %}（{{ inbox.unread }} 未读）{% endif %}</a> / {% endif %}
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

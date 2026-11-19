@@ -7,7 +7,8 @@ from django.http import Http404, HttpResponseNotAllowed, HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 
-from .models import Product, ProductBatchItem, ProductBatchTask, ProductPublicationRequest
+from .models import Product, ProductBatchItem, ProductBatchTask, ProductNotification, ProductPublicationRequest
+from .navigation import visible_product_ids
 from .product_board import can_edit_status, can_view_board
 from .publication import submit_publication
 
@@ -54,7 +55,8 @@ def submit_item(request, owner, products, item):
     if product.updated_at != item.product_updated_at:
         return Outcome.CONFLICT
     try:
-        submitted = submit_publication(products, product, request.user, previous_request=item.previous_request_id)
+        submitted = submit_publication(products, product, request.user, site=owner.admin_site.name,
+                                       previous_request=item.previous_request_id)
     except (ValidationError, IntegrityError):
         # submit_publication rolls its transaction back before the item is marked failed.
         return Outcome.INVALID
@@ -69,6 +71,10 @@ def process_batch(request, owner, items, db):
             # Conditional write also locks on SQLite. A replay cannot submit or count an item twice.
             if row.update(outcome=Outcome.PENDING):
                 row.update(outcome=submit_item(request, owner, products, item))
+                # Serialize completion checks across workers finishing different items of the same task.
+                ProductBatchTask.objects.using(db).select_for_update().only("pk").get(pk=item.task_id)
+                if not ProductBatchItem.objects.using(db).filter(task_id=item.task_id, outcome=Outcome.PENDING).exists():
+                    ProductNotification.objects.using(db).get_or_create(task_id=item.task_id)
 
 
 def totals():
@@ -92,8 +98,7 @@ def product_batch_tasks(request, owner, task_id=None):
     )
     if task_id:
         items = items.filter(task_id=task_id)
-    products = owner.get_queryset(request).using(db).filter(pk__in=items.values("product_id")).order_by("pk").distinct()
-    visible_ids = [p.pk for p in products.iterator() if owner.has_view_or_change_permission(request, p)]
+    visible_ids = visible_product_ids(request, owner, items.values("product_id"), db)
     items = items.filter(product_id__in=visible_ids)
     request.current_app = owner.admin_site.name
     context = {**owner.admin_site.each_context(request), "opts": owner.opts, "title": "批量任务进度"}

@@ -5,6 +5,7 @@ from importlib.resources import files
 
 from django import template
 from django.db import DatabaseError
+from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import pgettext
 
@@ -27,6 +28,29 @@ def product_kpis(request, app_list):
     if "catalog.product" not in counts:
         return {"cards": []}
     return {"cards": [{"label": pgettext("Nova demo", "Visible products"), "value": counts["catalog.product"]}]}
+
+
+@register.simple_tag(takes_context=True)
+def notification_link(context):
+    from catalog.models import ProductNotification
+    from catalog.navigation import visible_product_admin
+    from catalog.notifications import visible_notifications
+    from catalog.product_board import can_view_board
+
+    request = getattr(context, "request", None) or context.get("request")
+    if request is None:
+        return None
+    owner = visible_product_admin(request, context.get("available_apps") or [])
+    if not hasattr(owner, "notifications_view") or not can_view_board(request, owner):
+        return None
+    url = reverse("admin:catalog_product_notifications", current_app=owner.admin_site.name)
+    if "notification_unread" in context:
+        return {"url": url, "unread": context["notification_unread"]}
+    try:
+        unread = visible_notifications(request, owner, ProductNotification.objects.filter(read_at__isnull=True)).count()
+    except DatabaseError:
+        unread = None
+    return {"url": url, "unread": unread}
 
 
 # Full native-template signatures, reviewed alongside ci/template-baselines.json.

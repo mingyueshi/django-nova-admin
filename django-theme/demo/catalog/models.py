@@ -178,6 +178,8 @@ class ProductPublicationRequest(models.Model):
         REJECTED = "rejected", "已驳回"
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="publication_requests")
+    # Older pending applications acquire a site when their result is first recorded.
+    site = models.CharField(max_length=100, blank=True, default="")
     submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
     submitted_at = models.DateTimeField(auto_now_add=True)
     result = models.CharField(max_length=8, choices=Result.choices, default=Result.PENDING)
@@ -232,6 +234,23 @@ class ProductBatchItem(models.Model):
         default_permissions = ()
         constraints = [models.UniqueConstraint(fields=["task", "product"], name="catalog_batch_unique_product")]
         indexes = [models.Index(fields=["task", "outcome", "id"], name="catalog_batch_pending")]
+
+
+class ProductNotification(models.Model):
+    # Each source has one recipient, one site, and at most one result notification.
+    publication = models.OneToOneField(ProductPublicationRequest, null=True, on_delete=models.CASCADE, related_name="+")
+    task = models.OneToOneField(ProductBatchTask, null=True, on_delete=models.CASCADE, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True)
+
+    class Meta:
+        default_permissions = ()
+        ordering = ["-created_at", "-pk"]
+        constraints = [models.CheckConstraint(
+            condition=(models.Q(publication__isnull=False, task__isnull=True)
+                       | models.Q(publication__isnull=True, task__isnull=False)),
+            name="catalog_notification_one_source",
+        )]
 
 
 class ProductVariant(models.Model):

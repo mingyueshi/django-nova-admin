@@ -12,6 +12,7 @@ from .category_tree import can_view_tree, category_tree, edit_category_tree
 from .batch_tasks import publication_task_action, product_batch_tasks
 from .charts import ProductActivityDayFilter
 from .media import DemoMediaAdminMixin
+from .notifications import product_notifications
 from .pagination import BoundedPaginationAdminMixin
 from .product_board import can_view_board, product_publication, product_status_board
 from .publication import PublicationConflict, lock_status
@@ -97,6 +98,7 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
             return wrapped
 
         return [
+            path("notifications/", admin_view(self.notifications_view), name="catalog_product_notifications"),
             path("batch-tasks/", admin_view(self.batch_tasks_view), name="catalog_product_batch_tasks"),
             path("batch-tasks/<uuid:task_id>/", admin_view(self.batch_tasks_view), name="catalog_product_batch_task"),
             path("status-board/", admin_view(self.status_board_view), name="catalog_product_status_board"),
@@ -111,6 +113,9 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
         if getattr(request, "product_recycle_bin", False):
             return Product.all_objects.filter(recycle_entry__isnull=False)
         return super().get_queryset(request)
+
+    def notifications_view(self, request):
+        return product_notifications(request, self)
 
     def batch_tasks_view(self, request, task_id=None):
         return product_batch_tasks(request, self, task_id)

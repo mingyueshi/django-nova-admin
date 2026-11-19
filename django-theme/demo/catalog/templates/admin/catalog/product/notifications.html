@@ -1,0 +1,44 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls i18n l10n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+    &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">商品列表</a>
+    &rsaquo; {{ title }}
+  </div>
+{% endblock %}
+
+{% block content %}
+  <section aria-label="我的通知">
+    <p role="status">未读通知 {{ notification_unread }} 条</p>
+    {% if page.object_list %}
+      <ul>{% for notice in page %}
+        <li>
+          {% if notice.publication_id %}
+            <a href="{% url opts|admin_urlname:'change' notice.publication.product_id|admin_urlquote %}">{{ notice.publication.product.name }}</a>
+            上架审批{{ notice.publication.get_result_display }}
+          {% else %}
+            <a href="{% url opts|admin_urlname:'batch_task' notice.task_id %}">批量提交上架审批任务已完成</a>
+          {% endif %}
+          <time datetime="{{ notice.created_at|date:'c' }}">{{ notice.created_at|date:"Y-m-d H:i:s" }}</time>
+          {% if notice.read_at %}<span>已读</span>{% else %}
+            <span>未读</span>
+            <form method="post">{% csrf_token %}
+              <button type="submit" name="notification" value="{{ notice.pk|unlocalize }}">标记已读</button>
+            </form>
+          {% endif %}
+        </li>
+      {% endfor %}</ul>
+      {% if page.has_other_pages %}
+        <nav aria-label="通知分页">
+          {% if page.has_previous %}<a href="?page={{ page.previous_page_number|unlocalize }}">上一页</a>{% endif %}
+          第 {{ page.number }} / {{ page.paginator.num_pages }} 页
+          {% if page.has_next %}<a href="?page={{ page.next_page_number|unlocalize }}">下一页</a>{% endif %}
+        </nav>
+      {% endif %}
+    {% else %}
+      <p>暂无可查看的通知。</p>
+    {% endif %}
+  </section>
+{% endblock %}

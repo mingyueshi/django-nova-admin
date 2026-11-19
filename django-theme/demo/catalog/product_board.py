@@ -146,7 +146,7 @@ def product_publication(request, model_admin, product_id):
         raise PermissionDenied
 
     if action == "submit":
-        if not submit_publication(products, product, request.user, previous_request=request_id):
+        if not submit_publication(products, product, request.user, site=model_admin.admin_site.name, previous_request=request_id):
             return render_board(request, model_admin, conflict=True)
         message = "已提交上架审批"
     else:

@@ -1,4 +1,4 @@
-"""Demo-owned product visibility shared by navigation and dashboard metrics."""
+"""Shared product visibility checks for the Demo admin."""
 from django.contrib.admin import AdminSite
 from django.contrib.admin.exceptions import NotRegistered
 
@@ -38,3 +38,11 @@ def demo_product_badges(request, available_apps):
     if model_admin is None:
         return {}
     return {"catalog.product": model_admin.get_queryset(request).count()}
+
+
+def visible_product_ids(request, owner, product_ids, db):
+    scope = owner.get_queryset(request).using(db)
+    candidates = scope.filter(pk__in=product_ids).order_by("pk").distinct()
+    allowed = [p.pk for p in candidates.iterator(chunk_size=500) if owner.has_view_or_change_permission(request, p)]
+    # Keep the live site scope in the final query, including a read-state UPDATE after the object checks.
+    return scope.filter(pk__in=allowed).order_by().values("pk")
