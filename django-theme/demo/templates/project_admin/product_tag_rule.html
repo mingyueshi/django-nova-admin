@@ -16,6 +16,7 @@
     <option value="not_exact"{% if rule.mode == 'not_exact' %} selected{% endif %}>{% translate 'Matched tag count differs from N' context 'Nova demo' %}</option>
     <option value="range"{% if rule.mode == 'range' %} selected{% endif %}>{% translate 'Match N to M tags' context 'Nova demo' %}</option>
     <option value="not_range"{% if rule.mode == 'not_range' %} selected{% endif %}>{% translate 'Matched tag count outside N to M' context 'Nova demo' %}</option>
+    <option value="one_of"{% if rule.mode == 'one_of' %} selected{% endif %}>{% translate 'Match one of the specified tag counts' context 'Nova demo' %}</option>
   </select>
 </label>
 <label>
@@ -25,4 +26,10 @@
 <label>
   {% if parameter == 'chart_tag' %}{% translate 'Maximum included tags' context 'Nova demo' %}{% else %}{% translate 'Maximum excluded tags' context 'Nova demo' %}{% endif %}
   <input type="number" name="{{ parameter }}_max" min="0" step="1" value="{{ rule.maximum|default_if_none:rule.minimum|default_if_none:1|unlocalize }}">
+</label>
+<label>
+  {% if parameter == 'chart_tag' %}{% translate 'Included match counts' context 'Nova demo' %}{% else %}{% translate 'Excluded match counts' context 'Nova demo' %}{% endif %}
+  <select name="{{ parameter }}_counts" multiple data-range-error="{% translate 'Each count must be at most the number of selected tags.' context 'Nova demo' %}">
+    {% for count in tag_count_choices %}<option value="{{ count|unlocalize }}"{% if count in rule.counts %} selected{% endif %}>{{ count }}</option>{% endfor %}
+  </select>
 </label>

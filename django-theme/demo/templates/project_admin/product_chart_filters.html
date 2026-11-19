@@ -4,6 +4,8 @@
   {% if filters.category %}<input type="hidden" name="chart_category" value="{{ filters.category }}">{% endif %}
   {% for key in filters.included_tags.keys %}<input type="hidden" name="chart_tag" value="{{ key }}">{% endfor %}
   {% for key in filters.excluded_tags.keys %}<input type="hidden" name="chart_tag_exclude" value="{{ key }}">{% endfor %}
+  {% for count in filters.included_tags.counts %}<input type="hidden" name="chart_tag_counts" value="{{ count|unlocalize }}">{% endfor %}
+  {% for count in filters.excluded_tags.counts %}<input type="hidden" name="chart_tag_exclude_counts" value="{{ count|unlocalize }}">{% endfor %}
   {% if filters.excluded_tags.mode %}<input type="hidden" name="chart_tag_exclude_mode" value="{{ filters.excluded_tags.mode }}">{% endif %}
   {% if filters.included_tags.mode %}<input type="hidden" name="chart_tag_mode" value="{{ filters.included_tags.mode }}">{% endif %}
   {% if filters.included_tags.minimum is not None %}<input type="hidden" name="chart_tag_min" value="{{ filters.included_tags.minimum|unlocalize }}">{% endif %}

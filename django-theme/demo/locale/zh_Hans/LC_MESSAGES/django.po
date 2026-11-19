@@ -468,3 +468,24 @@ msgstr "命中 %(lower)s 到 %(upper)s 个"
 msgctxt "Nova demo"
 msgid "Matched tag count outside %(lower)s to %(upper)s"
 msgstr "命中标签数不在 %(lower)s 到 %(upper)s 之间"
+
+msgctxt "Nova demo"
+msgid "Match one of the specified tag counts"
+msgstr "命中标签数为指定值之一"
+
+msgctxt "Nova demo"
+msgid "Included match counts"
+msgstr "包含的命中数（可多选）"
+
+msgctxt "Nova demo"
+msgid "Excluded match counts"
+msgstr "排除的命中数（可多选）"
+
+msgctxt "Nova demo"
+msgid "Each count must be at most the number of selected tags."
+msgstr "命中数不能超过已选标签数。"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Match one of these counts (%(counts)s)"
+msgstr "命中标签数为指定值之一（%(counts)s）"

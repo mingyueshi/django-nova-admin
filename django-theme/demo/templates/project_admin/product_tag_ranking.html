@@ -21,7 +21,7 @@
       {% endif %}
       {% if excluded_tag_labels %}
         {{ exclusion_label }} · {{ excluded_tag_labels|join:", " }} ·
-        <a href="{% querystring filters.query chart_tag_exclude=None chart_tag_exclude_mode=None chart_tag_exclude_min=None chart_tag_exclude_max=None %}#product-tag-ranking">{% translate 'Clear exclusions' context 'Nova demo' %}</a>{% if filters.included_tags.keys %} · {% endif %}
+        <a href="{% querystring filters.query chart_tag_exclude=None chart_tag_exclude_mode=None chart_tag_exclude_min=None chart_tag_exclude_max=None chart_tag_exclude_counts=None %}#product-tag-ranking">{% translate 'Clear exclusions' context 'Nova demo' %}</a>{% if filters.included_tags.keys %} · {% endif %}
       {% endif %}
       {% if filters.included_tags.keys %}<a href="{% querystring tag_form_query %}#product-tag-ranking">{% translate 'Clear tag filter' context 'Nova demo' %}</a>{% endif %}
     </p>
@@ -32,7 +32,7 @@
       <tbody>{% for row in tag_rows %}
         <tr>
           <th scope="row">
-            {% if not filters.included_tags.mode and row.key in filters.included_tags.keys %}<span aria-current="true">{{ row.label }}</span>{% else %}<a href="{% querystring filters.query chart_tag=row.key chart_tag_mode=tag_row_mode chart_tag_min=None chart_tag_max=None %}#product-tag-ranking">{{ row.label }}</a>{% endif %}
+            {% if not filters.included_tags.mode and row.key in filters.included_tags.keys %}<span aria-current="true">{{ row.label }}</span>{% else %}<a href="{% querystring filters.query chart_tag=row.key chart_tag_mode=tag_row_mode chart_tag_min=None chart_tag_max=None chart_tag_counts=None %}#product-tag-ranking">{{ row.label }}</a>{% endif %}
           </th>
           <td>{{ row.total }}</td>
         </tr>
