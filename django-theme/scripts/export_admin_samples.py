@@ -285,7 +285,7 @@ def sanitize_html(raw: str, *, mode: str, page: str, django_version: str, routes
     banner.append(picker)
     soup.body.insert(0, banner)
     for notice in soup.select(".nova-list-edit-help"):
-        notice.string = "精选推荐为已保存状态的只读快照；本页面不能修改或保存。真实 Django 中需点击保存才生效。"
+        notice.string = "库存和精选推荐显示已保存的值。本页面不能修改或保存。"
     return str(soup)
 
 

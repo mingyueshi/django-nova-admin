@@ -17,9 +17,10 @@ class ColumnPreferencesMixin:
 
     nova_preference_columns = ()
 
-    def _column_names(self, cl):
+    def _column_names(self, request, cl):
         display = [name for name in cl.list_display if name != "action_checkbox"]
-        fixed = [*display[:1], *(cl.list_display_links or ()), *cl.list_editable]
+        editable = cl.list_editable if self.has_change_permission(request) else ()
+        fixed = [*display[:1], *(cl.list_display_links or ()), *editable]
         return [name for name in display if isinstance(name, str) and name not in fixed
                 and name in self.nova_preference_columns and display.count(name) == 1]
 
@@ -48,7 +49,7 @@ class ColumnPreferencesMixin:
             cl = self.get_changelist_instance(request)
         except IncorrectLookupParameters:
             return HttpResponseBadRequest()
-        names = self._column_names(cl)
+        names = self._column_names(request, cl)
         if cl.is_popup or not names:
             return HttpResponseNotFound()
         key = self._column_session_key(request)
@@ -77,7 +78,7 @@ class ColumnPreferencesMixin:
         context = getattr(response, "context_data", None)
         cl = context.get("cl") if context else None
         if enabled and cl is not None and not cl.is_popup:
-            names = self._column_names(cl)
+            names = self._column_names(request, cl)
             if names:
                 context["nova_columns"] = self._column_rows(request, names)
         return response

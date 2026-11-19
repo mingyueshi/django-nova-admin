@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django import forms
+from django.core.exceptions import PermissionDenied
 from django.utils.html import format_html
 from django.utils import timezone
 from nova_admin.columns import ColumnPreferencesMixin
@@ -34,7 +35,7 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
     nova_preference_columns = ("image_thumbnail", "sku", "price", "stock", "status_badge", "updated_at")
     change_list_template = "admin/catalog/product/change_list.html"
     list_display = ["name", "image_thumbnail", "sku", "price", "stock", "status_badge", "featured", "updated_at"]
-    list_editable = ["featured"]
+    list_editable = ["stock", "featured"]
     search_fields = ["name", "sku"]
     search_help_text = "搜索商品名称或 SKU"
     list_filter = [ProductActivityDayFilter, "status"]
@@ -51,18 +52,54 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
     list_per_page = 20
 
     def get_changelist_instance(self, request):
+        zone = timezone.get_current_timezone()
         if ProductActivityDayFilter.parameter_name in request.GET:
-            # Native date lookups and pagination counts use Django's active timezone.
-            window = ProductActivityDayFilter.signed_window(request)
-            with timezone.override(window.zone):
-                return super().get_changelist_instance(request)
-        return super().get_changelist_instance(request)
+            zone = ProductActivityDayFilter.signed_window(request).zone
+        with timezone.override(zone):
+            cl = super().get_changelist_instance(request)
+            if request.method == "POST" and "_save" in request.POST and self.has_change_permission(request):
+                # Bind the hidden IDs to this site's current filtered page, including its signed day.
+                request.product_edit_page_ids = list(cl.result_list.values_list("pk", flat=True))
+        return cl
+
+    def get_changelist_formset(self, request, **kwargs):
+        owner = self
+        displayed = self.get_list_display(request)
+        page_ids = getattr(request, "product_edit_page_ids", None)
+
+        class ProductListFormSet(forms.BaseModelFormSet):
+            def __init__(self, *args, **options):
+                super().__init__(*args, **options)
+                if self.is_bound and page_ids is not None:
+                    # Narrow Django's submitted-object queryset before it resolves the forms.
+                    queryset = self.queryset if self.queryset is not None else owner.get_queryset(request)
+                    self.queryset = queryset.filter(pk__in=page_ids)
+
+            def add_fields(self, form, index):
+                super().add_fields(form, index)
+                if self.is_bound:
+                    identity = form.fields[owner.opts.pk.name]
+                    identity.queryset = self.get_queryset()
+                row_editable = owner.has_change_permission(request, form.instance)
+                for name in owner.list_editable:
+                    if not row_editable or name not in displayed:
+                        if self.is_bound and form.add_prefix(name) in form.data:
+                            raise PermissionDenied
+                        form.fields.pop(name, None)
+                if "stock" in form.fields:
+                    form.fields["stock"].widget.attrs["aria-label"] = f"{form.instance.name} 库存"
+
+        return super().get_changelist_formset(request, formset=ProductListFormSet, **kwargs)
 
     def changelist_view(self, request, extra_context=None):
         if request.method == "POST" and "_export_day_csv" in request.POST:
             return export_product_day(request, self)
-        if ProductActivityDayFilter.parameter_name in request.GET and can_export_product_day(request, self):
-            extra_context = {**(extra_context or {}), "product_csv_limit": MAX_EXPORT_ROWS}
+        if ProductActivityDayFilter.parameter_name in request.GET and self.has_view_or_change_permission(request):
+            if can_export_product_day(request, self):
+                extra_context = {**(extra_context or {}), "product_csv_limit": MAX_EXPORT_ROWS}
+            # Django constructs the page formset after creating the changelist.
+            with timezone.override(ProductActivityDayFilter.signed_window(request).zone):
+                return super().changelist_view(request, extra_context)
         return super().changelist_view(request, extra_context)
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):

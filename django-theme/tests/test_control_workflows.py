@@ -5,6 +5,9 @@ or accessibility certification. A switch is only an explicitly styled checkbox;
 changing its value is persisted by Django's ordinary Save POST.
 """
 import json
+from unittest.mock import patch
+
+from bs4 import BeautifulSoup
 
 from django.contrib import admin
 from django.contrib.admin.models import CHANGE, LogEntry
@@ -37,6 +40,10 @@ class NativeControlWorkflowTests(TestCase):
         )
         cls.viewer.user_permissions.add(Permission.objects.get(
             content_type__app_label="catalog", codename="view_product",
+        ))
+        cls.editor = get_user_model().objects.create_user("stock-editor", is_staff=True)
+        cls.editor.user_permissions.add(Permission.objects.get(
+            content_type__app_label="catalog", codename="change_product",
         ))
         cls.product = Product.objects.create(
             name="Control fixture off", sku="CONTROL-OFF", price="12.50",
@@ -75,8 +82,10 @@ class NativeControlWorkflowTests(TestCase):
         data["_save"] = "Save"
         for form in formset:
             data[form["id"].html_name] = str(form.instance.pk)
+            if "stock" in form.fields:
+                data[form["stock"].html_name] = str(form.instance.stock)
             checked = featured_by_pk.get(str(form.instance.pk), form.instance.featured)
-            if checked:
+            if checked and "featured" in form.fields:
                 data[form["featured"].html_name] = "on"
         return data
 
@@ -107,7 +116,7 @@ class NativeControlWorkflowTests(TestCase):
         self.assertEqual(field.verbose_name, "精选推荐")
         self.product.refresh_from_db()
         self.assertIs(self.product.featured, False)
-        self.assertEqual(self.model_admin.list_editable, ["featured"])
+        self.assertEqual(self.model_admin.list_editable, ["stock", "featured"])
 
     def test_list_switches_keep_native_formset_ids_names_and_save_control(self):
         for mode in MODES:
@@ -121,9 +130,9 @@ class NativeControlWorkflowTests(TestCase):
                 self.assertContains(response, 'name="form-TOTAL_FORMS"')
                 self.assertContains(response, 'name="csrfmiddlewaretoken"')
                 self.assertContains(response, 'name="_save"')
-                self.assertContains(response, "精选推荐开关仅更改待保存状态，请点击「保存」后生效。")
+                self.assertContains(response, "库存须为非负整数。修改库存或精选推荐后，点击「保存」提交当前页。")
                 for form in formset:
-                    self.assertEqual(set(form.fields), {"id", "featured"})
+                    self.assertEqual(set(form.fields), {"id", "stock", "featured"})
                     self.assertIsInstance(form.fields["featured"].widget, CheckboxInput)
                     controls = self.controls(response, name=form["featured"].html_name)
                     self.assertEqual(len(controls), 1)
@@ -166,6 +175,87 @@ class NativeControlWorkflowTests(TestCase):
                     control = self.controls(refreshed, name=form["featured"].html_name)[0]
                     self.assert_real_switch(control, checked=checked)
 
+    def test_change_only_account_saves_stock_on_filtered_list_and_logs_change(self):
+        self.client.force_login(self.editor)
+        url = self.list_url + "?q=CONTROL-OFF"
+        listing = self.client.get(url)
+        form, = listing.context["cl"].formset.forms
+        payload = self.list_post(listing)
+        stock = form["stock"]
+        control, = self.controls(listing, name=stock.html_name)
+        self.assertEqual(control["attrs"]["min"], "0")
+        self.assertIn(self.product.name, control["attrs"]["aria-label"])
+        for value in (17, 0):
+            with self.subTest(value=value):
+                payload[stock.html_name] = str(value)
+                self.assertRedirects(self.client.post(url, payload), url)
+                self.product.refresh_from_db()
+                self.assertEqual(self.product.stock, value)
+                entry = self.changes().latest("id")
+                self.assertEqual(entry.user, self.editor)
+                self.assertEqual(json.loads(entry.change_message), [{"changed": {"fields": ["库存"]}}])
+        self.assertEqual(self.changes().count(), 2)
+
+    def test_invalid_stock_reports_cell_error_and_preserves_every_row(self):
+        self.client.force_login(self.editor)
+        listing = self.client.get(self.list_url)
+        forms = {f.instance.pk: f for f in listing.context["cl"].formset}
+        other_stock = forms[self.other.pk]["stock"].html_name
+        payload = self.list_post(listing, **{str(self.product.pk): True})
+        payload[forms[self.product.pk]["stock"].html_name] = "9"
+        for invalid in ("-1", "1.5", ""):
+            with self.subTest(value=invalid):
+                response = self.client.post(self.list_url, {**payload, other_stock: invalid})
+                self.assertEqual(response.status_code, 200)
+                page = BeautifulSoup(response.content, "html.parser")
+                input_field = page.select_one(f'input[name="{other_stock}"]')
+                self.assertTrue(input_field.find_parent("td").select_one(".errorlist").get_text(strip=True))
+                self.assertEqual(input_field.get("value", ""), invalid)
+                self.assertEqual(page.select_one(f'input[name="{forms[self.product.pk]["stock"].html_name}"]')["value"], "9")
+                self.product.refresh_from_db()
+                self.other.refresh_from_db()
+                self.assertEqual((self.product.stock, self.other.stock), (0, 0))
+                self.assertFalse(self.product.featured)
+                self.assertFalse(self.changes().exists())
+
+    def test_object_permission_change_before_save_rejects_batch_and_renders_readonly_row(self):
+        self.client.force_login(self.editor)
+        listing = self.client.get(self.list_url)
+        old = self.list_post(listing)
+        for form in listing.context["cl"].formset:
+            old[form["stock"].html_name] = "7"
+        with patch.object(self.model_admin, "has_change_permission",
+                          side_effect=lambda request, obj=None: obj is None or obj.pk != self.other.pk):
+            self.assertEqual(self.client.post(self.list_url, old).status_code, 403)
+            self.assertFalse(self.changes().exists())
+            self.assertFalse(Product.objects.exclude(stock=0).exists())
+            listing = self.client.get(self.list_url)
+            rows = BeautifulSoup(listing.content, "html.parser").select("#result_list tbody tr")
+            locked = next(row for row in rows if self.other.name in row.get_text())
+            self.assertEqual(locked.select_one(".field-stock").get_text(strip=True), "0")
+            self.assertFalse(locked.select(".field-stock input, .field-featured input"))
+            payload = self.list_post(listing)
+            editable = next(f for f in listing.context["cl"].formset if f.instance.pk == self.product.pk)
+            payload[editable["stock"].html_name] = "5"
+            self.assertRedirects(self.client.post(self.list_url, payload), self.list_url)
+        self.assertEqual(Product.objects.get(pk=self.product.pk).stock, 5)
+        self.assertEqual(Product.objects.get(pk=self.other.pk).stock, 0)
+        self.assertEqual(self.changes().count(), 1)
+
+    def test_product_that_leaves_current_filter_cannot_be_saved_from_stale_page(self):
+        self.client.force_login(self.editor)
+        url = self.list_url + "?status__exact=draft"
+        listing = self.client.get(url)
+        form, = listing.context["cl"].formset.forms
+        payload = self.list_post(listing)
+        payload[form["stock"].html_name] = "20"
+        Product.objects.filter(pk=self.product.pk).update(status=Product.Status.ARCHIVED)
+        response = self.client.post(url, payload)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["cl"].formset.is_valid())
+        self.assertEqual(Product.objects.get(pk=self.product.pk).stock, 0)
+        self.assertFalse(self.changes().exists())
+
     def test_repeated_unchanged_save_does_not_create_spurious_change_logs(self):
         for mode in MODES:
             with self.subTest(mode=mode):
@@ -202,9 +292,10 @@ class NativeControlWorkflowTests(TestCase):
                 self.assertEqual(self.changes().count(), before_logs + 1)
 
     def test_view_only_user_cannot_submit_list_editable_or_change_form(self):
-        payload = self.list_post(
-            self.client.get(self.list_url), **{str(self.product.pk): True},
-        )
+        listing = self.client.get(self.list_url)
+        payload = self.list_post(listing, **{str(self.product.pk): True})
+        for form in listing.context["cl"].formset:
+            payload[form["stock"].html_name] = "42"
         self.client.force_login(self.viewer)
         for mode in MODES:
             with self.subTest(mode=mode):
@@ -212,6 +303,9 @@ class NativeControlWorkflowTests(TestCase):
                 response = self.client.get(self.list_url)
                 self.assertEqual(response.status_code, 200)
                 self.assertIsNone(response.context["cl"].formset)
+                cells = BeautifulSoup(response.content, "html.parser").select("#result_list .field-stock")
+                self.assertEqual([cell.get_text(strip=True) for cell in cells], ["0", "0"])
+                self.assertTrue(all(cell.find("input") is None for cell in cells))
                 self.assertNotContains(response, 'name="_save"')
                 self.assertNotContains(response, 'class="nova-switch"')
                 self.assertNotContains(response, 'class="nova-list-edit-help"')
@@ -220,6 +314,7 @@ class NativeControlWorkflowTests(TestCase):
                     "featured": "on", "_save": "Save",
                 }).status_code, 403)
                 self.product.refresh_from_db()
+                self.assertFalse(Product.objects.exclude(stock=0).exists())
                 self.assertFalse(self.product.featured)
                 self.assertFalse(self.changes().exists())
 

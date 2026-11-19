@@ -108,7 +108,9 @@ class DashboardColumnTests(TestCase):
         session = self.client.session
         session[key] = saved
         session.save()
-        self.assertEqual(self.panel(), original)
+        reader_columns = self.panel()
+        self.assertIn(("stock", True), reader_columns)
+        self.assertEqual([item for item in reader_columns if item[0] != "stock"], original)
         self.client.force_login(self.admin)
         self.assertEqual(self.save(order, []).status_code, 200)
         news = reverse("admin:catalog_newsitem_changelist")

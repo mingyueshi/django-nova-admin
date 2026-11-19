@@ -116,7 +116,7 @@ class ProductAdmin(ColumnPreferencesMixin, admin.ModelAdmin):
     nova_preference_columns = ("sku", "stock")
 ```
 
-“列表列设置”提供显隐、上下移动和恢复默认。偏好保存在当前 Django session，按用户、完整 AdminSite 命名空间和模型隔离。每次打开列表和保存时，都与该请求的实际 `list_display` 取交集。候选列使用稳定的字符串标识；第一列、详情链接、操作选择框和可编辑列保留在原位。宿主应在 `get_list_display(request)` 等服务端钩子中过滤受限字段，列显隐只是用户的显示选择。退出登录或 session 到期后恢复默认，不跨设备同步。
+“列表列设置”提供显隐、上下移动和恢复默认。偏好保存在当前 Django session，按用户、完整 AdminSite 命名空间和模型隔离。每次打开列表和保存时，都与该请求的实际 `list_display` 取交集。候选列使用稳定的字符串标识；第一列、详情链接、操作选择框和当前账号可编辑的列保留在原位。Demo 的库存列在编辑时固定，只读账号仍可调整它的显示位置。宿主应在 `get_list_display(request)` 等服务端钩子中过滤受限字段，列显隐只是用户的显示选择。退出登录或 session 到期后恢复默认，不跨设备同步。
 
 列偏好使用独立的 CSRF POST，只提交布局，保留待保存的行内值。排序继续使用 Django 原生链接。原生外观、弹窗及无 JavaScript 环境使用标准列表。
 

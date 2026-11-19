@@ -153,7 +153,10 @@ class AutoNativeAdminTests(TestCase):
         self.assertFalse(LogEntry.objects.filter(action_flag=CHANGE).exists())
         payload = {field.html_name: field.value() for field in formset.management_form}
         form = formset.forms[0]
-        payload.update({form["id"].html_name: str(self.product.pk), form["featured"].html_name: "on", "_save": "Save"})
+        payload.update({
+            form["id"].html_name: str(self.product.pk), form["stock"].html_name: form["stock"].value(),
+            form["featured"].html_name: "on", "_save": "Save",
+        })
         self.assertRedirects(self.client.post(self.list_url, payload), self.list_url)
         self.product.refresh_from_db()
         self.assertTrue(self.product.featured)

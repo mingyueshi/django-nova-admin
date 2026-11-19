@@ -170,6 +170,25 @@ class ProductDayDrilldownTests(ProductDayTestCase):
         self.client.force_login(other)
         self.assertEqual(self.client.get(url).status_code, 404)
 
+    def test_inline_stock_save_on_second_page_of_signed_day(self):
+        self.reader.user_permissions.add(Permission.objects.get(codename="change_product"))
+        for index in range(11):
+            self.product(f"day-{index:02}", "2026-11-18T16:05:00+00:00")
+        outside = self.product("previous-day", "2026-11-18T15:59:59+00:00")
+        day_url = self.link(self.chart(), "2026-11-19", 11)
+        page_url = day_url + "&updated_at__date=2026-11-19&_nova_page_size=10&p=2"
+        with timezone.override(ZoneInfo("UTC")):
+            formset = self.client.get(page_url).context["cl"].formset
+            form, = formset.forms
+            data = {field.html_name: field.value() for field in formset.management_form}
+            data.update({"_save": "Save", form["id"].html_name: form.instance.pk, form["stock"].html_name: "12"})
+            response = self.client.post(page_url, data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, page_url)
+        self.assertEqual(list(Product.objects.filter(stock=12).values_list("pk", flat=True)), [form.instance.pk])
+        outside.refresh_from_db()
+        self.assertEqual(outside.stock, 0)
+
     def test_native_pagination_search_and_edit_permissions_preserve_day_filter(self):
         products = [self.product(f"day-{i:02}", "2026-11-19T01:00:00+00:00") for i in range(11)]
         self.product("other-day", "2026-11-18T01:00:00+00:00")
