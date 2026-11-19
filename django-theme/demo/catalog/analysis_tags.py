@@ -39,7 +39,10 @@ class TagRule(NamedTuple):
 
     @property
     def ranges_text(self):
-        return ", ".join(f"{low}-{high}" for low, high in self.ranges)
+        return ", ".join(
+            str(low) if self.mode == "values_or_ranges" and low == high else f"{low}-{high}"
+            for low, high in self.ranges
+        )
 
     @property
     def match_counts(self):
@@ -58,7 +61,9 @@ class TagRule(NamedTuple):
     @property
     def count_label(self):
         if self.ranges:
-            if self.negated:
+            if self.mode == "values_or_ranges":
+                label = pgettext("Nova demo", "Match these counts or ranges (%(ranges)s)")
+            elif self.negated:
                 label = pgettext("Nova demo", "Match none of these ranges (%(ranges)s)")
             else:
                 label = pgettext("Nova demo", "Match any of these ranges (%(ranges)s)")
@@ -110,14 +115,14 @@ def _count_bound(value, lowest, key_count):
     return bound
 
 
-def _count_ranges(value, key_count):
+def _count_ranges(value, key_count, *, allow_counts):
     intervals = []
     for part in re.split("[,，、]", value):
-        pair = re.fullmatch(r"([0-9]+)\s*(?:-|到)\s*([0-9]+)", part.strip())
-        if not pair:
+        pair = re.fullmatch(r"([0-9]+)(?:\s*(?:-|到)\s*([0-9]+))?", part.strip())
+        if not pair or (pair[2] is None and not allow_counts):
             raise Http404
         low = _count_bound(pair[1], 0, key_count)
-        high = _count_bound(pair[2], low, key_count)
+        high = _count_bound(pair[2], low, key_count) if pair[2] is not None else low
         intervals.append((low, high))
 
     merged = []
@@ -138,7 +143,7 @@ def _tag_rule(query, parameter, *, exporting):
     counts = query.getlist(parameter + "_counts")
     ranges = query.getlist(parameter + "_ranges")
     valid_modes = ([], ["any"], ["all"], ["at_least"], ["at_most"], ["exact"], ["not_exact"],
-                   ["range"], ["not_range"], ["one_of"], ["not_one_of"], ["any_range"], ["not_any_range"])
+                   ["range"], ["not_range"], ["one_of"], ["not_one_of"], ["any_range"], ["not_any_range"], ["values_or_ranges"])
     if modes not in valid_modes or len(lower) > 1 or len(upper) > 1 or len(ranges) > 1:
         raise Http404
     mode = modes[0] if modes else ""
@@ -146,7 +151,7 @@ def _tag_rule(query, parameter, *, exporting):
     uses_lower = is_range or mode in ("at_least", "exact", "not_exact")
     uses_upper = is_range or mode == "at_most"
     uses_counts = mode in ("one_of", "not_one_of")
-    uses_ranges = mode in ("any_range", "not_any_range")
+    uses_ranges = mode in ("any_range", "not_any_range", "values_or_ranges")
     # Plain HTML can send inactive bounds. Export URLs must only carry active ones.
     if exporting or not mode:
         if ((upper and not uses_upper) or (lower and not uses_lower) or
@@ -155,7 +160,8 @@ def _tag_rule(query, parameter, *, exporting):
     if uses_ranges:
         if not keys or not ranges:
             raise Http404
-        return TagRule(keys, mode, ranges=_count_ranges(ranges[0], len(keys)))
+        intervals = _count_ranges(ranges[0], len(keys), allow_counts=mode == "values_or_ranges")
+        return TagRule(keys, mode, ranges=intervals)
     if uses_counts:
         if not keys or not counts:
             raise Http404

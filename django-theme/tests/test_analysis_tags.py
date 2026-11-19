@@ -929,16 +929,63 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                 clear = urljoin(target, page.find("a", string="清除排除条件")["href"])
                 self.assertCountEqual([row[0] for row in self.csv_rows(self.download(clear))[1:]], restored)
 
+    def test_mixed_counts_and_ranges_match_each_product_once(self):
+        self.grant_export()
+        tags = [Tag.objects.create(name=f"t{i}", slug=f"tag-{i}") for i in range(1, 7)]
+        for n in range(7):
+            self.item(f"n{n}", *tags[:n])
+        self.item("other", Tag.objects.create(name="其他", slug="other"))
+        keys = [tag.pk for tag in tags] + [tags[0].pk]
+        entry = self.entry()
+        initial = self.open_page(entry)
+        for expression in ("0、2 到 4、6", "6，3、2-3, 0, 3 到 4, 6-6, 2"):
+            include = self.combination(initial, entry, keys, "values_or_ranges", ranges=expression)
+            exclude = self.combination(initial, entry, [], "any", excluded=keys,
+                                       exclude_mode="values_or_ranges", exclude_ranges=expression)
+            for url, side, expected, ranking in (
+                (include, "chart_tag", ["n0", "n2", "n3", "n4", "n6", "other"],
+                 {"t1": 4, "t2": 4, "t3": 3, "t4": 2, "t5": 1, "t6": 1, "其他": 1, "未打标签": 1}),
+                (exclude, "chart_tag_exclude", ["n1", "n5"], {"t1": 2, "t2": 1, "t3": 1, "t4": 1, "t5": 1}),
+            ):
+                with self.subTest(side=side, expression=expression):
+                    page = self.open_page(url)
+                    self.assertEqual(dict(self.ranking(page)), ranking)
+                    daily, status = [json.loads(n.string) for n in page.select('.product-analysis-charts [type="application/json"]')]
+                    self.assertEqual(daily["points"][-1]["value"], len(expected))
+                    self.assertEqual([p["value"] for p in status["points"]], [len(expected), 0, 0])
+                    self.assertCountEqual([a.string for a in page.select("#product-details tbody th a")], expected)
+                    export = urljoin(url, page.select_one("#product-details form")["action"])
+                    query = parse_qs(urlsplit(export).query)
+                    self.assertEqual(query[side + "_ranges"], ["0, 2-4, 6"])
+                    self.assertEqual(query[side], [str(tag.pk) for tag in tags])
+                    self.assertCountEqual([row[0] for row in self.csv_rows(self.download(export))[1:]], expected)
+
+        # An untagged product hits the explicit untagged choice once. A product with only other tags still hits zero.
+        selected = self.combination(initial, entry, [*keys, "untagged"], "values_or_ranges", ranges="0")
+        self.assertEqual([row[0] for row in self.csv_rows(self.download(selected))[1:]], ["other"])
+        empty = self.combination(initial, entry, keys, "values_or_ranges", ranges="0、2 到 4、6",
+                                 excluded=keys, exclude_mode="values_or_ranges", exclude_ranges="0-6")
+        page = self.open_page(empty)
+        self.assertFalse(self.ranking(page))
+        self.assertIsNone(page.select_one('#product-details tbody tr, .product-analysis-charts [type="application/json"]'))
+        self.assertIn("没有可查看的商品", page.select_one("#product-details").get_text())
+        export = urljoin(empty, page.select_one("#product-details form")["action"])
+        self.assertEqual(self.csv_rows(self.download(export)), [["SKU", "商品名称", "更新时间 (America/New_York)"]])
+
     def test_invalid_range_unions_reject_the_entire_view_and_export(self):
         self.grant_export()
         self.item("both", self.popular, self.sale)
         entry = self.entry()
-        for side, rule in product(("chart_tag", "chart_tag_exclude"), ("any_range", "not_any_range")):
+        for side, rule in product(("chart_tag", "chart_tag_exclude"), ("any_range", "not_any_range", "values_or_ranges")):
             field = side + "_ranges"
             tags = [(side, self.popular.pk), (side, self.sale.pk), (side, self.popular.pk)]
             mode = (side + "_mode", rule)
-            for values in ([], [""], ["0-1,2-3"], ["-1-0"], ["2-1"], ["1"], ["0-1,"], ["00-1"],
-                           ["0-0，1.5-2"], ["0-1", "1-2"], ["0-" + "9" * 100]):
+            invalid = [[], [""], ["0-1,2-3"], ["-1-0"], ["2-1"], ["0-1,"], ["00-1"],
+                       ["0-0，1.5-2"], ["0-1", "1-2"], ["0-" + "9" * 100],
+                       ["0-1,3"], ["0、1 到 3"], ["0,-1"], ["1,01"], ["0,,2"], ["1.5,0-1"]]
+            if rule != "values_or_ranges":
+                invalid.append(["1"])
+            for values in invalid:
                 with self.subTest(side=side, rule=rule, values=values):
                     url = entry + "&" + urlencode([*tags, mode, *((field, v) for v in values)])
                     self.assertEqual(self.client.get(url).status_code, 404)
@@ -1073,6 +1120,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                            excluded=excluded, exclude_mode="any_range", exclude_ranges="2-2, 0-0")
             outside_union = self.combination(initial, direct, excluded, "not_any_range", ranges="2-2, 0-0", counts=[1],
                                              excluded=included, exclude_mode="not_any_range", exclude_ranges="1-1, 0-1")
+            mixed = self.combination(initial, direct, included, "values_or_ranges", ranges="1, 0-1", counts=[2], minimum=2,
+                                     excluded=excluded, exclude_mode="values_or_ranges", exclude_ranges="2-2, 0")
             summaries = {
                 at_most: ("最多命中 1 个", "最多命中 0 个", ("_max",)),
                 exact: ("恰好命中 1 个", "恰好命中 0 个", ("_min",)),
@@ -1082,6 +1131,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                 not_count_set: ("命中标签数不在指定值中（0, 2）", "命中标签数不在指定值中（0, 1）", ()),
                 range_union: ("命中标签数落在任一指定区间（0-1）", "命中标签数落在任一指定区间（0-0, 2-2）", ()),
                 outside_union: ("命中标签数不在任何指定区间（0-0, 2-2）", "命中标签数不在任何指定区间（0-1）", ()),
+                mixed: ("命中指定值或闭区间（0-1）", "命中指定值或闭区间（0, 2）", ()),
             }
             for target in summaries:
                 self.assertIsNone(self.open_page(target).select_one('#product-details form, [name="_save"]'))
@@ -1134,9 +1184,10 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                 for selector in (f'#product-chart-filters input[name="{field}"]',
                                                  f'#product-tag-ranking [name="{field}"] option[selected]'):
                                     self.assertEqual([n["value"] for n in page.select(selector)], expected)
-                            if mode in ("any_range", "not_any_range"):
+                            if mode in ("any_range", "not_any_range", "values_or_ranges"):
                                 field = name + "_ranges"
-                                expected = "0-1" if submitted[field] == ["1-1, 0-1"] else "0-0, 2-2"
+                                expected = {"1-1, 0-1": "0-1", "2-2, 0-0": "0-0, 2-2",
+                                            "1, 0-1": "0-1", "2-2, 0": "0, 2"}[submitted[field][0]]
                                 self.assertEqual(query[field], [expected])
                                 self.assertNotIn(name + "_counts", query)
                                 for form in ("#product-chart-filters", "#product-tag-ranking"):
@@ -1148,8 +1199,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                         clear = urljoin(target, page.find("a", string="清除排除条件")["href"])
                         restored = "both" if target in (not_exact, not_count_set, outside_union) else "popular"
                         self.assertCountEqual([r[0] for r in self.csv_rows(self.download(clear))[1:]], ["plain", "sale", restored])
-                        if target in (count_set, not_count_set, range_union, outside_union):
-                            suffix = "_ranges" if target in (range_union, outside_union) else "_counts"
+                        if target in (count_set, not_count_set, range_union, outside_union, mixed):
+                            suffix = "_counts" if target in (count_set, not_count_set) else "_ranges"
                             self.assertNotIn("chart_tag_exclude" + suffix, parse_qs(urlsplit(clear).query))
                             drilled = self.tag_url(page, target, self.sale.pk)
                             drill_query = parse_qs(urlsplit(drilled).query)
@@ -1229,6 +1280,9 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         outside_union_include = self.combination(branch, url, [self.sale.pk, self.popular.pk], "not_any_range", ranges="0-0,2-2")
         outside_union_exclude = self.combination(branch, url, [], "any", excluded=[self.sale.pk, "untagged"],
                                                  exclude_mode="not_any_range", exclude_ranges="0-0,2-2")
+        mixed_include = self.combination(branch, url, [self.sale.pk, self.popular.pk], "values_or_ranges", ranges="0,1-2")
+        mixed_exclude = self.combination(branch, url, [], "any", excluded=[self.sale.pk, "untagged"],
+                                         exclude_mode="values_or_ranges", exclude_ranges="0,1-2")
         self.assertEqual(self.download(choice).status_code, 200)
         self.reader.user_permissions.add(Permission.objects.get(codename="view_tag"))
         tag_admin = self.owner.admin_site.get_model_admin(Tag)
@@ -1241,7 +1295,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                   included_range, excluded_range, zero_include, zero_exclude, cap_include, cap_exclude,
                                   exact_include, exact_exclude, not_exact_include, not_exact_exclude,
                                   outside_include, outside_exclude, set_include, set_exclude, not_set_include, not_set_exclude,
-                                  union_include, union_exclude, outside_union_include, outside_union_exclude):
+                                  union_include, union_exclude, outside_union_include, outside_union_exclude, mixed_include, mixed_exclude):
                     self.assertEqual(self.client.get(selection).status_code, 404)
                     denied = self.download(selection)
                     self.assertEqual(denied.status_code, 404)
@@ -1290,6 +1344,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         self.assertEqual(self.download(union_exclude).status_code, 403)
         self.assertEqual(self.download(outside_union_include).status_code, 403)
         self.assertEqual(self.download(outside_union_exclude).status_code, 403)
+        self.assertEqual(self.download(mixed_include).status_code, 403)
+        self.assertEqual(self.download(mixed_exclude).status_code, 403)
 
     @override_settings(ROOT_URLCONF="tests.multisite_urls", NOVA_ADMIN_URL_NAMESPACES={})
     def test_tag_coordinates_require_one_valid_value_and_the_same_account_and_site(self):

@@ -8,11 +8,15 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
 
   function validateRanges() {
     const tagCount = tags.selectedOptions.length;
+    const allowCounts = mode.value === "values_or_ranges";
     const valid = ranges.disabled || !ranges.value || ranges.value.split(/[,，、]/).every((part) => {
-      const pair = /^(0|[1-9][0-9]*)\s*(?:-|到)\s*(0|[1-9][0-9]*)$/.exec(part.trim());
-      return pair && Number(pair[1]) <= Number(pair[2]) && Number(pair[2]) <= tagCount;
+      const pair = /^(0|[1-9][0-9]*)(?:\s*(?:-|到)\s*(0|[1-9][0-9]*))?$/.exec(part.trim());
+      if (!pair || (!allowCounts && pair[2] === undefined)) return false;
+      const high = Number(pair[2] ?? pair[1]);
+      return Number(pair[1]) <= high && high <= tagCount;
     });
-    ranges.setCustomValidity(valid ? "" : ranges.dataset.rangeError);
+    const error = allowCounts ? ranges.dataset.mixedError : ranges.dataset.rangeError;
+    ranges.setCustomValidity(valid ? "" : error);
   }
 
   function update() {
@@ -20,7 +24,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
     const usesMinimum = range || ["exact", "not_exact", "at_least"].includes(mode.value);
     const usesMaximum = range || mode.value === "at_most";
     const usesCounts = mode.value === "one_of" || mode.value === "not_one_of";
-    const usesRanges = mode.value === "any_range" || mode.value === "not_any_range";
+    const usesRanges = ["any_range", "not_any_range", "values_or_ranges"].includes(mode.value);
     tags.required = usesMinimum || usesMaximum || usesCounts || usesRanges;
     minimum.required = usesMinimum;
     minimum.disabled = !usesMinimum;

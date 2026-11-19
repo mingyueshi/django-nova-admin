@@ -360,3 +360,4 @@ await import('./test-messages.mjs');
 await import('./test-markdown.mjs');
 await import('./test-daily-chart.mjs');
 await import('./test-category-chart.mjs');
+await import('./test-tag-rules.mjs');
