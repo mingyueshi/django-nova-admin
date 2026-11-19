@@ -22,7 +22,8 @@ CSV_ACTIONS = {DAY_CSV, STATUS_CSV}
 
 def product_csv_action(query):
     if ProductActivityDayFilter.parameter_name in query:
-        return DAY_CSV
+        if not query[ProductActivityDayFilter.parameter_name].startswith("all~"):
+            return DAY_CSV
     statuses = query.getlist("status__exact")
     if len(statuses) == 1 and statuses[0] in Product.Status.values:
         return STATUS_CSV
@@ -61,12 +62,12 @@ def export_products(request, model_admin):
     if cl.is_popup:
         raise Http404
     queryset = cl.queryset
-    if action == DAY_CSV:
+    if ProductActivityDayFilter.parameter_name in request.GET:
         day_filter = next((f for f in cl.filter_specs if isinstance(f, ProductActivityDayFilter)), None)
         if day_filter is None:
             raise Http404
         zone = day_filter.zone
-        suffix = day_filter.day.isoformat()
+        suffix = day_filter.day.isoformat() if day_filter.day else f'status-{request.GET["status__exact"]}'
     else:
         status = request.GET["status__exact"]
         queryset = queryset.filter(status=status)

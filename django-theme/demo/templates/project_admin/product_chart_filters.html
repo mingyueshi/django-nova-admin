@@ -1,0 +1,29 @@
+{% load i18n %}
+<form method="get" id="product-chart-filters" class="nova-chart-filters" aria-label="{% translate 'Product chart filters' context 'Nova demo' %}">
+  {% if filters.linked %}<input type="hidden" name="chart_window" value="{{ filters.window }}">{% endif %}
+  <label>{% translate 'Date range' context 'Nova demo' %}
+    <select id="product-activity-range" name="chart_days">
+      <option value="7"{% if days == 7 %} selected{% endif %}>{% translate 'Last 7 days' context 'Nova demo' %}</option>
+      <option value="30"{% if days == 30 %} selected{% endif %}>{% translate 'Last 30 days' context 'Nova demo' %}</option>
+    </select>
+  </label>
+  {% if filters.linked %}
+    <label>{% translate 'Last update date' context 'Nova demo' %}
+      <select name="chart_day">
+        <option value="">{% translate 'All dates' context 'Nova demo' %}</option>
+        {% for day in filters.dates %}<option value="{{ day }}"{% if day == filters.day %} selected{% endif %}>{{ day }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>{% translate 'Status' context 'Nova demo' %}
+      <select name="chart_status">
+        <option value="">{% translate 'All statuses' context 'Nova demo' %}</option>
+        {% for key, label in filters.statuses %}<option value="{{ key }}"{% if key == filters.status %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+  {% endif %}
+  <button type="submit">{% translate 'Apply' context 'Nova Admin' %}</button>
+  {% if filters.linked %}
+    {% if filters.reset_url %}<a href="{{ filters.reset_url }}?chart_days={{ filters.days }}#product-activity-range">{% translate 'Clear filters' context 'Nova demo' %}</a>{% endif %}
+    {% if filters.result_url %}<a href="{{ filters.result_url }}">{% translate 'View matching products' context 'Nova demo' %}</a>{% endif %}
+  {% endif %}
+</form>

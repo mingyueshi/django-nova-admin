@@ -67,7 +67,12 @@ class ProductDayDrilldownTests(ProductDayTestCase):
         self.assertIn("2026-11-19", day.h2.get_text())
         self.assertIn("Asia/Shanghai", day.p.get_text())
         self.assertIn("2026-11-19 09:30:00 +0800", day.p.get_text())
-        self.assertEqual(day.a["href"], reverse("admin:index") + "?chart_days=30#product-activity-range")
+        back = urlsplit(day.a["href"])
+        self.assertEqual((back.path, back.fragment), (reverse("admin:index"), "product-activity-range"))
+        self.assertEqual(parse_qs(back.query), {
+            "chart_days": ["30"], "chart_day": ["2026-11-19"],
+            "chart_window": [parse_qs(urlsplit(url).query)["activity_day"][0].split("~", 1)[1]],
+        })
         self.assertIn("0:00", page.select(".field-updated_at")[-1].get_text())
         self.assertIsNone(response.context["cl"].formset)
         self.assertIsNone(page.select_one('[name="_save"]'))

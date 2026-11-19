@@ -4,14 +4,20 @@
 {% block nova_dashboard %}
   {% product_kpis request app_list as metrics %}
   {% include "nova_admin/kpi_cards.html" with nova_kpis=metrics.cards unavailable=metrics.unavailable only %}
-  {% product_activity_chart request app_list as activity %}
+  {% product_chart_filters request app_list as filters %}
+  {% if filters.linked %}{% include "project_admin/product_chart_filters.html" with days=filters.days %}{% endif %}
+  {% product_activity_chart request app_list filters as activity %}
   {% if activity %}
-    {% translate 'Visible products by last update date' context 'Nova demo' as chart_title %}
+    {% if filters.status_label %}
+      {% blocktranslate with status=filters.status_label context 'Nova demo' asvar chart_title %}Products by last update date ({{ status }}){% endblocktranslate %}
+    {% else %}{% translate 'Visible products by last update date' context 'Nova demo' as chart_title %}{% endif %}
     {% include "project_admin/product_activity_chart.html" with chart_snapshot=activity.snapshot %}
   {% endif %}
-  {% product_status_chart request app_list as status_chart %}
+  {% product_status_chart request app_list filters as status_chart %}
   {% if status_chart %}
-    {% translate 'Visible products by status' context 'Nova demo' as chart_title %}
+    {% if filters.selected_day %}
+      {% blocktranslate with day=filters.day context 'Nova demo' asvar chart_title %}Products by status for {{ day }}{% endblocktranslate %}
+    {% else %}{% translate 'Visible products by status' context 'Nova demo' as chart_title %}{% endif %}
     {% include "project_admin/product_status_chart.html" with chart_snapshot=status_chart.snapshot %}
   {% endif %}
 {% endblock %}

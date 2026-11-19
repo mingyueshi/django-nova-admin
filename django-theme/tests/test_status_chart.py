@@ -1,6 +1,7 @@
 import json
 from datetime import timedelta
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlsplit
 
 from bs4 import BeautifulSoup
 from django.contrib import admin
@@ -91,7 +92,11 @@ class ProductStatusChartTests(TestCase):
         self.assertEqual(self.points(self.card(chart_days=30)), self.points(card))
         for obj in (self.draft, self.active, self.archived):
             url = self.link(card, obj.status)
-            self.assertEqual(url, reverse("admin:catalog_product_changelist") + "?status__exact=" + obj.status)
+            target = urlsplit(url)
+            self.assertEqual(target.path, reverse("admin:catalog_product_changelist"))
+            query = parse_qs(target.query)
+            self.assertEqual(query["status__exact"], [obj.status])
+            self.assertTrue(query["activity_day"][0].startswith("all~"))
             page = self.client.get(url)
             self.assertEqual(list(page.context["cl"].result_list), [obj])
             self.assertIsNone(page.context["cl"].formset)

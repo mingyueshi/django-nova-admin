@@ -189,3 +189,37 @@ msgstr "可见商品状态分布"
 msgctxt "Nova demo"
 msgid "No visible products."
 msgstr "暂无可见商品。"
+
+msgctxt "Nova demo"
+msgid "All dates"
+msgstr "全部日期"
+
+msgctxt "Nova demo"
+msgid "All statuses"
+msgstr "全部状态"
+
+msgctxt "Nova demo"
+msgid "Clear filters"
+msgstr "清除筛选"
+
+msgctxt "Nova demo"
+msgid "View matching products"
+msgstr "查看符合条件的商品"
+
+msgctxt "Nova demo"
+msgid "Choose a date in the selected range."
+msgstr "请选择所选范围内的日期。"
+
+msgctxt "Nova demo"
+msgid "Product chart filters"
+msgstr "商品图表筛选"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Products by last update date (%(status)s)"
+msgstr "%(status)s商品最近更新日期分布"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Products by status for %(day)s"
+msgstr "%(day)s 更新的商品状态分布"

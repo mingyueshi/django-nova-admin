@@ -1284,7 +1284,9 @@ body.nova-admin .nova-chart-card {
 }
 body.nova-admin .nova-chart-card header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
 body.nova-admin .nova-chart-card header h2 { margin: 0; }
-body.nova-admin .nova-daily-chart form { display: flex; align-items: center; gap: .5rem; }
+body.nova-admin .nova-daily-chart form,
+body.nova-admin .nova-chart-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+body.nova-admin .nova-chart-filters { margin-block-end: 1rem; }
 body.nova-admin .nova-chart-range { color: var(--body-quiet-color); }
 body.nova-admin .nova-chart-plot { height: clamp(12rem, 28vw, 17rem); }
 body.nova-admin .nova-daily-chart details { margin-block-start: .75rem; }

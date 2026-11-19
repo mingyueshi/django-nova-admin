@@ -1,18 +1,12 @@
 {% extends "nova_admin/daily_chart.html" %}
 {% load i18n %}
 {% block chart_controls %}
-  <form method="get">
-    <label>{% translate 'Date range' context 'Nova demo' %}
-      <select id="product-activity-range" name="chart_days">
-        <option value="7"{% if activity.days == 7 %} selected{% endif %}>{% translate 'Last 7 days' context 'Nova demo' %}</option>
-        <option value="30"{% if activity.days == 30 %} selected{% endif %}>{% translate 'Last 30 days' context 'Nova demo' %}</option>
-      </select>
-    </label>
-    <button type="submit">{% translate 'Apply' context 'Nova Admin' %}</button>
-  </form>
+  {% if not filters.linked %}{% include "project_admin/product_chart_filters.html" with days=activity.days %}{% endif %}
 {% endblock %}
 {% block chart_error %}
-  {% if activity.invalid_range %}<p>{% translate 'Choose a range of 7 or 30 days.' context 'Nova demo' %}</p>{% else %}{{ block.super }}{% endif %}
+  {% if activity.invalid_range %}<p>{% translate 'Choose a range of 7 or 30 days.' context 'Nova demo' %}</p>
+  {% elif filters.invalid_day %}<p>{% translate 'Choose a date in the selected range.' context 'Nova demo' %}</p>
+  {% else %}{{ block.super }}{% endif %}
 {% endblock %}
 
 {% block chart_table_summary %}
@@ -20,7 +14,7 @@
 {% endblock %}
 {% block chart_date %}
   {% if point.value != None and activity.window %}
-    <a data-nova-chart-day="{{ point.date }}" href="{{ activity.list_url }}?activity_day={{ point.date }}~{{ activity.window|urlencode }}"
+    <a data-nova-chart-day="{{ point.date }}" href="{{ activity.list_url }}?activity_day={{ point.date }}~{{ activity.window|urlencode }}{% if filters.status %}&amp;status__exact={{ filters.status|urlencode }}{% endif %}"{% if point.date == filters.day %} aria-current="true"{% endif %}
        aria-label="{% blocktranslate with day=point.date context 'Nova demo' %}View products for {{ day }}{% endblocktranslate %}">{{ point.date }}</a>
   {% else %}{{ point.date }}{% endif %}
 {% endblock %}

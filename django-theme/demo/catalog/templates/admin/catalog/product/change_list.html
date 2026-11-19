@@ -13,7 +13,7 @@
 {% endblock %}
 {% block content %}
   {% with drill=cl.filter_specs.0 %}
-    {% if drill.day %}
+    {% if drill.zone %}
       {% timezone drill.zone %}{{ block.super }}{% endtimezone %}
     {% else %}{{ block.super }}{% endif %}
   {% endwith %}
@@ -21,11 +21,11 @@
 {% block date_hierarchy %}
   {{ block.super }}
   {% with drill=cl.filter_specs.0 %}
-    {% if drill.day %}
-      <section class="nova-product-day" aria-label="{% translate 'Products for the selected date' context 'Nova demo' %}">
-        <h2>{% blocktranslate with day=drill.day|date:"Y-m-d" context 'Nova demo' %}Products last updated on {{ day }}{% endblocktranslate %}</h2>
-        <p>{% blocktranslate with zone=drill.zone.key cutoff=drill.cutoff|localtime|date:"Y-m-d H:i:s O" context 'Nova demo' %}Chart timezone: {{ zone }}. Data cutoff: {{ cutoff }}.{% endblocktranslate %}</p>
-        {% if not cl.result_count %}<p>{% translate 'No visible products match this date and the current filters.' context 'Nova demo' %}</p>{% endif %}
+    {% if drill.zone %}
+      <section class="nova-product-day" aria-labelledby="product-drill-heading">
+        <h2 id="product-drill-heading">{% if drill.day %}{% blocktranslate with day=drill.day|date:"Y-m-d" context 'Nova demo' %}Products last updated on {{ day }}{% endblocktranslate %}{% else %}{% translate 'All dates' context 'Nova demo' %}{% endif %}{% if drill.status_label %} · {{ drill.status_label }}{% endif %}</h2>
+        <p>{% blocktranslate with zone=drill.zone.key cutoff=drill.local_cutoff context 'Nova demo' %}Chart timezone: {{ zone }}. Data cutoff: {{ cutoff }}.{% endblocktranslate %}</p>
+        {% if not cl.result_count %}<p>{% if drill.day %}{% translate 'No visible products match this date and the current filters.' context 'Nova demo' %}{% else %}{% translate 'No visible products.' context 'Nova demo' %}{% endif %}</p>{% endif %}
         <a href="{{ drill.return_url }}">{% translate 'Back to chart' context 'Nova demo' %}</a>
       </section>
     {% endif %}

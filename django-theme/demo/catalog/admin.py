@@ -217,12 +217,12 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
 
     def get_changelist(self, request, **kwargs):
         base = super().get_changelist(request, **kwargs)
-        if "status__exact" not in request.GET:
+        if "status__exact" not in request.GET and ProductActivityDayFilter.parameter_name not in request.GET:
             return base
-        if not can_chart_status(request, self):
+        if "status__exact" in request.GET and not can_chart_status(request, self):
             raise PermissionDenied
 
-        class StatusChangeList(base):
+        class ChartChangeList(base):
             @cached_property
             def visible_scope(self):
                 return visible_products(request, self.model_admin, self.root_queryset).distinct()
@@ -232,7 +232,7 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
                 self.root_queryset = self.visible_scope
                 return super().get_queryset(request, *args, **kwargs)
 
-        return StatusChangeList
+        return ChartChangeList
 
     def get_changelist_instance(self, request):
         zone = timezone.get_current_timezone()
