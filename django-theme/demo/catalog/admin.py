@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django import forms
 from django.core.exceptions import PermissionDenied
+from django.urls import path
 from django.utils.html import format_html
 from django.utils import timezone
 from nova_admin.columns import ColumnPreferencesMixin
@@ -8,6 +9,7 @@ from .models import Category, MemberProfile, NewsItem, Product, ProductVariant, 
 from .charts import ProductActivityDayFilter
 from .media import DemoMediaAdminMixin
 from .pagination import BoundedPaginationAdminMixin
+from .product_board import can_view_board, product_status_board
 from .product_csv import MAX_EXPORT_ROWS, can_export_product_day, export_product_day
 
 
@@ -50,6 +52,14 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
     inlines = [VariantInline]
     actions = ["publish_products"]
     list_per_page = 20
+
+    def get_urls(self):
+        view = self.admin_site.admin_view(self.status_board_view)
+        view.model_admin = self
+        return [path("status-board/", view, name="catalog_product_status_board"), *super().get_urls()]
+
+    def status_board_view(self, request):
+        return product_status_board(request, self)
 
     def get_changelist_instance(self, request):
         zone = timezone.get_current_timezone()
@@ -94,9 +104,10 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
     def changelist_view(self, request, extra_context=None):
         if request.method == "POST" and "_export_day_csv" in request.POST:
             return export_product_day(request, self)
+        extra_context = {**(extra_context or {}), "show_product_board": can_view_board(request, self)}
         if ProductActivityDayFilter.parameter_name in request.GET and self.has_view_or_change_permission(request):
             if can_export_product_day(request, self):
-                extra_context = {**(extra_context or {}), "product_csv_limit": MAX_EXPORT_ROWS}
+                extra_context["product_csv_limit"] = MAX_EXPORT_ROWS
             # Django constructs the page formset after creating the changelist.
             with timezone.override(ProductActivityDayFilter.signed_window(request).zone):
                 return super().changelist_view(request, extra_context)

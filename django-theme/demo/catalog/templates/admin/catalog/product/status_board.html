@@ -1,0 +1,52 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls i18n static project_admin %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'catalog/product-board.css' %}" {% project_nonce %}>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">商品列表</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+  {% if conflict %}<p class="errornote" role="alert">商品已发生变化。请核对最新状态后重新提交。</p>{% endif %}
+  {% if empty %}<p>暂无可查看的商品。</p>{% endif %}
+  <div class="product-board">
+    {% for lane in lanes %}
+      <section aria-labelledby="lane-{{ lane.status }}">
+        <h2 id="lane-{{ lane.status }}">{{ lane.label }} <small>{{ lane.cards|length }} 件</small></h2>
+        {% if lane.cards %}
+          <ul>
+            {% for card in lane.cards %}
+              {% with product=card.product %}
+                <li>
+                  <a class="product-board-name" href="{% url opts|admin_urlname:'change' product.pk|admin_urlquote %}">{{ product.name }}</a>
+                  {% if show_sku %}<p class="product-board-sku">SKU · {{ product.sku }}</p>{% endif %}
+                  {% if card.editable %}
+                    <form method="post">
+                      {% csrf_token %}
+                      <input type="hidden" name="product_id" value="{{ product.pk|stringformat:'d' }}">
+                      <input type="hidden" name="previous_status" value="{{ product.status }}">
+                      {% for value,action in transitions %}
+                        {% if value != product.status %}
+                          <button type="submit" name="status" value="{{ value }}" class="button" aria-label="{{ action }}「{{ product.name }}」">{{ action }}</button>
+                        {% endif %}
+                      {% endfor %}
+                    </form>
+                  {% endif %}
+                </li>
+              {% endwith %}
+            {% endfor %}
+          </ul>
+        {% elif not empty %}<p class="product-board-empty">此状态下暂无商品。</p>{% endif %}
+      </section>
+    {% endfor %}
+  </div>
+{% endblock %}
