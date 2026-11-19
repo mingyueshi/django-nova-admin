@@ -17,6 +17,7 @@
     <option value="range"{% if rule.mode == 'range' %} selected{% endif %}>{% translate 'Match N to M tags' context 'Nova demo' %}</option>
     <option value="not_range"{% if rule.mode == 'not_range' %} selected{% endif %}>{% translate 'Matched tag count outside N to M' context 'Nova demo' %}</option>
     <option value="any_range"{% if rule.mode == 'any_range' %} selected{% endif %}>{% translate 'Match any of the specified tag count ranges' context 'Nova demo' %}</option>
+    <option value="not_any_range"{% if rule.mode == 'not_any_range' %} selected{% endif %}>{% translate 'Match none of the specified tag count ranges' context 'Nova demo' %}</option>
     <option value="one_of"{% if rule.mode == 'one_of' %} selected{% endif %}>{% translate 'Match one of the specified tag counts' context 'Nova demo' %}</option>
     <option value="not_one_of"{% if rule.mode == 'not_one_of' %} selected{% endif %}>{% translate 'Match none of the specified tag counts' context 'Nova demo' %}</option>
   </select>

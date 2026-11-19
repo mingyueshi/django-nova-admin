@@ -504,6 +504,10 @@ msgid "Match any of the specified tag count ranges"
 msgstr "命中标签数落在任一指定区间"
 
 msgctxt "Nova demo"
+msgid "Match none of the specified tag count ranges"
+msgstr "命中标签数不在任何指定区间"
+
+msgctxt "Nova demo"
 msgid "Included match ranges (e.g. 0-1, 3-4)"
 msgstr "包含的命中数区间（例如 0-1, 3-4）"
 
@@ -519,3 +523,8 @@ msgstr "请按 0-1, 3-4 的格式填写区间，每个区间的下限和上限�
 msgctxt "Nova demo"
 msgid "Match any of these ranges (%(ranges)s)"
 msgstr "命中标签数落在任一指定区间（%(ranges)s）"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Match none of these ranges (%(ranges)s)"
+msgstr "命中标签数不在任何指定区间（%(ranges)s）"

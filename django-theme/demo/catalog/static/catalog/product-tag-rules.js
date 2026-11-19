@@ -20,7 +20,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
     const usesMinimum = range || ["exact", "not_exact", "at_least"].includes(mode.value);
     const usesMaximum = range || mode.value === "at_most";
     const usesCounts = mode.value === "one_of" || mode.value === "not_one_of";
-    const usesRanges = mode.value === "any_range";
+    const usesRanges = mode.value === "any_range" || mode.value === "not_any_range";
     tags.required = usesMinimum || usesMaximum || usesCounts || usesRanges;
     minimum.required = usesMinimum;
     minimum.disabled = !usesMinimum;
