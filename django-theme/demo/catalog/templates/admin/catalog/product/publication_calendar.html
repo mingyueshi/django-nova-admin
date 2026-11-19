@@ -1,0 +1,68 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls i18n static tz project_admin %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'catalog/publication-calendar.css' %}" {% project_nonce %}>
+{% endblock %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">商品列表</a>
+    &rsaquo; {{ title }}
+  </div>
+{% endblock %}
+
+{% block content %}
+  <div class="publication-calendar">
+    <div class="publication-calendar-header">
+      <h2 id="calendar-month">{{ month|date:"Y年n月" }}</h2>
+      <nav aria-label="切换月份">
+        {% if previous_month %}<a rel="prev" href="?month={{ previous_month }}">上个月</a>{% endif %}
+        <a href="{% url opts|admin_urlname:'publication_calendar' %}">本月</a>
+        {% if next_month %}<a rel="next" href="?month={{ next_month }}">下个月</a>{% endif %}
+      </nav>
+    </div>
+    <p>上架日期按审批通过时间计算，时区为 {{ zone_name }}。</p>
+    {% if empty_month %}<p>本月暂无可查看的上架商品。</p>{% endif %}
+    <table class="publication-month" aria-labelledby="calendar-month">
+      <thead><tr>
+        <th scope="col">周一</th><th scope="col">周二</th><th scope="col">周三</th><th scope="col">周四</th>
+        <th scope="col">周五</th><th scope="col">周六</th><th scope="col">周日</th>
+      </tr></thead>
+      <tbody>
+        {% for week in weeks %}
+          <tr>
+            {% for cell in week %}
+              <td>{% if cell %}
+                <a href="?day={{ cell.day.isoformat }}#publication-day"
+                   aria-label="{{ cell.day.isoformat }}，{{ cell.count }} 件上架商品"{% if cell.day == selected %} aria-current="true"{% endif %}>
+                  <time datetime="{{ cell.day.isoformat }}"{% if cell.day == today %} aria-current="date"{% endif %}>{{ cell.day.day }}</time>
+                  {% if cell.count %}<span>{{ cell.count }} 件</span>{% endif %}
+                </a>
+              {% endif %}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if selected %}
+      <section id="publication-day" tabindex="-1" aria-labelledby="publication-day-title">
+        <h2 id="publication-day-title">{{ selected|date:"Y年n月j日" }}上架商品（{{ details|length }} 件）</h2>
+        {% if details %}
+          <table aria-labelledby="publication-day-title">
+            <thead><tr><th scope="col">商品名称</th><th scope="col">审批通过时间</th></tr></thead>
+            <tbody>{% localtime off %}
+              {% for item in details %}<tr>
+                <td><a href="{% url opts|admin_urlname:'change' item.product.pk|admin_urlquote %}">{{ item.product.name }}</a></td>
+                <td><time datetime="{{ item.approved_at.isoformat }}">{{ item.approved_at|date:"H:i:s" }}{% if item.offset %} {{ item.offset }}{% endif %}</time></td>
+              </tr>{% endfor %}
+            {% endlocaltime %}</tbody>
+          </table>
+        {% else %}<p>当天暂无可查看的上架商品。</p>{% endif %}
+      </section>
+    {% endif %}
+  </div>
+{% endblock %}

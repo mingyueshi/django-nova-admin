@@ -14,6 +14,7 @@ from .media import DemoMediaAdminMixin
 from .pagination import BoundedPaginationAdminMixin
 from .product_board import can_edit_status, can_view_board, product_publication, product_status_board
 from .publication import PublicationConflict, lock_status, submit_publication
+from .publication_calendar import publication_calendar
 from .product_csv import MAX_EXPORT_ROWS, can_export_product_day, export_product_day
 
 
@@ -95,9 +96,13 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
 
         return [
             path("status-board/", admin_view(self.status_board_view), name="catalog_product_status_board"),
+            path("publication-calendar/", admin_view(self.publication_calendar_view), name="catalog_product_publication_calendar"),
             path("<int:product_id>/publication/", admin_view(self.publication_view), name="catalog_product_publication"),
             *super().get_urls(),
         ]
+
+    def publication_calendar_view(self, request):
+        return publication_calendar(request, self)
 
     def publication_view(self, request, product_id):
         return product_publication(request, self, product_id)
