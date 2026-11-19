@@ -7,7 +7,7 @@
 {% endblock %}
 {% block breadcrumbs %}
   <div class="breadcrumbs">
-    <a href="{% url 'admin:index' %}{% if filters.query %}{% querystring filters.query %}{% endif %}">{% translate 'Home' %}</a>
+    <a href="{% url 'admin:index' %}{% if filters.query and filters.custom_dates %}{% querystring filters.query chart_start=None chart_end=None chart_day=None %}{% elif filters.query %}{% querystring filters.query %}{% endif %}">{% translate 'Home' %}</a>
     &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural }}</a>
     &rsaquo; {{ title }}
   </div>
@@ -15,7 +15,9 @@
 
 {% block content %}
   {% if filters.window %}{% include "project_admin/product_chart_filters.html" with days=filters.days %}{% endif %}
-  {% if filters.invalid_range %}
+  {% if filters.dates_error %}
+    <p id="product-dates-error" role="alert">{{ filters.dates_error }}</p>
+  {% elif filters.invalid_range %}
     <p>{% translate 'Choose a range of 7 or 30 days.' context 'Nova demo' %}</p>
   {% elif filters.invalid_day %}
     <p>{% translate 'Choose a date in the selected range.' context 'Nova demo' %}</p>
@@ -28,7 +30,7 @@
     {% if detail_error %}
       <p>{{ detail_error }}</p>
     {% elif page != None %}
-      <p>{% blocktranslate with zone=filters.period.zone.key context 'Nova demo' %}Chart timezone: {{ zone }}. Data cutoff: {{ cutoff }}.{% endblocktranslate %}</p>
+      <p>{% if filters.custom_dates %}{{ filters.detail_dates.first.isoformat }} – {{ filters.detail_dates.last.isoformat }}{% if filters.status_label %} · {{ filters.status_label }}{% endif %} · {% endif %}{% blocktranslate with zone=filters.period.zone.key context 'Nova demo' %}Chart timezone: {{ zone }}. Data cutoff: {{ cutoff }}.{% endblocktranslate %}</p>
       {% if page.object_list %}
         <div class="product-analysis-table">
           <table aria-labelledby="product-details-title">

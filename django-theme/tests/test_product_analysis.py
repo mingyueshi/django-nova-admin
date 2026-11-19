@@ -177,6 +177,7 @@ class ProductAnalysisTests(ProductCSVAssertions, ProductDayTestCase):
         self.reader.user_permissions.add(Permission.objects.get(codename="view_category"))
         with patch.object(warehouse_site, "index_template", "project_admin/dashboard.html"):
             url = self.entry(site="warehouse")
+        url += "&chart_start=2026-10-31&chart_end=2026-11-01&chart_status=draft"
         self.assertEqual(urlsplit(url).path, reverse("warehouse:catalog_product_analysis"))
         self.assertEqual(self.download(url).status_code, 200)
         wrong_site = reverse("review:catalog_product_analysis") + "?" + urlsplit(url).query
@@ -223,3 +224,129 @@ class ProductAnalysisTests(ProductCSVAssertions, ProductDayTestCase):
             self.assertEqual(page.select_one('a[data-nova-category="draft"]').find_parent("tr").td.string, "1")
             self.assertEqual(page.select_one('a[data-nova-chart-day="2026-10-31"]').find_parent("tr").td.string, "1")
             self.assertEqual([r[0] for r in self.csv_rows(self.download(url))[1:]], [visible.sku])
+
+    def test_cross_month_range_status_and_pagination_share_counts_rows_and_export(self):
+        self.grant_export()
+        first = self.product("@first", "2026-10-30T04:00:00+00:00")
+        self.product("too-early", "2026-10-30T03:59:59.999999+00:00")
+        fold = self.product("first-fold", "2026-11-01T05:30:00+00:00")
+        last = self.product("last-fold", self.cutoff)
+        self.product("too-late", "2026-11-01T06:30:00.000001+00:00")
+        active = self.product("active", "2026-10-31T04:00:00+00:00")
+        Product.objects.filter(pk=active.pk).update(status="active")
+        scoped = self.product("other-account", self.cutoff)
+        denied = self.product("object-denied", self.cutoff)
+        self.product("deleted", self.cutoff).delete()
+        url = self.entry() + "&chart_start=2026-10-30&chart_end=2026-11-01&chart_status=draft"
+        with timezone.override(ZoneInfo("Asia/Tokyo")), patch.object(self.owner, "list_per_page", 2), patch.object(
+            self.owner, "get_queryset", return_value=Product.objects.exclude(pk=scoped.pk)
+        ), patch.object(self.owner, "has_view_permission", side_effect=lambda req, obj=None: obj != denied):
+            page = self.open_page(url)
+            daily, status = [json.loads(node.string) for node in page.select('.product-analysis-charts [type="application/json"]')]
+            self.assertTrue(all((s["as_of"], s["timezone"]) == (self.cutoff, self.zone) for s in (daily, status)))
+            self.assertEqual((daily["start"], daily["end"]), ("2026-10-30", "2026-11-02"))
+            self.assertEqual([(p["date"], p["value"]) for p in daily["points"]],
+                             [("2026-10-30", 1), ("2026-10-31", 0), ("2026-11-01", 2)])
+            self.assertEqual([(p["key"], p["value"]) for p in status["points"]], [("draft", 3), ("active", 1), ("archived", 0)])
+            self.assertIn("(3)", page.select_one("#product-details-title").get_text())
+            self.assertEqual([a.string for a in page.select("#product-details tbody th a")], [last.name, fold.name])
+            next_url = self.chart_link(page, url, '#product-details a[rel="next"]')
+            page_two = self.open_page(next_url)
+            self.assertEqual([a.string for a in page_two.select("#product-details tbody th a")], [first.name])
+            export = urljoin(next_url, page_two.select_one("#product-details form")["action"])
+            self.assertEqual(parse_qs(urlsplit(export).query), parse_qs(urlsplit(url).query))
+            self.assertEqual(self.csv_rows(self.download(export)), [
+                ["SKU", "商品名称", "更新时间 (America/New_York)"],
+                [last.sku, last.name, "2026-11-01T01:30:00-05:00"],
+                [fold.sku, fold.name, "2026-11-01T01:30:00-04:00"],
+                ["TEXT: @first", "TEXT: @first", "2026-10-30T00:00:00-04:00"],
+            ])
+            empty_url = self.chart_link(page, url, 'a[data-nova-category="archived"]')
+            empty = self.open_page(empty_url)
+            self.assertIn("当前筛选条件下没有可查看的商品", empty.select_one("#product-details").get_text())
+            self.assertEqual(self.csv_rows(self.download(empty_url)), [["SKU", "商品名称", "更新时间 (America/New_York)"]])
+            with patch.object(self.owner, "get_queryset", return_value=Product.objects.none()):
+                self.assertEqual(len(self.csv_rows(self.download(export))), 1)
+        self.reader.user_permissions.remove(Permission.objects.get(codename="export_product"))
+        self.assertIsNone(self.open_page(url).select_one('#product-details form'))
+        denied_export = self.download(export)
+        self.assertEqual(denied_export.status_code, 403)
+        self.assertNotIn("Content-Disposition", denied_export)
+
+    def test_historical_range_includes_entire_end_day_and_drills_back_to_range(self):
+        self.grant_export()
+        self.product("before", "2025-03-31T03:59:59.999999+00:00")
+        self.product("first", "2025-03-31T04:00:00+00:00")
+        self.product("last", "2025-04-02T03:59:59.999999+00:00")
+        self.product("next-day", "2025-04-02T04:00:00+00:00")
+        url = self.entry() + "&chart_start=2025-03-31&chart_end=2025-04-01&chart_status=draft"
+        page = self.open_page(url)
+        inputs = page.select('#product-chart-filters input[type="date"]')
+        self.assertEqual([(e["name"], e["value"], e["max"]) for e in inputs],
+                         [("chart_start", "2025-03-31", self.day), ("chart_end", "2025-04-01", self.day)])
+        self.assertEqual([a.string for a in page.select('#product-details tbody th a')], ["last", "first"])
+        day_url = self.chart_link(page, url, 'a[data-nova-chart-day="2025-04-01"]')
+        detail = self.open_page(day_url)
+        self.assertEqual([a.string for a in detail.select('#product-details tbody th a')], ["last"])
+        self.assertEqual([r[0] for r in self.csv_rows(self.download(day_url))[1:]], ["last"])
+        back = urljoin(day_url, detail.find("a", string="查看整个日期范围")["href"])
+        self.assertEqual(parse_qs(urlsplit(back).query), parse_qs(urlsplit(url).query))
+        home = self.open_page(urljoin(day_url, detail.select_one(".breadcrumbs a")["href"]))
+        self.assertIsNotNone(home.select_one('a[data-nova-category="draft"]'))
+        self.assertEqual(home.select_one('[name="chart_status"] option[selected]')["value"], "draft")
+
+    def test_range_validation_and_export_never_fall_back_to_broader_dates(self):
+        self.grant_export()
+        base = self.entry()
+        for query in ({"chart_start": self.day}, {"chart_end": self.day},
+                      {"chart_start": "2026-02-30", "chart_end": self.day},
+                      {"chart_start": "20260804", "chart_end": self.day},
+                      {"chart_start": self.day, "chart_end": "2026-10-31"},
+                      {"chart_start": self.day, "chart_end": "2026-11-02"},
+                      {"chart_start": "2026-08-03", "chart_end": self.day},
+                      {"chart_start": self.day, "chart_end": self.day, "chart_day": "2026-10-31"}):
+            with self.subTest(query=query):
+                url = base + "&" + urlencode(query)
+                result = self.client.get(url)
+                self.assertEqual(result.status_code, 400)
+                self.assertNotContains(result, 'name="_export_csv"', status_code=400)
+                self.assertNotContains(result, 'id="product-details"', status_code=400)
+                rejected = self.download(url)
+                self.assertEqual(rejected.status_code, 404)
+                self.assertNotIn("Content-Disposition", rejected)
+        for url in (base + "&chart_start=2026-10-01&chart_start=2026-10-02&chart_end=" + self.day,
+                    base + "&chart_start=2026-10-01&chart_end=" + self.day + "&chart_end=" + self.day,
+                    urlsplit(base).path + "?chart_start=2026-10-01&chart_end=" + self.day):
+            with self.subTest(url=url):
+                self.assertEqual(self.client.get(url).status_code, 404)
+                self.assertEqual(self.download(url).status_code, 404)
+        self.product("visible", self.cutoff)
+        for start, length in (("2026-08-04", 90), (self.day, 1)):
+            page = self.open_page(base + "&chart_start=" + start + "&chart_end=" + self.day)
+            snapshot = json.loads(page.select_one('.nova-daily-chart [type="application/json"]').string)
+            self.assertEqual(len(snapshot["points"]), length)
+
+    @override_settings(USE_TZ=False, TIME_ZONE="Asia/Shanghai")
+    def test_naive_cross_month_range_matches_local_midnight_and_cutoff(self):
+        self.grant_export()
+        self.product("earlier", "2026-10-30T23:59:59")
+        self.product("midnight", "2026-10-31T00:00:00")
+        self.product("cutoff", "2026-11-01T14:30:00")
+        self.product("later", "2026-11-01T14:30:00.000001")
+        url = self.entry() + "&chart_start=2026-10-31&chart_end=" + self.day
+        with timezone.override(ZoneInfo("UTC")):
+            page = self.open_page(url)
+            self.assertEqual([e["datetime"] for e in page.select("#product-details time")],
+                             ["2026-11-01T14:30:00", "2026-10-31T00:00:00"])
+            self.assertEqual(self.csv_rows(self.download(url)), [
+                self.headers, ["cutoff", "cutoff", "2026-11-01T14:30:00"], ["midnight", "midnight", "2026-10-31T00:00:00"],
+            ])
+
+    def test_earliest_local_date_east_of_utc_can_return_an_empty_range(self):
+        self.grant_export()
+        with timezone.override(ZoneInfo("Asia/Shanghai")):
+            base = reverse("admin:catalog_product_analysis")
+            token = self.open_page(base).select_one('[name="chart_window"]')["value"]
+            url = base + "?" + urlencode({"chart_window": token, "chart_start": "0001-01-01", "chart_end": "0001-01-01"})
+            self.assertIn("(0)", self.open_page(url).select_one("#product-details-title").get_text())
+            self.assertEqual(self.csv_rows(self.download(url)), [self.headers])

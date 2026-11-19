@@ -1,14 +1,22 @@
 {% load i18n %}
 <form method="get" id="product-chart-filters" class="nova-chart-filters" aria-label="{% translate 'Product chart filters' context 'Nova demo' %}">
   {% if filters.linked %}<input type="hidden" name="chart_window" value="{{ filters.window }}">{% endif %}
-  <label>{% translate 'Date range' context 'Nova demo' %}
+  <label>{% if workbench %}{% translate 'Default daily chart range' context 'Nova demo' %}{% else %}{% translate 'Date range' context 'Nova demo' %}{% endif %}
     <select id="product-activity-range" name="chart_days">
       <option value="7"{% if days == 7 %} selected{% endif %}>{% translate 'Last 7 days' context 'Nova demo' %}</option>
       <option value="30"{% if days == 30 %} selected{% endif %}>{% translate 'Last 30 days' context 'Nova demo' %}</option>
     </select>
   </label>
   {% if filters.linked %}
-    <label>{% translate 'Last update date' context 'Nova demo' %}
+    {% if workbench %}
+      <label>{% translate 'Start date' context 'Nova demo' %}
+        <input type="date" name="chart_start" value="{{ filters.start }}" max="{{ filters.period.last.isoformat }}"{% if filters.dates_error %} aria-invalid="true" aria-describedby="product-dates-error"{% endif %}>
+      </label>
+      <label>{% translate 'End date' context 'Nova demo' %}
+        <input type="date" name="chart_end" value="{{ filters.end }}" max="{{ filters.period.last.isoformat }}"{% if filters.dates_error %} aria-invalid="true" aria-describedby="product-dates-error"{% endif %}>
+      </label>
+    {% endif %}
+    <label>{% if workbench %}{% translate 'Drilldown date' context 'Nova demo' %}{% else %}{% translate 'Last update date' context 'Nova demo' %}{% endif %}
       <select name="chart_day">
         <option value="">{% translate 'All dates' context 'Nova demo' %}</option>
         {% for day in filters.dates %}<option value="{{ day }}"{% if day == filters.day %} selected{% endif %}>{{ day }}</option>{% endfor %}
@@ -23,6 +31,7 @@
   {% endif %}
   <button type="submit">{% translate 'Apply' context 'Nova Admin' %}</button>
   {% if filters.linked %}
+    {% if filters.query and filters.custom_dates and filters.selected_day %}<a href="{% querystring filters.query chart_day=None %}#product-details">{% translate 'View full date range' context 'Nova demo' %}</a>{% endif %}
     {% if filters.reset_url %}<a href="{{ filters.reset_url }}?chart_days={{ filters.days }}#product-activity-range">{% translate 'Clear filters' context 'Nova demo' %}</a>{% endif %}
     {% if not workbench %}
       {% if filters.result_url %}<a href="{{ filters.result_url }}">{% translate 'View matching products' context 'Nova demo' %}</a>{% endif %}

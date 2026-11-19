@@ -35,18 +35,18 @@ def product_analysis(request, owner):
             raise Http404
         if set(request.POST) - {"_export_csv", "csrfmiddlewaretoken"}:
             raise Http404
-    if set(request.GET) - {"chart_window", "chart_days", "chart_day", "chart_status", "page"}:
+    if set(request.GET) - {"chart_window", "chart_days", "chart_start", "chart_end", "chart_day", "chart_status", "page"}:
         raise Http404
     request.current_app = owner.admin_site.name
     context = owner.admin_site.each_context(request)
-    filters = product_chart_filters(request, context["available_apps"])
+    filters = product_chart_filters(request, context["available_apps"], workbench=True)
     if not (filters["drill_days"] and filters["status_visible"]):
         raise PermissionDenied
     context.update(opts=owner.opts, title=pgettext("Nova demo", "Linked analysis workbench"),
                    filters=filters, workbench=True, can_export=can_export, export_limit=MAX_EXPORT_ROWS)
     if filters.get("reset_url"):
         filters["reset_url"] = request.path
-    if filters.get("invalid_range") or filters.get("invalid_day"):
+    if filters.get("invalid_range") or filters.get("invalid_day") or filters.get("dates_error"):
         if exporting:
             raise Http404
         return TemplateResponse(request, TEMPLATE, context, status=400)
@@ -54,13 +54,16 @@ def product_analysis(request, owner):
     period = filters.get("period")
     if period is None or filters["products"] is None:
         return details_unavailable(request, context)
-    products = period.products_on(filters["products"], filters.get("selected_day"))
+    products = period.products_in(filters["products"], filters["detail_dates"])
     if filters["status"]:
         products = products.filter(status=filters["status"])
     products = products.order_by("-updated_at", "-pk").distinct()
     try:
         if exporting:
-            suffix = "-".join(part for part in ("analysis", filters["day"], filters["status"]) if part)
+            date_label = filters["day"]
+            if not date_label and filters.get("custom_dates"):
+                date_label = f'{filters["start"]}-{filters["end"]}'
+            suffix = "-".join(part for part in ("analysis", date_label, filters["status"]) if part)
             return product_csv_response(request, owner, products, period.zone, suffix)
         with timezone.override(period.zone):
             pages = owner.get_paginator(request, products, owner.list_per_page)

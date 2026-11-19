@@ -255,3 +255,45 @@ msgstr "当前筛选条件下没有可查看的商品。"
 msgctxt "Nova demo"
 msgid "Product details are temporarily unavailable. Reload to retry."
 msgstr "商品明细暂时不可用，请刷新重试。"
+
+msgctxt "Nova demo"
+msgid "Default daily chart range"
+msgstr "每日图默认范围"
+
+msgctxt "Nova demo"
+msgid "Start date"
+msgstr "开始日期"
+
+msgctxt "Nova demo"
+msgid "End date"
+msgstr "结束日期"
+
+msgctxt "Nova demo"
+msgid "Drilldown date"
+msgstr "下钻日期"
+
+msgctxt "Nova demo"
+msgid "View full date range"
+msgstr "查看整个日期范围"
+
+msgctxt "Nova demo"
+msgid "Enter both a valid start date and a valid end date."
+msgstr "请填写有效的开始日期和结束日期。"
+
+msgctxt "Nova demo"
+msgid "The end date must be on or after the start date."
+msgstr "结束日期须等于或晚于开始日期。"
+
+msgctxt "Nova demo"
+msgid "The end date must not be after the chart cutoff date."
+msgstr "结束日期不能晚于图表的截止日期。"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Select at most %(limit)s calendar days."
+msgstr "最多可选择 %(limit)s 个自然日。"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Products by status from %(start)s to %(end)s"
+msgstr "%(start)s 至 %(end)s 更新的商品状态分布"

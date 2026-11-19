@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from django.conf import settings
 from django.contrib import admin
 from django.core import signing
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import DatabaseError
 from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
@@ -16,6 +16,7 @@ from django.http import Http404, QueryDict
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import pgettext_lazy
+from nova_admin.charts import MAX_DAYS
 
 from .models import Product
 from .navigation import visible_product_admin, visible_products
@@ -39,6 +40,9 @@ def _in_window(queryset, start, end, zone, cutoff):
     upper = datetime.combine(end, time.min, tzinfo=zone)
     if not settings.USE_TZ:
         lower, upper = lower.replace(tzinfo=None), upper.replace(tzinfo=None)
+    elif start == date.min:
+        # Local midnight east of UTC can precede the first storable UTC instant.
+        lower = max(lower, datetime.min.replace(tzinfo=dt_timezone.utc))
     return _through_cutoff(queryset, zone, cutoff).filter(updated_at__gte=lower, updated_at__lt=upper)
 
 
@@ -56,6 +60,45 @@ def _site_url(request, name):
     return reverse(f"{request.resolver_match.namespace}:{name}", urlconf=getattr(request, "urlconf", None))
 
 
+def _iso_date(text):
+    day = date.fromisoformat(text)
+    if day.isoformat() != text:
+        raise ValueError("Expected a local ISO date")
+    return day
+
+
+class ChartDates(NamedTuple):
+    first: date
+    last: date
+
+    @property
+    def stop(self):
+        return self.last + timedelta(days=1)
+
+    def local_days(self):
+        return [self.first + timedelta(days=i) for i in range((self.last - self.first).days + 1)]
+
+    def parse_day(self, text):
+        day = _iso_date(text)
+        if not self.first <= day <= self.last:
+            raise ValueError("Date outside chart window")
+        return day
+
+    @classmethod
+    def from_inputs(cls, start, end, latest):
+        try:
+            first, last = _iso_date(start), _iso_date(end)
+        except ValueError as exc:
+            raise ValidationError(pgettext_lazy("Nova demo", "Enter both a valid start date and a valid end date.")) from exc
+        if last < first:
+            raise ValidationError(pgettext_lazy("Nova demo", "The end date must be on or after the start date."))
+        if last > latest:
+            raise ValidationError(pgettext_lazy("Nova demo", "The end date must not be after the chart cutoff date."))
+        if (last - first).days >= MAX_DAYS:
+            raise ValidationError(pgettext_lazy("Nova demo", "Select at most %(limit)s calendar days."), params={"limit": MAX_DAYS})
+        return cls(first, last)
+
+
 class ChartWindow(NamedTuple):
     cutoff: datetime
     zone: ZoneInfo
@@ -65,19 +108,17 @@ class ChartWindow(NamedTuple):
     def last(self):
         return self.cutoff.astimezone(self.zone).date()
 
-    def parse_day(self, text):
-        day = date.fromisoformat(text)
-        if day.isoformat() != text or not 0 <= (self.last - day).days < self.days:
-            raise ValueError("Date outside chart window")
-        return day
+    @property
+    def default_dates(self):
+        return ChartDates(self.last - timedelta(days=self.days - 1), self.last)
 
     def sign(self, request):
         return _window_signer(request).sign_object([self.cutoff.isoformat(), self.zone.key, self.days])
 
-    def products_on(self, queryset, day):
-        if day is None:
+    def products_in(self, queryset, dates):
+        if dates is None:
             return _through_cutoff(queryset, self.zone, self.cutoff)
-        return _in_window(queryset, day, day + timedelta(days=1), self.zone, self.cutoff)
+        return _in_window(queryset, dates.first, dates.stop, self.zone, self.cutoff)
 
     @classmethod
     def from_token(cls, request, token):
@@ -98,6 +139,28 @@ def _single(query, key):
     return values[0] if values else ""
 
 
+def _date_filters(window, day_text, start, end):
+    """The daily chart spans the interval; a day drilldown narrows the details and status chart."""
+    dates = window.default_dates
+    selection = {"start": start, "end": end, "detail_dates": None}
+    if start or end:
+        try:
+            dates = ChartDates.from_inputs(start, end, window.last)
+        except ValidationError as exc:
+            selection["dates_error"] = exc.messages[0]
+            return selection
+        selection.update(custom_dates=dates, detail_dates=dates)
+    selection["daily_dates"] = dates
+    if day_text:
+        try:
+            day = dates.parse_day(day_text)
+        except ValueError:
+            selection["invalid_day"] = True
+        else:
+            selection.update(selected_day=day, detail_dates=ChartDates(day, day))
+    return selection
+
+
 class ProductDayWindow(NamedTuple):
     day: date | None
     zone: ZoneInfo
@@ -115,7 +178,7 @@ class ProductActivityDayFilter(admin.SimpleListFilter):
             day_text, token = _single(request.GET, cls.parameter_name).split("~", 1)
             window = ChartWindow.from_token(request, token)
             # Clearing the native status filter still leaves the signed upper bound in effect.
-            day = None if day_text == "all" else window.parse_day(day_text)
+            day = None if day_text == "all" else window.default_dates.parse_day(day_text)
         except ValueError as exc:
             raise Http404 from exc
         return ProductDayWindow(day, window.zone, window.cutoff, window.days)
@@ -159,7 +222,7 @@ class ProductActivityDayFilter(admin.SimpleListFilter):
         return _in_window(queryset, self.day, self.day + timedelta(days=1), self.zone, self.cutoff).distinct()
 
 
-def product_chart_filters(request, app_list):
+def product_chart_filters(request, app_list, *, workbench=False):
     """Resolve both chart dimensions and their common observation window once per page."""
     owner = visible_product_admin(request, app_list)
     daily = owner is not None and "updated_at" in owner.get_list_display(request)
@@ -167,11 +230,14 @@ def product_chart_filters(request, app_list):
     drill_days = daily and ProductActivityDayFilter in owner.get_list_filter(request)
     linked = drill_days and status_visible
     day_text = _single(request.GET, "chart_day")
+    start = _single(request.GET, "chart_start") if workbench else ""
+    end = _single(request.GET, "chart_end") if workbench else ""
     status = _single(request.GET, "chart_status")
     token = _single(request.GET, "chart_window")
-    if (day_text or status or token) and not linked:
+    has_selection = bool(start or end or day_text or status)
+    if (has_selection or token) and not linked:
         raise PermissionDenied
-    if (day_text or status or "chart_window" in request.GET) and not token:
+    if (has_selection or "chart_window" in request.GET) and not token:
         raise Http404
     if status and status not in Product.Status.values:
         raise Http404
@@ -196,31 +262,30 @@ def product_chart_filters(request, app_list):
         except (ValueError, ZoneInfoNotFoundError):
             return filters
     filters["period"] = window
+    filters.update(_date_filters(window, day_text, start, end))
     filters["list_url"] = _site_url(request, "catalog_product_changelist")
     if drill_days:
         filters["window"] = window.sign(request)
     if linked:
-        filters.update(linked=True, dates=[(window.last - timedelta(days=i)).isoformat() for i in range(days)],
-                       statuses=Product.Status.choices, status_label=Product.Status(status).label if status else "",
+        filters.update(linked=True, statuses=Product.Status.choices, status_label=Product.Status(status).label if status else "",
                        reset_url=_site_url(request, "index") if token else "")
-    if day_text:
-        try:
-            day = window.parse_day(day_text)
-        except ValueError:
-            filters["invalid_day"] = True
+        if filters.get("dates_error"):
             return filters
-        filters["selected_day"] = day
-    if linked:
+        filters["dates"] = [day.isoformat() for day in reversed(filters["daily_dates"].local_days())]
+        if filters.get("invalid_day"):
+            return filters
         filters["coordinate"] = (day_text or "all") + "~" + filters["window"]
         if not invalid_range:
             query = QueryDict(mutable=True)
             query.update({"chart_days": days, "chart_window": filters["window"]})
+            if start:
+                query.update({"chart_start": start, "chart_end": end})
             if day_text:
                 query["chart_day"] = day_text
             if status:
                 query["chart_status"] = status
             filters["query"] = query
-    if (day_text or status) and not invalid_range:
+    if (day_text or status) and not invalid_range and not workbench:
         params = {"activity_day": filters["coordinate"]}
         if status:
             params["status__exact"] = status
@@ -239,21 +304,20 @@ def product_activity_chart(request, app_list, filters=None):
         return None
     activity = {"days": filters["days"], "invalid_range": filters["invalid_range"]}
     period = filters.get("period")
-    if not period or filters["invalid_range"] or filters.get("invalid_day"):
+    if not period or filters["invalid_range"] or filters.get("invalid_day") or filters.get("dates_error"):
         return activity
-    end = period.last + timedelta(days=1)
-    start = end - timedelta(days=period.days)
+    dates = filters["daily_dates"]
     snapshot = {
         "schema_version": 1, "metric": "catalog.products_last_updated",
         "as_of": period.cutoff.isoformat(), "timezone": period.zone.key,
-        "start": start.isoformat(), "end": end.isoformat(), "state": "empty", "points": [],
+        "start": dates.first.isoformat(), "end": dates.stop.isoformat(), "state": "empty", "points": [],
     }
     activity["snapshot"] = snapshot
     if filters["products"] is None:
         snapshot["state"] = "error"
         return activity
     try:
-        queryset = _in_window(filters["products"], start, end, period.zone, period.cutoff)
+        queryset = period.products_in(filters["products"], dates)
         if filters["status"]:
             queryset = queryset.filter(status=filters["status"])
         buckets = queryset.order_by().values(day=TruncDate("updated_at", tzinfo=period.zone)).annotate(
@@ -265,9 +329,8 @@ def product_activity_chart(request, app_list, filters=None):
         snapshot["state"] = "error"
     else:
         if counts:
-            dates = (start + timedelta(days=index) for index in range(period.days))
             snapshot.update(state="ready", points=[
-                {"date": day.isoformat(), "value": counts.get(day, 0)} for day in dates
+                {"date": day.isoformat(), "value": counts.get(day, 0)} for day in dates.local_days()
             ])
     if snapshot["state"] == "ready" and filters["drill_days"]:
         activity.update(list_url=filters["list_url"], window=filters["window"])
@@ -287,7 +350,7 @@ def product_status_chart(request, app_list, filters=None):
     if not filters["status_visible"]:
         return None
     period = filters.get("period")
-    if filters.get("invalid_day") or (filters["invalid_range"] and (filters["status"] or filters["day"])):
+    if filters.get("invalid_day") or filters.get("dates_error") or (filters["invalid_range"] and (filters["status"] or filters["day"])):
         return None  # The daily card already displays the input error.
     if not period:
         return {"snapshot": None}
@@ -301,9 +364,8 @@ def product_status_chart(request, app_list, filters=None):
         snapshot["state"] = "error"
         return {"snapshot": snapshot}
     try:
-        day = filters.get("selected_day")
-        if day or filters.get("coordinate"):
-            products = period.products_on(products, day)
+        if filters["detail_dates"] or filters.get("coordinate"):
+            products = period.products_in(products, filters["detail_dates"])
         with timezone.override(period.zone):
             counts = products.aggregate(**{
                 key: Count("pk", filter=Q(status=key), distinct=True) for key in Product.Status.values

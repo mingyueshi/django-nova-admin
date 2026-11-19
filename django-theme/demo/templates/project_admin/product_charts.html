@@ -10,6 +10,8 @@
 {% if status_chart %}
   {% if filters.selected_day %}
     {% blocktranslate with day=filters.day context 'Nova demo' asvar chart_title %}Products by status for {{ day }}{% endblocktranslate %}
+  {% elif filters.custom_dates %}
+    {% blocktranslate with start=filters.start end=filters.end context 'Nova demo' asvar chart_title %}Products by status from {{ start }} to {{ end }}{% endblocktranslate %}
   {% else %}{% translate 'Visible products by status' context 'Nova demo' as chart_title %}{% endif %}
   {% include "project_admin/product_status_chart.html" with chart_snapshot=status_chart.snapshot %}
 {% endif %}
