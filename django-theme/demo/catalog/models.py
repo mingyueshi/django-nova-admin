@@ -1,4 +1,5 @@
 from decimal import Decimal
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from .media import MEDIA_CHOICES
@@ -53,11 +54,41 @@ class Product(models.Model):
     class Meta:
         verbose_name = "商品"
         verbose_name_plural = "商品"
-        permissions = [("export_product", "可导出按日期筛选的商品 CSV")]
+        permissions = [
+            ("export_product", "可导出按日期筛选的商品 CSV"),
+            ("approve_product", "可审批商品上架"),
+        ]
         ordering = ["-updated_at"]
 
     def __str__(self):
         return self.name
+
+
+class ProductPublicationRequest(models.Model):
+    class Result(models.TextChoices):
+        PENDING = "pending", "待审批"
+        APPROVED = "approved", "已通过"
+        REJECTED = "rejected", "已驳回"
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="publication_requests")
+    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    result = models.CharField(max_length=8, choices=Result.choices, default=Result.PENDING)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+", null=True)
+    reviewed_at = models.DateTimeField(null=True)
+
+    class Meta:
+        ordering = ["-pk"]
+        default_permissions = ()
+        constraints = [
+            models.UniqueConstraint(fields=["product"], condition=models.Q(result="pending"),
+                                    name="catalog_one_pending_publication"),
+            models.CheckConstraint(
+                condition=(models.Q(result="pending", reviewed_by__isnull=True, reviewed_at__isnull=True)
+                           | models.Q(result__in=["approved", "rejected"], reviewed_by__isnull=False, reviewed_at__isnull=False)),
+                name="catalog_publication_review_complete",
+            ),
+        ]
 
 
 class ProductVariant(models.Model):

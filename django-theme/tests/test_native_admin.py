@@ -60,7 +60,7 @@ class NativeAdminWorkflowTests(TestCase):
     def product_data(self, *, adding=False, **overrides):
         data = {
             "name": "Saved through native admin", "sku": "WORKFLOW-NEW" if adding else self.product.sku,
-            "price": "59.50", "stock": "12", "status": "active",
+            "price": "59.50", "stock": "12", "status": "draft",
             "category": str(self.second_category.pk), "tags": [str(self.tag.pk), str(self.second_tag.pk)],
             "_save": "Save", "variants-TOTAL_FORMS": "1",
             "variants-INITIAL_FORMS": "0" if adding else "1",

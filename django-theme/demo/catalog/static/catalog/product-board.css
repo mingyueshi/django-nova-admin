@@ -24,7 +24,7 @@
   font-weight: normal;
 }
 .product-board ul { margin: .75rem 0 0; padding: 0; }
-.product-board li {
+.product-board ul > li {
   margin: .5rem 0 0;
   padding: .75rem;
   list-style: none;
@@ -33,6 +33,9 @@
   border-radius: 6px;
   background: var(--body-bg);
 }
+.product-publication-history { margin-top: .5rem; }
+.product-publication-history summary { cursor: pointer; }
+.product-publication-history ol { padding-inline-start: 1.5rem; }
 .product-board-name { font-size: 1rem; font-weight: 600; }
 .product-board-sku { margin: .25rem 0 0; }
 .product-board form { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }

@@ -181,13 +181,15 @@ class ThemeIntegrationTests(TestCase):
         self.assertEqual(created.name, "新增商品")
         self.assertTrue(LogEntry.objects.filter(object_id=str(created.pk), action_flag=1).exists())
 
-    def test_native_bulk_action_works(self):
+    def test_native_bulk_action_submits_draft_for_review(self):
         previous_update = self.product.updated_at
         response = self.client.post(self.list_url, {"action": "publish_products", "_selected_action": [self.product.pk], "index": "0"})
         self.assertEqual(response.status_code, 302)
         self.product.refresh_from_db()
-        self.assertEqual(self.product.status, Product.Status.ACTIVE)
-        self.assertGreater(self.product.updated_at, previous_update)
+        self.assertEqual(self.product.status, Product.Status.DRAFT)
+        self.assertEqual(self.product.updated_at, previous_update)
+        application = self.product.publication_requests.get()
+        self.assertEqual((application.result, application.submitted_by), ("pending", self.admin_user))
 
     def test_permissions_not_bypassed_by_skin(self):
         self.client.force_login(self.staff)

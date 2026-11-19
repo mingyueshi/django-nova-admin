@@ -27,7 +27,7 @@ class ProductBoardTests(TestCase):
         self.client.force_login(self.editor)
 
     def transition(self, **updates):
-        return {"product_id": self.draft.pk, "previous_status": "draft", "status": "active", **updates}
+        return {"product_id": self.draft.pk, "previous_status": "draft", "status": "archived", **updates}
 
     def board(self, url=None):
         response = self.client.get(url or self.url)
@@ -48,7 +48,7 @@ class ProductBoardTests(TestCase):
         self.assertEqual(self.client.post(self.url, self.transition()).status_code, 403)
 
     def test_state_changes_move_one_card_and_log_only_real_changes(self):
-        for source, target in [("draft", "active"), ("active", "archived"), ("archived", "draft")]:
+        for source, target in [("draft", "archived"), ("archived", "draft")]:
             with self.subTest(source=source, target=target):
                 data = self.transition(previous_status=source, status=target, stock=0)
                 before = self.draft.updated_at
@@ -63,13 +63,13 @@ class ProductBoardTests(TestCase):
                 detail = reverse("admin:catalog_product_change", args=[self.draft.pk])
                 self.assertEqual(len(soup.select(f'.product-board a[href="{detail}"]')), 1)
         logs = LogEntry.objects.filter(user=self.editor, object_id=str(self.draft.pk), action_flag=CHANGE)
-        self.assertEqual(logs.count(), 3)
+        self.assertEqual(logs.count(), 2)
         self.assertIn("状态", logs.first().get_change_message())
         stamp = self.draft.updated_at
         self.assertEqual(self.client.post(self.url, self.transition(status="draft")).status_code, 302)
         self.draft.refresh_from_db()
         self.assertEqual(self.draft.updated_at, stamp)
-        self.assertEqual(logs.count(), 3)
+        self.assertEqual(logs.count(), 2)
 
     def test_queryset_and_object_visibility_filter_cards_counts_and_submissions(self):
         archived = Product.objects.create(name="不可见商品", sku="PRIVATE", price=1, status=Product.Status.ARCHIVED)
@@ -175,8 +175,8 @@ class ProductBoardTests(TestCase):
         form = page.select_one('section[aria-labelledby="lane-draft"] form')
         self.assertEqual(form["method"], "post")
         buttons = form.select('button[type="submit"][name="status"]')
-        self.assertEqual([button["value"] for button in buttons], ["active", "archived"])
-        archive = buttons[1]
+        self.assertEqual([button["value"] for button in buttons], ["archived"])
+        archive = buttons[0]
         self.assertEqual(archive["aria-label"], f"归档「{self.draft.name}」")
         data = {field["name"]: field["value"] for field in form.select("input")}
         token = data.pop("csrfmiddlewaretoken")

@@ -16,7 +16,7 @@
 {% endblock %}
 
 {% block content %}
-  {% if conflict %}<p class="errornote" role="alert">商品已发生变化。请核对最新状态后重新提交。</p>{% endif %}
+  {% if conflict %}<p class="errornote" role="alert">商品状态或上架申请已变化。请核对最新状态后重新提交。</p>{% endif %}
   {% if empty %}<p>暂无可查看的商品。</p>{% endif %}
   <div class="product-board">
     {% for lane in lanes %}
@@ -29,11 +29,36 @@
                 <li>
                   <a class="product-board-name" href="{% url opts|admin_urlname:'change' product.pk|admin_urlquote %}">{{ product.name }}</a>
                   {% if show_sku %}<p class="product-board-sku">SKU · {{ product.sku }}</p>{% endif %}
+                  {% if card.latest %}
+                    <details class="product-publication-history">
+                      <summary>上架审批 · {{ card.latest.get_result_display }}</summary>
+                      <ol aria-label="{{ product.name }} 的上架审批记录">
+                        {% for record in product.reviews %}
+                          <li>
+                            {{ record.submitted_by }} 于 {{ record.submitted_at|date:"Y-m-d H:i" }} 提交 · {{ record.get_result_display }}
+                            {% if record.reviewed_at %}（{{ record.reviewed_by }}，{{ record.reviewed_at|date:"Y-m-d H:i" }}）{% endif %}
+                          </li>
+                        {% endfor %}
+                      </ol>
+                    </details>
+                  {% endif %}
+                  {% if card.can_review %}
+                    <form method="post" action="{% url opts|admin_urlname:'publication' product.pk %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="request_id" value="{{ card.latest.pk|stringformat:'d' }}">
+                      <button type="submit" name="action" value="approve" class="button" aria-label="通过「{{ product.name }}」上架">通过上架</button>
+                      <button type="submit" name="action" value="reject" class="button" aria-label="驳回「{{ product.name }}」上架申请">驳回申请</button>
+                    </form>
+                  {% endif %}
                   {% if card.editable %}
                     <form method="post">
                       {% csrf_token %}
                       <input type="hidden" name="product_id" value="{{ product.pk|stringformat:'d' }}">
                       <input type="hidden" name="previous_status" value="{{ product.status }}">
+                      {% if lane.status == "draft" %}
+                        <input type="hidden" name="request_id" value="{% if card.latest %}{{ card.latest.pk|stringformat:'d' }}{% else %}0{% endif %}">
+                        <button type="submit" name="action" value="submit" formaction="{% url opts|admin_urlname:'publication' product.pk %}" class="button" aria-label="提交「{{ product.name }}」上架审批">提交上架审批</button>
+                      {% endif %}
                       {% for value,action in transitions %}
                         {% if value != product.status %}
                           <button type="submit" name="status" value="{{ value }}" class="button" aria-label="{{ action }}「{{ product.name }}」">{{ action }}</button>

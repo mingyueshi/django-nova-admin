@@ -1,15 +1,18 @@
 from django.contrib import admin
 from django import forms
 from django.core.exceptions import PermissionDenied
+from django.db import router, transaction
+from django.http import HttpResponse
 from django.urls import path
 from django.utils.html import format_html
 from django.utils import timezone
 from nova_admin.columns import ColumnPreferencesMixin
-from .models import Category, MemberProfile, NewsItem, Product, ProductVariant, Tag
+from .models import Category, MemberProfile, NewsItem, Product, ProductPublicationRequest, ProductVariant, Tag
 from .charts import ProductActivityDayFilter
 from .media import DemoMediaAdminMixin
 from .pagination import BoundedPaginationAdminMixin
-from .product_board import can_view_board, product_status_board
+from .product_board import can_edit_status, can_view_board, product_publication, product_status_board
+from .publication import PublicationConflict, lock_status, submit_publication
 from .product_csv import MAX_EXPORT_ROWS, can_export_product_day, export_product_day
 
 
@@ -54,9 +57,55 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
     list_per_page = 20
 
     def get_urls(self):
-        view = self.admin_site.admin_view(self.status_board_view)
-        view.model_admin = self
-        return [path("status-board/", view, name="catalog_product_status_board"), *super().get_urls()]
+        def admin_view(view):
+            wrapped = self.admin_site.admin_view(view)
+            wrapped.model_admin = self
+            return wrapped
+
+        return [
+            path("status-board/", admin_view(self.status_board_view), name="catalog_product_status_board"),
+            path("<int:product_id>/publication/", admin_view(self.publication_view), name="catalog_product_publication"),
+            *super().get_urls(),
+        ]
+
+    def publication_view(self, request, product_id):
+        return product_publication(request, self, product_id)
+
+    def has_approve_permission(self, request, obj=None):
+        return request.user.has_perm("catalog.approve_product")
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        status = form.base_fields.get("status")
+        if status is not None:
+            current = obj.status if obj is not None else Product.Status.DRAFT
+            pending = obj is not None and obj.publication_requests.filter(result=ProductPublicationRequest.Result.PENDING).exists()
+            status.choices = [(value, label) for value, label in Product.Status.choices
+                              if value == current or (not pending and value != Product.Status.ACTIVE)]
+            status.show_hidden_initial = True
+            status.help_text = "上架请在商品状态看板提交审批。" if not pending else "正在审批上架，商品保留为草稿。"
+        return form
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        try:
+            return super().changeform_view(request, object_id, form_url, extra_context)
+        except PublicationConflict:
+            return HttpResponse("商品状态或上架申请已变化，请重新打开商品。", status=409)
+
+    def save_model(self, request, obj, form, change):
+        if change and ("status" not in form.changed_data or obj.status == form.initial.get("status")):
+            # Stock edits and ordinary saves must not overwrite a concurrent approval.
+            fields = [field.name for field in obj._meta.concrete_fields
+                      if field.name in form.changed_data and not field.primary_key and field.name != "status"]
+            obj.save(update_fields=[*fields, "updated_at"])
+            return
+        if change:
+            products = self.get_queryset(request).using(router.db_for_write(Product)).filter(pk=obj.pk)
+            previous = request.POST.get(form.add_initial_prefix("status"), form.initial["status"])
+            if (not lock_status(products, previous)
+                    or obj.publication_requests.filter(result=ProductPublicationRequest.Result.PENDING).exists()):
+                raise PublicationConflict
+        super().save_model(request, obj, form, change)
 
     def status_board_view(self, request):
         return product_status_board(request, self)
@@ -130,10 +179,21 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
         tone = obj.status if obj.status in Product.Status.values else "unknown"
         return format_html('<span class="nova-status nova-status--{}">{}</span>', tone, obj.get_status_display())
 
-    @admin.action(description="上架所选商品", permissions=["change"])
+    @admin.action(description="提交所选草稿上架审批", permissions=["change"])
     def publish_products(self, request, queryset):
-        count = queryset.update(status=Product.Status.ACTIVE, updated_at=timezone.now())
-        self.message_user(request, f"已上架 {count} 件商品。")
+        if not can_view_board(request, self) or not self.has_change_permission(request):
+            raise PermissionDenied
+        db = router.db_for_write(Product)
+        drafts = list(queryset.using(db).filter(status=Product.Status.DRAFT).order_by("pk").distinct())
+        products = self.get_queryset(request).using(db)
+        submitted = 0
+        with transaction.atomic(using=db):
+            for product in drafts:
+                if not self.has_view_or_change_permission(request, product) or not can_edit_status(request, self, product):
+                    raise PermissionDenied
+                if submit_publication(products, product, request.user):
+                    submitted += 1
+        self.message_user(request, f"已提交 {submitted} 件草稿商品上架审批。")
 
 
 @admin.register(MemberProfile)
