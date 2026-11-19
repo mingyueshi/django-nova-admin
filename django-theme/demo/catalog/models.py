@@ -198,6 +198,42 @@ class ProductPublicationRequest(models.Model):
         ]
 
 
+class ProductBatchTask(models.Model):
+    class Operation(models.TextChoices):
+        SUBMIT_PUBLICATION = "submit_publication", "批量提交上架审批"
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+")
+    site = models.CharField(max_length=100)
+    operation = models.CharField(max_length=32, choices=Operation.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        default_permissions = ()
+        indexes = [models.Index(fields=["owner", "site", "-created_at"], name="catalog_batch_owner_site")]
+
+
+class ProductBatchItem(models.Model):
+    class Outcome(models.TextChoices):
+        PENDING = "pending", "待处理"
+        SUBMITTED = "submitted", "已提交上架审批"
+        NOT_DRAFT = "not_draft", "商品不是草稿"
+        CONFLICT = "conflict", "已有待审批申请，或商品、审批记录已变化"
+        UNAVAILABLE = "unavailable", "商品不可用或修改权限已变化"
+        INVALID = "invalid", "提交校验失败"
+
+    task = models.ForeignKey(ProductBatchTask, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="+")
+    product_updated_at = models.DateTimeField()
+    previous_request_id = models.PositiveBigIntegerField(default=0)
+    outcome = models.CharField(max_length=16, choices=Outcome.choices, default=Outcome.PENDING)
+
+    class Meta:
+        default_permissions = ()
+        constraints = [models.UniqueConstraint(fields=["task", "product"], name="catalog_batch_unique_product")]
+        indexes = [models.Index(fields=["task", "outcome", "id"], name="catalog_batch_pending")]
+
+
 class ProductVariant(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
     name = models.CharField("规格", max_length=80)

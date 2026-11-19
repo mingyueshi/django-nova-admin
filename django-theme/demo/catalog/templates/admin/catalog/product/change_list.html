@@ -3,6 +3,7 @@
 {% block object-tools-items %}
   {{ block.super }}
   {% if show_product_board and not is_popup %}
+    <li><a href="{% url opts|admin_urlname:'batch_tasks' %}">批量任务进度</a></li>
     <li><a href="{% url opts|admin_urlname:'status_board' %}">商品状态看板</a></li>
     <li><a href="{% url opts|admin_urlname:'publication_calendar' %}">商品上架日历</a></li>
   {% endif %}

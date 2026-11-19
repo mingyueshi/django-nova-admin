@@ -1,0 +1,27 @@
+{% extends "admin/catalog/product/batch_tasks.html" %}
+{% load admin_urls l10n static project_admin %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {% if cursor %}<script src="{% static 'catalog/batch-task.js' %}" defer {% project_nonce %}></script>{% endif %}
+{% endblock %}
+{% block task_crumb %}&rsaquo; <a href="{% url opts|admin_urlname:'batch_tasks' %}">批量任务进度</a> {% endblock %}
+
+{% block task_content %}
+  <progress aria-label="上架审批提交进度" value="{{ counts.processed|unlocalize }}" max="{{ counts.total|unlocalize }}"></progress>
+  <p role="status">总数 {{ counts.total }}，已处理 {{ counts.processed }}，成功 {{ counts.succeeded }}，失败 {{ counts.failed }}。</p>
+  {% if cursor %}
+    <form method="post" action="?page={{ page.number|unlocalize }}" id="batch-continue">
+      {% csrf_token %}<input type="hidden" name="cursor" value="{{ cursor|unlocalize }}">
+      <button type="submit">继续处理</button>
+    </form>
+    <p>保持此页打开可自动继续，离开后可在批量任务进度中接续。</p>
+    <p id="batch-interrupted" role="alert" hidden>自动处理已暂停，可点击「继续处理」重试。</p>
+  {% endif %}
+  <table aria-label="商品处理结果">
+    <thead><tr><th scope="col">商品</th><th scope="col">提交结果</th></tr></thead>
+    <tbody>{% for item in page %}
+      <tr><th scope="row">{{ item.product.name }}</th><td>{{ item.get_outcome_display }}</td></tr>
+    {% endfor %}</tbody>
+  </table>
+{% endblock %}

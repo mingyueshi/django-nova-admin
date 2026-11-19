@@ -1,0 +1,41 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls l10n i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">商品列表</a>
+    {% block task_crumb %}{% endblock %}&rsaquo; {{ title }}
+  </div>
+{% endblock %}
+
+{% block content %}
+  <section id="batch-progress" aria-label="{{ title }}">
+    {% block task_content %}
+      {% if page.object_list %}
+        <table aria-label="本站我的批量任务">
+          <thead><tr><th scope="col">任务</th><th scope="col">创建时间</th><th scope="col">总数</th><th scope="col">已处理</th><th scope="col">成功</th><th scope="col">失败</th></tr></thead>
+          <tbody>
+            {% for task in page %}
+              <tr>
+                <th scope="row"><a href="{% url opts|admin_urlname:'batch_task' task.task_id %}">批量提交上架审批</a></th>
+                <td>{{ task.task__created_at|date:"Y-m-d H:i:s" }}</td>
+                <td>{{ task.total }}</td><td>{{ task.processed }}</td><td>{{ task.succeeded }}</td><td>{{ task.failed }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>暂无可查看的批量任务。</p>
+      {% endif %}
+    {% endblock %}
+    {% if page.has_other_pages %}
+      <nav aria-label="分页">
+        {% if page.has_previous %}<a href="?page={{ page.previous_page_number|unlocalize }}">上一页</a>{% endif %}
+        第 {{ page.number }} / {{ page.paginator.num_pages }} 页
+        {% if page.has_next %}<a href="?page={{ page.next_page_number|unlocalize }}">下一页</a>{% endif %}
+      </nav>
+    {% endif %}
+  </section>
+{% endblock %}

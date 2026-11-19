@@ -9,11 +9,12 @@ from django.utils import timezone
 from nova_admin.columns import ColumnPreferencesMixin
 from .models import Category, MemberProfile, NewsItem, Product, ProductPublicationRequest, ProductVariant, Tag
 from .category_tree import can_view_tree, category_tree, edit_category_tree
+from .batch_tasks import publication_task_action, product_batch_tasks
 from .charts import ProductActivityDayFilter
 from .media import DemoMediaAdminMixin
 from .pagination import BoundedPaginationAdminMixin
-from .product_board import can_edit_status, can_view_board, product_publication, product_status_board
-from .publication import PublicationConflict, lock_status, submit_publication
+from .product_board import can_view_board, product_publication, product_status_board
+from .publication import PublicationConflict, lock_status
 from .publication_calendar import publication_calendar
 from .recycle_bin import can_view_recycle_bin, product_recycle_bin, restore_product
 from .product_csv import MAX_EXPORT_ROWS, can_export_product_day, export_product_day
@@ -96,6 +97,8 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
             return wrapped
 
         return [
+            path("batch-tasks/", admin_view(self.batch_tasks_view), name="catalog_product_batch_tasks"),
+            path("batch-tasks/<uuid:task_id>/", admin_view(self.batch_tasks_view), name="catalog_product_batch_task"),
             path("status-board/", admin_view(self.status_board_view), name="catalog_product_status_board"),
             path("recycle-bin/", admin_view(self.recycle_bin_view), name="catalog_product_recycle_bin"),
             path("recycle-bin/<int:entry_id>/restore/", admin_view(self.restore_view), name="catalog_product_restore"),
@@ -108,6 +111,9 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
         if getattr(request, "product_recycle_bin", False):
             return Product.all_objects.filter(recycle_entry__isnull=False)
         return super().get_queryset(request)
+
+    def batch_tasks_view(self, request, task_id=None):
+        return product_batch_tasks(request, self, task_id)
 
     def recycle_bin_view(self, request):
         return product_recycle_bin(request, self)
@@ -141,8 +147,10 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
 
     def response_action(self, request, queryset, *args, **kwargs):
         # Django logs bulk deletions before delete_queryset. Commit both together.
-        with transaction.atomic(using=router.db_for_write(Product)):
-            return super().response_action(request, queryset, *args, **kwargs)
+        if "delete_selected" in request.POST.getlist("action"):
+            with transaction.atomic(using=router.db_for_write(Product)):
+                return super().response_action(request, queryset, *args, **kwargs)
+        return super().response_action(request, queryset, *args, **kwargs)
 
     def publication_calendar_view(self, request):
         return publication_calendar(request, self)
@@ -264,19 +272,7 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
 
     @admin.action(description="提交所选草稿上架审批", permissions=["change"])
     def publish_products(self, request, queryset):
-        if not can_view_board(request, self) or not self.has_change_permission(request):
-            raise PermissionDenied
-        db = router.db_for_write(Product)
-        drafts = list(queryset.using(db).filter(status=Product.Status.DRAFT).order_by("pk").distinct())
-        products = self.get_queryset(request).using(db)
-        submitted = 0
-        with transaction.atomic(using=db):
-            for product in drafts:
-                if not self.has_view_or_change_permission(request, product) or not can_edit_status(request, self, product):
-                    raise PermissionDenied
-                if submit_publication(products, product, request.user):
-                    submitted += 1
-        self.message_user(request, f"已提交 {submitted} 件草稿商品上架审批。")
+        return publication_task_action(request, self, queryset)
 
 
 @admin.register(MemberProfile)
