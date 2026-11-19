@@ -6,22 +6,28 @@
       <summary>{% translate 'Combine tags' context 'Nova demo' %}</summary>
       <form method="get" action="#product-tag-ranking">
         {% for name, value in filters.query.items %}
-          {% if name != 'chart_tag' and name != 'chart_tag_mode' and name != 'chart_tag_exclude' %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endif %}
+          {% if name != 'chart_tag' and name != 'chart_tag_mode' and name != 'chart_tag_exclude' and name != 'chart_tag_exclude_mode' %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endif %}
         {% endfor %}
         <label>{% translate 'Include tags (optional)' context 'Nova demo' %}
           <select name="chart_tag" multiple>
             {% include "project_admin/product_tag_options.html" with selected_keys=filters.tag_keys %}
           </select>
         </label>
-        <label>{% translate 'Match rule' context 'Nova demo' %}
+        <label>{% translate 'Inclusion match rule' context 'Nova demo' %}
           <select name="chart_tag_mode">
             <option value="any"{% if filters.tag_mode != 'all' %} selected{% endif %}>{% translate 'Match any tag' context 'Nova demo' %}</option>
             <option value="all"{% if filters.tag_mode == 'all' %} selected{% endif %}>{% translate 'Match all tags' context 'Nova demo' %}</option>
           </select>
         </label>
-        <label>{% translate 'Exclude products matching any of these tags' context 'Nova demo' %}
+        <label>{% translate 'Exclude tags (optional)' context 'Nova demo' %}
           <select name="chart_tag_exclude" multiple>
             {% include "project_admin/product_tag_options.html" with selected_keys=filters.excluded_tag_keys %}
+          </select>
+        </label>
+        <label>{% translate 'Exclusion match rule' context 'Nova demo' %}
+          <select name="chart_tag_exclude_mode">
+            <option value="any"{% if filters.tag_exclude_mode != 'all' %} selected{% endif %}>{% translate 'Match any tag' context 'Nova demo' %}</option>
+            <option value="all"{% if filters.tag_exclude_mode == 'all' %} selected{% endif %}>{% translate 'Match all tags' context 'Nova demo' %}</option>
           </select>
         </label>
         <button type="submit">{% translate 'Apply' context 'Nova Admin' %}</button>
@@ -32,10 +38,10 @@
     <p>
       {% if filters.tag_keys %}{{ tag_labels|join:", " }} · {% endif %}
       {% if excluded_tag_labels %}
-        {% translate 'Excluded tags' context 'Nova demo' %} · {{ excluded_tag_labels|join:", " }} ·
-        <a href="{% querystring filters.query chart_tag_exclude=None %}#product-tag-ranking">{% translate 'Clear exclusions' context 'Nova demo' %}</a>{% if filters.tag_keys %} · {% endif %}
+        {{ exclusion_label }} · {{ excluded_tag_labels|join:", " }} ·
+        <a href="{% querystring filters.query chart_tag_exclude=None chart_tag_exclude_mode=None %}#product-tag-ranking">{% translate 'Clear exclusions' context 'Nova demo' %}</a>{% if filters.tag_keys %} · {% endif %}
       {% endif %}
-      {% if filters.tag_keys %}<a href="{% querystring filters.query chart_tag=None chart_tag_mode=None chart_tag_exclude=None %}#product-tag-ranking">{% translate 'Clear tag filter' context 'Nova demo' %}</a>{% endif %}
+      {% if filters.tag_keys %}<a href="{% querystring filters.query chart_tag=None chart_tag_mode=None chart_tag_exclude=None chart_tag_exclude_mode=None %}#product-tag-ranking">{% translate 'Clear tag filter' context 'Nova demo' %}</a>{% endif %}
     </p>
   {% endif %}
   {% if tag_rows %}

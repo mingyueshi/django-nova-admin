@@ -30,6 +30,7 @@ def apply_rankings(request, owner, context, *, show_rankings):
     base, period = filters["products"], filters["period"]
     category, keys = filters["category"], filters["tag_keys"]
     mode, excluded = filters["tag_mode"], filters["excluded_tag_keys"]
+    exclude_mode = filters["tag_exclude_mode"]
     category_products = ranking_field_scope(request, owner, base, "category", category, show_rankings)
     has_tag_filter = bool(keys or excluded)
     tag_products = ranking_field_scope(request, owner, base, "tags", has_tag_filter, show_rankings)
@@ -49,13 +50,20 @@ def apply_rankings(request, owner, context, *, show_rankings):
             rank_scope = rank_scope.filter(pk__in=category_products.order_by().values("pk"))
         selected_labels = {}
         if has_tag_filter:
-            tagged, selected_labels = select_tags(tag_products, tags, keys, mode, period, excluded=excluded)
+            tagged, selected_labels = select_tags(
+                tag_products, tags, keys, mode, period, excluded=excluded, exclude_mode=exclude_mode,
+            )
             if keys:
                 context["tag_labels"] = [selected_labels[key] for key in keys]
                 filters["query"].setlist("chart_tag", keys)
             if excluded:
+                context["exclusion_label"] = (
+                    pgettext("Nova demo", "Excluded tags (match all)") if exclude_mode == "all"
+                    else pgettext("Nova demo", "Excluded tags (match any)")
+                )
                 context["excluded_tag_labels"] = [selected_labels[key] for key in excluded]
                 filters["query"].setlist("chart_tag_exclude", excluded)
+                filters["query"]["chart_tag_exclude_mode"] = exclude_mode
             if category_products is not None:
                 category_products = category_products.filter(pk__in=tagged.order_by().values("pk"))
             filters["products"] = category_products if category else tagged
@@ -93,15 +101,16 @@ def product_analysis(request, owner):
         if set(request.POST) - {"_export_csv", "csrfmiddlewaretoken"}:
             raise Http404
     allowed_filters = {"chart_window", "chart_days", "chart_start", "chart_end", "chart_day", "chart_status",
-                       "chart_category", "chart_tag", "chart_tag_mode", "chart_tag_exclude", "page"}
+                       "chart_category", "chart_tag", "chart_tag_mode", "chart_tag_exclude", "chart_tag_exclude_mode", "page"}
     if set(request.GET) - allowed_filters:
         raise Http404
     category = ranking_selection(request.GET, "chart_category", UNCATEGORIZED, DIRECT_PREFIX)
-    tag_keys, tag_mode, excluded_tag_keys = tag_selection(request.GET, exporting=exporting)
+    tag_keys, tag_mode, excluded_tag_keys, exclude_mode = tag_selection(request.GET, exporting=exporting)
     request.current_app = owner.admin_site.name
     context = owner.admin_site.each_context(request)
     filters = product_chart_filters(request, context["available_apps"], workbench=True)
-    filters.update(category=category, tag_keys=tag_keys, tag_mode=tag_mode, excluded_tag_keys=excluded_tag_keys)
+    filters.update(category=category, tag_keys=tag_keys, tag_mode=tag_mode,
+                   excluded_tag_keys=excluded_tag_keys, tag_exclude_mode=exclude_mode)
     if not (filters["drill_days"] and filters["status_visible"]):
         raise PermissionDenied
     context.update(opts=owner.opts, title=pgettext("Nova demo", "Linked analysis workbench"),

@@ -359,8 +359,8 @@ msgid "Include tags (optional)"
 msgstr "包含标签（可留空）"
 
 msgctxt "Nova demo"
-msgid "Match rule"
-msgstr "匹配方式"
+msgid "Inclusion match rule"
+msgstr "包含标签匹配方式"
 
 msgctxt "Nova demo"
 msgid "Match any tag"
@@ -375,12 +375,20 @@ msgid "Untagged (no assigned tags)"
 msgstr "未打标签（没有任何标签）"
 
 msgctxt "Nova demo"
-msgid "Exclude products matching any of these tags"
-msgstr "排除命中以下任一标签的商品"
+msgid "Exclude tags (optional)"
+msgstr "排除标签（可留空）"
 
 msgctxt "Nova demo"
-msgid "Excluded tags"
-msgstr "排除标签"
+msgid "Exclusion match rule"
+msgstr "排除标签匹配方式"
+
+msgctxt "Nova demo"
+msgid "Excluded tags (match any)"
+msgstr "排除标签（匹配任一）"
+
+msgctxt "Nova demo"
+msgid "Excluded tags (match all)"
+msgstr "排除标签（匹配全部）"
 
 msgctxt "Nova demo"
 msgid "Clear exclusions"

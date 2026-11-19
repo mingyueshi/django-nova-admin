@@ -30,21 +30,33 @@ def _tag_keys(values):
     return list(dict.fromkeys(ranking_key(value, UNTAGGED) for value in values))
 
 
+def _tag_mode(query, name):
+    values = query.getlist(name)
+    if not values:
+        return ""
+    if values not in (["any"], ["all"]):
+        raise Http404
+    return values[0]
+
+
 def tag_selection(query, *, exporting):
-    modes = query.getlist("chart_tag_mode")
+    mode = _tag_mode(query, "chart_tag_mode")
+    exclude_mode = _tag_mode(query, "chart_tag_exclude_mode")
     excluded = query.getlist("chart_tag_exclude")
-    if not modes and not excluded:
+    if not (mode or excluded or exclude_mode):
         key = ranking_selection(query, "chart_tag", UNTAGGED)
-        return ([key] if key else []), "", []
+        return ([key] if key else []), "", [], ""
     values = query.getlist("chart_tag")
-    if not query.get("chart_window") or (modes and modes not in (["any"], ["all"])):
+    if not query.get("chart_window") or (values and not mode):
         raise Http404
-    if values and not modes:
+    # A GET form submits both selectors even when a side is empty. Export links
+    # carry an exclusion rule only when its tag list is present.
+    if exporting and (not (values or excluded) or (exclude_mode and not excluded)):
         raise Http404
-    # An empty GET form clears the selection. Download links omit a mode without includes.
-    if exporting and not (values or excluded):
-        raise Http404
-    return _tag_keys(values), modes[0] if values else "", _tag_keys(excluded)
+    return (
+        _tag_keys(values), mode if values else "",
+        _tag_keys(excluded), (exclude_mode or "any") if excluded else "",
+    )
 
 
 def _tag_match(memberships, keys, mode):
@@ -62,7 +74,7 @@ def _tag_match(memberships, keys, mode):
     return condition
 
 
-def select_tags(products, tags, keys, mode, period, *, excluded):
+def select_tags(products, tags, keys, mode, period, *, excluded, exclude_mode):
     requested = set(keys).union(excluded)
     named = requested - {UNTAGGED}
     labels = {}
@@ -79,7 +91,7 @@ def select_tags(products, tags, keys, mode, period, *, excluded):
     memberships = Product.tags.through.objects.using(products.db)
     selected = products.filter(_tag_match(memberships, keys, mode)) if keys else products
     if excluded:
-        selected = selected.exclude(_tag_match(memberships, excluded, "any"))
+        selected = selected.exclude(_tag_match(memberships, excluded, exclude_mode))
     return selected, labels
 
 
