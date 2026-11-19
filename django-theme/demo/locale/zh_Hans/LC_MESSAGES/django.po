@@ -403,12 +403,16 @@ msgid "Match at most N tags"
 msgstr "最多命中 N 个标签"
 
 msgctxt "Nova demo"
-msgid "Minimum included tags"
-msgstr "包含标签的最少命中数"
+msgid "Match exactly N tags"
+msgstr "恰好命中 N 个标签"
 
 msgctxt "Nova demo"
-msgid "Minimum excluded tags"
-msgstr "排除标签的最少命中数"
+msgid "Included tag count (N)"
+msgstr "包含标签命中数（N）"
+
+msgctxt "Nova demo"
+msgid "Excluded tag count (N)"
+msgstr "排除标签命中数（N）"
 
 #, python-format
 msgctxt "Nova demo"

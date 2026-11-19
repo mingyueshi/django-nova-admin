@@ -12,11 +12,12 @@
     <option value="all"{% if rule.mode == 'all' %} selected{% endif %}>{% translate 'Match all tags' context 'Nova demo' %}</option>
     <option value="at_least"{% if rule.mode == 'at_least' %} selected{% endif %}>{% translate 'Match at least N tags' context 'Nova demo' %}</option>
     <option value="at_most"{% if rule.mode == 'at_most' %} selected{% endif %}>{% translate 'Match at most N tags' context 'Nova demo' %}</option>
+    <option value="exact"{% if rule.mode == 'exact' %} selected{% endif %}>{% translate 'Match exactly N tags' context 'Nova demo' %}</option>
     <option value="range"{% if rule.mode == 'range' %} selected{% endif %}>{% translate 'Match N to M tags' context 'Nova demo' %}</option>
   </select>
 </label>
 <label>
-  {% if parameter == 'chart_tag' %}{% translate 'Minimum included tags' context 'Nova demo' %}{% else %}{% translate 'Minimum excluded tags' context 'Nova demo' %}{% endif %}
+  {% if parameter == 'chart_tag' %}{% translate 'Included tag count (N)' context 'Nova demo' %}{% else %}{% translate 'Excluded tag count (N)' context 'Nova demo' %}{% endif %}
   <input type="number" name="{{ parameter }}_min" min="0" step="1" value="{{ rule.minimum|default_if_none:1|unlocalize }}" data-minimum-for="{{ parameter }}">
 </label>
 <label>

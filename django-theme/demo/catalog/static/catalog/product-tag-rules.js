@@ -6,14 +6,14 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
 
   function update() {
     const range = mode.value === "range";
-    const usesMinimum = range || mode.value === "at_least";
+    const usesMinimum = range || mode.value === "exact" || mode.value === "at_least";
     const usesMaximum = range || mode.value === "at_most";
     tags.required = usesMinimum || usesMaximum;
     minimum.required = usesMinimum;
     minimum.disabled = !usesMinimum;
     minimum.closest("label").hidden = !usesMinimum;
-    minimum.min = range ? "0" : "1";
-    minimum.max = String(Math.max(1, tags.selectedOptions.length));
+    minimum.min = mode.value === "at_least" ? "1" : "0";
+    minimum.max = String(tags.selectedOptions.length);
     maximum.required = usesMaximum;
     maximum.disabled = !usesMaximum;
     maximum.closest("label").hidden = !usesMaximum;

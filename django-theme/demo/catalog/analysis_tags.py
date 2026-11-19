@@ -36,15 +36,19 @@ class TagRule(NamedTuple):
     maximum: int | None = None
 
     @property
+    def match_maximum(self):
+        return self.minimum if self.mode == "exact" else self.maximum
+
+    @property
     def count_label(self):
         if self.mode == "at_most":
             return pgettext("Nova demo", "Match at most %(n)s") % {"n": self.maximum}
         if self.minimum is None:
             return ""
+        if self.minimum == self.match_maximum:
+            return pgettext("Nova demo", "Match exactly %(n)s") % {"n": self.minimum}
         if self.maximum is None:
             return pgettext("Nova demo", "Match at least %(n)s") % {"n": self.minimum}
-        if self.minimum == self.maximum:
-            return pgettext("Nova demo", "Match exactly %(n)s") % {"n": self.minimum}
         return pgettext("Nova demo", "Match %(lower)s to %(upper)s") % {"lower": self.minimum, "upper": self.maximum}
 
     def add_to_query(self, query, parameter):
@@ -74,10 +78,10 @@ def _tag_rule(query, parameter, *, exporting):
     modes = query.getlist(parameter + "_mode")
     lower = query.getlist(parameter + "_min")
     upper = query.getlist(parameter + "_max")
-    if modes not in ([], ["any"], ["all"], ["at_least"], ["at_most"], ["range"]) or len(lower) > 1 or len(upper) > 1:
+    if modes not in ([], ["any"], ["all"], ["at_least"], ["at_most"], ["exact"], ["range"]) or len(lower) > 1 or len(upper) > 1:
         raise Http404
     mode = modes[0] if modes else ""
-    uses_lower = mode in ("at_least", "range")
+    uses_lower = mode in ("at_least", "exact", "range")
     uses_upper = mode in ("at_most", "range")
     # Plain HTML can send inactive bounds. Export URLs must only carry active ones.
     if (exporting or not mode) and ((upper and not uses_upper) or (lower and not uses_lower)):
@@ -87,7 +91,7 @@ def _tag_rule(query, parameter, *, exporting):
             raise Http404
         minimum = None
         if uses_lower:
-            minimum = _count_bound(lower, 0 if mode == "range" else 1, len(keys))
+            minimum = _count_bound(lower, 1 if mode == "at_least" else 0, len(keys))
         maximum = _count_bound(upper, minimum or 0, len(keys)) if uses_upper else None
         return TagRule(keys, mode, minimum, maximum)
 
@@ -130,12 +134,13 @@ def _positive_tag_match(memberships, keys, minimum, maximum=None):
 
 
 def _tag_match(memberships, rule):
+    maximum = rule.match_maximum
     if rule.mode == "at_most" or rule.minimum == 0:
         # Products with no matching assignments have no group in the through table.
         # Within the visible queryset, 0..M is the complement of at least M+1.
-        return ~_positive_tag_match(memberships, rule.keys, rule.maximum + 1)
+        return ~_positive_tag_match(memberships, rule.keys, maximum + 1)
     minimum = len(rule.keys) if rule.mode == "all" else (rule.minimum or 1)
-    return _positive_tag_match(memberships, rule.keys, minimum, rule.maximum)
+    return _positive_tag_match(memberships, rule.keys, minimum, maximum)
 
 
 def select_tags(products, tags, included, excluded, period):
