@@ -17,9 +17,11 @@
   text-align: end;
   font-variant-numeric: tabular-nums;
 }
-#product-category-ranking [aria-current="true"] {
+#product-category-ranking nav {
+  margin-block-end: 0.75rem;
+}
+#product-category-ranking [aria-current="page"] {
   font-weight: bold;
-  text-decoration: underline;
 }
 #product-details form {
   margin-block-start: 1rem;

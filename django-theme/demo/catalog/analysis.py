@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.utils.translation import pgettext
 from django.views.decorators.http import require_http_methods
 
-from .analysis_categories import category_field_scope, category_ranking, category_selection, select_category
+from .analysis_categories import CategoryLevel, category_field_scope, category_selection
 from .charts import product_chart_filters
 from .product_csv import MAX_EXPORT_ROWS, can_export_products, product_csv_response
 
@@ -69,11 +69,16 @@ def product_analysis(request, owner):
         with timezone.override(period.zone):
             if category or not exporting:
                 scope = category_field_scope(request, owner, filters["products"])
-                if category:
-                    filters["products"], context["category_label"] = select_category(scope, category, period)
-                    filters["query"]["chart_category"] = category
-                if not exporting and scope is not None:
-                    context["category_rows"] = category_ranking(matching_products(scope, filters))
+                if scope is None and category:
+                    raise PermissionDenied
+                if scope is not None:
+                    level = CategoryLevel(request, owner, scope, period, category)
+                    if category:
+                        scope = filters["products"] = level.select_products(scope, period)
+                        filters["query"]["chart_category"] = category
+                        context.update(category_path=level.path, category_label=level.path[-1][1])
+                    if not exporting:
+                        context["category_rows"] = level.ranking(matching_products(scope, filters))
             products = matching_products(filters["products"], filters).order_by("-updated_at", "-pk").distinct()
             if exporting:
                 date_label = filters["day"]

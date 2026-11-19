@@ -17,10 +17,13 @@ def can_view_tree(request, owner):
             and "name" in owner.get_list_display(request))
 
 
+def visible_categories(request, owner, queryset):
+    return (obj for obj in queryset.distinct() if owner.has_view_or_change_permission(request, obj))
+
+
 class TreeScope:
     def __init__(self, request, owner, queryset):
-        visible = [obj for obj in queryset.distinct()
-                   if owner.has_view_or_change_permission(request, obj)]
+        visible = list(visible_categories(request, owner, queryset))
         self.nodes = {obj.pk: obj for obj in sorted(visible, key=lambda obj: (obj.tree_position, obj.pk))}
         self.writable = set()
         if owner.has_change_permission(request):

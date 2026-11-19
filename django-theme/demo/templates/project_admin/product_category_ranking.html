@@ -1,16 +1,23 @@
 {% load i18n %}
 <section id="product-category-ranking" aria-labelledby="product-categories-title" tabindex="-1">
   <h2 id="product-categories-title">{% translate 'Product category ranking' context 'Nova demo' %}</h2>
-  {% if filters.category %}
-    <p>{% blocktranslate with category=category_label context 'Nova demo' %}Selected category: {{ category }}{% endblocktranslate %}
+  {% if category_path %}
+    <nav aria-label="{% translate 'Category path' context 'Nova demo' %}">
       <a href="{% querystring filters.query chart_category=None %}#product-category-ranking">{% translate 'Clear category filter' context 'Nova demo' %}</a>
-    </p>
+      {% for key, label in category_path %}
+        <span aria-hidden="true"> › </span>
+        {% if forloop.last %}<span aria-current="page">{{ label }}</span>{% else %}<a href="{% querystring filters.query chart_category=key %}#product-category-ranking">{{ label }}</a>{% endif %}
+      {% endfor %}
+    </nav>
   {% endif %}
   {% if category_rows %}
     <table aria-labelledby="product-categories-title">
       <thead><tr><th scope="col">{% translate 'Category' context 'Nova demo' %}</th><th scope="col">{% translate 'Visible products' context 'Nova demo' %}</th></tr></thead>
       <tbody>{% for row in category_rows %}
-        <tr><th scope="row"><a href="{% querystring filters.query chart_category=row.key %}#product-category-ranking"{% if row.key == filters.category %} aria-current="true"{% endif %}>{{ row.label }}</a></th><td>{{ row.total }}</td></tr>
+        <tr>
+          <th scope="row">{% if row.direct %}{{ row.label }}{% else %}<a href="{% querystring filters.query chart_category=row.key %}#product-category-ranking">{{ row.label }}</a>{% endif %}</th>
+          <td>{{ row.total }}</td>
+        </tr>
       {% endfor %}</tbody>
     </table>
   {% else %}

@@ -310,10 +310,13 @@ msgctxt "Nova demo"
 msgid "Uncategorized"
 msgstr "未分类"
 
-#, python-format
 msgctxt "Nova demo"
-msgid "Selected category: %(category)s"
-msgstr "当前分类为%(category)s"
+msgid "Category path"
+msgstr "分类路径"
+
+msgctxt "Nova demo"
+msgid "Directly assigned products"
+msgstr "本级直属商品"
 
 msgctxt "Nova demo"
 msgid "Clear category filter"
