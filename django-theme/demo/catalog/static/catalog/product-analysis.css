@@ -1,0 +1,15 @@
+.product-analysis-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 23rem), 1fr));
+  align-items: start;
+  gap: 1rem;
+}
+.product-analysis-table {
+  overflow-x: auto;
+}
+.product-analysis-table table {
+  width: 100%;
+}
+#product-details form {
+  margin-block-start: 1rem;
+}

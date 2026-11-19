@@ -12,6 +12,7 @@ from django.utils import timezone
 from nova_admin.columns import ColumnPreferencesMixin
 from .models import Category, MemberProfile, NewsItem, Product, ProductPublicationRequest, ProductVariant, Tag
 from .category_tree import can_view_tree, category_tree, edit_category_tree
+from .analysis import product_analysis
 from .batch_tasks import publication_task_action, product_batch_tasks
 from .charts import ProductActivityDayFilter, can_chart_status
 from .media import DemoMediaAdminMixin
@@ -104,6 +105,7 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
             return wrapped
 
         return [
+            path("analysis/", admin_view(self.analysis_view), name="catalog_product_analysis"),
             path("notifications/", admin_view(self.notifications_view), name="catalog_product_notifications"),
             path("batch-tasks/", admin_view(self.batch_tasks_view), name="catalog_product_batch_tasks"),
             path("batch-tasks/<uuid:task_id>/", admin_view(self.batch_tasks_view), name="catalog_product_batch_task"),
@@ -122,6 +124,9 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
 
     def notifications_view(self, request):
         return product_notifications(request, self)
+
+    def analysis_view(self, request):
+        return product_analysis(request, self)
 
     def batch_tasks_view(self, request, task_id=None):
         return product_batch_tasks(request, self, task_id)

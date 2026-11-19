@@ -74,13 +74,18 @@ def export_products(request, model_admin):
         zone = timezone.get_current_timezone() if settings.USE_TZ else timezone.get_default_timezone()
         suffix = f"status-{status}"
 
+    return product_csv_response(request, model_admin, queryset, zone, suffix)
+
+
+def product_csv_response(request, model_admin, queryset, zone, suffix):
     # Fetch a single bounded result set before sending any attachment bytes.
     with timezone.override(zone):
         products = list(queryset[:MAX_EXPORT_ROWS + 1])
+        if len(products) > MAX_EXPORT_ROWS:
+            message = pgettext("Nova demo", "Narrow the filters to at most %(limit)s products to export CSV.")
+            return HttpResponseBadRequest(message % {"limit": MAX_EXPORT_ROWS}, content_type="text/plain; charset=utf-8")
+        products = [p for p in products if model_admin.has_view_or_change_permission(request, p)]
         zone_name = timezone.get_current_timezone_name()
-    if len(products) > MAX_EXPORT_ROWS:
-        message = pgettext("Nova demo", "Narrow the filters to at most %(limit)s products to export CSV.")
-        return HttpResponseBadRequest(message % {"limit": MAX_EXPORT_ROWS}, content_type="text/plain; charset=utf-8")
 
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="products-{suffix}.csv"'
@@ -89,9 +94,8 @@ def export_products(request, model_admin):
     sku_label, name_label, updated_label = [model_admin.opts.get_field(field).verbose_name for field in CSV_FIELDS]
     writer.writerow((sku_label, name_label, f"{updated_label} ({zone_name})"))
     for product in products:
-        if model_admin.has_view_or_change_permission(request, product):
-            updated = product.updated_at
-            if timezone.is_aware(updated):
-                updated = timezone.localtime(updated, zone)
-            writer.writerow((spreadsheet_text(product.sku), spreadsheet_text(product.name), updated.isoformat()))
+        updated = product.updated_at
+        if timezone.is_aware(updated):
+            updated = timezone.localtime(updated, zone)
+        writer.writerow((spreadsheet_text(product.sku), spreadsheet_text(product.name), updated.isoformat()))
     return response

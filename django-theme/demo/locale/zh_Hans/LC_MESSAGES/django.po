@@ -223,3 +223,35 @@ msgstr "%(status)s商品最近更新日期分布"
 msgctxt "Nova demo"
 msgid "Products by status for %(day)s"
 msgstr "%(day)s 更新的商品状态分布"
+
+msgctxt "Nova demo"
+msgid "Linked analysis workbench"
+msgstr "联动分析工作台"
+
+msgctxt "Nova demo"
+msgid "Matching products"
+msgstr "匹配商品明细"
+
+msgctxt "Nova demo"
+msgid "Product name"
+msgstr "商品名称"
+
+msgctxt "Nova demo"
+msgid "Last updated"
+msgstr "更新时间"
+
+msgctxt "Nova demo"
+msgid "Previous page"
+msgstr "上一页"
+
+msgctxt "Nova demo"
+msgid "Next page"
+msgstr "下一页"
+
+msgctxt "Nova demo"
+msgid "No visible products match these filters."
+msgstr "当前筛选条件下没有可查看的商品。"
+
+msgctxt "Nova demo"
+msgid "Product details are temporarily unavailable. Reload to retry."
+msgstr "商品明细暂时不可用，请刷新重试。"

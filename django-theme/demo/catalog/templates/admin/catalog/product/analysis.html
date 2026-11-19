@@ -1,0 +1,74 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls i18n static tz project_admin %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'catalog/product-analysis.css' %}" {% project_nonce %}>
+{% endblock %}
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}{% if filters.query %}{% querystring filters.query %}{% endif %}">{% translate 'Home' %}</a>
+    &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural }}</a>
+    &rsaquo; {{ title }}
+  </div>
+{% endblock %}
+
+{% block content %}
+  {% if filters.window %}{% include "project_admin/product_chart_filters.html" with days=filters.days %}{% endif %}
+  {% if filters.invalid_range %}
+    <p>{% translate 'Choose a range of 7 or 30 days.' context 'Nova demo' %}</p>
+  {% elif filters.invalid_day %}
+    <p>{% translate 'Choose a date in the selected range.' context 'Nova demo' %}</p>
+  {% else %}
+  <div class="product-analysis-charts">
+    {% include "project_admin/product_charts.html" with app_list=available_apps %}
+  </div>
+  <section id="product-details" aria-labelledby="product-details-title" tabindex="-1">
+    <h2 id="product-details-title">{% translate 'Matching products' context 'Nova demo' %}{% if page != None %} ({{ page.paginator.count }}){% endif %}</h2>
+    {% if detail_error %}
+      <p>{{ detail_error }}</p>
+    {% elif page != None %}
+      <p>{% blocktranslate with zone=filters.period.zone.key context 'Nova demo' %}Chart timezone: {{ zone }}. Data cutoff: {{ cutoff }}.{% endblocktranslate %}</p>
+      {% if page.object_list %}
+        <div class="product-analysis-table">
+          <table aria-labelledby="product-details-title">
+            <thead><tr>
+              {% if show_name %}<th scope="col">{% translate 'Product name' context 'Nova demo' %}</th>{% endif %}
+              {% if show_sku %}<th scope="col">SKU</th>{% endif %}
+              <th scope="col">{% translate 'Status' context 'Nova demo' %}</th>
+              <th scope="col">{% translate 'Last updated' context 'Nova demo' %}</th>
+            </tr></thead>
+            <tbody>{% timezone filters.period.zone %}
+              {% for product in page.object_list %}<tr>
+                {% if show_name %}<th scope="row"><a href="{% url opts|admin_urlname:'change' product.pk|admin_urlquote %}">{{ product.name }}</a></th>{% endif %}
+                {% if show_sku %}<td>{{ product.sku }}</td>{% endif %}
+                <td>{{ product.get_status_display }}</td>
+                <td><time datetime="{{ product.updated_at|date:'c' }}">{{ product.updated_at|date:'c' }}</time></td>
+              </tr>{% endfor %}
+            {% endtimezone %}</tbody>
+          </table>
+        </div>
+        {% if page.has_other_pages %}
+          <nav class="paginator" aria-label="{% translate 'Pagination controls' context 'Nova demo' %}">
+            {% if page.has_previous %}<a rel="prev" href="{% querystring filters.query page=page.previous_page_number %}#product-details">{% translate 'Previous page' context 'Nova demo' %}</a>{% endif %}
+            {{ page.number }} / {{ page.paginator.num_pages }}
+            {% if page.has_next %}<a rel="next" href="{% querystring filters.query page=page.next_page_number %}#product-details">{% translate 'Next page' context 'Nova demo' %}</a>{% endif %}
+          </nav>
+        {% endif %}
+      {% else %}
+        <p>{% translate 'No visible products match these filters.' context 'Nova demo' %}</p>
+      {% endif %}
+      {% if can_export %}
+        {% if page.paginator.count > export_limit %}
+          <p>{% blocktranslate with limit=export_limit context 'Nova demo' %}Narrow the filters to at most {{ limit }} products to export CSV.{% endblocktranslate %}</p>
+        {% else %}
+          <form method="post" action="{% querystring filters.query %}">
+            {% csrf_token %}
+            <button type="submit" name="_export_csv" value="1">{% translate 'Export filtered products as CSV' context 'Nova demo' %}</button>
+          </form>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  </section>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,15 @@
+{% load i18n project_admin %}
+{% product_activity_chart request app_list filters as activity %}
+{% if activity %}
+  {% if filters.status_label %}
+    {% blocktranslate with status=filters.status_label context 'Nova demo' asvar chart_title %}Products by last update date ({{ status }}){% endblocktranslate %}
+  {% else %}{% translate 'Visible products by last update date' context 'Nova demo' as chart_title %}{% endif %}
+  {% include "project_admin/product_activity_chart.html" with chart_snapshot=activity.snapshot %}
+{% endif %}
+{% product_status_chart request app_list filters as status_chart %}
+{% if status_chart %}
+  {% if filters.selected_day %}
+    {% blocktranslate with day=filters.day context 'Nova demo' asvar chart_title %}Products by status for {{ day }}{% endblocktranslate %}
+  {% else %}{% translate 'Visible products by status' context 'Nova demo' as chart_title %}{% endif %}
+  {% include "project_admin/product_status_chart.html" with chart_snapshot=status_chart.snapshot %}
+{% endif %}

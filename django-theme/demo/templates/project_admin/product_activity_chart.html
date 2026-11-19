@@ -14,7 +14,7 @@
 {% endblock %}
 {% block chart_date %}
   {% if point.value != None and activity.window %}
-    <a data-nova-chart-day="{{ point.date }}" href="{{ activity.list_url }}?activity_day={{ point.date }}~{{ activity.window|urlencode }}{% if filters.status %}&amp;status__exact={{ filters.status|urlencode }}{% endif %}"{% if point.date == filters.day %} aria-current="true"{% endif %}
+    <a data-nova-chart-day="{{ point.date }}" href="{% if workbench %}{% querystring filters.query chart_day=point.date %}#product-details{% else %}{{ activity.list_url }}?activity_day={{ point.date }}~{{ activity.window|urlencode }}{% if filters.status %}&amp;status__exact={{ filters.status|urlencode }}{% endif %}{% endif %}"{% if point.date == filters.day %} aria-current="true"{% endif %}
        aria-label="{% blocktranslate with day=point.date context 'Nova demo' %}View products for {{ day }}{% endblocktranslate %}">{{ point.date }}</a>
   {% else %}{{ point.date }}{% endif %}
 {% endblock %}

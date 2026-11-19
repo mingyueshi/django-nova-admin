@@ -12,7 +12,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import DatabaseError
 from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
-from django.http import Http404
+from django.http import Http404, QueryDict
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import pgettext_lazy
@@ -73,6 +73,11 @@ class ChartWindow(NamedTuple):
 
     def sign(self, request):
         return _window_signer(request).sign_object([self.cutoff.isoformat(), self.zone.key, self.days])
+
+    def products_on(self, queryset, day):
+        if day is None:
+            return _through_cutoff(queryset, self.zone, self.cutoff)
+        return _in_window(queryset, day, day + timedelta(days=1), self.zone, self.cutoff)
 
     @classmethod
     def from_token(cls, request, token):
@@ -207,13 +212,22 @@ def product_chart_filters(request, app_list):
         filters["selected_day"] = day
     if linked:
         filters["coordinate"] = (day_text or "all") + "~" + filters["window"]
+        if not invalid_range:
+            query = QueryDict(mutable=True)
+            query.update({"chart_days": days, "chart_window": filters["window"]})
+            if day_text:
+                query["chart_day"] = day_text
+            if status:
+                query["chart_status"] = status
+            filters["query"] = query
     if (day_text or status) and not invalid_range:
         params = {"activity_day": filters["coordinate"]}
         if status:
             params["status__exact"] = status
         filters["result_url"] = filters["list_url"] + "?" + urlencode(params)
     try:
-        filters["products"] = visible_products(request, owner, owner.get_queryset(request))
+        with timezone.override(window.zone):
+            filters["products"] = visible_products(request, owner, owner.get_queryset(request))
     except DatabaseError:
         filters["products"] = None
     return filters
@@ -245,7 +259,8 @@ def product_activity_chart(request, app_list, filters=None):
         buckets = queryset.order_by().values(day=TruncDate("updated_at", tzinfo=period.zone)).annotate(
             total=Count("pk", distinct=True)
         )
-        counts = {row["day"]: row["total"] for row in buckets}
+        with timezone.override(period.zone):
+            counts = {row["day"]: row["total"] for row in buckets}
     except DatabaseError:
         snapshot["state"] = "error"
     else:
@@ -287,13 +302,12 @@ def product_status_chart(request, app_list, filters=None):
         return {"snapshot": snapshot}
     try:
         day = filters.get("selected_day")
-        if day:
-            products = _in_window(products, day, day + timedelta(days=1), period.zone, period.cutoff)
-        elif filters.get("coordinate"):
-            products = _through_cutoff(products, period.zone, period.cutoff)
-        counts = products.aggregate(**{
-            key: Count("pk", filter=Q(status=key), distinct=True) for key in Product.Status.values
-        })
+        if day or filters.get("coordinate"):
+            products = period.products_on(products, day)
+        with timezone.override(period.zone):
+            counts = products.aggregate(**{
+                key: Count("pk", filter=Q(status=key), distinct=True) for key in Product.Status.values
+            })
     except DatabaseError:
         snapshot["state"] = "error"
     else:

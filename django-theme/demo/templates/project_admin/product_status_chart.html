@@ -3,7 +3,7 @@
 {% block category_heading %}{% translate 'Status' context 'Nova demo' %}{% endblock %}
 {% block category_label %}
   {% if point.value != None %}
-    <a data-nova-category="{{ point.key }}" href="{{ status_chart.list_url }}?status__exact={{ point.key|urlencode }}{% if filters.coordinate %}&amp;activity_day={{ filters.coordinate|urlencode }}{% endif %}"{% if point.key == filters.status %} aria-current="true"{% endif %}>{{ point.label|force_escape }}</a>
+    <a data-nova-category="{{ point.key }}" href="{% if workbench %}{% querystring filters.query chart_status=point.key %}#product-details{% else %}{{ status_chart.list_url }}?status__exact={{ point.key|urlencode }}{% if filters.coordinate %}&amp;activity_day={{ filters.coordinate|urlencode }}{% endif %}{% endif %}"{% if point.key == filters.status %} aria-current="true"{% endif %}>{{ point.label|force_escape }}</a>
   {% else %}{{ point.label|force_escape }}{% endif %}
 {% endblock %}
 {% block category_empty %}{% translate 'No visible products.' context 'Nova demo' %}{% endblock %}

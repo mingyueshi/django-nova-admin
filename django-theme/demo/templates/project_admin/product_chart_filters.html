@@ -24,6 +24,10 @@
   <button type="submit">{% translate 'Apply' context 'Nova Admin' %}</button>
   {% if filters.linked %}
     {% if filters.reset_url %}<a href="{{ filters.reset_url }}?chart_days={{ filters.days }}#product-activity-range">{% translate 'Clear filters' context 'Nova demo' %}</a>{% endif %}
-    {% if filters.result_url %}<a href="{{ filters.result_url }}">{% translate 'View matching products' context 'Nova demo' %}</a>{% endif %}
+    {% if not workbench %}
+      {% if filters.result_url %}<a href="{{ filters.result_url }}">{% translate 'View matching products' context 'Nova demo' %}</a>{% endif %}
+      {% url request.resolver_match.namespace|add:':catalog_product_analysis' as analysis_url %}
+      {% if analysis_url and filters.query %}<a href="{{ analysis_url }}{% querystring filters.query %}">{% translate 'Linked analysis workbench' context 'Nova demo' %}</a>{% endif %}
+    {% endif %}
   {% endif %}
 </form>
