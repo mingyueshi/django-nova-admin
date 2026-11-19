@@ -6,18 +6,19 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
 
   function update() {
     const range = mode.value === "range";
-    const active = range || mode.value === "at_least";
-    tags.required = active;
-    minimum.required = active;
-    minimum.disabled = !active;
-    minimum.closest("label").hidden = !active;
+    const usesMinimum = range || mode.value === "at_least";
+    const usesMaximum = range || mode.value === "at_most";
+    tags.required = usesMinimum || usesMaximum;
+    minimum.required = usesMinimum;
+    minimum.disabled = !usesMinimum;
+    minimum.closest("label").hidden = !usesMinimum;
     minimum.min = range ? "0" : "1";
     minimum.max = String(Math.max(1, tags.selectedOptions.length));
-    maximum.required = range;
-    maximum.disabled = !range;
-    maximum.closest("label").hidden = !range;
-    maximum.max = minimum.max;
-    maximum.min = String(Math.max(0, minimum.valueAsNumber || 0));
+    maximum.required = usesMaximum;
+    maximum.disabled = !usesMaximum;
+    maximum.closest("label").hidden = !usesMaximum;
+    maximum.max = String(tags.selectedOptions.length);
+    maximum.min = range ? String(Math.max(0, minimum.valueAsNumber || 0)) : "0";
   }
 
   mode.addEventListener("change", update);

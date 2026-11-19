@@ -54,10 +54,11 @@ def apply_rankings(request, owner, context, *, show_rankings):
             tagged, selected_labels = select_tags(tag_products, tags, included, excluded, period)
             if included.keys:
                 context["tag_labels"] = [selected_labels[key] for key in included.keys]
+                context["inclusion_count_label"] = included.count_label
                 included.add_to_query(filters["query"], "chart_tag")
             if excluded.keys:
-                if excluded.minimum is not None:
-                    context["exclusion_label"] = pgettext("Nova demo", "Excluded tags (%(rule)s)") % {"rule": excluded.count_label}
+                if count_label := excluded.count_label:
+                    context["exclusion_label"] = pgettext("Nova demo", "Excluded tags (%(rule)s)") % {"rule": count_label}
                 else:
                     context["exclusion_label"] = (
                         pgettext("Nova demo", "Excluded tags (match all)") if excluded.mode == "all"

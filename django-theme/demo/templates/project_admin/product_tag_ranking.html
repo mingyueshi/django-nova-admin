@@ -17,7 +17,7 @@
   {% if filters.included_tags.keys or filters.excluded_tags.keys %}
     <p>
       {% if filters.included_tags.keys %}
-        {% if filters.included_tags.minimum is not None %}{{ filters.included_tags.count_label }} · {% endif %}{{ tag_labels|join:", " }} ·
+        {% if inclusion_count_label %}{{ inclusion_count_label }} · {% endif %}{{ tag_labels|join:", " }} ·
       {% endif %}
       {% if excluded_tag_labels %}
         {{ exclusion_label }} · {{ excluded_tag_labels|join:", " }} ·

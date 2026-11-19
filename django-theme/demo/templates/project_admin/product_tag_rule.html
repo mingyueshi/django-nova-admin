@@ -11,6 +11,7 @@
     <option value="any"{% if not rule.mode or rule.mode == 'any' %} selected{% endif %}>{% translate 'Match any tag' context 'Nova demo' %}</option>
     <option value="all"{% if rule.mode == 'all' %} selected{% endif %}>{% translate 'Match all tags' context 'Nova demo' %}</option>
     <option value="at_least"{% if rule.mode == 'at_least' %} selected{% endif %}>{% translate 'Match at least N tags' context 'Nova demo' %}</option>
+    <option value="at_most"{% if rule.mode == 'at_most' %} selected{% endif %}>{% translate 'Match at most N tags' context 'Nova demo' %}</option>
     <option value="range"{% if rule.mode == 'range' %} selected{% endif %}>{% translate 'Match N to M tags' context 'Nova demo' %}</option>
   </select>
 </label>
