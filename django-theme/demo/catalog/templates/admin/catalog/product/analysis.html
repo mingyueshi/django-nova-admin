@@ -31,7 +31,7 @@
     {% if detail_error %}
       <p>{{ detail_error }}</p>
     {% elif page != None %}
-      <p>{% if filters.category %}{{ category_label }} · {% endif %}{% if filters.custom_dates %}{{ filters.detail_dates.first.isoformat }} – {{ filters.detail_dates.last.isoformat }}{% if filters.status_label %} · {{ filters.status_label }}{% endif %} · {% endif %}{% blocktranslate with zone=filters.period.zone.key context 'Nova demo' %}Chart timezone: {{ zone }}. Data cutoff: {{ cutoff }}.{% endblocktranslate %}</p>
+      <p>{% if filters.category %}{{ category_label }} · {% if direct_only %}{% translate 'Directly assigned products' context 'Nova demo' %} · {% endif %}{% endif %}{% if filters.custom_dates %}{{ filters.detail_dates.first.isoformat }} – {{ filters.detail_dates.last.isoformat }}{% if filters.status_label %} · {{ filters.status_label }}{% endif %} · {% endif %}{% blocktranslate with zone=filters.period.zone.key context 'Nova demo' %}Chart timezone: {{ zone }}. Data cutoff: {{ cutoff }}.{% endblocktranslate %}</p>
       {% if page.object_list %}
         <div class="product-analysis-table">
           <table aria-labelledby="product-details-title">

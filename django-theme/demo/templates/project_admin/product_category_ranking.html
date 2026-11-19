@@ -6,7 +6,12 @@
       <a href="{% querystring filters.query chart_category=None %}#product-category-ranking">{% translate 'Clear category filter' context 'Nova demo' %}</a>
       {% for key, label in category_path %}
         <span aria-hidden="true"> › </span>
-        {% if forloop.last %}<span aria-current="page">{{ label }}</span>{% else %}<a href="{% querystring filters.query chart_category=key %}#product-category-ranking">{{ label }}</a>{% endif %}
+        {% if forloop.last %}
+          <span aria-current="page">{{ label }}{% if direct_only %} · {% translate 'Directly assigned products' context 'Nova demo' %}{% endif %}</span>
+          {% if direct_only %}<a href="{% querystring filters.query chart_category=key %}#product-category-ranking">{% translate 'Back to the full subtree' context 'Nova demo' %}</a>{% endif %}
+        {% else %}
+          <a href="{% querystring filters.query chart_category=key %}#product-category-ranking">{{ label }}</a>
+        {% endif %}
       {% endfor %}
     </nav>
   {% endif %}
@@ -15,7 +20,7 @@
       <thead><tr><th scope="col">{% translate 'Category' context 'Nova demo' %}</th><th scope="col">{% translate 'Visible products' context 'Nova demo' %}</th></tr></thead>
       <tbody>{% for row in category_rows %}
         <tr>
-          <th scope="row">{% if row.direct %}{{ row.label }}{% else %}<a href="{% querystring filters.query chart_category=row.key %}#product-category-ranking">{{ row.label }}</a>{% endif %}</th>
+          <th scope="row">{% if row.key == filters.category %}{{ row.label }}{% else %}<a href="{% querystring filters.query chart_category=row.key %}#product-category-ranking">{{ row.label }}</a>{% endif %}</th>
           <td>{{ row.total }}</td>
         </tr>
       {% endfor %}</tbody>

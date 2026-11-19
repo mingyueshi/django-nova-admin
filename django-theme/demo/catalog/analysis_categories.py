@@ -13,6 +13,7 @@ from .models import Category
 
 
 UNCATEGORIZED = "uncategorized"
+DIRECT_PREFIX = "direct-"
 
 
 def category_selection(query):
@@ -24,7 +25,8 @@ def category_selection(query):
     key = values[0]
     if key == UNCATEGORIZED:
         return key
-    if not re.fullmatch(r"[1-9][0-9]{0,18}", key) or int(key) > 2**63 - 1:
+    pk = key.removeprefix(DIRECT_PREFIX)
+    if not re.fullmatch(r"[1-9][0-9]{0,18}", pk) or int(pk) > 2**63 - 1:
         raise Http404
     return key
 
@@ -65,6 +67,8 @@ def category_nodes(request, owner, products, period):
 
 class CategoryLevel:
     def __init__(self, request, owner, scope, period, key):
+        self.direct_only = key.startswith(DIRECT_PREFIX)
+        key = key.removeprefix(DIRECT_PREFIX)
         self.selected = int(key) if key and key != UNCATEGORIZED else key
         self.path = []
         self.branches = {None: UNCATEGORIZED} if not key or key == UNCATEGORIZED else {}
@@ -111,6 +115,8 @@ class CategoryLevel:
         # category without a visible product through the cutoff is not a drilldown.
         if not period.products_in(selected, None).exists():
             raise Http404
+        if self.direct_only:
+            return scope.filter(category_id=self.selected)
         return selected
 
     def ranking(self, products):
@@ -122,9 +128,10 @@ class CategoryLevel:
 
         rows = []
         for key in sorted(totals, key=lambda k: (-totals[k], k == UNCATEGORIZED, k)):
-            direct = key == self.selected
+            target = str(key)
             label = self.labels[key]
-            if direct and key != UNCATEGORIZED:
+            if key == self.selected and key != UNCATEGORIZED:
                 label = pgettext("Nova demo", "Directly assigned products")
-            rows.append({"key": key, "label": label, "total": totals[key], "direct": direct})
+                target = f"{DIRECT_PREFIX}{key}"
+            rows.append({"key": target, "label": label, "total": totals[key]})
         return rows

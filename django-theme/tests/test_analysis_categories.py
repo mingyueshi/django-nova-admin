@@ -101,7 +101,7 @@ class ProductCategoryRankingTests(ProductAnalysisTestCase):
             leaf_url = self.choose(child, child_url, leaf.pk)
             terminal = self.open_page(leaf_url)
             self.assertEqual(self.ranking(terminal), [("本级直属商品", 1)])
-            self.assertFalse(terminal.select("#product-category-ranking tbody a"))
+            self.assertEqual([a.string for a in terminal.select("#product-category-ranking tbody a")], ["本级直属商品"])
             self.assertEqual([a.string for a in terminal.select("#product-details tbody th a")], [first.name])
             self.assertEqual([r[0] for r in self.csv_rows(self.download(leaf_url))[1:]], ["TEXT: @first"])
             daily, status = [json.loads(s.string) for s in terminal.select('.product-analysis-charts [type="application/json"]')]
@@ -111,6 +111,89 @@ class ProductCategoryRankingTests(ProductAnalysisTestCase):
             self.assertEqual([a.string for a in links], ["清除分类筛选", "灯具", "书桌"])
             self.assertEqual([parse_qs(urlsplit(a["href"]).query) for a in links],
                              [parse_qs(urlsplit(u).query) for u in (url, selected, child_url)])
+
+    def test_direct_drilldown_shares_dates_status_and_cutoff_across_charts_pages_and_csv(self):
+        leaf = Category.objects.create(name="阅读灯", slug="reading", parent=self.desks)
+        self.item("ancestor", self.lamps)
+        self.item("descendant", leaf)
+        self.item("loose", None)
+        self.item("@first", self.desks, stamp="2026-10-31T04:00:00+00:00")
+        self.item("last", self.desks)
+        self.item("listed", self.desks, status="active", stamp="2026-11-01T05:30:00+00:00")
+        self.item("before", self.desks, stamp="2026-10-31T03:59:59.999999+00:00")
+        self.item("after", self.desks, stamp="2026-11-01T06:30:00.000001+00:00")
+        hidden = self.item("restricted", self.desks)
+        url = self.entry() + "&chart_start=2026-10-31&chart_end=2026-11-01&chart_status=draft"
+        with timezone.override(ZoneInfo("Asia/Tokyo")), patch.object(self.owner, "list_per_page", 1), patch.object(
+            self.owner, "has_view_permission", side_effect=lambda request, obj=None: obj != hidden
+        ):
+            root = self.choose(self.open_page(url), url, self.lamps.pk)
+            subtree = self.choose(self.open_page(root), root, self.desks.pk)
+            branch = self.open_page(subtree)
+            self.assertEqual(self.ranking(branch), [("本级直属商品", 2), ("阅读灯", 1)])
+            direct = urljoin(subtree, branch.find("a", string="本级直属商品")["href"])
+            page = self.open_page(direct)
+            self.assertEqual(self.ranking(page), [("本级直属商品", 2)])
+            self.assertIn("书桌 · 本级直属商品", page.select_one('#product-category-ranking [aria-current="page"]').get_text())
+            self.assertEqual(page.select_one('#product-chart-filters [name="chart_category"]')["value"],
+                             parse_qs(urlsplit(direct).query)["chart_category"][0])
+            self.assertIsNone(page.select_one('#product-details form, [name="_save"]'))
+            self.assertEqual(self.download(direct).status_code, 403)
+            daily, status = [json.loads(s.string) for s in page.select('.product-analysis-charts [type="application/json"]')]
+            self.assertTrue(all((s["as_of"], s["timezone"]) == (self.cutoff, self.zone) for s in (daily, status)))
+            self.assertEqual([p["value"] for p in daily["points"]], [1, 1])
+            self.assertEqual([p["value"] for p in status["points"]], [2, 1, 0])
+            self.assertEqual([a.string for a in page.select("#product-details tbody th a")], ["last"])
+            day = self.chart_link(page, direct, 'a[data-nova-chart-day="2026-11-01"]')
+            listed = self.chart_link(self.open_page(day), day, 'a[data-nova-category="active"]')
+            self.assertEqual([a.string for a in self.open_page(listed).select("#product-details tbody th a")], ["listed"])
+
+            self.grant_export()
+            next_page = self.chart_link(page, direct, '#product-details a[rel="next"]')
+            second = self.open_page(next_page)
+            self.assertEqual([a.string for a in second.select("#product-details tbody th a")], ["@first"])
+            export = urljoin(next_page, second.select_one("#product-details form")["action"])
+            self.assertEqual(self.csv_rows(self.download(export)), [
+                ["SKU", "商品名称", "更新时间 (America/New_York)"],
+                ["last", "last", "2026-11-01T01:30:00-05:00"],
+                ["TEXT: @first", "TEXT: @first", "2026-10-31T00:00:00-04:00"],
+            ])
+            back = urljoin(next_page, second.find("a", string="返回整棵子树")["href"])
+            self.assertEqual(parse_qs(urlsplit(back).query), parse_qs(urlsplit(subtree).query))
+            self.assertEqual(self.ranking(self.open_page(back)), self.ranking(branch))
+            self.assertEqual([r[0] for r in self.csv_rows(self.download(back))[1:]], ["last", "descendant", "TEXT: @first"])
+
+    def test_empty_direct_selection_returns_to_subtree_with_same_filters_and_rechecks_permissions(self):
+        self.grant_export()
+        self.reader.user_permissions.add(Permission.objects.get(codename="view_category"))
+        direct_item = self.item("direct", self.lamps)
+        self.item("child", self.desks, status="archived")
+        url = self.entry() + "&chart_start=2026-10-31&chart_end=2026-11-01&chart_day=2026-11-01"
+        subtree = self.choose(self.open_page(url), url, self.lamps.pk)
+        direct = urljoin(subtree, self.open_page(subtree).find("a", string="本级直属商品")["href"])
+        archived = self.chart_link(self.open_page(direct), direct, 'a[data-nova-category="archived"]')
+        page = self.open_page(archived)
+        self.assertEqual(self.ranking(page), [])
+        self.assertIn("没有可查看的商品", page.select_one("#product-details").get_text())
+        self.assertEqual(self.csv_rows(self.download(archived)), [["SKU", "商品名称", "更新时间 (America/New_York)"]])
+        back = urljoin(archived, page.find("a", string="返回整棵子树")["href"])
+        self.assertEqual(parse_qs(urlsplit(back).query), {**parse_qs(urlsplit(subtree).query), "chart_status": ["archived"]})
+        self.assertEqual([r[0] for r in self.csv_rows(self.download(back))[1:]], ["child"])
+
+        # This branch remains visible through its child when its only direct item becomes private.
+        with patch.object(self.owner, "get_queryset", return_value=Product.objects.exclude(pk=direct_item.pk)):
+            self.assertEqual(self.csv_rows(self.download(direct)), [["SKU", "商品名称", "更新时间 (America/New_York)"]])
+            self.assertIsNotNone(self.open_page(direct).find("a", string="返回整棵子树"))
+        categories = self.owner.admin_site.get_model_admin(Category)
+        with patch.object(categories, "get_queryset", return_value=Category.objects.exclude(pk=self.lamps.pk)):
+            self.assertEqual(self.client.get(direct).status_code, 404)
+            self.assertEqual(self.download(direct).status_code, 404)
+        with patch.object(self.owner, "get_exclude", return_value=["category"]):
+            self.assertEqual(self.download(direct).status_code, 403)
+        self.reader.user_permissions.remove(Permission.objects.get(codename="export_product"))
+        denied = self.download(direct)
+        self.assertEqual(denied.status_code, 403)
+        self.assertNotIn("Content-Disposition", denied)
 
     def test_readonly_uncategorized_and_same_name_categories_have_distinct_keys(self):
         named = Category.objects.create(name="未分类", slug="named")
@@ -238,7 +321,8 @@ class ProductCategoryRankingTests(ProductAnalysisTestCase):
         self.item("loose", None)
         url = self.entry()
         for value in ("", "0", "-1", "01", "１", "9223372036854775808", "uncategorized&chart_category=1",
-                      "all", str(self.desks.pk)):
+                      "all", "direct-", "direct-0", "direct-01", "direct-uncategorized", "direct-direct-1",
+                      "direct-9223372036854775808", f"direct-{self.desks.pk}", str(self.desks.pk)):
             with self.subTest(value=value):
                 result = self.download(url + "&chart_category=" + value)
                 self.assertEqual(result.status_code, 404)

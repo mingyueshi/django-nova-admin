@@ -76,7 +76,7 @@ def product_analysis(request, owner):
                     if category:
                         scope = filters["products"] = level.select_products(scope, period)
                         filters["query"]["chart_category"] = category
-                        context.update(category_path=level.path, category_label=level.path[-1][1])
+                        context.update(category_path=level.path, category_label=level.path[-1][1], direct_only=level.direct_only)
                     if not exporting:
                         context["category_rows"] = level.ranking(matching_products(scope, filters))
             products = matching_products(filters["products"], filters).order_by("-updated_at", "-pk").distinct()

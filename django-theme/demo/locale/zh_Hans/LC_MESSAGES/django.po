@@ -319,6 +319,10 @@ msgid "Directly assigned products"
 msgstr "本级直属商品"
 
 msgctxt "Nova demo"
+msgid "Back to the full subtree"
+msgstr "返回整棵子树"
+
+msgctxt "Nova demo"
 msgid "Clear category filter"
 msgstr "清除分类筛选"
 
