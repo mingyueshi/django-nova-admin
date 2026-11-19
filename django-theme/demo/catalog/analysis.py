@@ -31,7 +31,8 @@ def apply_rankings(request, owner, context, *, show_rankings):
     category, keys = filters["category"], filters["tag_keys"]
     mode, excluded = filters["tag_mode"], filters["excluded_tag_keys"]
     category_products = ranking_field_scope(request, owner, base, "category", category, show_rankings)
-    tag_products = ranking_field_scope(request, owner, base, "tags", keys, show_rankings)
+    has_tag_filter = bool(keys or excluded)
+    tag_products = ranking_field_scope(request, owner, base, "tags", has_tag_filter, show_rankings)
 
     if category_products is not None:
         level = CategoryLevel(request, owner, category_products, period, category)
@@ -47,16 +48,17 @@ def apply_rankings(request, owner, context, *, show_rankings):
         if show_rankings and category:
             rank_scope = rank_scope.filter(pk__in=category_products.order_by().values("pk"))
         selected_labels = {}
-        if keys:
+        if has_tag_filter:
             tagged, selected_labels = select_tags(tag_products, tags, keys, mode, period, excluded=excluded)
-            context["tag_labels"] = [selected_labels[key] for key in keys]
+            if keys:
+                context["tag_labels"] = [selected_labels[key] for key in keys]
+                filters["query"].setlist("chart_tag", keys)
             if excluded:
                 context["excluded_tag_labels"] = [selected_labels[key] for key in excluded]
                 filters["query"].setlist("chart_tag_exclude", excluded)
             if category_products is not None:
                 category_products = category_products.filter(pk__in=tagged.order_by().values("pk"))
             filters["products"] = category_products if category else tagged
-            filters["query"].setlist("chart_tag", keys)
             if mode:
                 filters["query"]["chart_tag_mode"] = mode
         if show_rankings:
@@ -64,8 +66,8 @@ def apply_rankings(request, owner, context, *, show_rankings):
             choices = {row["key"]: row["label"] for row in options}
             choices.update(selected_labels)
             context["tag_choices"] = choices
-            context["tag_row_mode"] = mode if excluded else None
-            context["tag_rows"] = tag_ranking(matching_products(filters["products"], filters), tags) if mode else options
+            context["tag_row_mode"] = (mode or "any") if excluded else None
+            context["tag_rows"] = tag_ranking(matching_products(filters["products"], filters), tags) if mode or excluded else options
     if show_rankings and category_products is not None:
         context["category_rows"] = level.ranking(matching_products(category_products, filters))
 
@@ -95,7 +97,7 @@ def product_analysis(request, owner):
     if set(request.GET) - allowed_filters:
         raise Http404
     category = ranking_selection(request.GET, "chart_category", UNCATEGORIZED, DIRECT_PREFIX)
-    tag_keys, tag_mode, excluded_tag_keys = tag_selection(request.GET)
+    tag_keys, tag_mode, excluded_tag_keys = tag_selection(request.GET, exporting=exporting)
     request.current_app = owner.admin_site.name
     context = owner.admin_site.each_context(request)
     filters = product_chart_filters(request, context["available_apps"], workbench=True)

@@ -30,16 +30,21 @@ def _tag_keys(values):
     return list(dict.fromkeys(ranking_key(value, UNTAGGED) for value in values))
 
 
-def tag_selection(query):
+def tag_selection(query, *, exporting):
     modes = query.getlist("chart_tag_mode")
     excluded = query.getlist("chart_tag_exclude")
     if not modes and not excluded:
         key = ranking_selection(query, "chart_tag", UNTAGGED)
         return ([key] if key else []), "", []
     values = query.getlist("chart_tag")
-    if modes not in (["any"], ["all"]) or not values or not query.get("chart_window"):
+    if not query.get("chart_window") or (modes and modes not in (["any"], ["all"])):
         raise Http404
-    return _tag_keys(values), modes[0], _tag_keys(excluded)
+    if values and not modes:
+        raise Http404
+    # An empty GET form clears the selection. Download links omit a mode without includes.
+    if exporting and not (values or excluded):
+        raise Http404
+    return _tag_keys(values), modes[0] if values else "", _tag_keys(excluded)
 
 
 def _tag_match(memberships, keys, mode):
@@ -69,10 +74,10 @@ def select_tags(products, tags, keys, mode, period, *, excluded):
         if len(labels) != len(named):
             raise Http404
     if UNTAGGED in requested:
-        labels[UNTAGGED] = pgettext("Nova demo", "Untagged (no assigned tags)") if mode else pgettext("Nova demo", "Untagged")
+        labels[UNTAGGED] = pgettext("Nova demo", "Untagged (no assigned tags)") if mode or excluded else pgettext("Nova demo", "Untagged")
 
     memberships = Product.tags.through.objects.using(products.db)
-    selected = products.filter(_tag_match(memberships, keys, mode))
+    selected = products.filter(_tag_match(memberships, keys, mode)) if keys else products
     if excluded:
         selected = selected.exclude(_tag_match(memberships, excluded, "any"))
     return selected, labels

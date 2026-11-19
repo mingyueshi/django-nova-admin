@@ -355,8 +355,8 @@ msgid "Combine tags"
 msgstr "组合筛选标签"
 
 msgctxt "Nova demo"
-msgid "Select one or more tags"
-msgstr "选择一个或多个标签"
+msgid "Include tags (optional)"
+msgstr "包含标签（可留空）"
 
 msgctxt "Nova demo"
 msgid "Match rule"

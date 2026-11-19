@@ -2,14 +2,14 @@
 <section id="product-tag-ranking" aria-labelledby="product-tags-title" tabindex="-1">
   <h2 id="product-tags-title">{% translate 'Product tag ranking' context 'Nova demo' %}</h2>
   {% if tag_choices %}
-    <details{% if filters.tag_mode %} open{% endif %}>
+    <details{% if filters.tag_mode or filters.excluded_tag_keys %} open{% endif %}>
       <summary>{% translate 'Combine tags' context 'Nova demo' %}</summary>
       <form method="get" action="#product-tag-ranking">
         {% for name, value in filters.query.items %}
           {% if name != 'chart_tag' and name != 'chart_tag_mode' and name != 'chart_tag_exclude' %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endif %}
         {% endfor %}
-        <label>{% translate 'Select one or more tags' context 'Nova demo' %}
-          <select name="chart_tag" multiple required>
+        <label>{% translate 'Include tags (optional)' context 'Nova demo' %}
+          <select name="chart_tag" multiple>
             {% include "project_admin/product_tag_options.html" with selected_keys=filters.tag_keys %}
           </select>
         </label>
@@ -28,14 +28,14 @@
       </form>
     </details>
   {% endif %}
-  {% if filters.tag_keys %}
+  {% if filters.tag_keys or filters.excluded_tag_keys %}
     <p>
-      {{ tag_labels|join:", " }} ·
+      {% if filters.tag_keys %}{{ tag_labels|join:", " }} · {% endif %}
       {% if excluded_tag_labels %}
         {% translate 'Excluded tags' context 'Nova demo' %} · {{ excluded_tag_labels|join:", " }} ·
-        <a href="{% querystring filters.query chart_tag_exclude=None %}#product-tag-ranking">{% translate 'Clear exclusions' context 'Nova demo' %}</a> ·
+        <a href="{% querystring filters.query chart_tag_exclude=None %}#product-tag-ranking">{% translate 'Clear exclusions' context 'Nova demo' %}</a>{% if filters.tag_keys %} · {% endif %}
       {% endif %}
-      <a href="{% querystring filters.query chart_tag=None chart_tag_mode=None chart_tag_exclude=None %}#product-tag-ranking">{% translate 'Clear tag filter' context 'Nova demo' %}</a>
+      {% if filters.tag_keys %}<a href="{% querystring filters.query chart_tag=None chart_tag_mode=None chart_tag_exclude=None %}#product-tag-ranking">{% translate 'Clear tag filter' context 'Nova demo' %}</a>{% endif %}
     </p>
   {% endif %}
   {% if tag_rows %}
