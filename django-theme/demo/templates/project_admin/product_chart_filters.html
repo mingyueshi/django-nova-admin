@@ -3,6 +3,7 @@
   {% if filters.linked %}<input type="hidden" name="chart_window" value="{{ filters.window }}">{% endif %}
   {% if filters.category %}<input type="hidden" name="chart_category" value="{{ filters.category }}">{% endif %}
   {% for key in filters.tag_keys %}<input type="hidden" name="chart_tag" value="{{ key }}">{% endfor %}
+  {% for key in filters.excluded_tag_keys %}<input type="hidden" name="chart_tag_exclude" value="{{ key }}">{% endfor %}
   {% if filters.tag_mode %}<input type="hidden" name="chart_tag_mode" value="{{ filters.tag_mode }}">{% endif %}
   <label>{% if workbench %}{% translate 'Default daily chart range' context 'Nova demo' %}{% else %}{% translate 'Date range' context 'Nova demo' %}{% endif %}
     <select id="product-activity-range" name="chart_days">

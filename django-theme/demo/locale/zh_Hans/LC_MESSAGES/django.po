@@ -373,3 +373,15 @@ msgstr "匹配全部标签"
 msgctxt "Nova demo"
 msgid "Untagged (no assigned tags)"
 msgstr "未打标签（没有任何标签）"
+
+msgctxt "Nova demo"
+msgid "Exclude products matching any of these tags"
+msgstr "排除命中以下任一标签的商品"
+
+msgctxt "Nova demo"
+msgid "Excluded tags"
+msgstr "排除标签"
+
+msgctxt "Nova demo"
+msgid "Clear exclusions"
+msgstr "清除排除条件"

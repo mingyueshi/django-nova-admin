@@ -39,7 +39,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                 return urljoin(url, a["href"])
         self.fail(f"Missing tag link for {key}")
 
-    def combination(self, page, current, keys, mode):
+    def combination(self, page, current, keys, mode, *, excluded=()):
         form = page.select_one("#product-tag-ranking form")
         selector = form.select_one('select[name="chart_tag"][multiple][required]')
         choices = {opt["value"] for opt in selector.select("option")}
@@ -47,6 +47,10 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         self.assertIn(mode, [opt["value"] for opt in form.select('[name="chart_tag_mode"] option')])
         params = [(n["name"], n["value"]) for n in form.select('input[type="hidden"]')]
         params.extend((selector["name"], str(key)) for key in keys)
+        exclusion = form.select_one('select[name="chart_tag_exclude"][multiple]')
+        self.assertFalse(exclusion.has_attr("required"))
+        self.assertTrue(set(map(str, excluded)) <= {opt["value"] for opt in exclusion.select("option")})
+        params.extend((exclusion["name"], str(key)) for key in excluded)
         params.append(("chart_tag_mode", mode))
         return urlsplit(urljoin(current, form["action"]))._replace(query=urlencode(params)).geturl()
 
@@ -317,6 +321,137 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         self.assertEqual(self.client.get(unsigned).status_code, 404)
         self.reader.user_permissions.remove(Permission.objects.get(codename="export_product"))
         self.assertEqual(self.download(all_url).status_code, 403)
+
+    def test_exclusions_share_the_direct_scope_cutoff_permissions_and_export_across_pages(self):
+        stop = Tag.objects.create(name="停用", slug="stopped")
+        hold = Tag.objects.create(name="待定", slug="on-hold")
+        self.item("@both", self.popular, self.sale, category=self.root)
+        self.item("first", self.popular, category=self.root, stamp="2026-10-31T04:00:00+00:00")
+        self.item("stopped", self.popular, self.sale, stop, category=self.root)
+        self.item("on-hold", self.sale, hold, category=self.root)
+        self.item("listed", self.popular, self.sale, category=self.root, status="active")
+        self.item("blocked-listed", self.popular, self.sale, hold, category=self.root, status="active")
+        self.item("child", self.popular, self.sale, category=self.child)
+        self.item("other", self.popular, self.sale)
+        self.item("past-cutoff", self.popular, self.sale, category=self.root, stamp="2026-11-01T06:30:00.000001+00:00")
+        self.item("before-range", self.popular, self.sale, category=self.root, stamp="2026-10-31T03:59:59.999999+00:00")
+        private = self.item("private", self.popular, self.sale, category=self.root)
+        keys = [self.popular.pk, self.sale.pk]
+        excluded = [str(stop.pk), str(hold.pk)]
+        url = self.entry() + "&chart_start=2026-10-31&chart_end=2026-11-01&chart_status=draft"
+        # The host join duplicates products and omits the excluded tag assignments.
+        with timezone.override(ZoneInfo("Asia/Tokyo")), patch.object(self.owner, "list_per_page", 1), patch.object(
+            self.owner, "get_queryset", return_value=Product.objects.filter(tags__in=keys)
+        ), patch.object(self.owner, "has_view_permission", side_effect=lambda req, obj=None: obj != private):
+            root_url = urljoin(url, self.open_page(url).find("a", string="灯具")["href"])
+            direct = urljoin(root_url, self.open_page(root_url).find("a", string="本级直属商品")["href"])
+            branch = self.open_page(direct)
+            readonly = self.combination(branch, direct, keys, "any", excluded=excluded)
+            self.assertIsNone(self.open_page(readonly).select_one('#product-details form, [name="_save"]'))
+            self.assertEqual(self.download(readonly).status_code, 403)
+            self.grant_export()
+            for mode, skus, days in (("any", ["TEXT: @both", "first"], [1, 1]), ("all", ["TEXT: @both"], [0, 1])):
+                with self.subTest(mode=mode):
+                    choice = self.combination(branch, direct, keys, mode, excluded=[*excluded, excluded[0]])
+                    page = self.open_page(choice)
+                    self.assertEqual(self.ranking(page), [("人气", len(skus)), ("促销", 1)])
+                    self.assertEqual([e["value"] for e in page.select('#product-chart-filters [name="chart_tag_exclude"]')], excluded)
+                    daily, status = [json.loads(n.string) for n in page.select('.product-analysis-charts [type="application/json"]')]
+                    self.assertTrue(all((s["timezone"], s["as_of"]) == (self.zone, self.cutoff) for s in (daily, status)))
+                    self.assertEqual([p["value"] for p in daily["points"]], days)
+                    self.assertEqual([p["value"] for p in status["points"]], [len(skus), 1, 0])
+                    self.assertEqual(page.select_one("#product-details tbody th a").string, "@both")
+                    self.assertIn(f"({len(skus)})", page.select_one("#product-details-title").get_text())
+                    day = self.chart_link(page, choice, 'a[data-nova-chart-day="2026-11-01"]')
+                    active = self.chart_link(self.open_page(day), day, 'a[data-nova-category="active"]')
+                    self.assertEqual([r[0] for r in self.csv_rows(self.download(active))[1:]], ["listed"])
+                    back = urljoin(choice, page.find("a", string="返回整棵子树")["href"])
+                    self.assertCountEqual([r[0] for r in self.csv_rows(self.download(back))[1:]], [*skus, "child"])
+                    shortcut = self.tag_url(page, choice, self.sale.pk)
+                    self.assertEqual([r[0] for r in self.csv_rows(self.download(shortcut))[1:]], ["TEXT: @both"])
+                    if mode == "any":
+                        second = self.chart_link(page, choice, '#product-details a[rel="next"]')
+                        page = self.open_page(second)
+                        self.assertEqual(page.select_one("#product-details tbody th a").string, "first")
+                    export = urljoin(choice, page.select_one("#product-details form")["action"])
+                    self.assertEqual(parse_qs(urlsplit(export).query)["chart_tag_exclude"], excluded)
+                    rows = self.csv_rows(self.download(export))
+                    self.assertEqual(rows[0], ["SKU", "商品名称", "更新时间 (America/New_York)"])
+                    self.assertEqual(rows[1][2], "2026-11-01T01:30:00-05:00")
+                    self.assertEqual([r[0] for r in rows[1:]], skus)
+                    clear = urljoin(choice, page.find("a", string="清除标签筛选")["href"])
+                    self.assertEqual(parse_qs(urlsplit(clear).query), parse_qs(urlsplit(direct).query))
+
+    def test_overlapping_and_untagged_exclusions_remain_editable_and_can_be_cleared(self):
+        self.grant_export()
+        named = Tag.objects.create(name="未打标签", slug="named")
+        self.item("plain")
+        self.item("a", self.popular)
+        self.item("b", self.sale)
+        self.item("ab", self.popular, self.sale)
+        self.item("named", named)
+        url = self.entry()
+        initial = self.open_page(url)
+        a, b = self.popular.pk, self.sale.pk
+        for keys, mode, excluded, skus in (
+            ([a, b], "any", [a], ["b"]),
+            ([a, b], "all", [a], []),
+            ([a, "untagged"], "any", [a, b], ["plain"]),
+            ([a, "untagged"], "any", ["untagged"], ["a", "ab"]),
+            (["untagged", named.pk, b], "any", ["untagged", b], ["named"]),
+            (["untagged"], "all", [named.pk], ["plain"]),
+            (["untagged"], "any", ["untagged"], []),
+        ):
+            with self.subTest(keys=keys, mode=mode, excluded=excluded):
+                choice = self.combination(initial, url, keys, mode, excluded=excluded)
+                page = self.open_page(choice)
+                self.assertCountEqual([row.string for row in page.select("#product-details tbody th a")], skus)
+                rows = self.csv_rows(self.download(choice))
+                self.assertEqual(rows[0], ["SKU", "商品名称", "更新时间 (America/New_York)"])
+                self.assertCountEqual([r[0] for r in rows[1:]], skus)
+                if not skus:
+                    self.assertEqual(self.ranking(page), [])
+                    self.assertIsNone(page.select_one('.product-analysis-charts [type="application/json"]'))
+                selected = page.select('#product-tag-ranking [name="chart_tag_exclude"] option[selected]')
+                self.assertCountEqual([opt["value"] for opt in selected], map(str, excluded))
+                cleared = urljoin(choice, page.find("a", string="清除排除条件")["href"])
+                applied = self.combination(page, choice, keys, mode)
+                expected = self.combination(initial, url, keys, mode)
+                for restored in (cleared, applied):
+                    self.assertEqual(parse_qs(urlsplit(restored).query), parse_qs(urlsplit(expected).query))
+                self.assertTrue(self.open_page(cleared).select("#product-details tbody tr"))
+
+    def test_unreadable_exclusions_and_malformed_coordinates_never_broaden_an_export(self):
+        self.grant_export()
+        self.item("visible", self.popular)
+        private = self.item("label-source", self.sale)
+        self.item("plain")
+        url = self.entry()
+        branch = self.open_page(url)
+        choice = self.combination(branch, url, [self.popular.pk], "any", excluded=[self.sale.pk])
+        impossible = self.combination(branch, url, [self.popular.pk, "untagged"], "all", excluded=[self.sale.pk])
+        self.assertEqual(self.download(choice).status_code, 200)
+        self.reader.user_permissions.add(Permission.objects.get(codename="view_tag"))
+        tag_admin = self.owner.admin_site.get_model_admin(Tag)
+        for restriction in (
+            patch.object(self.owner, "get_queryset", return_value=Product.objects.exclude(pk=private.pk)),
+            patch.object(tag_admin, "get_queryset", return_value=Tag.objects.exclude(pk=self.sale.pk)),
+        ):
+            with restriction:
+                for selection in (choice, impossible):
+                    self.assertEqual(self.client.get(selection).status_code, 404)
+                    denied = self.download(selection)
+                    self.assertEqual(denied.status_code, 404)
+                    self.assertNotIn("Content-Disposition", denied)
+        base = urlsplit(choice)._replace(fragment="").geturl()
+        for invalid in ("", "0", "01", "unknown", "9223372036854775808"):
+            self.assertEqual(self.download(base + "&chart_tag_exclude=" + invalid).status_code, 404)
+        unsigned = urlsplit(url).path + f"?chart_tag_mode=any&chart_tag={self.popular.pk}&chart_tag_exclude=untagged"
+        self.assertEqual(self.client.get(unsigned).status_code, 404)
+        with patch.object(self.owner, "get_exclude", return_value=["tags"]):
+            self.assertEqual(self.download(choice).status_code, 403)
+        self.reader.user_permissions.remove(Permission.objects.get(codename="export_product"))
+        self.assertEqual(self.download(choice).status_code, 403)
 
     @override_settings(ROOT_URLCONF="tests.multisite_urls", NOVA_ADMIN_URL_NAMESPACES={})
     def test_tag_coordinates_require_one_valid_value_and_the_same_account_and_site(self):

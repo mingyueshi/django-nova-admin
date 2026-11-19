@@ -1,0 +1,4 @@
+{% load i18n %}
+{% for key, label in tag_choices.items %}
+  <option value="{{ key }}"{% if key in selected_keys %} selected{% endif %}>{% if key == 'untagged' %}{% translate 'Untagged (no assigned tags)' context 'Nova demo' %}{% else %}{{ label }}{% endif %}</option>
+{% endfor %}

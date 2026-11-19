@@ -6,13 +6,11 @@
       <summary>{% translate 'Combine tags' context 'Nova demo' %}</summary>
       <form method="get" action="#product-tag-ranking">
         {% for name, value in filters.query.items %}
-          {% if name != 'chart_tag' and name != 'chart_tag_mode' %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endif %}
+          {% if name != 'chart_tag' and name != 'chart_tag_mode' and name != 'chart_tag_exclude' %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endif %}
         {% endfor %}
         <label>{% translate 'Select one or more tags' context 'Nova demo' %}
           <select name="chart_tag" multiple required>
-            {% for key, label in tag_choices.items %}
-              <option value="{{ key }}"{% if key in filters.tag_keys %} selected{% endif %}>{% if key == 'untagged' %}{% translate 'Untagged (no assigned tags)' context 'Nova demo' %}{% else %}{{ label }}{% endif %}</option>
-            {% endfor %}
+            {% include "project_admin/product_tag_options.html" with selected_keys=filters.tag_keys %}
           </select>
         </label>
         <label>{% translate 'Match rule' context 'Nova demo' %}
@@ -21,12 +19,24 @@
             <option value="all"{% if filters.tag_mode == 'all' %} selected{% endif %}>{% translate 'Match all tags' context 'Nova demo' %}</option>
           </select>
         </label>
+        <label>{% translate 'Exclude products matching any of these tags' context 'Nova demo' %}
+          <select name="chart_tag_exclude" multiple>
+            {% include "project_admin/product_tag_options.html" with selected_keys=filters.excluded_tag_keys %}
+          </select>
+        </label>
         <button type="submit">{% translate 'Apply' context 'Nova Admin' %}</button>
       </form>
     </details>
   {% endif %}
   {% if filters.tag_keys %}
-    <p>{{ tag_labels|join:", " }} · <a href="{% querystring filters.query chart_tag=None chart_tag_mode=None %}#product-tag-ranking">{% translate 'Clear tag filter' context 'Nova demo' %}</a></p>
+    <p>
+      {{ tag_labels|join:", " }} ·
+      {% if excluded_tag_labels %}
+        {% translate 'Excluded tags' context 'Nova demo' %} · {{ excluded_tag_labels|join:", " }} ·
+        <a href="{% querystring filters.query chart_tag_exclude=None %}#product-tag-ranking">{% translate 'Clear exclusions' context 'Nova demo' %}</a> ·
+      {% endif %}
+      <a href="{% querystring filters.query chart_tag=None chart_tag_mode=None chart_tag_exclude=None %}#product-tag-ranking">{% translate 'Clear tag filter' context 'Nova demo' %}</a>
+    </p>
   {% endif %}
   {% if tag_rows %}
     <table aria-labelledby="product-tags-title">
@@ -34,7 +44,7 @@
       <tbody>{% for row in tag_rows %}
         <tr>
           <th scope="row">
-            {% if not filters.tag_mode and row.key in filters.tag_keys %}<span aria-current="true">{{ row.label }}</span>{% else %}<a href="{% querystring filters.query chart_tag=row.key chart_tag_mode=None %}#product-tag-ranking">{{ row.label }}</a>{% endif %}
+            {% if not filters.tag_mode and row.key in filters.tag_keys %}<span aria-current="true">{{ row.label }}</span>{% else %}<a href="{% querystring filters.query chart_tag=row.key chart_tag_mode=tag_row_mode %}#product-tag-ranking">{{ row.label }}</a>{% endif %}
           </th>
           <td>{{ row.total }}</td>
         </tr>

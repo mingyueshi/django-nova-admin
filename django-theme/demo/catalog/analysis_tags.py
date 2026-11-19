@@ -26,45 +26,56 @@ def readable_tags(request, owner, db):
     return tags
 
 
+def _tag_keys(values):
+    return list(dict.fromkeys(ranking_key(value, UNTAGGED) for value in values))
+
+
 def tag_selection(query):
     modes = query.getlist("chart_tag_mode")
-    if not modes:
+    excluded = query.getlist("chart_tag_exclude")
+    if not modes and not excluded:
         key = ranking_selection(query, "chart_tag", UNTAGGED)
-        return ([key] if key else []), ""
+        return ([key] if key else []), "", []
     values = query.getlist("chart_tag")
     if modes not in (["any"], ["all"]) or not values or not query.get("chart_window"):
         raise Http404
-    keys = list(dict.fromkeys(ranking_key(value, UNTAGGED) for value in values))
-    return keys, modes[0]
+    return _tag_keys(values), modes[0], _tag_keys(excluded)
 
 
-def select_tags(products, tags, keys, mode, period):
+def _tag_match(memberships, keys, mode):
     named = [key for key in keys if key != UNTAGGED]
-    labels = {}
-    if named:
-        # Authorize every requested tag, even if their intersection will be empty.
-        visible = period.products_in(products, None).order_by().values("pk")
-        names = tags.filter(pk__in=named, products__in=visible).order_by().values_list("pk", "name").distinct()
-        labels = {str(pk): name for pk, name in names}
-        if len(labels) != len(named):
-            raise Http404
-    if UNTAGGED in keys:
-        labels[UNTAGGED] = pgettext("Nova demo", "Untagged (no assigned tags)") if mode else pgettext("Nova demo", "Untagged")
-        if not named:
-            return products.filter(tags__isnull=True), labels
-        if mode == "all":
-            return products.none(), labels
+    if UNTAGGED in keys and named and mode == "all":
+        return Q(pk__in=[])
 
-    # Group assignments separately from host joins. Each matching product ID
-    # contributes once, including when several selected tags occur on one row.
-    memberships = Product.tags.through.objects.using(products.db)
+    # Match product IDs independently of joins already present in the host queryset.
     matches = memberships.filter(tag_id__in=named).order_by().values("product_id")
     if mode == "all" and len(named) > 1:
         matches = matches.alias(matched=Count("tag_id", distinct=True)).filter(matched=len(named))
     condition = Q(pk__in=matches)
     if UNTAGGED in keys:
         condition |= ~Exists(memberships.filter(product_id=OuterRef("pk")))
-    return products.filter(condition), labels
+    return condition
+
+
+def select_tags(products, tags, keys, mode, period, *, excluded):
+    requested = set(keys).union(excluded)
+    named = requested - {UNTAGGED}
+    labels = {}
+    if named:
+        # Authorize both sides before evaluating even an empty or overlapping selection.
+        visible = period.products_in(products, None).order_by().values("pk")
+        names = tags.filter(pk__in=named, products__in=visible).order_by().values_list("pk", "name").distinct()
+        labels = {str(pk): name for pk, name in names}
+        if len(labels) != len(named):
+            raise Http404
+    if UNTAGGED in requested:
+        labels[UNTAGGED] = pgettext("Nova demo", "Untagged (no assigned tags)") if mode else pgettext("Nova demo", "Untagged")
+
+    memberships = Product.tags.through.objects.using(products.db)
+    selected = products.filter(_tag_match(memberships, keys, mode))
+    if excluded:
+        selected = selected.exclude(_tag_match(memberships, excluded, "any"))
+    return selected, labels
 
 
 def tag_ranking(products, tags):
