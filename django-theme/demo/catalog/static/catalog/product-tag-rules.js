@@ -5,8 +5,8 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
   const maximum = fields.namedItem(minimum.dataset.minimumFor + "_max");
 
   function update() {
-    const range = mode.value === "range";
-    const usesMinimum = ["range", "exact", "not_exact", "at_least"].includes(mode.value);
+    const range = mode.value === "range" || mode.value === "not_range";
+    const usesMinimum = range || ["exact", "not_exact", "at_least"].includes(mode.value);
     const usesMaximum = range || mode.value === "at_most";
     tags.required = usesMinimum || usesMaximum;
     minimum.required = usesMinimum;

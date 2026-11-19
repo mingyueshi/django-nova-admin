@@ -438,6 +438,10 @@ msgid "Match N to M tags"
 msgstr "命中 N 到 M 个标签"
 
 msgctxt "Nova demo"
+msgid "Matched tag count outside N to M"
+msgstr "命中标签数不在 N 到 M 之间"
+
+msgctxt "Nova demo"
 msgid "Maximum included tags"
 msgstr "包含标签的最多命中数"
 
@@ -459,3 +463,8 @@ msgstr "命中标签数不等于 %(n)s"
 msgctxt "Nova demo"
 msgid "Match %(lower)s to %(upper)s"
 msgstr "命中 %(lower)s 到 %(upper)s 个"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Matched tag count outside %(lower)s to %(upper)s"
+msgstr "命中标签数不在 %(lower)s 到 %(upper)s 之间"

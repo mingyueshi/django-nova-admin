@@ -15,6 +15,7 @@
     <option value="exact"{% if rule.mode == 'exact' %} selected{% endif %}>{% translate 'Match exactly N tags' context 'Nova demo' %}</option>
     <option value="not_exact"{% if rule.mode == 'not_exact' %} selected{% endif %}>{% translate 'Matched tag count differs from N' context 'Nova demo' %}</option>
     <option value="range"{% if rule.mode == 'range' %} selected{% endif %}>{% translate 'Match N to M tags' context 'Nova demo' %}</option>
+    <option value="not_range"{% if rule.mode == 'not_range' %} selected{% endif %}>{% translate 'Matched tag count outside N to M' context 'Nova demo' %}</option>
   </select>
 </label>
 <label>
