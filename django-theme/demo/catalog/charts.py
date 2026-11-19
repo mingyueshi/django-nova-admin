@@ -1,6 +1,7 @@
 """Host-owned metric: count visible products by the date of their latest update."""
 import json
 from datetime import date, datetime, time, timedelta, timezone as dt_timezone
+from typing import NamedTuple
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -49,31 +50,43 @@ def _site_url(request, name):
     return reverse(f"{request.resolver_match.namespace}:{name}", urlconf=getattr(request, "urlconf", None))
 
 
+class ProductDayWindow(NamedTuple):
+    day: date
+    zone: ZoneInfo
+    cutoff: datetime
+    days: int
+
+
 class ProductActivityDayFilter(admin.SimpleListFilter):
     parameter_name = "activity_day"
     title = pgettext_lazy("Nova demo", "Last update date")
 
-    def lookups(self, request, model_admin):
-        values = request.GET.getlist(self.parameter_name)
-        if not values:
-            return ()
-        if _activity_admin(request, model_admin.admin_site.get_app_list(request)) is not model_admin:
-            raise PermissionDenied
+    @classmethod
+    def signed_window(cls, request):
+        values = request.GET.getlist(cls.parameter_name)
         if len(values) != 1:
             raise Http404
         try:
-            day, token = values[0].split("~", 1)
-            stamp, zone, days = _window_signer(request).unsign_object(token)
-            self.zone = ZoneInfo(zone)
-            self.cutoff = datetime.fromisoformat(stamp)
-            self.day = date.fromisoformat(day)
-            last = self.cutoff.astimezone(self.zone).date()
-            if day != self.day.isoformat() or not 0 <= (last - self.day).days < days:
+            day_text, token = values[0].split("~", 1)
+            stamp, zone_name, days = _window_signer(request).unsign_object(token)
+            zone = ZoneInfo(zone_name)
+            cutoff = datetime.fromisoformat(stamp)
+            day = date.fromisoformat(day_text)
+            last = cutoff.astimezone(zone).date()
+            if day_text != day.isoformat() or not 0 <= (last - day).days < days:
                 raise ValueError("Date outside chart window")
         except (ValueError, signing.BadSignature, ZoneInfoNotFoundError) as exc:
             raise Http404 from exc
+        return ProductDayWindow(day, zone, cutoff, days)
+
+    def lookups(self, request, model_admin):
+        if self.parameter_name not in request.GET:
+            return ()
+        if _activity_admin(request, model_admin.admin_site.get_app_list(request)) is not model_admin:
+            raise PermissionDenied
+        self.day, self.zone, self.cutoff, days = self.signed_window(request)
         self.return_url = _site_url(request, "index") + "?" + urlencode({"chart_days": days}) + "#product-activity-range"
-        return [(self.value(), f"{day} · {self.zone.key}")]
+        return [(self.value(), f"{self.day.isoformat()} · {self.zone.key}")]
 
     def queryset(self, request, queryset):
         return _in_window(queryset, self.day, self.day + timedelta(days=1), self.zone, self.cutoff).distinct()

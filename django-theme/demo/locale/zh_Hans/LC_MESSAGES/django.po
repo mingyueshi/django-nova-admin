@@ -163,3 +163,17 @@ msgstr "当天没有符合当前筛选条件的可见商品。"
 msgctxt "Nova demo"
 msgid "Back to chart"
 msgstr "返回图表"
+
+msgctxt "Nova demo"
+msgid "Export filtered products as CSV"
+msgstr "导出筛选结果为 CSV"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Narrow the filters to at most %(limit)s products to export CSV."
+msgstr "请将筛选结果缩小至 %(limit)s 件商品以内，再导出 CSV。"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Includes SKU, product name and update time across all matching pages, up to %(limit)s products."
+msgstr "导出所有匹配页的 SKU、商品名称和更新时间，最多 %(limit)s 件商品。"

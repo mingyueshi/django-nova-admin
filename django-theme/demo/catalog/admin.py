@@ -7,6 +7,7 @@ from .models import Category, MemberProfile, NewsItem, Product, ProductVariant, 
 from .charts import ProductActivityDayFilter
 from .media import DemoMediaAdminMixin
 from .pagination import BoundedPaginationAdminMixin
+from .product_csv import MAX_EXPORT_ROWS, can_export_product_day, export_product_day
 
 
 @admin.register(Category)
@@ -48,6 +49,21 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
     inlines = [VariantInline]
     actions = ["publish_products"]
     list_per_page = 20
+
+    def get_changelist_instance(self, request):
+        if ProductActivityDayFilter.parameter_name in request.GET:
+            # Native date lookups and pagination counts use Django's active timezone.
+            window = ProductActivityDayFilter.signed_window(request)
+            with timezone.override(window.zone):
+                return super().get_changelist_instance(request)
+        return super().get_changelist_instance(request)
+
+    def changelist_view(self, request, extra_context=None):
+        if request.method == "POST" and "_export_day_csv" in request.POST:
+            return export_product_day(request, self)
+        if ProductActivityDayFilter.parameter_name in request.GET and can_export_product_day(request, self):
+            extra_context = {**(extra_context or {}), "product_csv_limit": MAX_EXPORT_ROWS}
+        return super().changelist_view(request, extra_context)
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         # Demo-only opt-in. The theme never changes a host ModelAdmin's fields.

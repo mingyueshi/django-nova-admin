@@ -53,6 +53,7 @@ class Product(models.Model):
     class Meta:
         verbose_name = "商品"
         verbose_name_plural = "商品"
+        permissions = [("export_product", "可导出按日期筛选的商品 CSV")]
         ordering = ["-updated_at"]
 
     def __str__(self):

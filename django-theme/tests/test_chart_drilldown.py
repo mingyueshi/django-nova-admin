@@ -15,7 +15,7 @@ from django.utils import timezone
 from catalog.models import Product
 
 
-class ProductDayDrilldownTests(TestCase):
+class ProductDayTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.reader = get_user_model().objects.create_user("day-reader", is_staff=True)
@@ -52,6 +52,8 @@ class ProductDayDrilldownTests(TestCase):
         self.assertCountEqual([row.pk for row in cl.result_list], [p.pk for p in products])
         return result
 
+
+class ProductDayDrilldownTests(ProductDayTestCase):
     def test_snapshot_cutoff_timezone_and_readonly_native_list(self):
         self.product("before", "2026-11-18T15:59:59+00:00")
         midnight = self.product("midnight", "2026-11-18T16:00:00+00:00")
