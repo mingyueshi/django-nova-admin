@@ -393,3 +393,25 @@ msgstr "排除标签（匹配全部）"
 msgctxt "Nova demo"
 msgid "Clear exclusions"
 msgstr "清除排除条件"
+
+msgctxt "Nova demo"
+msgid "Match at least N tags"
+msgstr "至少命中 N 个标签"
+
+msgctxt "Nova demo"
+msgid "Minimum included tags"
+msgstr "包含标签的最少命中数"
+
+msgctxt "Nova demo"
+msgid "Minimum excluded tags"
+msgstr "排除标签的最少命中数"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Match at least %(n)s"
+msgstr "至少命中 %(n)s 个"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Excluded tags (at least %(n)s)"
+msgstr "排除标签（至少命中 %(n)s 个）"

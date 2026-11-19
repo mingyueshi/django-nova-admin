@@ -28,11 +28,10 @@ def matching_products(scope, filters):
 def apply_rankings(request, owner, context, *, show_rankings):
     filters = context["filters"]
     base, period = filters["products"], filters["period"]
-    category, keys = filters["category"], filters["tag_keys"]
-    mode, excluded = filters["tag_mode"], filters["excluded_tag_keys"]
-    exclude_mode = filters["tag_exclude_mode"]
+    category = filters["category"]
+    included, excluded = filters["included_tags"], filters["excluded_tags"]
     category_products = ranking_field_scope(request, owner, base, "category", category, show_rankings)
-    has_tag_filter = bool(keys or excluded)
+    has_tag_filter = bool(included.keys or excluded.keys)
     tag_products = ranking_field_scope(request, owner, base, "tags", has_tag_filter, show_rankings)
 
     if category_products is not None:
@@ -49,33 +48,34 @@ def apply_rankings(request, owner, context, *, show_rankings):
         if show_rankings and category:
             rank_scope = rank_scope.filter(pk__in=category_products.order_by().values("pk"))
         selected_labels = {}
+        if show_rankings:
+            context["tag_form_query"] = filters["query"].copy()
         if has_tag_filter:
-            tagged, selected_labels = select_tags(
-                tag_products, tags, keys, mode, period, excluded=excluded, exclude_mode=exclude_mode,
-            )
-            if keys:
-                context["tag_labels"] = [selected_labels[key] for key in keys]
-                filters["query"].setlist("chart_tag", keys)
-            if excluded:
-                context["exclusion_label"] = (
-                    pgettext("Nova demo", "Excluded tags (match all)") if exclude_mode == "all"
-                    else pgettext("Nova demo", "Excluded tags (match any)")
-                )
-                context["excluded_tag_labels"] = [selected_labels[key] for key in excluded]
-                filters["query"].setlist("chart_tag_exclude", excluded)
-                filters["query"]["chart_tag_exclude_mode"] = exclude_mode
+            tagged, selected_labels = select_tags(tag_products, tags, included, excluded, period)
+            if included.keys:
+                context["tag_labels"] = [selected_labels[key] for key in included.keys]
+                included.add_to_query(filters["query"], "chart_tag")
+            if excluded.keys:
+                if excluded.minimum is not None:
+                    context["exclusion_label"] = pgettext("Nova demo", "Excluded tags (at least %(n)s)") % {"n": excluded.minimum}
+                else:
+                    context["exclusion_label"] = (
+                        pgettext("Nova demo", "Excluded tags (match all)") if excluded.mode == "all"
+                        else pgettext("Nova demo", "Excluded tags (match any)")
+                    )
+                context["excluded_tag_labels"] = [selected_labels[key] for key in excluded.keys]
+                excluded.add_to_query(filters["query"], "chart_tag_exclude")
             if category_products is not None:
                 category_products = category_products.filter(pk__in=tagged.order_by().values("pk"))
             filters["products"] = category_products if category else tagged
-            if mode:
-                filters["query"]["chart_tag_mode"] = mode
         if show_rankings:
             options = tag_ranking(matching_products(rank_scope, filters), tags)
             choices = {row["key"]: row["label"] for row in options}
             choices.update(selected_labels)
             context["tag_choices"] = choices
-            context["tag_row_mode"] = (mode or "any") if excluded else None
-            context["tag_rows"] = tag_ranking(matching_products(filters["products"], filters), tags) if mode or excluded else options
+            # Ranking links replace the inclusion with one tag, keeping the exclusions.
+            context["tag_row_mode"] = ("all" if included.mode == "all" else "any") if excluded.keys else None
+            context["tag_rows"] = tag_ranking(matching_products(filters["products"], filters), tags) if included.mode or excluded.keys else options
     if show_rankings and category_products is not None:
         context["category_rows"] = level.ranking(matching_products(category_products, filters))
 
@@ -101,16 +101,18 @@ def product_analysis(request, owner):
         if set(request.POST) - {"_export_csv", "csrfmiddlewaretoken"}:
             raise Http404
     allowed_filters = {"chart_window", "chart_days", "chart_start", "chart_end", "chart_day", "chart_status",
-                       "chart_category", "chart_tag", "chart_tag_mode", "chart_tag_exclude", "chart_tag_exclude_mode", "page"}
+                       "chart_category", "chart_tag", "chart_tag_mode", "chart_tag_min",
+                       "chart_tag_exclude", "chart_tag_exclude_mode", "chart_tag_exclude_min", "page"}
     if set(request.GET) - allowed_filters:
         raise Http404
     category = ranking_selection(request.GET, "chart_category", UNCATEGORIZED, DIRECT_PREFIX)
-    tag_keys, tag_mode, excluded_tag_keys, exclude_mode = tag_selection(request.GET, exporting=exporting)
+    included, excluded = tag_selection(request.GET, exporting=exporting)
     request.current_app = owner.admin_site.name
     context = owner.admin_site.each_context(request)
     filters = product_chart_filters(request, context["available_apps"], workbench=True)
-    filters.update(category=category, tag_keys=tag_keys, tag_mode=tag_mode,
-                   excluded_tag_keys=excluded_tag_keys, tag_exclude_mode=exclude_mode)
+    filters.update(category=category, included_tags=included, excluded_tags=excluded)
+    if "query" in filters:
+        context["home_chart_query"] = filters["query"].copy()
     if not (filters["drill_days"] and filters["status_visible"]):
         raise PermissionDenied
     context.update(opts=owner.opts, title=pgettext("Nova demo", "Linked analysis workbench"),
@@ -136,9 +138,9 @@ def product_analysis(request, owner):
                 suffix = "-".join(part for part in ("analysis", date_label, filters["status"]) if part)
                 if category:
                     suffix += f"-category-{category}"
-                if tag_keys:
-                    suffix += f"-tags-{tag_mode}" if tag_mode else f"-tag-{tag_keys[0]}"
-                if excluded_tag_keys:
+                if included.keys:
+                    suffix += f"-tags-{included.mode}" if included.mode else f"-tag-{included.keys[0]}"
+                if excluded.keys:
                     suffix += "-with-exclusions"
                 return product_csv_response(request, owner, products, period.zone, suffix)
             pages = owner.get_paginator(request, products, owner.list_per_page)

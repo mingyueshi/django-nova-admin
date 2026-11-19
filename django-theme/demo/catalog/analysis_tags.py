@@ -1,4 +1,7 @@
 """Count distinct visible products for each tag on their product records."""
+import re
+from typing import NamedTuple
+
 from django.db.models import Count, Exists, OuterRef, Q
 from django.http import Http404
 from django.utils.translation import pgettext
@@ -26,56 +29,80 @@ def readable_tags(request, owner, db):
     return tags
 
 
-def _tag_keys(values):
-    return list(dict.fromkeys(ranking_key(value, UNTAGGED) for value in values))
+class TagRule(NamedTuple):
+    keys: list[str]
+    mode: str = ""
+    minimum: int | None = None
+
+    def add_to_query(self, query, parameter):
+        if self.keys:
+            query.setlist(parameter, self.keys)
+        if self.mode:
+            query[parameter + "_mode"] = self.mode
+        if self.minimum is not None:
+            query[parameter + "_min"] = str(self.minimum)
 
 
-def _tag_mode(query, name):
-    values = query.getlist(name)
-    if not values:
-        return ""
-    if values not in (["any"], ["all"]):
+def _tag_rule(query, parameter, *, exporting):
+    keys = list(dict.fromkeys(ranking_key(value, UNTAGGED) for value in query.getlist(parameter)))
+    modes = query.getlist(parameter + "_mode")
+    counts = query.getlist(parameter + "_min")
+    if modes not in ([], ["any"], ["all"], ["at_least"]) or len(counts) > 1:
         raise Http404
-    return values[0]
+    mode = modes[0] if modes else ""
+    if mode == "at_least":
+        value = counts[0] if counts else ""
+        # Bound the input before integer conversion and count distinct selected options.
+        if len(value) > len(str(len(keys))) or not re.fullmatch(r"[1-9][0-9]*", value):
+            raise Http404
+        minimum = int(value)
+        if minimum > len(keys):
+            raise Http404
+        return TagRule(keys, mode, minimum)
+
+    # An unenhanced GET form sends both number inputs even when their rules are
+    # inactive. Canonical links and CSV requests carry only active thresholds.
+    if counts and (exporting or not mode):
+        raise Http404
+    if not keys:
+        if exporting and mode and parameter == "chart_tag_exclude":
+            raise Http404
+        return TagRule([])
+    if parameter == "chart_tag" and not mode:
+        raise Http404
+    return TagRule(keys, mode or "any")
 
 
 def tag_selection(query, *, exporting):
-    mode = _tag_mode(query, "chart_tag_mode")
-    exclude_mode = _tag_mode(query, "chart_tag_exclude_mode")
-    excluded = query.getlist("chart_tag_exclude")
-    if not (mode or excluded or exclude_mode):
+    rule_params = ("chart_tag_mode", "chart_tag_min", "chart_tag_exclude",
+                   "chart_tag_exclude_mode", "chart_tag_exclude_min")
+    if not any(name in query for name in rule_params):
         key = ranking_selection(query, "chart_tag", UNTAGGED)
-        return ([key] if key else []), "", [], ""
-    values = query.getlist("chart_tag")
-    if not query.get("chart_window") or (values and not mode):
+        return TagRule([key] if key else []), TagRule([])
+    if not query.get("chart_window"):
         raise Http404
-    # A GET form submits both selectors even when a side is empty. Export links
-    # carry an exclusion rule only when its tag list is present.
-    if exporting and (not (values or excluded) or (exclude_mode and not excluded)):
+    included = _tag_rule(query, "chart_tag", exporting=exporting)
+    excluded = _tag_rule(query, "chart_tag_exclude", exporting=exporting)
+    if exporting and not (included.keys or excluded.keys):
         raise Http404
-    return (
-        _tag_keys(values), mode if values else "",
-        _tag_keys(excluded), (exclude_mode or "any") if excluded else "",
-    )
+    return included, excluded
 
 
-def _tag_match(memberships, keys, mode):
-    named = [key for key in keys if key != UNTAGGED]
-    if UNTAGGED in keys and named and mode == "all":
-        return Q(pk__in=[])
-
-    # Match product IDs independently of joins already present in the host queryset.
+def _tag_match(memberships, rule):
+    required = len(rule.keys) if rule.mode == "all" else (rule.minimum or 1)
+    named = [key for key in rule.keys if key != UNTAGGED]
+    # Group on the through table so host joins cannot multiply or hide matches.
     matches = memberships.filter(tag_id__in=named).order_by().values("product_id")
-    if mode == "all" and len(named) > 1:
-        matches = matches.alias(matched=Count("tag_id", distinct=True)).filter(matched=len(named))
+    if required > 1:
+        matches = matches.alias(matched=Count("tag_id", distinct=True)).filter(matched__gte=required)
     condition = Q(pk__in=matches)
-    if UNTAGGED in keys:
+    if required == 1 and UNTAGGED in rule.keys:
         condition |= ~Exists(memberships.filter(product_id=OuterRef("pk")))
     return condition
 
 
-def select_tags(products, tags, keys, mode, period, *, excluded, exclude_mode):
-    requested = set(keys).union(excluded)
+def select_tags(products, tags, included, excluded, period):
+    requested = set(included.keys).union(excluded.keys)
     named = requested - {UNTAGGED}
     labels = {}
     if named:
@@ -86,12 +113,12 @@ def select_tags(products, tags, keys, mode, period, *, excluded, exclude_mode):
         if len(labels) != len(named):
             raise Http404
     if UNTAGGED in requested:
-        labels[UNTAGGED] = pgettext("Nova demo", "Untagged (no assigned tags)") if mode or excluded else pgettext("Nova demo", "Untagged")
+        labels[UNTAGGED] = pgettext("Nova demo", "Untagged (no assigned tags)") if included.mode or excluded.keys else pgettext("Nova demo", "Untagged")
 
     memberships = Product.tags.through.objects.using(products.db)
-    selected = products.filter(_tag_match(memberships, keys, mode)) if keys else products
-    if excluded:
-        selected = selected.exclude(_tag_match(memberships, excluded, exclude_mode))
+    selected = products.filter(_tag_match(memberships, included)) if included.keys else products
+    if excluded.keys:
+        selected = selected.exclude(_tag_match(memberships, excluded))
     return selected, labels
 
 

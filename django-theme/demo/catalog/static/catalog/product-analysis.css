@@ -42,3 +42,6 @@
 #product-details form {
   margin-block-start: 1rem;
 }
+#product-tag-ranking label[hidden] {
+  display: none;
+}

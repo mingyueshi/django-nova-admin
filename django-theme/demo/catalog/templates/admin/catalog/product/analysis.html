@@ -5,9 +5,13 @@
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'catalog/product-analysis.css' %}" {% project_nonce %}>
 {% endblock %}
+{% block extrahead %}
+  {{ block.super }}
+  {% if tag_choices %}<script src="{% static 'catalog/product-tag-rules.js' %}" defer {% project_nonce %}></script>{% endif %}
+{% endblock %}
 {% block breadcrumbs %}
   <div class="breadcrumbs">
-    <a href="{% url 'admin:index' %}{% if filters.query and filters.custom_dates %}{% querystring filters.query chart_start=None chart_end=None chart_day=None chart_category=None chart_tag=None chart_tag_mode=None chart_tag_exclude=None chart_tag_exclude_mode=None %}{% elif filters.query %}{% querystring filters.query chart_category=None chart_tag=None chart_tag_mode=None chart_tag_exclude=None chart_tag_exclude_mode=None %}{% endif %}">{% translate 'Home' %}</a>
+    <a href="{% url 'admin:index' %}{% if home_chart_query and filters.custom_dates %}{% querystring home_chart_query chart_start=None chart_end=None chart_day=None %}{% elif home_chart_query %}{% querystring home_chart_query %}{% endif %}">{% translate 'Home' %}</a>
     &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural }}</a>
     &rsaquo; {{ title }}
   </div>
@@ -34,8 +38,8 @@
     {% elif page != None %}
       <p>
         {% if filters.category %}{{ category_label }} · {% if direct_only %}{% translate 'Directly assigned products' context 'Nova demo' %} · {% endif %}{% endif %}
-        {% if filters.tag_keys %}
-          {% if filters.tag_mode == 'all' %}{% translate 'Match all tags' context 'Nova demo' %}{% elif filters.tag_mode == 'any' %}{% translate 'Match any tag' context 'Nova demo' %}{% else %}{% translate 'Tag' context 'Nova demo' %}{% endif %}
+        {% if filters.included_tags.keys %}
+          {% if filters.included_tags.minimum %}{% blocktranslate with n=filters.included_tags.minimum context 'Nova demo' %}Match at least {{ n }}{% endblocktranslate %}{% elif filters.included_tags.mode == 'all' %}{% translate 'Match all tags' context 'Nova demo' %}{% elif filters.included_tags.mode == 'any' %}{% translate 'Match any tag' context 'Nova demo' %}{% else %}{% translate 'Tag' context 'Nova demo' %}{% endif %}
           · {{ tag_labels|join:", " }} ·
         {% endif %}
         {% if excluded_tag_labels %}{{ exclusion_label }} · {{ excluded_tag_labels|join:", " }} · {% endif %}

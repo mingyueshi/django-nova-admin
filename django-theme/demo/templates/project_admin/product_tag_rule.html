@@ -1,0 +1,19 @@
+{% load i18n l10n %}
+<label>
+  {% if parameter == 'chart_tag' %}{% translate 'Include tags (optional)' context 'Nova demo' %}{% else %}{% translate 'Exclude tags (optional)' context 'Nova demo' %}{% endif %}
+  <select name="{{ parameter }}" multiple>
+    {% include "project_admin/product_tag_options.html" with selected_keys=rule.keys %}
+  </select>
+</label>
+<label>
+  {% if parameter == 'chart_tag' %}{% translate 'Inclusion match rule' context 'Nova demo' %}{% else %}{% translate 'Exclusion match rule' context 'Nova demo' %}{% endif %}
+  <select name="{{ parameter }}_mode">
+    <option value="any"{% if not rule.mode or rule.mode == 'any' %} selected{% endif %}>{% translate 'Match any tag' context 'Nova demo' %}</option>
+    <option value="all"{% if rule.mode == 'all' %} selected{% endif %}>{% translate 'Match all tags' context 'Nova demo' %}</option>
+    <option value="at_least"{% if rule.mode == 'at_least' %} selected{% endif %}>{% translate 'Match at least N tags' context 'Nova demo' %}</option>
+  </select>
+</label>
+<label>
+  {% if parameter == 'chart_tag' %}{% translate 'Minimum included tags' context 'Nova demo' %}{% else %}{% translate 'Minimum excluded tags' context 'Nova demo' %}{% endif %}
+  <input type="number" name="{{ parameter }}_min" min="1" step="1" value="{{ rule.minimum|default:1|unlocalize }}" data-minimum-for="{{ parameter }}">
+</label>
