@@ -413,5 +413,27 @@ msgstr "至少命中 %(n)s 个"
 
 #, python-format
 msgctxt "Nova demo"
-msgid "Excluded tags (at least %(n)s)"
-msgstr "排除标签（至少命中 %(n)s 个）"
+msgid "Excluded tags (%(rule)s)"
+msgstr "排除标签（%(rule)s）"
+
+msgctxt "Nova demo"
+msgid "Match N to M tags"
+msgstr "命中 N 到 M 个标签"
+
+msgctxt "Nova demo"
+msgid "Maximum included tags"
+msgstr "包含标签的最多命中数"
+
+msgctxt "Nova demo"
+msgid "Maximum excluded tags"
+msgstr "排除标签的最多命中数"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Match exactly %(n)s"
+msgstr "恰好命中 %(n)s 个"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Match %(lower)s to %(upper)s"
+msgstr "命中 %(lower)s 到 %(upper)s 个"

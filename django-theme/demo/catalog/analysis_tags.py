@@ -33,6 +33,17 @@ class TagRule(NamedTuple):
     keys: list[str]
     mode: str = ""
     minimum: int | None = None
+    maximum: int | None = None
+
+    @property
+    def count_label(self):
+        if self.minimum is None:
+            return ""
+        if self.maximum is None:
+            return pgettext("Nova demo", "Match at least %(n)s") % {"n": self.minimum}
+        if self.minimum == self.maximum:
+            return pgettext("Nova demo", "Match exactly %(n)s") % {"n": self.minimum}
+        return pgettext("Nova demo", "Match %(lower)s to %(upper)s") % {"lower": self.minimum, "upper": self.maximum}
 
     def add_to_query(self, query, parameter):
         if self.keys:
@@ -41,28 +52,40 @@ class TagRule(NamedTuple):
             query[parameter + "_mode"] = self.mode
         if self.minimum is not None:
             query[parameter + "_min"] = str(self.minimum)
+        if self.maximum is not None:
+            query[parameter + "_max"] = str(self.maximum)
+
+
+def _count_bound(values, key_count):
+    value = values[0] if values else ""
+    # Bound the input before integer conversion and count distinct selected options.
+    if len(value) > len(str(key_count)) or not re.fullmatch(r"[1-9][0-9]*", value):
+        raise Http404
+    bound = int(value)
+    if bound > key_count:
+        raise Http404
+    return bound
 
 
 def _tag_rule(query, parameter, *, exporting):
     keys = list(dict.fromkeys(ranking_key(value, UNTAGGED) for value in query.getlist(parameter)))
     modes = query.getlist(parameter + "_mode")
-    counts = query.getlist(parameter + "_min")
-    if modes not in ([], ["any"], ["all"], ["at_least"]) or len(counts) > 1:
+    lower = query.getlist(parameter + "_min")
+    upper = query.getlist(parameter + "_max")
+    if modes not in ([], ["any"], ["all"], ["at_least"], ["range"]) or len(lower) > 1 or len(upper) > 1:
         raise Http404
     mode = modes[0] if modes else ""
-    if mode == "at_least":
-        value = counts[0] if counts else ""
-        # Bound the input before integer conversion and count distinct selected options.
-        if len(value) > len(str(len(keys))) or not re.fullmatch(r"[1-9][0-9]*", value):
+    # Plain HTML can send inactive bounds. Export URLs must only carry active ones.
+    if (exporting or not mode) and upper and mode != "range":
+        raise Http404
+    if mode in ("at_least", "range"):
+        minimum = _count_bound(lower, len(keys))
+        maximum = _count_bound(upper, len(keys)) if mode == "range" else None
+        if maximum is not None and minimum > maximum:
             raise Http404
-        minimum = int(value)
-        if minimum > len(keys):
-            raise Http404
-        return TagRule(keys, mode, minimum)
+        return TagRule(keys, mode, minimum, maximum)
 
-    # An unenhanced GET form sends both number inputs even when their rules are
-    # inactive. Canonical links and CSV requests carry only active thresholds.
-    if counts and (exporting or not mode):
+    if lower and (exporting or not mode):
         raise Http404
     if not keys:
         if exporting and mode and parameter == "chart_tag_exclude":
@@ -74,8 +97,8 @@ def _tag_rule(query, parameter, *, exporting):
 
 
 def tag_selection(query, *, exporting):
-    rule_params = ("chart_tag_mode", "chart_tag_min", "chart_tag_exclude",
-                   "chart_tag_exclude_mode", "chart_tag_exclude_min")
+    rule_params = ("chart_tag_mode", "chart_tag_min", "chart_tag_max", "chart_tag_exclude",
+                   "chart_tag_exclude_mode", "chart_tag_exclude_min", "chart_tag_exclude_max")
     if not any(name in query for name in rule_params):
         key = ranking_selection(query, "chart_tag", UNTAGGED)
         return TagRule([key] if key else []), TagRule([])
@@ -93,7 +116,9 @@ def _tag_match(memberships, rule):
     named = [key for key in rule.keys if key != UNTAGGED]
     # Group on the through table so host joins cannot multiply or hide matches.
     matches = memberships.filter(tag_id__in=named).order_by().values("product_id")
-    if required > 1:
+    if rule.maximum is not None:
+        matches = matches.alias(matched=Count("tag_id", distinct=True)).filter(matched__range=(required, rule.maximum))
+    elif required > 1:
         matches = matches.alias(matched=Count("tag_id", distinct=True)).filter(matched__gte=required)
     condition = Q(pk__in=matches)
     if required == 1 and UNTAGGED in rule.keys:
