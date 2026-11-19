@@ -1,0 +1,11 @@
+<div>
+  {% include "django/forms/widgets/text.html" %}
+  <input type="hidden" name="_initial_name_en" value="{{ stored }}">
+  <div>
+    <label><input type="checkbox" name="_copy_name" value="1"{% if copy_selected %} checked{% endif %}> 保存时将中文名称复制到英文名称</label>
+  </div>
+  {% if confirmation %}
+    <p>{% if stored %}已保存的英文名称为「{{ stored }}」。{% endif %}复制后将保存为「{{ confirmation.source }}」。</p>
+    <label><input type="checkbox" name="_confirm_name_copy" value="{{ confirmation.token }}"{% if confirmation.confirmed %} checked{% endif %}> 确认覆盖英文名称</label>
+  {% endif %}
+</div>

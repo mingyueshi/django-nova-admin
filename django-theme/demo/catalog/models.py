@@ -118,6 +118,7 @@ class Product(models.Model):
         ARCHIVED = "archived", "已归档"
 
     name = models.CharField("商品名称", max_length=120)
+    name_en = models.CharField("英文名称", max_length=120, blank=True, default="")
     sku = models.CharField("SKU", max_length=40, unique=True)
     price = models.DecimalField("价格", max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0"))])
     stock = models.PositiveIntegerField("库存", default=0)

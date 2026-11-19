@@ -2,6 +2,7 @@ from django.contrib import admin
 from django import forms
 from django.core.exceptions import PermissionDenied
 from django.db import router, transaction
+from django.db.models import F
 from django.http import Http404, HttpResponse
 from django.urls import path
 from django.utils.html import format_html
@@ -15,6 +16,7 @@ from .media import DemoMediaAdminMixin
 from .notifications import product_notifications
 from .pagination import BoundedPaginationAdminMixin
 from .product_board import can_view_board, product_publication, product_status_board
+from .product_names import ProductNameConflict, ProductNameForm
 from .publication import PublicationConflict, lock_status
 from .publication_calendar import publication_calendar
 from .recycle_bin import can_view_recycle_bin, product_recycle_bin, restore_product
@@ -72,6 +74,7 @@ class VariantInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMediaAdminMixin, admin.ModelAdmin):
+    form = ProductNameForm
     nova_preference_columns = ("image_thumbnail", "sku", "price", "stock", "status_badge", "updated_at")
     change_list_template = "admin/catalog/product/change_list.html"
     list_display = ["name", "image_thumbnail", "sku", "price", "stock", "status_badge", "featured", "updated_at"]
@@ -83,7 +86,7 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
     autocomplete_fields = ["category"]
     filter_horizontal = ["tags"]
     fieldsets = [
-        ("商品信息", {"fields": ["name", "sku", "image_key", "category", "tags"]}),
+        ("商品信息", {"fields": ["name", "name_en", "sku", "image_key", "category", "tags"]}),
         ("价格与库存", {"fields": [("price", "stock"), "status", "featured"]}),
         ("维护信息", {"fields": ["updated_at"], "classes": ["collapse"]}),
     ]
@@ -183,21 +186,28 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
             return super().changeform_view(request, object_id, form_url, extra_context)
         except PublicationConflict:
             return HttpResponse("商品状态或上架申请已变化，请重新打开商品。", status=409)
+        except ProductNameConflict:
+            return HttpResponse("商品名称已变化，请重新打开商品并核对中英文名称。", status=409)
 
     def save_model(self, request, obj, form, change):
-        if change and ("status" not in form.changed_data or obj.status == form.initial.get("status")):
-            # Stock edits and ordinary saves must not overwrite a concurrent approval.
-            fields = [field.name for field in obj._meta.concrete_fields
-                      if field.name in form.changed_data and not field.primary_key and field.name != "status"]
-            obj.save(update_fields=[*fields, "updated_at"])
-            return
-        if change:
+        if not change:
+            return super().save_model(request, obj, form, change)
+        if getattr(form, "copy_name", False):
+            products = self.get_queryset(request).using(router.db_for_write(Product))
+            reviewed = products.filter(pk=obj.pk, name=form.initial["name"], name_en=form.initial["name_en"])
+            if not reviewed.update(name_en=F("name_en")):
+                raise ProductNameConflict
+        fields = [field.name for field in obj._meta.concrete_fields
+                  if field.name in form.changed_data and not field.primary_key and field.name != "status"]
+        if "status" in form.changed_data and obj.status != form.initial.get("status"):
             products = self.get_queryset(request).using(router.db_for_write(Product)).filter(pk=obj.pk)
             previous = request.POST.get(form.add_initial_prefix("status"), form.initial["status"])
             if (not lock_status(products, previous)
                     or obj.publication_requests.filter(result=ProductPublicationRequest.Result.PENDING).exists()):
                 raise PublicationConflict
-        super().save_model(request, obj, form, change)
+            fields.append("status")
+        # Updating only edited fields also preserves concurrent approvals and translations.
+        obj.save(update_fields=[*fields, "updated_at"])
 
     def status_board_view(self, request):
         return product_status_board(request, self)
