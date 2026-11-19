@@ -407,6 +407,10 @@ msgid "Match exactly N tags"
 msgstr "恰好命中 N 个标签"
 
 msgctxt "Nova demo"
+msgid "Matched tag count differs from N"
+msgstr "命中标签数不等于 N"
+
+msgctxt "Nova demo"
 msgid "Included tag count (N)"
 msgstr "包含标签命中数（N）"
 
@@ -445,6 +449,11 @@ msgstr "排除标签的最多命中数"
 msgctxt "Nova demo"
 msgid "Match exactly %(n)s"
 msgstr "恰好命中 %(n)s 个"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Matched tag count differs from %(n)s"
+msgstr "命中标签数不等于 %(n)s"
 
 #, python-format
 msgctxt "Nova demo"

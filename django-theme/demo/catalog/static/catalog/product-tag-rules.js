@@ -6,7 +6,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
 
   function update() {
     const range = mode.value === "range";
-    const usesMinimum = range || mode.value === "exact" || mode.value === "at_least";
+    const usesMinimum = ["range", "exact", "not_exact", "at_least"].includes(mode.value);
     const usesMaximum = range || mode.value === "at_most";
     tags.required = usesMinimum || usesMaximum;
     minimum.required = usesMinimum;

@@ -37,7 +37,7 @@ class TagRule(NamedTuple):
 
     @property
     def match_maximum(self):
-        return self.minimum if self.mode == "exact" else self.maximum
+        return self.minimum if self.mode in ("exact", "not_exact") else self.maximum
 
     @property
     def count_label(self):
@@ -45,6 +45,8 @@ class TagRule(NamedTuple):
             return pgettext("Nova demo", "Match at most %(n)s") % {"n": self.maximum}
         if self.minimum is None:
             return ""
+        if self.mode == "not_exact":
+            return pgettext("Nova demo", "Matched tag count differs from %(n)s") % {"n": self.minimum}
         if self.minimum == self.match_maximum:
             return pgettext("Nova demo", "Match exactly %(n)s") % {"n": self.minimum}
         if self.maximum is None:
@@ -78,10 +80,11 @@ def _tag_rule(query, parameter, *, exporting):
     modes = query.getlist(parameter + "_mode")
     lower = query.getlist(parameter + "_min")
     upper = query.getlist(parameter + "_max")
-    if modes not in ([], ["any"], ["all"], ["at_least"], ["at_most"], ["exact"], ["range"]) or len(lower) > 1 or len(upper) > 1:
+    valid_modes = ([], ["any"], ["all"], ["at_least"], ["at_most"], ["exact"], ["not_exact"], ["range"])
+    if modes not in valid_modes or len(lower) > 1 or len(upper) > 1:
         raise Http404
     mode = modes[0] if modes else ""
-    uses_lower = mode in ("at_least", "exact", "range")
+    uses_lower = mode in ("at_least", "exact", "not_exact", "range")
     uses_upper = mode in ("at_most", "range")
     # Plain HTML can send inactive bounds. Export URLs must only carry active ones.
     if (exporting or not mode) and ((upper and not uses_upper) or (lower and not uses_lower)):
@@ -138,9 +141,11 @@ def _tag_match(memberships, rule):
     if rule.mode == "at_most" or rule.minimum == 0:
         # Products with no matching assignments have no group in the through table.
         # Within the visible queryset, 0..M is the complement of at least M+1.
-        return ~_positive_tag_match(memberships, rule.keys, maximum + 1)
-    minimum = len(rule.keys) if rule.mode == "all" else (rule.minimum or 1)
-    return _positive_tag_match(memberships, rule.keys, minimum, maximum)
+        condition = ~_positive_tag_match(memberships, rule.keys, maximum + 1)
+    else:
+        minimum = len(rule.keys) if rule.mode == "all" else (rule.minimum or 1)
+        condition = _positive_tag_match(memberships, rule.keys, minimum, maximum)
+    return ~condition if rule.mode == "not_exact" else condition
 
 
 def select_tags(products, tags, included, excluded, period):
