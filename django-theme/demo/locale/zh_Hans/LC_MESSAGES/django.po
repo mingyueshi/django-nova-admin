@@ -474,6 +474,10 @@ msgid "Match one of the specified tag counts"
 msgstr "命中标签数为指定值之一"
 
 msgctxt "Nova demo"
+msgid "Match none of the specified tag counts"
+msgstr "命中标签数不在指定值中"
+
+msgctxt "Nova demo"
 msgid "Included match counts"
 msgstr "包含的命中数（可多选）"
 
@@ -489,3 +493,8 @@ msgstr "命中数不能超过已选标签数。"
 msgctxt "Nova demo"
 msgid "Match one of these counts (%(counts)s)"
 msgstr "命中标签数为指定值之一（%(counts)s）"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Match none of these counts (%(counts)s)"
+msgstr "命中标签数不在指定值中（%(counts)s）"

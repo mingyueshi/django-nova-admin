@@ -42,14 +42,16 @@ class TagRule(NamedTuple):
 
     @property
     def negated(self):
-        return self.mode in ("not_exact", "not_range")
+        return self.mode in ("not_exact", "not_range", "not_one_of")
 
     @property
     def count_label(self):
         if self.counts:
-            return pgettext("Nova demo", "Match one of these counts (%(counts)s)") % {
-                "counts": ", ".join(map(str, self.counts)),
-            }
+            if self.negated:
+                label = pgettext("Nova demo", "Match none of these counts (%(counts)s)")
+            else:
+                label = pgettext("Nova demo", "Match one of these counts (%(counts)s)")
+            return label % {"counts": ", ".join(map(str, self.counts))}
         if self.mode == "at_most":
             return pgettext("Nova demo", "Match at most %(n)s") % {"n": self.maximum}
         if self.minimum is None:
@@ -95,17 +97,19 @@ def _tag_rule(query, parameter, *, exporting):
     lower = query.getlist(parameter + "_min")
     upper = query.getlist(parameter + "_max")
     counts = query.getlist(parameter + "_counts")
-    valid_modes = ([], ["any"], ["all"], ["at_least"], ["at_most"], ["exact"], ["not_exact"], ["range"], ["not_range"], ["one_of"])
+    valid_modes = ([], ["any"], ["all"], ["at_least"], ["at_most"], ["exact"], ["not_exact"],
+                   ["range"], ["not_range"], ["one_of"], ["not_one_of"])
     if modes not in valid_modes or len(lower) > 1 or len(upper) > 1:
         raise Http404
     mode = modes[0] if modes else ""
     is_range = mode in ("range", "not_range")
     uses_lower = is_range or mode in ("at_least", "exact", "not_exact")
     uses_upper = is_range or mode == "at_most"
+    uses_counts = mode in ("one_of", "not_one_of")
     # Plain HTML can send inactive bounds. Export URLs must only carry active ones.
-    if (exporting or not mode) and ((upper and not uses_upper) or (lower and not uses_lower) or (counts and mode != "one_of")):
+    if (exporting or not mode) and ((upper and not uses_upper) or (lower and not uses_lower) or (counts and not uses_counts)):
         raise Http404
-    if mode == "one_of":
+    if uses_counts:
         if not keys or not counts:
             raise Http404
         values = {_count_bound(value, 0, len(keys)) for value in counts}
@@ -156,15 +160,15 @@ def _positive_tag_match(memberships, keys, count_filter, *, matches_one):
 
 
 def _tag_match(memberships, rule):
+    maximum = rule.match_maximum
     if rule.counts:
         allowed = Q(matched__in=rule.counts)
         if 0 in rule.counts:
             # Rows with zero hits have no group. Remove only the disallowed positive counts.
-            return ~_positive_tag_match(memberships, rule.keys, ~allowed, matches_one=1 not in rule.counts)
-        return _positive_tag_match(memberships, rule.keys, allowed, matches_one=1 in rule.counts)
-
-    maximum = rule.match_maximum
-    if rule.mode == "at_most" or rule.minimum == 0:
+            condition = ~_positive_tag_match(memberships, rule.keys, ~allowed, matches_one=1 not in rule.counts)
+        else:
+            condition = _positive_tag_match(memberships, rule.keys, allowed, matches_one=1 in rule.counts)
+    elif rule.mode == "at_most" or rule.minimum == 0:
         # Products with no matching assignments have no group in the through table.
         # Within the visible queryset, 0..M is the complement of at least M+1.
         above = Q(matched__gt=maximum) if maximum else None
