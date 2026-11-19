@@ -1,0 +1,19 @@
+{% load i18n %}
+<section id="product-category-ranking" aria-labelledby="product-categories-title" tabindex="-1">
+  <h2 id="product-categories-title">{% translate 'Product category ranking' context 'Nova demo' %}</h2>
+  {% if filters.category %}
+    <p>{% blocktranslate with category=category_label context 'Nova demo' %}Selected category: {{ category }}{% endblocktranslate %}
+      <a href="{% querystring filters.query chart_category=None %}#product-category-ranking">{% translate 'Clear category filter' context 'Nova demo' %}</a>
+    </p>
+  {% endif %}
+  {% if category_rows %}
+    <table aria-labelledby="product-categories-title">
+      <thead><tr><th scope="col">{% translate 'Category' context 'Nova demo' %}</th><th scope="col">{% translate 'Visible products' context 'Nova demo' %}</th></tr></thead>
+      <tbody>{% for row in category_rows %}
+        <tr><th scope="row"><a href="{% querystring filters.query chart_category=row.key %}#product-category-ranking"{% if row.key == filters.category %} aria-current="true"{% endif %}>{{ row.label }}</a></th><td>{{ row.total }}</td></tr>
+      {% endfor %}</tbody>
+    </table>
+  {% else %}
+    <p>{% translate 'No categories have matching products.' context 'Nova demo' %}</p>
+  {% endif %}
+</section>

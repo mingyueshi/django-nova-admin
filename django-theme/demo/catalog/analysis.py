@@ -8,11 +8,19 @@ from django.utils import timezone
 from django.utils.translation import pgettext
 from django.views.decorators.http import require_http_methods
 
+from .analysis_categories import category_field_scope, category_ranking, category_selection, select_category
 from .charts import product_chart_filters
 from .product_csv import MAX_EXPORT_ROWS, can_export_products, product_csv_response
 
 
 TEMPLATE = "admin/catalog/product/analysis.html"
+
+
+def matching_products(scope, filters):
+    products = filters["period"].products_in(scope, filters["detail_dates"])
+    if filters["status"]:
+        products = products.filter(status=filters["status"])
+    return products
 
 
 def details_unavailable(request, context):
@@ -35,11 +43,14 @@ def product_analysis(request, owner):
             raise Http404
         if set(request.POST) - {"_export_csv", "csrfmiddlewaretoken"}:
             raise Http404
-    if set(request.GET) - {"chart_window", "chart_days", "chart_start", "chart_end", "chart_day", "chart_status", "page"}:
+    allowed_filters = {"chart_window", "chart_days", "chart_start", "chart_end", "chart_day", "chart_status", "chart_category", "page"}
+    if set(request.GET) - allowed_filters:
         raise Http404
+    category = category_selection(request.GET)
     request.current_app = owner.admin_site.name
     context = owner.admin_site.each_context(request)
     filters = product_chart_filters(request, context["available_apps"], workbench=True)
+    filters["category"] = category
     if not (filters["drill_days"] and filters["status_visible"]):
         raise PermissionDenied
     context.update(opts=owner.opts, title=pgettext("Nova demo", "Linked analysis workbench"),
@@ -54,18 +65,24 @@ def product_analysis(request, owner):
     period = filters.get("period")
     if period is None or filters["products"] is None:
         return details_unavailable(request, context)
-    products = period.products_in(filters["products"], filters["detail_dates"])
-    if filters["status"]:
-        products = products.filter(status=filters["status"])
-    products = products.order_by("-updated_at", "-pk").distinct()
     try:
-        if exporting:
-            date_label = filters["day"]
-            if not date_label and filters.get("custom_dates"):
-                date_label = f'{filters["start"]}-{filters["end"]}'
-            suffix = "-".join(part for part in ("analysis", date_label, filters["status"]) if part)
-            return product_csv_response(request, owner, products, period.zone, suffix)
         with timezone.override(period.zone):
+            if category or not exporting:
+                scope = category_field_scope(request, owner, filters["products"])
+                if category:
+                    filters["products"], context["category_label"] = select_category(scope, category, period)
+                    filters["query"]["chart_category"] = category
+                if not exporting and scope is not None:
+                    context["category_rows"] = category_ranking(matching_products(scope, filters))
+            products = matching_products(filters["products"], filters).order_by("-updated_at", "-pk").distinct()
+            if exporting:
+                date_label = filters["day"]
+                if not date_label and filters.get("custom_dates"):
+                    date_label = f'{filters["start"]}-{filters["end"]}'
+                suffix = "-".join(part for part in ("analysis", date_label, filters["status"]) if part)
+                if category:
+                    suffix += f"-category-{category}"
+                return product_csv_response(request, owner, products, period.zone, suffix)
             pages = owner.get_paginator(request, products, owner.list_per_page)
             if len(request.GET.getlist("page")) > 1:
                 raise Http404
@@ -74,6 +91,7 @@ def product_analysis(request, owner):
     except InvalidPage as exc:
         raise Http404 from exc
     except DatabaseError:
+        filters["products"] = None
         return details_unavailable(request, context)
     display = owner.get_list_display(request)
     context.update(page=page, show_name="name" in display, show_sku="sku" in display,

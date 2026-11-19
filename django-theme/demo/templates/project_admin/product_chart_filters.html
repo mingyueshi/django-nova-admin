@@ -1,6 +1,7 @@
 {% load i18n %}
 <form method="get" id="product-chart-filters" class="nova-chart-filters" aria-label="{% translate 'Product chart filters' context 'Nova demo' %}">
   {% if filters.linked %}<input type="hidden" name="chart_window" value="{{ filters.window }}">{% endif %}
+  {% if filters.category %}<input type="hidden" name="chart_category" value="{{ filters.category }}">{% endif %}
   <label>{% if workbench %}{% translate 'Default daily chart range' context 'Nova demo' %}{% else %}{% translate 'Date range' context 'Nova demo' %}{% endif %}
     <select id="product-activity-range" name="chart_days">
       <option value="7"{% if days == 7 %} selected{% endif %}>{% translate 'Last 7 days' context 'Nova demo' %}</option>

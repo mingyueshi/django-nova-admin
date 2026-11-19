@@ -297,3 +297,28 @@ msgstr "最多可选择 %(limit)s 个自然日。"
 msgctxt "Nova demo"
 msgid "Products by status from %(start)s to %(end)s"
 msgstr "%(start)s 至 %(end)s 更新的商品状态分布"
+
+msgctxt "Nova demo"
+msgid "Product category ranking"
+msgstr "商品分类排行"
+
+msgctxt "Nova demo"
+msgid "Category"
+msgstr "分类"
+
+msgctxt "Nova demo"
+msgid "Uncategorized"
+msgstr "未分类"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Selected category: %(category)s"
+msgstr "当前分类为%(category)s"
+
+msgctxt "Nova demo"
+msgid "Clear category filter"
+msgstr "清除分类筛选"
+
+msgctxt "Nova demo"
+msgid "No categories have matching products."
+msgstr "当前筛选条件下没有可排行的商品。"

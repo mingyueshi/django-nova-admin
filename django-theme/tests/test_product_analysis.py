@@ -18,7 +18,7 @@ from tests.test_chart_drilldown import ProductDayTestCase
 from tests.test_product_csv import ProductCSVAssertions
 
 
-class ProductAnalysisTests(ProductCSVAssertions, ProductDayTestCase):
+class ProductAnalysisTestCase(ProductCSVAssertions, ProductDayTestCase):
     export_action = "_export_csv"
     day = "2026-11-01"
     cutoff = "2026-11-01T06:30:00+00:00"
@@ -41,6 +41,8 @@ class ProductAnalysisTests(ProductCSVAssertions, ProductDayTestCase):
         self.assertEqual(urlsplit(target).path, urlsplit(current).path)
         return target
 
+
+class ProductAnalysisTests(ProductAnalysisTestCase):
     def test_home_selection_both_chart_directions_details_and_download_through_dst_fold(self):
         self.grant_export()
         first = self.product("@first", "2026-11-01T05:30:00+00:00")

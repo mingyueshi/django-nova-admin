@@ -10,6 +10,17 @@
 .product-analysis-table table {
   width: 100%;
 }
+#product-category-ranking {
+  margin-block-end: 1.5rem;
+}
+#product-category-ranking td {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+#product-category-ranking [aria-current="true"] {
+  font-weight: bold;
+  text-decoration: underline;
+}
 #product-details form {
   margin-block-start: 1rem;
 }
