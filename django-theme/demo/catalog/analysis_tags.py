@@ -19,7 +19,7 @@ ONE_SIDED_COUNT = re.compile(
 )
 # Capture only numeric endpoints. Infinity requires a minus on the left and allows a plus on the right.
 BRACKETED_COUNT = re.compile(
-    r"(\(|\[|（|［)\s*(?:(?:([0-9]+)|\*|-∞)\s*)?[,，]\s*"
+    r"(\(|\[|（|［)\s*(?:(?:([0-9]+)|\*|[-−]∞)\s*)?[,，]\s*"
     r"(?:(?:([0-9]+)|\*|\+?∞)\s*)?(\)|\]|）|］)"
 )
 # Keep the comma before the upper endpoint and closing bracket inside the interval.

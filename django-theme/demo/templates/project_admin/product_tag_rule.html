@@ -36,7 +36,7 @@
   {% if parameter == 'chart_tag' %}{% translate 'Included tag counts or ranges' context 'Nova demo' %}{% else %}{% translate 'Excluded tag counts or ranges' context 'Nova demo' %}{% endif %}
   <input type="text" name="{{ parameter }}_ranges" value="{{ rule.ranges_text }}" placeholder="0-1, 3-4"
          data-range-error="{% translate 'Use ranges such as 0-1, 3-4, with endpoints between zero and the number of selected tags.' context 'Nova demo' %}"
-         data-mixed-error="{% translate 'Enter counts, intervals or comparisons. Round brackets exclude an endpoint and square brackets include it. Use ∞, inf or infinity with a minus sign on the left or an optional plus sign on the right. ASCII endpoints are case-insensitive, as in (-INFINITY,3] or [3,Inf). Use round brackets on unbounded sides, including blank or * endpoints. A standalone * matches every count. Numeric endpoints must be ordered and lie between zero and the number of selected tags.' context 'Nova demo' %}">
+         data-mixed-error="{% translate 'Enter counts, intervals or comparisons. Round brackets exclude an endpoint and square brackets include it. Use ∞, inf or infinity with - or − on the left and an optional + on the right. ASCII letters are case-insensitive, as in (−INFINITY,3] or [3,Inf). Use round brackets on unbounded sides, including blank or * endpoints. A standalone * matches every count. Numeric endpoints must be ordered and lie between zero and the number of selected tags.' context 'Nova demo' %}">
 </label>
 <label>
   {% if parameter == 'chart_tag' %}{% translate 'Included match counts' context 'Nova demo' %}{% else %}{% translate 'Excluded match counts' context 'Nova demo' %}{% endif %}
