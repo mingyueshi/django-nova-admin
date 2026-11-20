@@ -13,11 +13,11 @@ from .navigation import visible_admin_objects
 
 UNTAGGED = "untagged"
 MIXED_COUNT_MODES = ("values_or_ranges", "not_values_or_ranges")
-FULLWIDTH_COUNT_CHARS = str.maketrans("０１２３４５６７８９＜＞＝", "0123456789<>=")
+FULLWIDTH_COUNT_CHARS = str.maketrans("０１２３４５６７８９＜＞＝！", "0123456789<>=!")
 # Each letter of "inf" or "infinity" accepts either width and case.
 INFINITY_NAME = re.compile(r"[iIｉＩ][nNｎＮ][fFｆＦ](?:[iIｉＩ][nNｎＮ][iIｉＩ][tTｔＴ][yYｙＹ])?")
 COUNT_COMPARISON = re.compile(
-    r"(?:([<>=]=?|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
+    r"(?:([<>=]=?|!=|≠|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
 )
 # Capture only numeric endpoints. Infinity requires a minus on the left and allows a plus on the right.
 BRACKETED_COUNT = re.compile(
@@ -154,9 +154,9 @@ def _count_bound(value, lowest, key_count):
     return bound
 
 
-def _count_interval(term, key_count, mixed):
+def _term_intervals(term, key_count, mixed):
     if mixed and term == "*":
-        return None, None
+        return [(None, None)]
     if mixed and (interval := BRACKETED_COUNT.fullmatch(term)):
         left, lower, upper, right = interval.groups()
         open_left = left in ("(", "（")
@@ -167,27 +167,28 @@ def _count_interval(term, key_count, mixed):
             raise Http404
         low = _count_bound(lower, 0, key_count) if lower is not None else None
         high = _count_bound(upper, low or 0, key_count) if upper is not None else None
-        return (
-            CountBound(low + open_left, open_left) if low is not None else None,
-            CountBound(high - open_right, open_right) if high is not None else None,
-        )
+        lower_bound = CountBound(low + open_left, open_left) if low is not None else None
+        upper_bound = CountBound(high - open_right, open_right) if high is not None else None
+        return [(lower_bound, upper_bound)]
     if mixed and (comparison := COUNT_COMPARISON.fullmatch(term)):
         operator = comparison[1] or comparison[4]
         threshold = _count_bound(comparison[2] or comparison[3], 0, key_count)
         if operator in ("<", "少于"):
-            return None, CountBound(threshold - 1, strict=True)
+            return [(None, CountBound(threshold - 1, strict=True))]
         if operator in (">", "多于"):
-            return CountBound(threshold + 1, strict=True), None
+            return [(CountBound(threshold + 1, strict=True), None)]
+        if operator in ("!=", "≠"):
+            return [(None, CountBound(threshold - 1, strict=True)), (CountBound(threshold + 1, strict=True), None)]
         bound = CountBound(threshold)
         if operator in ("=", "=="):
-            return bound, bound
-        return (None, bound) if operator in ("<=", "≤", "至多", "及以下") else (bound, None)
+            return [(bound, bound)]
+        return [(None, bound)] if operator in ("<=", "≤", "至多", "及以下") else [(bound, None)]
     pair = re.fullmatch(r"([0-9]+)(?:\s*(?:-|到)\s*([0-9]+))?", term)
     if not pair or (pair[2] is None and not mixed):
         raise Http404
     low = _count_bound(pair[1], 0, key_count)
     high = _count_bound(pair[2], low, key_count) if pair[2] is not None else low
-    return CountBound(low), CountBound(high)
+    return [(CountBound(low), CountBound(high))]
 
 
 def _count_ranges(value, key_count, *, mixed):
@@ -196,7 +197,9 @@ def _count_ranges(value, key_count, *, mixed):
         # Normalize before splitting so the comma in [3,INF) stays inside the interval.
         value = INFINITY_NAME.sub("∞", value)
     # Validate every term before merging, even when another term already covers all counts.
-    intervals = [_count_interval(part.strip(), key_count, mixed) for part in COUNT_SEPARATOR.split(value)]
+    intervals = []
+    for part in COUNT_SEPARATOR.split(value):
+        intervals.extend(_term_intervals(part.strip(), key_count, mixed))
     merged = []
     # On equal starting counts, prefer the original strict threshold (>2 over >=3).
     for low, high in sorted(intervals, key=lambda pair: (pair[0].included, not pair[0].strict) if pair[0] else (-1, False)):
