@@ -61,17 +61,23 @@
 
     const refreshScrollbars = [];
     const filter = changelist.querySelector('#changelist-filter');
-    if (filter) {
-        const controls = document.createElement('div');
+    let controls = changelist.querySelector('[data-nova-print-tool]');
+    if (!controls && filter) {
+        controls = document.createElement('div');
         controls.className = 'nova-changelist-controls';
+    }
+    if (controls) {
+        const toolbar = changelist.querySelector('#toolbar');
+        if (toolbar) toolbar.append(controls);
+        else changelist.before(controls);
+    }
+    if (filter) {
         const toggle = document.createElement('button');
         toggle.type = 'button';
         toggle.className = 'nova-filter-toggle';
         toggle.setAttribute('aria-controls', filter.id);
-        controls.append(toggle);
-        const toolbar = changelist.querySelector('#toolbar');
-        if (toolbar) toolbar.append(controls);
-        else changelist.before(controls);
+        controls.prepend(toggle);
+        controls.hidden = false;
         const storageKey = `nova.changelist.filters:${window.location.pathname}`;
         const setCollapsed = (collapsed) => {
             if (collapsed && filter.contains(document.activeElement)) toggle.focus();

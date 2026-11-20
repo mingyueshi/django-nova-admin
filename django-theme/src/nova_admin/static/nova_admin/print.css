@@ -1,7 +1,6 @@
-/* Screen styles only affect the opt-in list tool. Print sheets are ephemeral. */
-body.nova-admin .nova-print-tool[hidden], body.nova-admin .nova-print-button[hidden], body.nova-admin .nova-print-sheet { display:none; }
-body.nova-admin .object-tools .nova-print-button { --nova-print-available:1; min-height:40px; padding:9px 14px; border:1px solid var(--border-color); border-radius:var(--nova-action-radius,8px); background:var(--darkened-bg); color:var(--body-fg); font:inherit; font-size:12px; cursor:pointer; }
-body.nova-admin .nova-print-button:focus-visible { outline:2px solid var(--link-fg); outline-offset:2px; }
+/* Expose the button only when the print stylesheet has loaded. */
+body.nova-admin .nova-print-button { --nova-print-available:1; }
+body.nova-admin .nova-print-button[hidden], body.nova-admin .nova-print-sheet { display:none; }
 @page nova-list { size:A4 landscape; margin:12mm; }
 @media print {
   body.nova-admin.nova-printing { display:block !important; background:#fff !important; color:#000 !important; min-width:0 !important; margin:0 !important; padding:0 !important; }

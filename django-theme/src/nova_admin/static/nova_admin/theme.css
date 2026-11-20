@@ -1173,11 +1173,11 @@ body.nova-admin:dir(rtl) #content-related .actionlist li { background-position: 
 
 /* Progressive list tools leave the original filter and editable form intact.
    Both native arrangements (5.2/6.0 and 6.1) release their filter column. */
-body.nova-admin .nova-changelist-controls { display: flex; justify-content: flex-end; margin-bottom: 16px; }
-body.nova-admin #changelist #toolbar:has(> .nova-changelist-controls) { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+body.nova-admin .nova-changelist-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-bottom: 16px; }
+body.nova-admin #changelist #toolbar:has(> .nova-changelist-controls:not([hidden])) { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 body.nova-admin #changelist #toolbar > form { flex: 1 1 auto; min-width: 0; }
-body.nova-admin #changelist #toolbar > .nova-changelist-controls { flex: 0 0 auto; margin: 0; margin-inline-start: auto; }
-body.nova-admin :is(.nova-filter-toggle, .nova-results-scroll-button) {
+body.nova-admin #changelist #toolbar > .nova-changelist-controls { flex: 0 1 auto; margin: 0; margin-inline-start: auto; }
+body.nova-admin :is(.nova-filter-toggle, .nova-print-button, .nova-results-scroll-button) {
   min-height: max(36px, var(--nova-touch-min));
   padding: 8px 12px;
   border: 1px solid var(--border-color);
@@ -1187,7 +1187,8 @@ body.nova-admin :is(.nova-filter-toggle, .nova-results-scroll-button) {
   font: inherit;
   cursor: pointer;
 }
-body.nova-admin :is(.nova-filter-toggle, .nova-results-scroll-button):hover { background: var(--nova-hover); }
+body.nova-admin :is(.nova-filter-toggle, .nova-print-button, .nova-results-scroll-button):hover { background: var(--nova-hover); }
+body.nova-admin .nova-changelist-controls[hidden],
 body.nova-admin #changelist-filter[hidden],
 body.nova-admin .nova-results-scroll-tools[hidden] { display: none; }
 body.nova-admin #changelist.nova-filters-collapsed { gap: 0; }

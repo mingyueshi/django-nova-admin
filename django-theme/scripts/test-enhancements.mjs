@@ -20,13 +20,14 @@ run('Readonly input is untouched', {attrs:'readonly'}, d => assert.equal(d.query
 run('Form values and label semantics are unchanged', {}, d => {assert.equal(d.querySelector('input').value,'kept');assert.equal(d.querySelector('input').name,'q');assert.equal(d.querySelector('form').method,'get');assert.equal(d.querySelector('label').htmlFor,'searchbar');assert.equal(d.querySelector('input').getAttribute('aria-describedby'),'searchbar_helptext');});
 
 
-function changelist({structure = 'external', body = 'nova-admin', filter = true, table = true, toolbar = true,
+function changelist({structure = 'external', body = 'nova-admin', filter = true, table = true, toolbar = true, print = false,
     evaluate = true, saved = null, storageFails = false, writeFails = false,
     resizeObserver = true, rtl = false, resultId = '', viewport = 320, width = 1000} = {}) {
     const filterHtml = filter ? `<${structure === 'internal' ? 'search' : 'nav'} id="changelist-filter"><h2>Filters</h2><a href="?q=kept&status=active">Active</a><form id="filter-choice" method="get"><input name="status" value="active"></form></${structure === 'internal' ? 'search' : 'nav'}>` : '';
     const search = '<form id="changelist-search" method="get"><label for="searchbar">Search</label><input id="searchbar" name="q" value="kept"><input type="hidden" name="category" value="2"></form>';
     const form = `<form id="changelist-form" method="post"><input name="csrfmiddlewaretoken" value="synthetic"><select name="action"><option value="publish">Publish</option></select>${table ? `<div class="results" ${resultId ? `id="${resultId}"` : ''} style="direction:${rtl ? 'rtl' : 'ltr'}"><table><tbody><tr><td><input type="checkbox" name="_selected_action" value="3" checked></td><td>Record</td></tr></tbody></table></div>` : ''}<button type="submit" name="_save">Save</button></form>`;
-    const searchMarkup = toolbar ? `<div id="toolbar">${search}</div>` : search;
+    const printTool = print ? '<div class="nova-changelist-controls" data-nova-print-tool hidden><button type="button" data-nova-print hidden>Print current page</button></div>' : '';
+    const searchMarkup = (toolbar ? `<div id="toolbar">${search}</div>` : search) + printTool;
     const inner = structure === 'internal'
         ? `<div class="changelist-form-container">${filterHtml}<div>${searchMarkup}${form}</div></div>`
         : `<div class="changelist-form-container">${searchMarkup}${form}</div>${filterHtml}`;
@@ -127,6 +128,23 @@ checkList('Pages without search toolbar or results keep a standalone filter cont
     query(f, '.nova-filter-toggle').click();
     assert.equal(query(f, '#changelist-filter').hidden, true);
 });
+checkList('Print shares the search toolbar group with the filter toggle', {print:true}, f => {
+    const controls = query(f, '#toolbar > [data-nova-print-tool]');
+    assert.equal(controls.hidden, false);
+    assert.equal(controls.firstElementChild, query(f, '.nova-filter-toggle'));
+    assert.equal(controls.lastElementChild, query(f, '[data-nova-print]'));
+    assert.equal(controls.lastElementChild.hidden, true);
+    assert.equal(controls.closest('form'), null);
+});
+for (const toolbar of [true, false]) {
+    checkList(`Print-only group keeps a position ${toolbar ? 'in the search toolbar' : 'above the list'}`, {print:true, filter:false, toolbar}, f => {
+        const controls = query(f, '[data-nova-print-tool]');
+        assert.equal(controls.hidden, true);
+        assert.equal(query(f, '.nova-filter-toggle'), null);
+        if (toolbar) assert.equal(controls.parentElement, query(f, '#toolbar'));
+        else assert.equal(controls.nextElementSibling, query(f, '#changelist'));
+    });
+}
 checkList('Collapsing while focus is in the filter returns focus to its toggle', {}, f => {
     query(f, '#filter-choice input').focus();
     query(f, '.nova-filter-toggle').click();

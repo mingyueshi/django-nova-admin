@@ -47,6 +47,7 @@ class PrintMarkupTests(PrintPageMixin, TestCase):
         _, soup = self.page()
         tool = soup.select_one('[data-nova-print-tool][hidden]')
         button = tool.select_one('button[data-nova-print]')
+        self.assertIsNotNone(tool.find_parent(id='changelist'))
         self.assertEqual(button['type'], 'button')
         self.assertIn('hidden', button.attrs)
         self.assertIsNone(button.find_parent('form'))

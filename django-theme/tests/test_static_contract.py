@@ -146,7 +146,7 @@ class StaticLayoutContractTests(SimpleTestCase):
         self.assertIn("max-width: 100%", self.declarations(selector + " > div"))
         self.assertIn("max-width: 100%", self.declarations(selector + ":has(> #changelist-filter) > div"))
         self.assertIn("body.nova-admin #changelist-filter[hidden]", self.css)
-        toolbar = self.declarations("body.nova-admin #changelist #toolbar:has(> .nova-changelist-controls)")
+        toolbar = self.declarations("body.nova-admin #changelist #toolbar:has(> .nova-changelist-controls:not([hidden]))")
         self.assertIn("display: flex", toolbar)
         self.assertIn("flex-wrap: wrap", toolbar)
         self.assertIn("margin: 0", self.declarations("body.nova-admin #changelist #toolbar > .nova-changelist-controls"))
