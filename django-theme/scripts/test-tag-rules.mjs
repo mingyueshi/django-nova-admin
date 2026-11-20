@@ -89,7 +89,9 @@ try {
                 ['*,多于７个', false], ['②', false], ['٣', false], ['２－2', false],
                 ['＜３', true], ['＞3', true], ['＜＝０、２到４、＞＝６', true], ['＜０、＞6', true],
                 ['＝１', true], ['=０', true], ['=6', true], ['=０、2、[2,4]、＝４、＞=６', true],
-                ['=', false], ['*,==１', false], ['＝=2', false], ['=０1', false], ['＝７', false], ['!=1', false],
+                ['==０', true], ['＝＝3', true], ['=＝６', true], ['＝=２、==2、[2,4]、>=６', true],
+                ['=', false], ['=０1', false], ['＝７', false], ['!=1', false],
+                ['==', false], ['*,===１', false], ['＝=＝2', false], ['= ＝2', false], ['==０1', false], ['＝＝７', false], ['==1-2', false],
                 ['=1-2', false], ['[=0,1]', false], ['＜＞１', false], ['*,＞＝＝1', false], ['＝＜２、*', false], ['＜ ＝２', false], ['＞＝', false],
                 ['＜=０', true], ['<＝3', true], ['＞=３', true], ['>＝6', true], ['＜=２、[2,4]、>＝４', true],
                 ['＞＝０1', false], ['＜７', false], ['[０,＜２]', false], ['＜=０1', false], ['>＝７', false],
@@ -107,7 +109,7 @@ try {
                 assert.equal(input.checkValidity(), valid, value);
             }
             for (const option of tags.options) option.selected = true;
-            input.value = '＝１0、[1１,１2)、=1２';
+            input.value = '＝=１0、[1１,１2)、=＝1２';
             tags.dispatchEvent(new window.Event('change'));
             assert.ok(input.checkValidity());
             tags.options[11].selected = false;

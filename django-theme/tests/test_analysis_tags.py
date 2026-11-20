@@ -1128,6 +1128,10 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             ("＝3", "3", {3}),
             ("=７", "7", {7}),
             ("=０、2、[2,4]、＝４、＞=７", "0, 2-4, >=7", {0, 2, 3, 4, 7}),
+            ("==０", "0", {0}),
+            ("＝＝3", "3", {3}),
+            ("=＝７", "7", {7}),
+            ("＝=２、==2、[2,4]、>=７", "2-4, >=7", {2, 3, 4, 7}),
         ):
             repeated = [*keys, keys[0]]
             include = self.combination(initial, entry, repeated, "values_or_ranges", ranges=expression)
@@ -1185,7 +1189,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         keys = [tag.pk for tag in tags] + [tags[0].pk]
         for expression, canonical in (("１0、[1１,１2)、至少1２个", "10, [11,12), >=12"),
                                       ("1０到１2", "10-12"), ("＞＝１0", ">=10"), (">＝1０", ">=10"),
-                                      ("＝１0、=1１、＝１２", "10, 11, 12")):
+                                      ("＝１0、=1１、＝１２", "10, 11, 12"),
+                                      ("＝=１0、[10,1１]、=＝1２", "10-11, 12")):
             include = self.combination(initial, entry, keys, "values_or_ranges", ranges=expression)
             exclude = self.combination(initial, entry, [], "any", excluded=keys,
                                        exclude_mode="values_or_ranges", exclude_ranges=expression)
@@ -1248,8 +1253,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             ("not_values_or_ranges", "values_or_ranges", ["one"]),
         ):
             with self.subTest(include=include, exclude=exclude):
-                url = self.combination(initial, entry, keys, include, ranges="=０, 2-2",
-                                       excluded=keys, exclude_mode=exclude, exclude_ranges="＝1")
+                url = self.combination(initial, entry, keys, include, ranges="==０, 2-2",
+                                       excluded=keys, exclude_mode=exclude, exclude_ranges="＝＝1")
                 page = self.open_page(url)
                 self.assertFalse(self.ranking(page))
                 self.assertIsNone(page.select_one('#product-details tbody tr, .product-analysis-charts [type="application/json"]'))
@@ -1301,7 +1306,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                        ["(−ｉnＦ,3]"], ["[3,Iｎfｉnｉtｙ)"], ["(1,Iｎfｉn)"], ["(1,ıｎＦ)"],
                        ["０1"], ["0０-２"], ["[０,0２)"], ["至少０１个"], ["１-３"], ["２ 到 1"],
                        ["*,多于３个"], ["少于1３个"], ["②"], ["٣"], ["２－2"],
-                       ["="], ["*,==１"], ["＝=2"], ["=０1"], ["＝３"], ["!=1"], ["=1-2"], ["[=0,1]"],
+                       ["="], ["=０1"], ["＝３"], ["!=1"], ["=1-2"], ["[=0,1]"],
+                       ["=="], ["*,===１"], ["＝=＝2"], ["= ＝2"], ["==０1"], ["＝＝３"], ["==1-2"],
                        ["＜＞１"], ["*,＞＝＝1"], ["＝＜２、*"], ["＜ ＝２"], ["＞＝"],
                        ["＞＝０1"], ["＜３"], ["[０,＜２]"], ["＜=０1"], [">＝３"],
                        ["*,＜=＝１"], ["=＞２"], ["< ＝２"], ["＞="], ["＜>＝１"],
@@ -1313,7 +1319,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                 ["(,)"], ["*"], ["(*,2]"], ["[1,*)"], ["(*,*)"], ["(-∞,2]"], ["[1,+∞)"], ["(-∞,+∞)"],
                                 ["(-Inf,2]"], ["[1,+INF)"], ["(-inf,+inf)"], ["(-infinity,2]"], ["[1,+Infinity)"],
                                 ["(1,∞)"], ["(1,inf)"], ["(1,infinity)"], ["(−Infinity,2]"], ["(－∞,＋Inf)"], ["(－ｉｎｆ,1]"],
-                                ["(－ｉnＦ,1]"], ["＜＝２"], ["＜=１"], [">＝2"], ["＝１"]))
+                                ["(－ｉnＦ,1]"], ["＜＝２"], ["＜=１"], [">＝2"], ["＝１"], ["＝=2"]))
             for values in invalid:
                 with self.subTest(side=side, rule=rule, values=values):
                     url = entry + "&" + urlencode([*tags, mode, *((field, v) for v in values)])
@@ -1453,8 +1459,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                      excluded=excluded, exclude_mode="values_or_ranges", exclude_ranges="(1,2]、0")
             mixed_comparisons = self.combination(initial, direct, included, "values_or_ranges", ranges="＜=１",
                                                  excluded=excluded, exclude_mode="values_or_ranges", exclude_ranges="0、>＝２")
-            equality = self.combination(initial, direct, exact_keys, "values_or_ranges", ranges="=１",
-                                        excluded=excluded, exclude_mode="values_or_ranges", exclude_ranges="＝0")
+            equality = self.combination(initial, direct, exact_keys, "values_or_ranges", ranges="=＝１",
+                                        excluded=excluded, exclude_mode="values_or_ranges", exclude_ranges="＝=0")
             not_mixed = self.combination(initial, direct, excluded, "not_values_or_ranges", ranges="(1,2]、0", counts=[1],
                                          excluded=included, exclude_mode="not_values_or_ranges", exclude_ranges="1, [0,2)")
             unbounded_urls = [
@@ -1570,7 +1576,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                             "(−ｉnＦ,2),1": "<2", "(1,＋Iｎfｉnｉtｙ),0": "0, >1",
                                             "少于２个、１": "<2", "(１,＋ｉnＦ),０": "0, >1",
                                             "＜２、１": "<2", "＞1、０": "0, >1",
-                                            "＜=１": "<=1", "0、>＝２": "0, >=2", "=１": "1", "＝0": "0"}[submitted[field][0]]
+                                            "＜=１": "<=1", "0、>＝２": "0, >=2", "=＝１": "1", "＝=0": "0"}[submitted[field][0]]
                                 self.assertEqual(query[field], [expected])
                                 self.assertNotIn(name + "_counts", query)
                                 for form in ("#product-chart-filters", "#product-tag-ranking"):
@@ -1693,8 +1699,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         fullwidth_comparisons = self.combination(branch, url, [self.popular.pk], "values_or_ranges", ranges="＞＝０",
                                                  excluded=[self.sale.pk], exclude_mode="values_or_ranges", exclude_ranges="＞0")
         self.assertEqual(self.download(fullwidth_comparisons).status_code, 200)
-        equality = self.combination(branch, url, [self.popular.pk], "values_or_ranges", ranges="=1",
-                                    excluded=[self.sale.pk], exclude_mode="values_or_ranges", exclude_ranges="＝０")
+        equality = self.combination(branch, url, [self.popular.pk], "values_or_ranges", ranges="==1",
+                                    excluded=[self.sale.pk], exclude_mode="values_or_ranges", exclude_ranges="＝＝０")
         self.assertEqual(self.download(equality).status_code, 200)
         self.reader.user_permissions.add(Permission.objects.get(codename="view_tag"))
         tag_admin = self.owner.admin_site.get_model_admin(Tag)
