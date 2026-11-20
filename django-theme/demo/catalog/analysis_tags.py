@@ -16,9 +16,9 @@ MIXED_COUNT_MODES = ("values_or_ranges", "not_values_or_ranges")
 ONE_SIDED_COUNT = re.compile(
     r"(?:(<=?|>=?|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
 )
-BRACKETED_COUNT = re.compile(r"(\(|\[|（|［)\s*([0-9]+)\s*[,，]\s*([0-9]+)\s*(\)|\]|）|］)")
-# A comma immediately before an upper endpoint and a closing bracket belongs to the interval.
-COUNT_SEPARATOR = re.compile(r"、|[,，](?!\s*[0-9]+\s*(?:\)|\]|）|］))")
+BRACKETED_COUNT = re.compile(r"(\(|\[|（|［)\s*(?:([0-9]+)\s*)?[,，]\s*(?:([0-9]+)\s*)?(\)|\]|）|］)")
+# Keep the interval's comma with its closing bracket, including when the upper endpoint is omitted.
+COUNT_SEPARATOR = re.compile(r"、|[,，](?!\s*(?:[0-9]+\s*)?(?:\)|\]|）|］))")
 
 
 def readable_tags(request, owner, db):
@@ -149,11 +149,19 @@ def _count_bound(value, lowest, key_count):
 
 def _count_interval(term, key_count, mixed):
     if mixed and (interval := BRACKETED_COUNT.fullmatch(term)):
-        low = _count_bound(interval[2], 0, key_count)
-        high = _count_bound(interval[3], low, key_count)
-        open_left = interval[1] in ("(", "（")
-        open_right = interval[4] in (")", "）")
-        return CountBound(low + open_left, open_left), CountBound(high - open_right, open_right)
+        left, lower, upper, right = interval.groups()
+        open_left = left in ("(", "（")
+        open_right = right in (")", "）")
+        if lower is None and (upper is None or not open_left):
+            raise Http404
+        if upper is None and not open_right:
+            raise Http404
+        low = _count_bound(lower, 0, key_count) if lower is not None else None
+        high = _count_bound(upper, low or 0, key_count) if upper is not None else None
+        return (
+            CountBound(low + open_left, open_left) if low is not None else None,
+            CountBound(high - open_right, open_right) if high is not None else None,
+        )
     if mixed and (limit := ONE_SIDED_COUNT.fullmatch(term)):
         operator = limit[1] or limit[4]
         threshold = _count_bound(limit[2] or limit[3], 0, key_count)
