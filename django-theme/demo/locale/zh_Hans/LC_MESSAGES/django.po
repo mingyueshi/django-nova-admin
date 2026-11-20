@@ -508,12 +508,12 @@ msgid "Match none of the specified tag count ranges"
 msgstr "命中标签数不在任何指定区间"
 
 msgctxt "Nova demo"
-msgid "Match specified counts or ranges (e.g. 0, 2-4, 6)"
-msgstr "命中指定值或闭区间（如 0、2 到 4、6）"
+msgid "Match specified counts or ranges (e.g. 0, 2-4, ≥6)"
+msgstr "命中指定值或范围（如 0、2 到 4、6 及以上）"
 
 msgctxt "Nova demo"
-msgid "Match none of the specified counts or ranges (e.g. 0, 2-4, 6)"
-msgstr "命中标签数不在指定值或闭区间中（如 0、2 到 4、6）"
+msgid "Match none of the specified counts or ranges (e.g. 0, 2-4, ≥6)"
+msgstr "命中标签数不在指定值或范围中（如 0、2 到 4、6 及以上）"
 
 msgctxt "Nova demo"
 msgid "Included tag counts or ranges"
@@ -528,8 +528,8 @@ msgid "Use ranges such as 0-1, 3-4, with endpoints between zero and the number o
 msgstr "请按 0-1, 3-4 的格式填写区间，每个区间的下限和上限应依次位于 0 到已选标签数之间。"
 
 msgctxt "Nova demo"
-msgid "Enter counts or closed ranges such as 0, 2-4, 6. Each value must be between zero and the number of selected tags."
-msgstr "请填写命中数或闭区间，如 0、2 到 4、6。数值须在 0 到已选标签数之间，区间下限不能大于上限。"
+msgid "Enter counts or inclusive ranges, such as ≤1, 3-4, ≥6. Each threshold must be between zero and the number of selected tags."
+msgstr "可填写命中数、闭区间、至多 N 个或至少 N 个，例如 0、2 到 4、6 及以上。阈值须在 0 到已选标签数之间，区间下限不能大于上限。"
 
 #, python-format
 msgctxt "Nova demo"
@@ -544,9 +544,9 @@ msgstr "命中标签数不在任何指定区间（%(ranges)s）"
 #, python-format
 msgctxt "Nova demo"
 msgid "Match these counts or ranges (%(ranges)s)"
-msgstr "命中指定值或闭区间（%(ranges)s）"
+msgstr "命中指定值或范围（%(ranges)s）"
 
 #, python-format
 msgctxt "Nova demo"
 msgid "Match none of these counts or ranges (%(ranges)s)"
-msgstr "命中标签数不在指定值或闭区间中（%(ranges)s）"
+msgstr "命中标签数不在指定值或范围中（%(ranges)s）"

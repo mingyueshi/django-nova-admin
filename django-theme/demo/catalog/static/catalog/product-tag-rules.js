@@ -9,14 +9,19 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
 
   function validateRanges() {
     const tagCount = tags.selectedOptions.length;
-    const allowCounts = mixedCountModes.includes(mode.value);
+    const mixed = mixedCountModes.includes(mode.value);
     const valid = ranges.disabled || !ranges.value || ranges.value.split(/[,，、]/).every((part) => {
-      const pair = /^(0|[1-9][0-9]*)(?:\s*(?:-|到)\s*(0|[1-9][0-9]*))?$/.exec(part.trim());
-      if (!pair || (!allowCounts && pair[2] === undefined)) return false;
+      const term = part.trim();
+      if (mixed) {
+        const limit = /^(?:(?:<=|>=|≤|≥|至多|至少)\s*(0|[1-9][0-9]*)(?:\s*个)?|(0|[1-9][0-9]*)\s*(?:个\s*)?(?:及以下|及以上))$/.exec(term);
+        if (limit) return Number(limit[1] ?? limit[2]) <= tagCount;
+      }
+      const pair = /^(0|[1-9][0-9]*)(?:\s*(?:-|到)\s*(0|[1-9][0-9]*))?$/.exec(term);
+      if (!pair || (!mixed && pair[2] === undefined)) return false;
       const high = Number(pair[2] ?? pair[1]);
       return Number(pair[1]) <= high && high <= tagCount;
     });
-    const error = allowCounts ? ranges.dataset.mixedError : ranges.dataset.rangeError;
+    const error = mixed ? ranges.dataset.mixedError : ranges.dataset.rangeError;
     ranges.setCustomValidity(valid ? "" : error);
   }
 
@@ -50,6 +55,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
     counts.setCustomValidity(usesCounts && outOfRange ? counts.dataset.rangeError : "");
     ranges.required = usesRanges;
     ranges.disabled = !usesRanges;
+    ranges.placeholder = mixedCountModes.includes(mode.value) ? "≤1, 3-4, ≥6" : "0-1, 3-4";
     ranges.closest("label").hidden = !usesRanges;
     validateRanges();
   }

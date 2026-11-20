@@ -18,8 +18,8 @@
     <option value="not_range"{% if rule.mode == 'not_range' %} selected{% endif %}>{% translate 'Matched tag count outside N to M' context 'Nova demo' %}</option>
     <option value="any_range"{% if rule.mode == 'any_range' %} selected{% endif %}>{% translate 'Match any of the specified tag count ranges' context 'Nova demo' %}</option>
     <option value="not_any_range"{% if rule.mode == 'not_any_range' %} selected{% endif %}>{% translate 'Match none of the specified tag count ranges' context 'Nova demo' %}</option>
-    <option value="values_or_ranges"{% if rule.mode == 'values_or_ranges' %} selected{% endif %}>{% translate 'Match specified counts or ranges (e.g. 0, 2-4, 6)' context 'Nova demo' %}</option>
-    <option value="not_values_or_ranges"{% if rule.mode == 'not_values_or_ranges' %} selected{% endif %}>{% translate 'Match none of the specified counts or ranges (e.g. 0, 2-4, 6)' context 'Nova demo' %}</option>
+    <option value="values_or_ranges"{% if rule.mode == 'values_or_ranges' %} selected{% endif %}>{% translate 'Match specified counts or ranges (e.g. 0, 2-4, ≥6)' context 'Nova demo' %}</option>
+    <option value="not_values_or_ranges"{% if rule.mode == 'not_values_or_ranges' %} selected{% endif %}>{% translate 'Match none of the specified counts or ranges (e.g. 0, 2-4, ≥6)' context 'Nova demo' %}</option>
     <option value="one_of"{% if rule.mode == 'one_of' %} selected{% endif %}>{% translate 'Match one of the specified tag counts' context 'Nova demo' %}</option>
     <option value="not_one_of"{% if rule.mode == 'not_one_of' %} selected{% endif %}>{% translate 'Match none of the specified tag counts' context 'Nova demo' %}</option>
   </select>
@@ -36,7 +36,7 @@
   {% if parameter == 'chart_tag' %}{% translate 'Included tag counts or ranges' context 'Nova demo' %}{% else %}{% translate 'Excluded tag counts or ranges' context 'Nova demo' %}{% endif %}
   <input type="text" name="{{ parameter }}_ranges" value="{{ rule.ranges_text }}" placeholder="0-1, 3-4"
          data-range-error="{% translate 'Use ranges such as 0-1, 3-4, with endpoints between zero and the number of selected tags.' context 'Nova demo' %}"
-         data-mixed-error="{% translate 'Enter counts or closed ranges such as 0, 2-4, 6. Each value must be between zero and the number of selected tags.' context 'Nova demo' %}">
+         data-mixed-error="{% translate 'Enter counts or inclusive ranges, such as ≤1, 3-4, ≥6. Each threshold must be between zero and the number of selected tags.' context 'Nova demo' %}">
 </label>
 <label>
   {% if parameter == 'chart_tag' %}{% translate 'Included match counts' context 'Nova demo' %}{% else %}{% translate 'Excluded match counts' context 'Nova demo' %}{% endif %}

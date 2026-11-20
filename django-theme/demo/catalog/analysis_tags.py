@@ -13,6 +13,9 @@ from .navigation import visible_admin_objects
 
 UNTAGGED = "untagged"
 MIXED_COUNT_MODES = ("values_or_ranges", "not_values_or_ranges")
+ONE_SIDED_COUNT = re.compile(
+    r"(?:(<=|>=|≤|≥|至多|至少)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
+)
 
 
 def readable_tags(request, owner, db):
@@ -36,19 +39,29 @@ class TagRule(NamedTuple):
     minimum: int | None = None
     maximum: int | None = None
     counts: tuple[int, ...] = ()
-    ranges: tuple[tuple[int, int], ...] = ()
+    ranges: tuple[tuple[int | None, int | None], ...] = ()
 
     @property
     def ranges_text(self):
-        return ", ".join(
-            str(low) if self.mode in MIXED_COUNT_MODES and low == high else f"{low}-{high}"
-            for low, high in self.ranges
-        )
+        terms = []
+        for low, high in self.ranges:
+            if high is None:
+                terms.append(f">={low or 0}")
+            elif low is None:
+                terms.append(f"<={high}")
+            elif self.mode in MIXED_COUNT_MODES and low == high:
+                terms.append(str(low))
+            else:
+                terms.append(f"{low}-{high}")
+        return ", ".join(terms)
 
     @property
     def match_counts(self):
         if self.ranges:
-            return tuple(n for low, high in self.ranges for n in range(low, high + 1))
+            return tuple(
+                n for low, high in self.ranges
+                for n in range(low or 0, (len(self.keys) if high is None else high) + 1)
+            )
         return self.counts
 
     @property
@@ -118,23 +131,31 @@ def _count_bound(value, lowest, key_count):
     return bound
 
 
-def _count_ranges(value, key_count, *, allow_counts):
-    intervals = []
-    for part in re.split("[,，、]", value):
-        pair = re.fullmatch(r"([0-9]+)(?:\s*(?:-|到)\s*([0-9]+))?", part.strip())
-        if not pair or (pair[2] is None and not allow_counts):
-            raise Http404
-        low = _count_bound(pair[1], 0, key_count)
-        high = _count_bound(pair[2], low, key_count) if pair[2] is not None else low
-        intervals.append((low, high))
+def _count_interval(term, key_count, mixed):
+    if mixed and (limit := ONE_SIDED_COUNT.fullmatch(term)):
+        operator = limit[1] or limit[4]
+        threshold = _count_bound(limit[2] or limit[3], 0, key_count)
+        return (None, threshold) if operator in ("<=", "≤", "至多", "及以下") else (threshold, None)
+    pair = re.fullmatch(r"([0-9]+)(?:\s*(?:-|到)\s*([0-9]+))?", term)
+    if not pair or (pair[2] is None and not mixed):
+        raise Http404
+    low = _count_bound(pair[1], 0, key_count)
+    return low, _count_bound(pair[2], low, key_count) if pair[2] is not None else low
 
+
+def _count_ranges(value, key_count, *, mixed):
+    # Validate every term before merging, even when another term already covers all counts.
+    intervals = [_count_interval(part.strip(), key_count, mixed) for part in re.split("[,，、]", value)]
     merged = []
-    for low, high in sorted(intervals):
-        if merged and low <= merged[-1][1]:
+    for low, high in sorted(intervals, key=lambda pair: -1 if pair[0] is None else pair[0]):
+        if merged:
             start, end = merged[-1]
-            merged[-1] = (start, max(end, high))
-        else:
-            merged.append((low, high))
+            if end is None:
+                break
+            if (low or 0) <= end:
+                merged[-1] = (start, None if high is None else max(end, high))
+                continue
+        merged.append((low, high))
     return tuple(merged)
 
 
@@ -154,8 +175,8 @@ def _tag_rule(query, parameter, *, exporting):
     uses_lower = is_range or mode in ("at_least", "exact", "not_exact")
     uses_upper = is_range or mode == "at_most"
     uses_counts = mode in ("one_of", "not_one_of")
-    allow_counts_in_ranges = mode in MIXED_COUNT_MODES
-    uses_ranges = allow_counts_in_ranges or mode in ("any_range", "not_any_range")
+    mixed = mode in MIXED_COUNT_MODES
+    uses_ranges = mixed or mode in ("any_range", "not_any_range")
     # Plain HTML can send inactive bounds. Export URLs must only carry active ones.
     if exporting or not mode:
         if ((upper and not uses_upper) or (lower and not uses_lower) or
@@ -164,7 +185,7 @@ def _tag_rule(query, parameter, *, exporting):
     if uses_ranges:
         if not keys or not ranges:
             raise Http404
-        intervals = _count_ranges(ranges[0], len(keys), allow_counts=allow_counts_in_ranges)
+        intervals = _count_ranges(ranges[0], len(keys), mixed=mixed)
         return TagRule(keys, mode, ranges=intervals)
     if uses_counts:
         if not keys or not counts:

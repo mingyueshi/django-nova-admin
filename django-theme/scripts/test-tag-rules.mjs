@@ -27,13 +27,17 @@ try {
             assert.ok(input.required && !input.closest('label').hidden);
             for (const [value, valid] of [
                 ['0、2 到 4、6', true], ['3, 2-4，4', true], ['0', true], ['0-6', true],
+                ['0、2 到 4、6 及以上', true], ['至多 2 个、至少 4 个', true], ['2 个及以下、>=4', true],
+                ['≤0、≥6', true], ['至少0、<=6', true], ['0 及以上、至多 7 个', false], ['7 及以上', false],
+                ['至多 -1 个', false], ['>=01', false], ['1.5 及以下', false], ['至少', false], ['至多 1 及以上', false],
+                ['<1', false], ['>=1-2', false],
                 ['0,7', false], ['2-7', false], ['4-2', false], ['1.5', false], ['01', false], ['0,,2', false], ['', false],
             ]) {
                 input.value = value;
                 input.dispatchEvent(new window.Event('input'));
                 assert.equal(input.checkValidity(), valid, value);
             }
-            input.value = '0、2 到 4、6';
+            input.value = '0、2 到 4、6 及以上';
             tags.options[5].selected = false;
             tags.dispatchEvent(new window.Event('change'));
             assert.equal(input.validationMessage, 'Invalid count or range');
@@ -46,6 +50,9 @@ try {
         }
         mode.value = 'any_range';
         mode.dispatchEvent(new window.Event('change'));
+        assert.equal(input.validationMessage, 'Invalid range');
+        input.value = '至少 1 个';
+        input.dispatchEvent(new window.Event('input'));
         assert.equal(input.validationMessage, 'Invalid range');
         mode.value = 'any';
         mode.dispatchEvent(new window.Event('change'));
