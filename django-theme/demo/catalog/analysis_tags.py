@@ -148,6 +148,8 @@ def _count_bound(value, lowest, key_count):
 
 
 def _count_interval(term, key_count, mixed):
+    if mixed and term == "*":
+        return None, None
     if mixed and (interval := BRACKETED_COUNT.fullmatch(term)):
         left, lower, upper, right = interval.groups()
         open_left = left in ("(", "（")

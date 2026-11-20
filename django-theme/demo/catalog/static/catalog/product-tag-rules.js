@@ -15,6 +15,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
     const valid = ranges.disabled || !ranges.value || ranges.value.split(separators).every((part) => {
       const term = part.trim();
       if (mixed) {
+        if (term === "*") return true;
         const interval = /^(\(|\[|（|［)\s*(?:(0|[1-9][0-9]*)\s*)?[,，]\s*(?:(0|[1-9][0-9]*)\s*)?(\)|\]|）|］)$/.exec(term);
         if (interval) {
           const [, left, lower, upper, right] = interval;
