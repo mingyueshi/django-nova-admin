@@ -1087,6 +1087,14 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             ("(−iNf,0)", "<0", set()),
             ("(−INFINITY,7]", "<=7", all_counts),
             ("（ −InFiNiTy ，2］、[2,4)、3、[5,inf)", "<4, >=5", {0, 1, 2, 3, 5, 6, 7}),
+            ("(－∞,0]", "<=0", {0}),
+            ("(－iNF,0)", "<0", set()),
+            ("(－Infinity,3]", "<=3", {0, 1, 2, 3}),
+            ("[7,＋∞)", ">=7", {7}),
+            ("(7,＋inf)", ">7", set()),
+            ("(3,＋Infinity)", ">3", {4, 5, 6, 7}),
+            ("(－inf,＋∞)", ">=0", all_counts),
+            ("（ －INFINITY ，2］、[2,4),3,［5，＋iNf）", "<4, >=5", {0, 1, 2, 3, 5, 6, 7}),
         ):
             repeated = [*keys, keys[0]]
             include = self.combination(initial, entry, repeated, "values_or_ranges", ranges=expression)
@@ -1165,6 +1173,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             ([*keys, "untagged"], "(-Infinity,0]、(1,+INFINITY)", ["plain", "one"]),
             ([*keys, "untagged"], "(-Infinity,0]、(1,INFINITY)", ["plain", "one"]),
             ([*keys, "untagged"], "(−∞,0]、(1,INFINITY)", ["plain", "one"]),
+            ([*keys, "untagged"], "(－Inf,0]、(1,＋INFINITY)", ["plain", "one"]),
         ):
             with self.subTest(selected=selected, expression=expression):
                 url = self.combination(initial, entry, selected, "not_values_or_ranges", ranges=expression)
@@ -1225,6 +1234,9 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                        ["Infinity"], ["(1,infinityx)"], ["(1,ınf)"], ["[0,Infinity),[1,-inf)"],
                        ["(1,−∞)"], ["*,(1,−Inf)"], ["(1,−INFINITY),*"], ["[−inf,2]"], ["(−∞,3]"],
                        ["(−infinity,−1]"], ["1−2"], ["(−−inf,2]"], ["(−ınf,1]"], ["−∞"],
+                       ["(＋∞,1]"], ["*,(＋Inf,1]"], ["(1,－Infinity),*"], ["(＋INFINITY,－inf)"],
+                       ["[－inf,1]"], ["[1,＋inf]"], ["(－∞,3]"], ["[3,＋∞)"],
+                       ["1－2"], ["[＋1,＋∞)"], ["(－ｉｎｆ,1]"], ["(1,＋＋inf)"],
                        ["[,1]"], ["[,1)"], ["(1,]"], ["[1,]"], ["(,3]"], ["[3,)"], ["(,01)"],
                        ["(,-1]"], ["[0,), (1,,)"], ["(,1][2,)"], ["(,0),,"],
                        ["([0,2))"], ["0(1,2]"], ["(0,1][1,2)"], ["(0,2),"], ["[00,1)"], ["(-1,2]"]]
@@ -1232,7 +1244,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                 invalid.extend((["1"], ["至少 1 个"], ["1 及以下"], ["<1"], ["多于 1 个"], ["(1,2]"], ["(,1]"], ["(1,)"],
                                 ["(,)"], ["*"], ["(*,2]"], ["[1,*)"], ["(*,*)"], ["(-∞,2]"], ["[1,+∞)"], ["(-∞,+∞)"],
                                 ["(-Inf,2]"], ["[1,+INF)"], ["(-inf,+inf)"], ["(-infinity,2]"], ["[1,+Infinity)"],
-                                ["(1,∞)"], ["(1,inf)"], ["(1,infinity)"], ["(−Infinity,2]"]))
+                                ["(1,∞)"], ["(1,inf)"], ["(1,infinity)"], ["(−Infinity,2]"], ["(－∞,＋Inf)"]))
             for values in invalid:
                 with self.subTest(side=side, rule=rule, values=values):
                     url = entry + "&" + urlencode([*tags, mode, *((field, v) for v in values)])
@@ -1381,6 +1393,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                     ("(-InFiNiTy,2),1", "(1,+iNfInItY),0"),
                     ("(-InFiNiTy,2),1", "(1,InFiNiTy),0"),
                     ("(−InFiNiTy,2),1", "(1,InFiNiTy),0"),
+                    ("(－Inf,2),1", "(1,＋InFiNiTy),0"),
                 )
             ]
             summaries = {
@@ -1472,7 +1485,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                             "(-∞,2),1": "<2", "(1,+∞),0": "0, >1",
                                             "(-InF,2),1": "<2", "(1,+iNF),0": "0, >1",
                                             "(-InFiNiTy,2),1": "<2", "(1,+iNfInItY),0": "0, >1",
-                                            "(1,InFiNiTy),0": "0, >1", "(−InFiNiTy,2),1": "<2"}[submitted[field][0]]
+                                            "(1,InFiNiTy),0": "0, >1", "(−InFiNiTy,2),1": "<2",
+                                            "(－Inf,2),1": "<2", "(1,＋InFiNiTy),0": "0, >1"}[submitted[field][0]]
                                 self.assertEqual(query[field], [expected])
                                 self.assertNotIn(name + "_counts", query)
                                 for form in ("#product-chart-filters", "#product-tag-ranking"):
@@ -1581,7 +1595,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         star_bound_exclude = self.combination(branch, url, [], "any", excluded=[self.sale.pk],
                                               exclude_mode="values_or_ranges", exclude_ranges="(1,*)")
         infinity_urls = []
-        for lower, upper in (("-∞", "+∞"), ("-InF", "+inf"), ("-InFiNiTy", "+infinity"), ("-inf", "Infinity")):
+        for lower, upper in (("-∞", "+∞"), ("-InF", "+inf"), ("-InFiNiTy", "+infinity"), ("-inf", "Infinity"),
+                             ("－InFiNiTy", "＋InF")):
             infinity_urls.append(self.combination(branch, url, [self.sale.pk], "values_or_ranges", ranges=f"({lower},{upper})"))
             infinity_urls.append(self.combination(branch, url, [], "any", excluded=[self.sale.pk],
                                                   exclude_mode="values_or_ranges", exclude_ranges=f"(1,{upper})"))
