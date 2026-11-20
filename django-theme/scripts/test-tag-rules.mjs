@@ -107,6 +107,8 @@ try {
                 ['=<', false], ['＝＞', false], ['= ＜1', false], ['＝>>２', false], ['*,==<1', false], ['=<=2', false], ['＝<０1', false], ['=＞７', false],
                 ['≦０', true], ['≧0', true], ['≦6', true], ['≧６', true], ['≦１、[3,4]、≧６', true],
                 ['≦', false], ['≧', false], ['≦=1', false], ['*,≧＞１', false], ['≦０1', false], ['≧７', false], ['≦1-2', false],
+                ['≮０', true], ['≯0', true], ['≮6', true], ['≯６', true], ['≯１、[3,4]、≮6', true],
+                ['≮', false], ['≯', false], ['≮=1', false], ['*,≯≮１', false], ['≯０1', false], ['≮７', false], ['≯1-2', false],
                 ['*,7', false], ['2-1,*', false], ['**', false], ['1*', false], ['[*,2]', false], ['*,', false],
                 ['(,),7', false], ['(7,), (,)', false], ['(,),4-2', false], ['(,),', false], ['(,,)', false],
                 ['[,)', false], ['[,]', false], ['(,]', false], ['[,1)', false], ['[,1]', false], ['(1,]', false], ['[1,]', false],
@@ -120,7 +122,7 @@ try {
                 assert.equal(input.checkValidity(), valid, value);
             }
             for (const option of tags.options) option.selected = true;
-            input.value = '＝=１0、[1１,１2)、≧1２';
+            input.value = '＝=１0、[1１,１2)、≧1２、≯１0、≮1２';
             tags.dispatchEvent(new window.Event('change'));
             assert.ok(input.checkValidity());
             tags.options[11].selected = false;
@@ -153,7 +155,7 @@ try {
         input.value = '><1';
         input.dispatchEvent(new window.Event('input'));
         assert.equal(input.validationMessage, 'Invalid range');
-        for (const value of ['=＞２', '≦１', '≧２']) {
+        for (const value of ['=＞２', '≦１', '≧２', '≮１', '≯２']) {
             input.value = value;
             input.dispatchEvent(new window.Event('input'));
             assert.equal(input.validationMessage, 'Invalid range');
