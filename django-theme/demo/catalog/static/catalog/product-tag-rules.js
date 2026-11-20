@@ -28,8 +28,8 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
           const high = Number(upper ?? tagCount);
           return low <= high && high <= tagCount;
         }
-        const limit = /^(?:(?:[<>]=?|≤|≥|至多|至少|少于|多于)\s*(0|[1-9][0-9]*)(?:\s*个)?|(0|[1-9][0-9]*)\s*(?:个\s*)?(?:及以下|及以上))$/.exec(term);
-        if (limit) return Number(limit[1] ?? limit[2]) <= tagCount;
+        const comparison = /^(?:(?:[<>]=?|=|≤|≥|至多|至少|少于|多于)\s*(0|[1-9][0-9]*)(?:\s*个)?|(0|[1-9][0-9]*)\s*(?:个\s*)?(?:及以下|及以上))$/.exec(term);
+        if (comparison) return Number(comparison[1] ?? comparison[2]) <= tagCount;
       }
       const pair = /^(0|[1-9][0-9]*)(?:\s*(?:-|到)\s*(0|[1-9][0-9]*))?$/.exec(term);
       if (!pair || (!mixed && pair[2] === undefined)) return false;
@@ -70,7 +70,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
     counts.setCustomValidity(usesCounts && outOfRange ? counts.dataset.rangeError : "");
     ranges.required = usesRanges;
     ranges.disabled = !usesRanges;
-    ranges.placeholder = mixedCountModes.includes(mode.value) ? "＜２、３到４、＞＝６" : "0-1, 3-4";
+    ranges.placeholder = mixedCountModes.includes(mode.value) ? "=０、２到４、＞＝６" : "0-1, 3-4";
     ranges.closest("label").hidden = !usesRanges;
     validateRanges();
   }

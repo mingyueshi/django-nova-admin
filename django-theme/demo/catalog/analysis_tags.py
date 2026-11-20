@@ -16,8 +16,8 @@ MIXED_COUNT_MODES = ("values_or_ranges", "not_values_or_ranges")
 FULLWIDTH_COUNT_CHARS = str.maketrans("０１２３４５６７８９＜＞＝", "0123456789<>=")
 # Each letter of "inf" or "infinity" accepts either width and case.
 INFINITY_NAME = re.compile(r"[iIｉＩ][nNｎＮ][fFｆＦ](?:[iIｉＩ][nNｎＮ][iIｉＩ][tTｔＴ][yYｙＹ])?")
-ONE_SIDED_COUNT = re.compile(
-    r"(?:([<>]=?|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
+COUNT_COMPARISON = re.compile(
+    r"(?:([<>]=?|=|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
 )
 # Capture only numeric endpoints. Infinity requires a minus on the left and allows a plus on the right.
 BRACKETED_COUNT = re.compile(
@@ -171,14 +171,16 @@ def _count_interval(term, key_count, mixed):
             CountBound(low + open_left, open_left) if low is not None else None,
             CountBound(high - open_right, open_right) if high is not None else None,
         )
-    if mixed and (limit := ONE_SIDED_COUNT.fullmatch(term)):
-        operator = limit[1] or limit[4]
-        threshold = _count_bound(limit[2] or limit[3], 0, key_count)
+    if mixed and (comparison := COUNT_COMPARISON.fullmatch(term)):
+        operator = comparison[1] or comparison[4]
+        threshold = _count_bound(comparison[2] or comparison[3], 0, key_count)
         if operator in ("<", "少于"):
             return None, CountBound(threshold - 1, strict=True)
         if operator in (">", "多于"):
             return CountBound(threshold + 1, strict=True), None
         bound = CountBound(threshold)
+        if operator == "=":
+            return bound, bound
         return (None, bound) if operator in ("<=", "≤", "至多", "及以下") else (bound, None)
     pair = re.fullmatch(r"([0-9]+)(?:\s*(?:-|到)\s*([0-9]+))?", term)
     if not pair or (pair[2] is None and not mixed):

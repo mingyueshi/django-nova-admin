@@ -88,7 +88,9 @@ try {
                 ['０1', false], ['0０-２', false], ['[０,0２)', false], ['>=０１', false], ['２到1', false],
                 ['*,多于７个', false], ['②', false], ['٣', false], ['２－2', false],
                 ['＜３', true], ['＞3', true], ['＜＝０、２到４、＞＝６', true], ['＜０、＞6', true],
-                ['＝１', false], ['＜＞１', false], ['*,＞＝＝1', false], ['＝＜２、*', false], ['＜ ＝２', false], ['＞＝', false],
+                ['＝１', true], ['=０', true], ['=6', true], ['=０、2、[2,4]、＝４、＞=６', true],
+                ['=', false], ['*,==１', false], ['＝=2', false], ['=０1', false], ['＝７', false], ['!=1', false],
+                ['=1-2', false], ['[=0,1]', false], ['＜＞１', false], ['*,＞＝＝1', false], ['＝＜２、*', false], ['＜ ＝２', false], ['＞＝', false],
                 ['＜=０', true], ['<＝3', true], ['＞=３', true], ['>＝6', true], ['＜=２、[2,4]、>＝４', true],
                 ['＞＝０1', false], ['＜７', false], ['[０,＜２]', false], ['＜=０1', false], ['>＝７', false],
                 ['*,＜=＝１', false], ['=＞２', false], ['< ＝２', false], ['＞=', false], ['＜>＝１', false],
@@ -105,7 +107,7 @@ try {
                 assert.equal(input.checkValidity(), valid, value);
             }
             for (const option of tags.options) option.selected = true;
-            input.value = '１0、[1１,１2)、＞=1２个';
+            input.value = '＝１0、[1１,１2)、=1２';
             tags.dispatchEvent(new window.Event('change'));
             assert.ok(input.checkValidity());
             tags.options[11].selected = false;
@@ -125,6 +127,9 @@ try {
         }
         mode.value = 'any_range';
         mode.dispatchEvent(new window.Event('change'));
+        assert.equal(input.validationMessage, 'Invalid range');
+        input.value = '＝１';
+        input.dispatchEvent(new window.Event('input'));
         assert.equal(input.validationMessage, 'Invalid range');
         input.value = '０-1、３到４';
         input.dispatchEvent(new window.Event('input'));
