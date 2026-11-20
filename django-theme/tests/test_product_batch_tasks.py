@@ -54,6 +54,27 @@ class ProductBatchTaskTests(TestCase):
         self.assertFalse(ProductPublicationRequest.objects.exists())
         self.assertEqual(self.client.post(self.history).status_code, 405)
 
+    def test_third_page_save_and_two_off_page_action_targets_have_separate_write_sets(self):
+        products = [self.product(f"selection-{number:02}") for number in range(25)]
+        url = reverse("admin:catalog_product_changelist") + "?q=selection&o=1&_nova_page_size=10&p=3"
+        formset = self.client.get(url).context["cl"].formset
+        self.assertEqual([form.instance.pk for form in formset], [p.pk for p in products[20:]])
+        save = {formset.add_prefix(key): value for key, value in formset.management_form.initial.items()}
+        save["_save"] = "Save"
+        for i, form in enumerate(formset):
+            save[form.add_prefix("id")] = form.instance.pk
+            save[form.add_prefix("stock")] = 17 if i == 0 else 0
+        self.assertEqual(self.client.post(url, save).status_code, 302)
+        self.assertEqual(list(Product.objects.exclude(stock=0).values_list("pk", "stock")), [(products[20].pk, 17)])
+        self.assertFalse(ProductBatchTask.objects.exists())
+
+        selected = [products[1].pk, products[12].pk]
+        response = self.client.post(url, {"index": 0, "action": "publish_products",
+                                          "select_across": "0", "_selected_action": selected})
+        self.counts(response.url, (2, 2, 2, 0))
+        self.assertCountEqual(ProductBatchItem.objects.values_list("product_id", flat=True), selected)
+        self.assertCountEqual(ProductPublicationRequest.objects.values_list("product_id", flat=True), selected)
+
     def test_mixed_batch_results_match_real_approvals_and_history(self):
         good = self.product("待提交 <A>")
         waiting = self.product("已经待审")

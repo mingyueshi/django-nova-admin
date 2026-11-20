@@ -5,6 +5,9 @@ from collections import Counter
 from datetime import date, timedelta
 
 from django import template
+from django.conf import settings
+from django.contrib.admin.views.main import ALL_VAR, ERROR_FLAG, IS_FACETS_VAR, ORDER_VAR, PAGE_VAR, SEARCH_VAR
+from django.middleware.csrf import get_token
 from django.utils.crypto import salted_hmac
 from django.utils.encoding import iri_to_uri
 from django.utils.html import format_html
@@ -119,6 +122,28 @@ def nova_navigation_scope(context, site_index):
 
 
 @register.simple_tag(takes_context=True)
+def nova_action_selection(context, cl):
+    """Scope a tab's selection to this login and the current filtered list."""
+    request = context.get("request")
+    user = getattr(request, "user", None)
+    match = getattr(request, "resolver_match", None)
+    if not user or not user.is_authenticated or user.pk is None or not match or not cl or cl.is_popup:
+        return None
+    presentation = {PAGE_VAR, ORDER_VAR, ALL_VAR, IS_FACETS_VAR, ERROR_FLAG, SEARCH_VAR,
+                    getattr(cl, "nova_page_size_param", None)}
+    filters = sorted((key, values) for key, values in request.GET.lists() if key not in presentation)
+    # The CSRF secret rotates on login, including with signed-cookie sessions.
+    # Only its keyed digest reaches the selection store.
+    get_token(request)
+    scope = [request.META["CSRF_COOKIE"], user._meta.label_lower, str(user.pk),
+             match.namespace, request.path, cl.opts.label_lower, cl.query, filters]
+    return {
+        "scope": salted_hmac("nova_admin.action_selection.v1", json.dumps(scope), algorithm="sha256").hexdigest(),
+        "max_fields": settings.DATA_UPLOAD_MAX_NUMBER_FIELDS,
+    }
+
+
+@register.simple_tag(takes_context=True)
 def nova_nonce(context):
     """Honor Django 6.x CSP context without requiring 6.x tags on Django 5.2."""
     nonce = context.get("csp_nonce")
@@ -132,8 +157,6 @@ def nova_navigation_groups(context):
     No model/site lookup, extra queries, permission changes or context mutation.
     Unknown/empty groups disappear; each visible app is assigned at most once.
     """
-    from django.conf import settings
-
     available = context.get("available_apps") or []
     apps = []
     seen = set()

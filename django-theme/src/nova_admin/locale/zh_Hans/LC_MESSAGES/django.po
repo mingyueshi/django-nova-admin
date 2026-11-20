@@ -584,3 +584,23 @@ msgstr "拖拽或按左右方向键调整列宽。双击或按 Home 恢复自动
 msgctxt "Nova Admin"
 msgid "Form sections"
 msgstr "表单导航"
+
+msgctxt "Nova Admin"
+msgid "Selected on this page: {page}. Manually selected across pages: {total}."
+msgstr "本页勾选 {page} 条，跨页手动勾选共 {total} 条。"
+
+msgctxt "Nova Admin"
+msgid "All %(count)s matching records selected."
+msgstr "已选择全部 %(count)s 条匹配记录。"
+
+msgctxt "Nova Admin"
+msgid "Clear selection"
+msgstr "清空勾选"
+
+msgctxt "Nova Admin"
+msgid "This tab cannot remember selections across pages."
+msgstr "此标签页无法在翻页后保留勾选。"
+
+msgctxt "Nova Admin"
+msgid "Too many selected records for one request. Reduce the selection before running the action."
+msgstr "本次提交的记录过多，请减少勾选数量后再执行。"

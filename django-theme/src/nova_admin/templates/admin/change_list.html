@@ -1,5 +1,5 @@
 {% extends "admin/change_list.html" %}
-{% load i18n static nova_tags %}
+{% load i18n l10n static nova_tags %}
 
 {% block extrastyle %}
   {{ block.super }}
@@ -14,6 +14,16 @@
     <script src="{% static 'nova_admin/columns.js' %}" defer {% nova_nonce %}></script>
   {% endif %}
   {% if nova_admin_active and has_permission and not is_popup %}
+    {% nova_action_selection cl as selection %}
+    {% if selection %}
+      <script src="{% static 'nova_admin/action-selection.js' %}" defer {% nova_nonce %}
+              data-scope="{{ selection.scope }}" data-max-fields="{{ selection.max_fields|default_if_none:''|unlocalize }}"
+              data-manual="{% translate 'Selected on this page: {page}. Manually selected across pages: {total}.' context 'Nova Admin' %}"
+              data-all="{% blocktranslate with count=cl.result_count context 'Nova Admin' %}All {{ count }} matching records selected.{% endblocktranslate %}"
+              data-clear="{% translate 'Clear selection' context 'Nova Admin' %}"
+              data-unavailable="{% translate 'This tab cannot remember selections across pages.' context 'Nova Admin' %}"
+              data-limit="{% translate 'Too many selected records for one request. Reduce the selection before running the action.' context 'Nova Admin' %}"></script>
+    {% endif %}
     <script src="{% static 'nova_admin/list-layout.js' %}" defer {% nova_nonce %}
             data-resize="{% translate 'Resize column' context 'Nova Admin' %}"
             data-help="{% translate 'Drag or use the arrow keys to resize. Double-click or press Home to restore auto width.' context 'Nova Admin' %}"></script>

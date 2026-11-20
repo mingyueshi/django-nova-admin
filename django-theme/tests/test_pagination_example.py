@@ -2,6 +2,7 @@
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlsplit
 
+from bs4 import BeautifulSoup
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
@@ -123,6 +124,29 @@ class PaginationExampleTests(TestCase):
         response = self.client.get(self.url, {PAGE_SIZE_PARAM: 10, "made_up_lookup": "x"})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, self.url + "?e=1")
+
+    def test_cross_page_selection_scope_tracks_login_site_model_and_all_filter_values(self):
+        def scope(query, url=None):
+            response = self.client.get(url or self.url, query)
+            self.assertEqual(response.status_code, 200)
+            script = BeautifulSoup(response.content, "html.parser").select_one('script[src$="/action-selection.js"]')
+            self.assertRegex(script["data-scope"], r"^[0-9a-f]{64}$")
+            return script["data-scope"]
+
+        query = {"q": "product", "status__exact": ["draft", "active"]}
+        original = scope(query)
+        self.assertEqual(original, scope({**query, "p": 2, "o": "-2", PAGE_SIZE_PARAM: 10}))
+        self.assertNotEqual(original, scope({**query, "q": "Visible"}))
+        self.assertNotEqual(original, scope({**query, "status__exact": ["active"]}))
+        self.assertNotEqual(original, scope(query, reverse("pagination_plain:catalog_product_changelist")))
+        self.assertNotEqual(scope({}, reverse("admin:catalog_product_changelist")),
+                            scope({}, reverse("admin:catalog_memberprofile_changelist")))
+        self.staff.user_permissions.add(Permission.objects.get(codename="change_product"))
+        self.client.force_login(self.staff)
+        self.assertNotEqual(original, scope(query))
+        self.client.logout()
+        self.client.force_login(self.user)
+        self.assertNotEqual(original, scope(query))
 
     def test_native_all_limit_and_return_to_paging(self):
         response, cl = self.changelist({PAGE_SIZE_PARAM: 10, "all": "", "q": "product", "o": "2"})
