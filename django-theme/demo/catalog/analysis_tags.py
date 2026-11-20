@@ -16,9 +16,12 @@ MIXED_COUNT_MODES = ("values_or_ranges", "not_values_or_ranges")
 ONE_SIDED_COUNT = re.compile(
     r"(?:(<=?|>=?|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
 )
-BRACKETED_COUNT = re.compile(r"(\(|\[|（|［)\s*(?:([0-9]+)\s*)?[,，]\s*(?:([0-9]+)\s*)?(\)|\]|）|］)")
-# Keep the interval's comma with its closing bracket, including when the upper endpoint is omitted.
-COUNT_SEPARATOR = re.compile(r"、|[,，](?!\s*(?:[0-9]+\s*)?(?:\)|\]|）|］))")
+# Capture only numeric endpoints so a star uses the same bounds as an omitted endpoint.
+BRACKETED_COUNT = re.compile(
+    r"(\(|\[|（|［)\s*(?:([0-9]+)\s*|\*\s*)?[,，]\s*(?:([0-9]+)\s*|\*\s*)?(\)|\]|）|］)"
+)
+# Keep the comma before the upper endpoint and closing bracket inside the interval.
+COUNT_SEPARATOR = re.compile(r"、|[,，](?!\s*(?:(?:[0-9]+|\*)\s*)?(?:\)|\]|）|］))")
 
 
 def readable_tags(request, owner, db):

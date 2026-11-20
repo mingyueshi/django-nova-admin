@@ -40,6 +40,10 @@ try {
                 [' ( , 0 ] ，（ 2 ， ）,1-2,［6，）', true], ['(,3],2,(2,4],(3,)', true],
                 ['(,)', true], ['0,(1,4],(,),[6,)', true], ['（ ， ）、(,)', true],
                 ['*', true], ['0,(1,4], *,[3,6],>5', true], ['*、(,) ， *', true],
+                ['(*,3)', true], ['(*,3]', true], ['(3,*)', true], ['[3,*)', true], ['(*,*)', true],
+                ['(*,0], [6,*)', true], ['(*,),3、(,*)', true], ['0、（ * ，2］, [2,4),3,[5,*)', true],
+                ['(*,7]', false], ['[7,*)', false], ['[*,2)', false], ['(2,*]', false], ['[*,*)', false],
+                ['(*,*]', false], ['(*,*),7', false], ['(1*,2]', false], ['(1,**)', false], ['(*,*,1)', false],
                 ['*,7', false], ['2-1,*', false], ['**', false], ['1*', false], ['[*,2]', false], ['*,', false],
                 ['(,),7', false], ['(7,), (,)', false], ['(,),4-2', false], ['(,),', false], ['(,,)', false],
                 ['[,)', false], ['[,]', false], ['(,]', false], ['[,1)', false], ['[,1]', false], ['(1,]', false], ['[1,]', false],
@@ -52,7 +56,7 @@ try {
                 input.dispatchEvent(new window.Event('input'));
                 assert.equal(input.checkValidity(), valid, value);
             }
-            input.value = '*、(1,4]、[6,)';
+            input.value = '(*,*)、(1,4]、[6,*)';
             tags.options[5].selected = false;
             tags.dispatchEvent(new window.Event('change'));
             assert.equal(input.validationMessage, 'Invalid count or range');
@@ -67,6 +71,9 @@ try {
         mode.dispatchEvent(new window.Event('change'));
         assert.equal(input.validationMessage, 'Invalid range');
         input.value = '*';
+        input.dispatchEvent(new window.Event('input'));
+        assert.equal(input.validationMessage, 'Invalid range');
+        input.value = '(*,2]';
         input.dispatchEvent(new window.Event('input'));
         assert.equal(input.validationMessage, 'Invalid range');
         input.value = '少于 1 个';
