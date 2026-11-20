@@ -109,6 +109,8 @@ try {
                 ['≦', false], ['≧', false], ['≦=1', false], ['*,≧＞１', false], ['≦０1', false], ['≧７', false], ['≦1-2', false],
                 ['≮０', true], ['≯0', true], ['≮6', true], ['≯６', true], ['≯１、[3,4]、≮6', true],
                 ['≮', false], ['≯', false], ['≮=1', false], ['*,≯≮１', false], ['≯０1', false], ['≮７', false], ['≯1-2', false],
+                ['≰０', true], ['≱0', true], ['≰6', true], ['≱６', true], ['≱２、3 到 4、≰5', true],
+                ['≰', false], ['≱', false], ['≰=1', false], ['*,≱≰１', false], ['≱０1', false], ['≰７', false], ['≱1-2', false],
                 ['*,7', false], ['2-1,*', false], ['**', false], ['1*', false], ['[*,2]', false], ['*,', false],
                 ['(,),7', false], ['(7,), (,)', false], ['(,),4-2', false], ['(,),', false], ['(,,)', false],
                 ['[,)', false], ['[,]', false], ['(,]', false], ['[,1)', false], ['[,1]', false], ['(1,]', false], ['[1,]', false],
@@ -121,13 +123,15 @@ try {
                 input.dispatchEvent(new window.Event('input'));
                 assert.equal(input.checkValidity(), valid, value);
             }
-            for (const option of tags.options) option.selected = true;
-            input.value = '＝=１0、[1１,１2)、≧1２、≯１0、≮1２';
-            tags.dispatchEvent(new window.Event('change'));
-            assert.ok(input.checkValidity());
-            tags.options[11].selected = false;
-            tags.dispatchEvent(new window.Event('change'));
-            assert.equal(input.validationMessage, 'Invalid count or range');
+            for (const value of ['＝=１0、[1１,１2)、≧1２、≯１0、≮1２', '≱１0、≰1２']) {
+                for (const option of tags.options) option.selected = true;
+                input.value = value;
+                tags.dispatchEvent(new window.Event('change'));
+                assert.ok(input.checkValidity());
+                tags.options[11].selected = false;
+                tags.dispatchEvent(new window.Event('change'));
+                assert.equal(input.validationMessage, 'Invalid count or range');
+            }
             for (const option of tags.options) option.selected = option.index < 6;
             input.value = '＜＝０、２到４、＞＝６';
             tags.options[5].selected = false;
@@ -155,7 +159,7 @@ try {
         input.value = '><1';
         input.dispatchEvent(new window.Event('input'));
         assert.equal(input.validationMessage, 'Invalid range');
-        for (const value of ['=＞２', '≦１', '≧２', '≮１', '≯２']) {
+        for (const value of ['=＞２', '≦１', '≧２', '≮１', '≯２', '≰１', '≱２']) {
             input.value = value;
             input.dispatchEvent(new window.Event('input'));
             assert.equal(input.validationMessage, 'Invalid range');
