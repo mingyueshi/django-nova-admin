@@ -10,9 +10,10 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
   function validateRanges() {
     const tagCount = tags.selectedOptions.length;
     const mixed = mixedCountModes.includes(mode.value);
+    const value = mixed ? ranges.value.replace(/([+-])inf/gi, "$1∞") : ranges.value;
     // Keep the comma inside an interval, including when the upper endpoint is unbounded.
     const separators = /、|[,，](?!\s*(?:(?:[0-9]+|\*|\+∞)\s*)?(?:\)|\]|）|］))/;
-    const valid = ranges.disabled || !ranges.value || ranges.value.split(separators).every((part) => {
+    const valid = ranges.disabled || !value || value.split(separators).every((part) => {
       const term = part.trim();
       if (mixed) {
         if (term === "*") return true;
@@ -67,7 +68,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
     counts.setCustomValidity(usesCounts && outOfRange ? counts.dataset.rangeError : "");
     ranges.required = usesRanges;
     ranges.disabled = !usesRanges;
-    ranges.placeholder = mixedCountModes.includes(mode.value) ? "(-∞,1], 3, [5,+∞)" : "0-1, 3-4";
+    ranges.placeholder = mixedCountModes.includes(mode.value) ? "(-inf,1], 3, [5,+inf)" : "0-1, 3-4";
     ranges.closest("label").hidden = !usesRanges;
     validateRanges();
   }

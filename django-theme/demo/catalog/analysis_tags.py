@@ -13,6 +13,7 @@ from .navigation import visible_admin_objects
 
 UNTAGGED = "untagged"
 MIXED_COUNT_MODES = ("values_or_ranges", "not_values_or_ranges")
+ASCII_INFINITY = re.compile(r"([+-])inf", re.ASCII | re.IGNORECASE)
 ONE_SIDED_COUNT = re.compile(
     r"(?:(<=?|>=?|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
 )
@@ -186,6 +187,9 @@ def _count_interval(term, key_count, mixed):
 
 
 def _count_ranges(value, key_count, *, mixed):
+    if mixed:
+        # Normalize before splitting so the comma in [3,+INF) stays inside the interval.
+        value = ASCII_INFINITY.sub(r"\1∞", value)
     # Validate every term before merging, even when another term already covers all counts.
     intervals = [_count_interval(part.strip(), key_count, mixed) for part in COUNT_SEPARATOR.split(value)]
     merged = []

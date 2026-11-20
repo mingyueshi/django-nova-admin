@@ -49,6 +49,12 @@ try {
                 ['(+∞,1]', false], ['[1,-∞)', false], ['(+∞,-∞)', false], ['(-∞,-∞)', false], ['(+∞,+∞)', false],
                 ['[-∞,2]', false], ['[2,+∞]', false], ['(-∞,7]', false], ['[7,+∞)', false], ['(-∞,01]', false],
                 ['(-∞,+∞),(+∞,1]', false], ['[1,-∞),*', false], ['(∞,2]', false], ['(1,∞)', false], ['+∞', false], ['-∞', false],
+                ['(-inf,3)', true], ['(-InF,3]', true], ['(3,+iNF)', true], ['[3,+INF)', true], ['(-INF,+inf)', true],
+                ['(-inf,0], [6,+InF)', true], ['（ -Inf ，2］、[2,4),3,[5,+∞)', true], ['(-∞,+inF),(-INF,*)', true],
+                ['(+InF,1]', false], ['[1,-iNf)', false], ['(+INF,-inf)', false], ['(-Inf,+inf),(+inf,1]', false],
+                ['[1,-inf),*', false], ['[-inf,2]', false], ['[2,+INF]', false], ['(-inf,7]', false], ['[7,+inf)', false],
+                ['(-inf,01]', false], ['(inf,2]', false], ['(1,inf)', false], ['+inf', false], ['-INF', false],
+                ['(-infinity,2]', false], ['(1,+inf2)', false], ['(-ınf,2]', false],
                 ['*,7', false], ['2-1,*', false], ['**', false], ['1*', false], ['[*,2]', false], ['*,', false],
                 ['(,),7', false], ['(7,), (,)', false], ['(,),4-2', false], ['(,),', false], ['(,,)', false],
                 ['[,)', false], ['[,]', false], ['(,]', false], ['[,1)', false], ['[,1]', false], ['(1,]', false], ['[1,]', false],
@@ -61,7 +67,7 @@ try {
                 input.dispatchEvent(new window.Event('input'));
                 assert.equal(input.checkValidity(), valid, value);
             }
-            input.value = '(-∞,2]、(1,4]、[6,+∞)';
+            input.value = '(-InF,2]、(1,4]、[6,+iNF)';
             tags.options[5].selected = false;
             tags.dispatchEvent(new window.Event('change'));
             assert.equal(input.validationMessage, 'Invalid count or range');
@@ -82,6 +88,9 @@ try {
         input.dispatchEvent(new window.Event('input'));
         assert.equal(input.validationMessage, 'Invalid range');
         input.value = '(-∞,2]';
+        input.dispatchEvent(new window.Event('input'));
+        assert.equal(input.validationMessage, 'Invalid range');
+        input.value = '[2,+INF)';
         input.dispatchEvent(new window.Event('input'));
         assert.equal(input.validationMessage, 'Invalid range');
         input.value = '少于 1 个';

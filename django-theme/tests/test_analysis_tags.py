@@ -1051,6 +1051,17 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             ("0,2-4,[4,+∞),≥6", "0, >=2", {0, 2, 3, 4, 5, 6, 7}),
             ("(-∞,+∞)", ">=0", all_counts),
             ("(-∞,*), 1, (, +∞)", ">=0", all_counts),
+            ("(-inf,3)", "<3", {0, 1, 2}),
+            ("(-InF,3]", "<=3", {0, 1, 2, 3}),
+            ("(3,+iNF)", ">3", {4, 5, 6, 7}),
+            ("[3,+INF)", ">=3", {3, 4, 5, 6, 7}),
+            ("(-INF,0)", "<0", set()),
+            ("(7,+inf)", ">7", set()),
+            ("(-iNf,0],[7,+InF)", "<=0, >=7", {0, 7}),
+            ("（ -Inf ，2］、[2,4),3,[5,+∞)", "<4, >=5", {0, 1, 2, 3, 5, 6, 7}),
+            ("0,2-4,[4,+inF),≥6", "0, >=2", {0, 2, 3, 4, 5, 6, 7}),
+            ("(-INF,+inf)", ">=0", all_counts),
+            ("(-∞,+INF), (-inf,*)", ">=0", all_counts),
         ):
             repeated = [*keys, keys[0]]
             include = self.combination(initial, entry, repeated, "values_or_ranges", ranges=expression)
@@ -1125,13 +1136,14 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             ([*keys, "untagged"], "0, *", []),
             ([*keys, "untagged"], "(*,0]、(1,*)", ["plain", "one"]),
             ([*keys, "untagged"], "(-∞,0]、(1,+∞)", ["plain", "one"]),
+            ([*keys, "untagged"], "(-inf,0]、(1,+INF)", ["plain", "one"]),
         ):
             with self.subTest(selected=selected, expression=expression):
                 url = self.combination(initial, entry, selected, "not_values_or_ranges", ranges=expression)
                 self.assertCountEqual([row[0] for row in self.csv_rows(self.download(url))[1:]], expected)
 
         # Excluding the complement of all counts leaves the inclusion rule in effect.
-        for expression in ("(,)", "*", "(*,*)", "(-∞,+∞)"):
+        for expression in ("(,)", "*", "(*,*)", "(-∞,+∞)", "(-Inf,+iNF)"):
             url = self.combination(initial, entry, keys, "values_or_ranges", ranges="1",
                                    excluded=keys, exclude_mode="not_values_or_ranges", exclude_ranges=expression)
             self.assertEqual([row[0] for row in self.csv_rows(self.download(url))[1:]], ["one"])
@@ -1175,12 +1187,16 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                        ["(+∞,1]"], ["[1,-∞)"], ["(+∞,-∞)"], ["(-∞,-∞)"], ["(+∞,+∞)"],
                        ["[-∞,2]"], ["[2,+∞]"], ["(-∞,3]"], ["[3,+∞)"], ["(-∞,01]"],
                        ["(-∞,+∞),(+∞,1]"], ["[1,-∞),*"], ["(∞,2]"], ["(1,∞)"], ["+∞"], ["-∞"],
+                       ["(+InF,1]"], ["[1,-iNf)"], ["(+INF,-inf)"], ["(-Inf,+inf),(+inf,1]"], ["[1,-inf),*"],
+                       ["[-inf,2]"], ["[2,+INF]"], ["(-inf,3]"], ["[3,+inf)"], ["(-inf,01]"],
+                       ["(inf,2]"], ["(1,inf)"], ["+inf"], ["-INF"], ["(-infinity,2]"], ["(1,+inf2)"], ["(-ınf,2]"],
                        ["[,1]"], ["[,1)"], ["(1,]"], ["[1,]"], ["(,3]"], ["[3,)"], ["(,01)"],
                        ["(,-1]"], ["[0,), (1,,)"], ["(,1][2,)"], ["(,0),,"],
                        ["([0,2))"], ["0(1,2]"], ["(0,1][1,2)"], ["(0,2),"], ["[00,1)"], ["(-1,2]"]]
             if rule in ("any_range", "not_any_range"):
                 invalid.extend((["1"], ["至少 1 个"], ["1 及以下"], ["<1"], ["多于 1 个"], ["(1,2]"], ["(,1]"], ["(1,)"],
-                                ["(,)"], ["*"], ["(*,2]"], ["[1,*)"], ["(*,*)"], ["(-∞,2]"], ["[1,+∞)"], ["(-∞,+∞)"]))
+                                ["(,)"], ["*"], ["(*,2]"], ["[1,*)"], ["(*,*)"], ["(-∞,2]"], ["[1,+∞)"], ["(-∞,+∞)"],
+                                ["(-Inf,2]"], ["[1,+INF)"], ["(-inf,+inf)"]))
             for values in invalid:
                 with self.subTest(side=side, rule=rule, values=values):
                     url = entry + "&" + urlencode([*tags, mode, *((field, v) for v in values)])
@@ -1325,6 +1341,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                  excluded=excluded, exclude_mode="values_or_ranges", exclude_ranges=exclude_ranges)
                 for include_ranges, exclude_ranges in (
                     ("(,2),1", "(1,),0"), ("(*,2),1", "(1,*),0"), ("(-∞,2),1", "(1,+∞),0"),
+                    ("(-InF,2),1", "(1,+iNF),0"),
                 )
             ]
             summaries = {
@@ -1345,7 +1362,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                 self.assertEqual(self.download(target).status_code, 403)
             self.grant_export()
             # A universal tag rule must still respect the signed window, hosting admin and direct category.
-            for expression in ("1,(,),[1,2]", "1,*,[1,2]", "1,(*,*),[1,2]", "1,(-∞,+∞),[1,2]"):
+            for expression in ("1,(,),[1,2]", "1,*,[1,2]", "1,(*,*),[1,2]", "1,(-∞,+∞),[1,2]", "1,(-Inf,+inf),[1,2]"):
                 all_counts = self.combination(initial, direct, included, "values_or_ranges", ranges=expression)
                 page = self.open_page(all_counts)
                 self.assertEqual(dict(self.ranking(page)), {"促销": 2, "人气": 2, "未打标签": 1})
@@ -1412,7 +1429,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                             "1, [0,2)": "[0,2)", "(1,2]、0": "0, (1,2]",
                                             "(,2),1": "<2", "(1,),0": "0, >1",
                                             "(*,2),1": "<2", "(1,*),0": "0, >1",
-                                            "(-∞,2),1": "<2", "(1,+∞),0": "0, >1"}[submitted[field][0]]
+                                            "(-∞,2),1": "<2", "(1,+∞),0": "0, >1",
+                                            "(-InF,2),1": "<2", "(1,+iNF),0": "0, >1"}[submitted[field][0]]
                                 self.assertEqual(query[field], [expected])
                                 self.assertNotIn(name + "_counts", query)
                                 for form in ("#product-chart-filters", "#product-tag-ranking"):
@@ -1520,9 +1538,11 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         star_bound_include = self.combination(branch, url, [self.sale.pk], "values_or_ranges", ranges="(*,*)")
         star_bound_exclude = self.combination(branch, url, [], "any", excluded=[self.sale.pk],
                                               exclude_mode="values_or_ranges", exclude_ranges="(1,*)")
-        infinity_include = self.combination(branch, url, [self.sale.pk], "values_or_ranges", ranges="(-∞,+∞)")
-        infinity_exclude = self.combination(branch, url, [], "any", excluded=[self.sale.pk],
-                                            exclude_mode="values_or_ranges", exclude_ranges="(1,+∞)")
+        infinity_urls = []
+        for lower, upper in (("-∞", "+∞"), ("-InF", "+inf")):
+            infinity_urls.append(self.combination(branch, url, [self.sale.pk], "values_or_ranges", ranges=f"({lower},{upper})"))
+            infinity_urls.append(self.combination(branch, url, [], "any", excluded=[self.sale.pk],
+                                                  exclude_mode="values_or_ranges", exclude_ranges=f"(1,{upper})"))
         not_mixed_include = self.combination(branch, url, [self.sale.pk, self.popular.pk], "not_values_or_ranges", ranges="0,1-2")
         not_mixed_exclude = self.combination(branch, url, [], "any", excluded=[self.sale.pk, "untagged"],
                                              exclude_mode="not_values_or_ranges", exclude_ranges="0,1-2")
@@ -1541,7 +1561,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                   union_include, union_exclude, outside_union_include, outside_union_exclude,
                                   mixed_include, mixed_exclude, unbounded_include, unbounded_exclude,
                                   any_count_include, any_count_exclude, wildcard_include, wildcard_exclude,
-                                  star_bound_include, star_bound_exclude, infinity_include, infinity_exclude,
+                                  star_bound_include, star_bound_exclude, *infinity_urls,
                                   not_mixed_include, not_mixed_exclude):
                     self.assertEqual(self.client.get(selection).status_code, 404)
                     denied = self.download(selection)
@@ -1601,8 +1621,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         self.assertEqual(self.download(wildcard_exclude).status_code, 403)
         self.assertEqual(self.download(star_bound_include).status_code, 403)
         self.assertEqual(self.download(star_bound_exclude).status_code, 403)
-        self.assertEqual(self.download(infinity_include).status_code, 403)
-        self.assertEqual(self.download(infinity_exclude).status_code, 403)
+        for target in infinity_urls:
+            self.assertEqual(self.download(target).status_code, 403)
         self.assertEqual(self.download(not_mixed_include).status_code, 403)
         self.assertEqual(self.download(not_mixed_exclude).status_code, 403)
 
