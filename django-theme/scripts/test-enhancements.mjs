@@ -379,3 +379,5 @@ await import('./test-markdown.mjs');
 await import('./test-daily-chart.mjs');
 await import('./test-category-chart.mjs');
 await import('./test-tag-rules.mjs');
+await import('./test-form-sections.mjs');
+await import('./test-list-layout.mjs');

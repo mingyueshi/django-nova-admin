@@ -1,4 +1,5 @@
 """Real named AdminSite instances, not a mock replacement admin registry."""
+from bs4 import BeautifulSoup
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.admin import AdminSite
@@ -66,6 +67,22 @@ class MultipleAdminSiteTests(TestCase):
         self.assertIsNot(warehouse_site.get_model_admin(Product), review_site.get_model_admin(Product))
         self.assertIs(warehouse_site.get_model_admin(Product).admin_site, warehouse_site)
         self.assertIs(review_site.get_model_admin(Product).admin_site, review_site)
+
+    def test_fieldset_preferences_use_the_rendered_account_site_and_model(self):
+        def scope(site, obj):
+            url = reverse(f"{site}:{obj._meta.app_label}_{obj._meta.model_name}_change", args=[obj.pk])
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            script = BeautifulSoup(response.content, "html.parser").select_one('script[src$="/form-sections.js"]')
+            self.assertRegex(script["data-scope"], r"^[0-9a-f]{64}$")
+            self.assertEqual(script["data-model"], obj._meta.label_lower)
+            return script["data-scope"], script["data-model"]
+
+        product = scope("warehouse", self.product)
+        self.assertNotEqual(product, scope("review", self.product))
+        self.assertNotEqual(product, scope("warehouse", self.category))
+        self.client.force_login(self.staff)
+        self.assertNotEqual(product, scope("warehouse", self.product))
 
     def test_each_site_renders_its_own_switcher_and_navigation_urls(self):
         for site in SITE_NAMESPACES:

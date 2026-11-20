@@ -13,6 +13,11 @@
   {% if nova_admin_active and nova_columns %}
     <script src="{% static 'nova_admin/columns.js' %}" defer {% nova_nonce %}></script>
   {% endif %}
+  {% if nova_admin_active and has_permission and not is_popup %}
+    <script src="{% static 'nova_admin/list-layout.js' %}" defer {% nova_nonce %}
+            data-resize="{% translate 'Resize column' context 'Nova Admin' %}"
+            data-help="{% translate 'Drag or use the arrow keys to resize. Double-click or press Home to restore auto width.' context 'Nova Admin' %}"></script>
+  {% endif %}
   {% if nova_admin_active and has_permission and not is_popup and nova_admin_print %}
     <script src="{% static 'nova_admin/print.js' %}" defer {% nova_nonce %}></script>
   {% endif %}

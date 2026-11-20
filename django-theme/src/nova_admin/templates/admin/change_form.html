@@ -10,6 +10,12 @@
 
 {% block extrahead %}
   {{ block.super }}
+  {% if nova_admin_active and has_permission and not is_popup %}
+    {% url request.resolver_match.namespace|add:':index' as nova_site_index %}
+    <script src="{% static 'nova_admin/form-sections.js' %}" defer {% nova_nonce %}
+            data-scope="{% if nova_site_index %}{% nova_navigation_scope nova_site_index %}{% endif %}" data-model="{{ opts.label_lower }}"
+            data-sections="{% translate 'Form sections' context 'Nova Admin' %}"></script>
+  {% endif %}
   {% if nova_admin_active and has_permission and not is_popup and nova_admin_markdown %}
     {{ nova_admin_markdown_labels|json_script:"nova-md-labels" }}
     <script src="{% static 'nova_admin/markdown.js' %}" defer {% nova_nonce %}></script>

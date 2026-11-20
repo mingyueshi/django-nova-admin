@@ -47,6 +47,7 @@
             }
             ordered.forEach((item, i) => targets[i].toggleAttribute('data-nova-column-hidden', !checkbox(item).checked));
         }
+        table?.dispatchEvent(new Event('nova:columns-changed'));
     }
 
     function updateButtons() {

@@ -572,3 +572,15 @@ msgstr "分类"
 msgctxt "Nova Admin"
 msgid "The chart could not be drawn. Use the table below."
 msgstr "图表暂时无法绘制，请查看下表。"
+
+msgctxt "Nova Admin"
+msgid "Resize column"
+msgstr "调整列宽"
+
+msgctxt "Nova Admin"
+msgid "Drag or use the arrow keys to resize. Double-click or press Home to restore auto width."
+msgstr "拖拽或按左右方向键调整列宽。双击或按 Home 恢复自动宽度。"
+
+msgctxt "Nova Admin"
+msgid "Form sections"
+msgstr "表单导航"
