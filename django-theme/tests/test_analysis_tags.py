@@ -1119,6 +1119,11 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             ("＞＝3", ">=3", {3, 4, 5, 6, 7}),
             ("＜０、＞7", "<0, >7", set()),
             ("＜＝０、２到４、＞＝７", "<=0, 2-4, >=7", {0, 2, 3, 4, 7}),
+            ("＜=０", "<=0", {0}),
+            ("<＝3", "<=3", {0, 1, 2, 3}),
+            ("＞=３", ">=3", {3, 4, 5, 6, 7}),
+            (">＝7", ">=7", {7}),
+            ("＜=２、[2,4]、>＝４", ">=0", all_counts),
         ):
             repeated = [*keys, keys[0]]
             include = self.combination(initial, entry, repeated, "values_or_ranges", ranges=expression)
@@ -1175,7 +1180,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         initial = self.open_page(entry)
         keys = [tag.pk for tag in tags] + [tags[0].pk]
         for expression, canonical in (("１0、[1１,１2)、至少1２个", "10, [11,12), >=12"),
-                                      ("1０到１2", "10-12"), ("＞＝１0", ">=10")):
+                                      ("1０到１2", "10-12"), ("＞＝１0", ">=10"), (">＝1０", ">=10")):
             include = self.combination(initial, entry, keys, "values_or_ranges", ranges=expression)
             exclude = self.combination(initial, entry, [], "any", excluded=keys,
                                        exclude_mode="values_or_ranges", exclude_ranges=expression)
@@ -1292,7 +1297,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                        ["０1"], ["0０-２"], ["[０,0２)"], ["至少０１个"], ["１-３"], ["２ 到 1"],
                        ["*,多于３个"], ["少于1３个"], ["②"], ["٣"], ["２－2"],
                        ["＝１"], ["＜＞１"], ["*,＞＝＝1"], ["＝＜２、*"], ["＜ ＝２"], ["＞＝"],
-                       ["＜=１"], [">＝2"], ["＞＝０1"], ["＜３"], ["[０,＜２]"],
+                       ["＞＝０1"], ["＜３"], ["[０,＜２]"], ["＜=０1"], [">＝３"],
+                       ["*,＜=＝１"], ["=＞２"], ["< ＝２"], ["＞="], ["＜>＝１"],
                        ["[,1]"], ["[,1)"], ["(1,]"], ["[1,]"], ["(,3]"], ["[3,)"], ["(,01)"],
                        ["(,-1]"], ["[0,), (1,,)"], ["(,1][2,)"], ["(,0),,"],
                        ["([0,2))"], ["0(1,2]"], ["(0,1][1,2)"], ["(0,2),"], ["[00,1)"], ["(-1,2]"]]
@@ -1301,7 +1307,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                 ["(,)"], ["*"], ["(*,2]"], ["[1,*)"], ["(*,*)"], ["(-∞,2]"], ["[1,+∞)"], ["(-∞,+∞)"],
                                 ["(-Inf,2]"], ["[1,+INF)"], ["(-inf,+inf)"], ["(-infinity,2]"], ["[1,+Infinity)"],
                                 ["(1,∞)"], ["(1,inf)"], ["(1,infinity)"], ["(−Infinity,2]"], ["(－∞,＋Inf)"], ["(－ｉｎｆ,1]"],
-                                ["(－ｉnＦ,1]"], ["＜＝２"]))
+                                ["(－ｉnＦ,1]"], ["＜＝２"], ["＜=１"], [">＝2"]))
             for values in invalid:
                 with self.subTest(side=side, rule=rule, values=values):
                     url = entry + "&" + urlencode([*tags, mode, *((field, v) for v in values)])
@@ -1439,6 +1445,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                              excluded=included, exclude_mode="not_any_range", exclude_ranges="1-1, 0-1")
             mixed = self.combination(initial, direct, included, "values_or_ranges", ranges="1, [0,2)", counts=[2], minimum=2,
                                      excluded=excluded, exclude_mode="values_or_ranges", exclude_ranges="(1,2]、0")
+            mixed_comparisons = self.combination(initial, direct, included, "values_or_ranges", ranges="＜=１",
+                                                 excluded=excluded, exclude_mode="values_or_ranges", exclude_ranges="0、>＝２")
             not_mixed = self.combination(initial, direct, excluded, "not_values_or_ranges", ranges="(1,2]、0", counts=[1],
                                          excluded=included, exclude_mode="not_values_or_ranges", exclude_ranges="1, [0,2)")
             unbounded_urls = [
@@ -1467,6 +1475,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                 range_union: ("命中标签数落在任一指定区间（0-1）", "命中标签数落在任一指定区间（0-0, 2-2）", ()),
                 outside_union: ("命中标签数不在任何指定区间（0-0, 2-2）", "命中标签数不在任何指定区间（0-1）", ()),
                 mixed: ("命中指定值或范围（[0,2)）", "命中指定值或范围（0, (1,2]）", ()),
+                mixed_comparisons: ("命中指定值或范围（<=1）", "命中指定值或范围（0, >=2）", ()),
                 not_mixed: ("命中标签数不在指定值或范围中（0, (1,2]）", "命中标签数不在指定值或范围中（[0,2)）", ()),
             }
             summaries.update(dict.fromkeys(unbounded_urls, ("命中指定值或范围（<2）", "命中指定值或范围（0, >1）", ())))
@@ -1551,7 +1560,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                             "(−ＩｎＦ,2),1": "<2", "(1,＋Ｉｎｆｉｎｉｔｙ),0": "0, >1",
                                             "(−ｉnＦ,2),1": "<2", "(1,＋Iｎfｉnｉtｙ),0": "0, >1",
                                             "少于２个、１": "<2", "(１,＋ｉnＦ),０": "0, >1",
-                                            "＜２、１": "<2", "＞1、０": "0, >1"}[submitted[field][0]]
+                                            "＜２、１": "<2", "＞1、０": "0, >1",
+                                            "＜=１": "<=1", "0、>＝２": "0, >=2"}[submitted[field][0]]
                                 self.assertEqual(query[field], [expected])
                                 self.assertNotIn(name + "_counts", query)
                                 for form in ("#product-chart-filters", "#product-tag-ranking"):

@@ -11,7 +11,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
   function validateRanges() {
     const tagCount = tags.selectedOptions.length;
     const mixed = mixedCountModes.includes(mode.value);
-    const normalized = ranges.value.replace(/[０-９]/g, digit => digit.normalize("NFKC"));
+    const normalized = ranges.value.replace(/[０-９＜＞＝]/g, char => char.normalize("NFKC"));
     const value = mixed ? normalized.replace(infinityName, "∞") : normalized;
     // Keep the comma inside an interval, including when the upper endpoint is unbounded.
     const separators = /、|[,，](?!\s*(?:(?:[0-9]+|\*|[+＋]?∞)\s*)?(?:\)|\]|）|］))/;
@@ -28,7 +28,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
           const high = Number(upper ?? tagCount);
           return low <= high && high <= tagCount;
         }
-        const limit = /^(?:(?:[<>]=?|[＜＞]＝?|≤|≥|至多|至少|少于|多于)\s*(0|[1-9][0-9]*)(?:\s*个)?|(0|[1-9][0-9]*)\s*(?:个\s*)?(?:及以下|及以上))$/.exec(term);
+        const limit = /^(?:(?:[<>]=?|≤|≥|至多|至少|少于|多于)\s*(0|[1-9][0-9]*)(?:\s*个)?|(0|[1-9][0-9]*)\s*(?:个\s*)?(?:及以下|及以上))$/.exec(term);
         if (limit) return Number(limit[1] ?? limit[2]) <= tagCount;
       }
       const pair = /^(0|[1-9][0-9]*)(?:\s*(?:-|到)\s*(0|[1-9][0-9]*))?$/.exec(term);
