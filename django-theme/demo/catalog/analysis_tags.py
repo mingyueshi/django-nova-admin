@@ -13,17 +13,17 @@ from .navigation import visible_admin_objects
 
 UNTAGGED = "untagged"
 MIXED_COUNT_MODES = ("values_or_ranges", "not_values_or_ranges")
-ASCII_INFINITY = re.compile(r"([+-])inf(?:inity)?", re.ASCII | re.IGNORECASE)
+ASCII_INFINITY = re.compile(r"inf(?:inity)?", re.ASCII | re.IGNORECASE)
 ONE_SIDED_COUNT = re.compile(
     r"(?:(<=?|>=?|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
 )
-# Capture only numeric endpoints. A star or a correctly signed infinity leaves that side unbounded.
+# Capture only numeric endpoints. Infinity requires a minus on the left and allows a plus on the right.
 BRACKETED_COUNT = re.compile(
     r"(\(|\[|（|［)\s*(?:(?:([0-9]+)|\*|-∞)\s*)?[,，]\s*"
-    r"(?:(?:([0-9]+)|\*|\+∞)\s*)?(\)|\]|）|］)"
+    r"(?:(?:([0-9]+)|\*|\+?∞)\s*)?(\)|\]|）|］)"
 )
 # Keep the comma before the upper endpoint and closing bracket inside the interval.
-COUNT_SEPARATOR = re.compile(r"、|[,，](?!\s*(?:(?:[0-9]+|\*|\+∞)\s*)?(?:\)|\]|）|］))")
+COUNT_SEPARATOR = re.compile(r"、|[,，](?!\s*(?:(?:[0-9]+|\*|\+?∞)\s*)?(?:\)|\]|）|］))")
 
 
 def readable_tags(request, owner, db):
@@ -188,8 +188,8 @@ def _count_interval(term, key_count, mixed):
 
 def _count_ranges(value, key_count, *, mixed):
     if mixed:
-        # Normalize before splitting so the comma in [3,+INF) stays inside the interval.
-        value = ASCII_INFINITY.sub(r"\1∞", value)
+        # Normalize before splitting so the comma in [3,INF) stays inside the interval.
+        value = ASCII_INFINITY.sub("∞", value)
     # Validate every term before merging, even when another term already covers all counts.
     intervals = [_count_interval(part.strip(), key_count, mixed) for part in COUNT_SEPARATOR.split(value)]
     merged = []
