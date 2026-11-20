@@ -79,6 +79,11 @@ try {
                 ['(ｉｎｆ,1]', false], ['*,(＋Ｉｎｆｉｎｉｔｙ,2]', false], ['[1,－ｉＮｆ),*', false], ['[－ＩＮＦ,1]', false],
                 ['[1,＋ＩＮＦ]', false], ['(－ｉｎｆ,7]', false], ['[7,ｉｎｆ)', false], ['(－ｉｎｆ,２]', false],
                 ['(－ｉｎｆｉｎ,1]', false], ['(1,ＩＮＦＸ)', false],
+                ['(−ｉnＦ,0]', true], ['(-Iｎfｉnｉtｙ,0)', true], ['[6,ｉnＦ)', true], ['(6,+Iｎfｉnｉtｙ)', true],
+                ['(－ｉnＦ,＋Iｎfｉnｉtｙ)', true], ['（ －Iｎfｉnｉtｙ ，2］、[2,4),3,［5，＋ｉnＦ）', true],
+                ['(ｉnＦ,1]', false], ['*,(＋Iｎfｉnｉtｙ,1]', false], ['(1,−ｉnＦ),*', false], ['[－ｉnＦ,1]', false],
+                ['[1,＋ｉnＦ]', false], ['(−ｉnＦ,7]', false], ['[7,Iｎfｉnｉtｙ)', false], ['(−ｉnＦ,２]', false],
+                ['(1,Iｎfｉn)', false], ['(1,ıｎＦ)', false],
                 ['*,7', false], ['2-1,*', false], ['**', false], ['1*', false], ['[*,2]', false], ['*,', false],
                 ['(,),7', false], ['(7,), (,)', false], ['(,),4-2', false], ['(,),', false], ['(,,)', false],
                 ['[,)', false], ['[,]', false], ['(,]', false], ['[,1)', false], ['[,1]', false], ['(1,]', false], ['[1,]', false],
@@ -91,7 +96,7 @@ try {
                 input.dispatchEvent(new window.Event('input'));
                 assert.equal(input.checkValidity(), valid, value);
             }
-            input.value = '(－Ｉｎｆｉｎｉｔｙ,2]、(1,4]、[6,＋ｉＮｆ)';
+            input.value = '(－Iｎfｉnｉtｙ,2]、(1,4]、[6,＋ｉnＦ)';
             tags.options[5].selected = false;
             tags.dispatchEvent(new window.Event('change'));
             assert.equal(input.validationMessage, 'Invalid count or range');

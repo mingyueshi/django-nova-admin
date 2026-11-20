@@ -6,11 +6,12 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
   const counts = fields.namedItem(minimum.dataset.minimumFor + "_counts");
   const ranges = fields.namedItem(minimum.dataset.minimumFor + "_ranges");
   const mixedCountModes = ["values_or_ranges", "not_values_or_ranges"];
+  const infinityName = /[iIｉＩ][nNｎＮ][fFｆＦ](?:[iIｉＩ][nNｎＮ][iIｉＩ][tTｔＴ][yYｙＹ])?/g;
 
   function validateRanges() {
     const tagCount = tags.selectedOptions.length;
     const mixed = mixedCountModes.includes(mode.value);
-    const value = mixed ? ranges.value.replace(/inf(?:inity)?|ｉｎｆ(?:ｉｎｉｔｙ)?/gi, "∞") : ranges.value;
+    const value = mixed ? ranges.value.replace(infinityName, "∞") : ranges.value;
     // Keep the comma inside an interval, including when the upper endpoint is unbounded.
     const separators = /、|[,，](?!\s*(?:(?:[0-9]+|\*|[+＋]?∞)\s*)?(?:\)|\]|）|］))/;
     const valid = ranges.disabled || !value || value.split(separators).every((part) => {
@@ -68,7 +69,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
     counts.setCustomValidity(usesCounts && outOfRange ? counts.dataset.rangeError : "");
     ranges.required = usesRanges;
     ranges.disabled = !usesRanges;
-    ranges.placeholder = mixedCountModes.includes(mode.value) ? "(－ｉｎｆ,1], 3, [5,＋Infinity)" : "0-1, 3-4";
+    ranges.placeholder = mixedCountModes.includes(mode.value) ? "(－ｉnＦ,1], 3, [5,Iｎfｉnｉtｙ)" : "0-1, 3-4";
     ranges.closest("label").hidden = !usesRanges;
     validateRanges();
   }

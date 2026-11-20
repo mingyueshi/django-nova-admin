@@ -13,8 +13,8 @@ from .navigation import visible_admin_objects
 
 UNTAGGED = "untagged"
 MIXED_COUNT_MODES = ("values_or_ranges", "not_values_or_ranges")
-# Keep case folding of the ASCII spelling limited to ASCII letters.
-INFINITY_NAME = re.compile(r"(?a:inf(?:inity)?)|ｉｎｆ(?:ｉｎｉｔｙ)?", re.IGNORECASE)
+# Each letter of "inf" or "infinity" accepts either width and case.
+INFINITY_NAME = re.compile(r"[iIｉＩ][nNｎＮ][fFｆＦ](?:[iIｉＩ][nNｎＮ][iIｉＩ][tTｔＴ][yYｙＹ])?")
 ONE_SIDED_COUNT = re.compile(
     r"(?:(<=?|>=?|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
 )
