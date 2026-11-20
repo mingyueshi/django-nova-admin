@@ -1,5 +1,6 @@
 from functools import cached_property
 
+from django.apps import apps
 from django.contrib import admin
 from django import forms
 from django.core.exceptions import PermissionDenied
@@ -104,7 +105,12 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
             wrapped.model_admin = self
             return wrapped
 
+        stock_urls = []
+        if apps.is_installed("stock_import"):
+            from stock_import.views import import_urls
+            stock_urls = import_urls(self)
         return [
+            *stock_urls,
             path("analysis/", admin_view(self.analysis_view), name="catalog_product_analysis"),
             path("notifications/", admin_view(self.notifications_view), name="catalog_product_notifications"),
             path("batch-tasks/", admin_view(self.batch_tasks_view), name="catalog_product_batch_tasks"),
@@ -287,6 +293,9 @@ class ProductAdmin(ColumnPreferencesMixin, BoundedPaginationAdminMixin, DemoMedi
             "show_product_board": can_view_board(request, self),
             "show_product_recycle_bin": can_view_recycle_bin(request, self),
         }
+        if apps.is_installed("stock_import"):
+            from stock_import.views import can_import
+            extra_context["show_stock_import"] = can_import(request, self)
         action = product_csv_action(request.GET)
         if action and can_export_products(request, self):
             extra_context.update(product_csv_action=action, product_csv_limit=MAX_EXPORT_ROWS)

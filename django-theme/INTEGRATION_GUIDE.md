@@ -66,13 +66,19 @@ msgstr "管理内容数据"
 
 找回密码应由现有身份系统决定。Django 提供四个标准密码重置视图，登录页在存在 `admin_password_reset` 命名 URL 时显示入口；邮件后端、发件域名、链接域名、模板与频率限制需一起配置和验收。优先沿用已有 SSO/身份提供方，避免同时出现两套恢复路径。[官方接入说明](https://docs.djangoproject.com/en/6.1/ref/contrib/admin/#adding-a-password-reset-feature)
 
-上线前验证：合法账号、无效账号、禁用账号、无可用密码的 SSO 账号、过期/重复令牌、邮件不可达、HTTPS 链接和防枚举响应。验证码、锁定策略、MFA、“记住我”和会话时长同属身份/风险策略；Nova 不自动添加或更改它们。本 Demo 没有重置密码端点，也不发送邮件。
+上线前验证：合法账号、无效账号、禁用账号、无可用密码的 SSO 账号、过期/重复令牌、邮件不可达、HTTPS 链接和防枚举响应。验证码、锁定策略、MFA、“记住我”和会话时长同属身份/风险策略；Nova 不自动添加或更改它们。使用 config.reset_settings 可在本机通过控制台邮件跑通四个重置视图。使用 config.mfa_settings 可单独验证 Axes、TOTP、恢复码与会话期限。[运行密码重置及 MFA 示例](HOST_EXAMPLES.md)
+
+## 只读审计日志
+
+通过 `config.audit_settings` 显式注册原生 `LogEntry` 查看器。持有 `admin.view_logentry` 的审计员可以按用户、动作与时间筛选既有记录。[启动与权限验收](HOST_EXAMPLES.md#审计查看器)
 
 ## 图片/文件上传与授权媒体
 
 Demo 的合成 static 图集只用于 list_display 样式，不是私有媒体方案。若接入 ImageField/FileField，应保留 Django ModelForm 与原生 multipart 提交；同时明确文件类型/大小、解码与重编码、随机文件名、病毒扫描、存储额度、审计、删除与备份策略。[上传机制](https://docs.djangoproject.com/en/6.1/topics/http/file-uploads/)
 
 私有文件不能直接用公开 MEDIA_URL 暴露：下载/预览先根据宿主权限、对象归属和 queryset 检查，再由授权响应或短时签名方式交付；列表能看到对象不等于媒体自动安全。不要把不可信 SVG/HTML 作为同源可执行内容提供。对公网用户内容应考虑独立媒体域及合适的 Content-Type/Disposition。[Django 用户上传内容安全说明](https://docs.djangoproject.com/en/6.1/topics/security/#user-uploaded-content)
+
+使用 `config.media_settings` 可从原生 ImageField 上传进入授权预览和下载，验证撤权后旧链接失效。[私有图片示例](HOST_EXAMPLES.md#私有图片)
 
 富文本/Markdown 编辑器属于内容输入功能：采用可信维护的集成，并在服务端按允许列表净化输出；不能只靠编辑器按钮限制 HTML。主题不会把已有普通 TextField 悄悄换成编辑器。
 
@@ -81,6 +87,8 @@ Demo 的合成 static 图集只用于 list_display 样式，不是私有媒体�
 导出可使用原生 admin action 接收已筛选/选中的 queryset，但还需遵守宿主对象级/字段级权限，明确允许导出的列，禁止信任客户端提供任意模型/字段名。CSV 用标准 csv writer 转义逗号/引号；电子表格打开场景还要处理不可信单元格的公式注入，并限制数据量。[Admin actions](https://docs.djangoproject.com/en/6.1/ref/contrib/admin/actions/) · [CSV 输出](https://docs.djangoproject.com/en/6.1/howto/outputting-csv/)
 
 导入应分成上传、解析/类型校验、预览差异、确认提交四步；使用已有认证和 CSRF，限制文件/行数、列允许列表、可关联对象范围与重复主键策略。提交需事务或明确的逐行失败策略，并记录操作者与结果；不建议一键覆盖生产表。导入导出库可以作为宿主依赖独立选择，Nova 不捆绑安装。
+
+使用 `config.import_settings` 可按 SKU 预览并更新库存，包含逐行错误报告、显式跳过、事务提交和重复确认处理。[样例 CSV 与操作步骤](HOST_EXAMPLES.md#商品库存-csv-导入)
 
 ## 仪表盘、行操作与分页
 

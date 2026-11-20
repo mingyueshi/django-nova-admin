@@ -1,0 +1,34 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls %}
+{% block content %}
+{% if error %}<p class="errornote" role="alert">{{ error }}</p>{% endif %}
+{% if step == "upload" %}
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    <label for="stock-file">1. 上传库存 CSV</label>
+    <p id="stock-help">UTF-8 编码，表头为 sku,stock。每批最多 500 条、256 KiB，只更新已有商品。</p>
+    <input type="file" id="stock-file" name="file" accept=".csv" aria-describedby="stock-help" required>
+    <button type="submit">解析并校验</button>
+  </form>
+{% elif step == "validate" %}
+  <h3>2. 校验结果</h3>
+  <p>通过 {{ batch.rows|length }} 条，错误 {{ batch.errors|length }} 条。</p>
+  {% if batch.errors %}
+    <ul>{% for line, sku, reason in batch.errors %}<li>第 {{ line }} 行 · {{ sku }} · {{ reason }}</li>{% endfor %}</ul>
+    <a href="{% url opts|admin_urlname:'import_errors' batch.pk %}">下载错误 CSV</a>
+    {% if batch.rows %}<p><a href="{% url opts|admin_urlname:'import_preview' batch.pk %}?skip=1">跳过错误行，仅预览通过的 {{ batch.rows|length }} 条</a></p>{% endif %}
+  {% else %}<a href="{% url opts|admin_urlname:'import_preview' batch.pk %}">预览库存差异</a>{% endif %}
+{% elif step == "preview" and not error %}
+  <h3>3. 预览差异</h3>
+  {% if batch.errors %}<p>本次跳过 {{ batch.errors|length }} 条错误行，将提交下表中的 {{ batch.rows|length }} 条。</p>{% endif %}
+  <table><thead><tr><th>行号</th><th>SKU</th><th>原库存</th><th>新库存</th></tr></thead>
+  <tbody>{% for row in batch.rows %}<tr><td>{{ row.line }}</td><td>{{ row.sku }}</td><td>{{ row.old }}</td><td>{{ row.new }}</td></tr>{% endfor %}</tbody></table>
+  <form method="post" action="{% url opts|admin_urlname:'import_confirm' batch.pk %}">{% csrf_token %}
+    <input type="hidden" name="review" value="{{ signature }}">
+    <button type="submit">4. 确认提交整批库存</button>
+  </form>
+{% elif step == "result" %}
+  <p role="status">已提交。共核对 {{ batch.rows|length }} 条，跳过 {{ batch.errors|length }} 条，库存变更已记录到商品历史。</p>
+{% endif %}
+{% if step != "upload" %}<p><a href="{% url opts|admin_urlname:'import_upload' %}">重新上传</a></p>{% endif %}
+<a href="{% url opts|admin_urlname:'changelist' %}">返回商品列表</a>
+{% endblock %}

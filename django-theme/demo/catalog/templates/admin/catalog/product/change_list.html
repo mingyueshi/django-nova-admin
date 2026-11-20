@@ -2,6 +2,9 @@
 {% load admin_urls i18n tz %}
 {% block object-tools-items %}
   {{ block.super }}
+  {% if show_stock_import and not is_popup %}
+    <li><a href="{% url opts|admin_urlname:'import_upload' %}">导入库存 CSV</a></li>
+  {% endif %}
   {% if show_product_board and not is_popup %}
     <li><a href="{% url opts|admin_urlname:'batch_tasks' %}">批量任务进度</a></li>
     <li><a href="{% url opts|admin_urlname:'status_board' %}">商品状态看板</a></li>

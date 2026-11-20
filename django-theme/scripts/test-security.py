@@ -26,6 +26,15 @@ import tomllib
 import zipfile
 
 
+HOST_EXAMPLES = {
+    "host-audit": ("config.audit_settings", "host_audit.acceptance"),
+    "host-reset": ("config.reset_settings", "tests.test_host_reset"),
+    "host-import": ("config.import_settings", "stock_import.acceptance"),
+    "host-media": ("config.media_settings", "private_media.acceptance"),
+    "host-mfa": ("config.mfa_settings", "host_mfa.acceptance"),
+}
+
+
 def write_json(path, value):
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
@@ -35,7 +44,8 @@ def worker(context_path, step):
     # -I ignores PYTHONPATH, cwd and user-site packages. Add only the copied
     # test/demo harness: never the checkout's src directory.
     sys.path[:0] = context["import_paths"]
-    os.environ["DJANGO_SETTINGS_MODULE"] = "security_matrix_settings"
+    host = HOST_EXAMPLES.get(step.removesuffix("-migrations"))
+    os.environ["DJANGO_SETTINGS_MODULE"] = host[0] if host else "security_matrix_settings"
     import django
     import nova_admin
     from django.conf import settings
@@ -59,16 +69,20 @@ def worker(context_path, step):
     assert provenance["django"] == context["django"]
     assert provenance["nova"] == context["version"]
     assert provenance["dependencies"] == context["dependencies"]
+    if host:
+        settings.DATABASES["default"].update(NAME=":memory:", TEST={"NAME": context["test_db"]})
     assert settings.DATABASES["default"]["NAME"] == ":memory:"
     assert settings.DATABASES["default"]["TEST"]["NAME"] == context["test_db"]
     django.setup()
     from django.apps import apps
     if context['profile'] == 'slider':
         assert apps.is_installed('nova_slider_captcha'), 'Slider provider must be enabled'
-    if step == "check":
-        call_command("check")
-    elif step == "migrations":
+    if step == "migrations" or step.endswith("-migrations"):
         call_command("makemigrations", check=True, dry_run=True, interactive=False)
+    elif host:
+        call_command("test", host[1], verbosity=2, interactive=False)
+    elif step == "check":
+        call_command("check")
     elif step == "tests":
         labels = (["tests.test_slider", "tests.test_captcha_policy"] if context['profile'] == 'slider'
                   else ["tests.test_security_interop"])
@@ -157,7 +171,8 @@ def main():
         }
         # Separate processes prevent a prior management command's in-memory
         # SQLite connection from being reused by file-backed test DB setup.
-        for step in ("check", "migrations", "tests"):
+        host_steps = [step for name in HOST_EXAMPLES for step in (f"{name}-migrations", name)] if profile == "security" else ()
+        for step in ("check", "migrations", "tests", *host_steps):
             commands[step] = [str(python), "-I", str(script), "--worker", str(directory / "context.json"), step]
         row = {"django": version, "profile": profile, "status": "running", "steps": {}}
         results.append(row)
@@ -172,8 +187,8 @@ def main():
                     log.write(str(error))
                     code = 127
             row["steps"][name] = {"exit_code": code, "command": command}
-            if name == "tests":
-                content = (directory / "tests.log").read_text()
+            if name == "tests" or name in HOST_EXAMPLES:
+                content = (directory / f"{name}.log").read_text()
                 match = re.search(r"Ran (\d+) tests? in", content)
                 row["steps"][name]["tests_run"] = int(match[1]) if match else None
                 if not match or int(match[1]) == 0 or "\nOK\n" not in content or re.search(r'\bskipped\b', content):

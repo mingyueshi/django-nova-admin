@@ -21,7 +21,7 @@ Issues = "https://github.com/mingyueshi/django-nova-admin/issues"
 
 [project.optional-dependencies]
 captcha = ["django-simple-captcha>=0.7,<0.8", "Pillow>=12.2,<13"]
-security = ["django-simple-captcha>=0.7,<0.8", "Pillow>=12.2,<13", "django-axes>=8.3,<9"]
+security = ["django-simple-captcha>=0.7,<0.8", "Pillow>=12.2,<13", "django-axes>=8.3,<9", "django-otp>=1.7.5,<2"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
