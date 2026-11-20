@@ -17,7 +17,7 @@ FULLWIDTH_COUNT_CHARS = str.maketrans("０１２３４５６７８９＜＞＝�
 # Each letter of "inf" or "infinity" accepts either width and case.
 INFINITY_NAME = re.compile(r"[iIｉＩ][nNｎＮ][fFｆＦ](?:[iIｉＩ][nNｎＮ][iIｉＩ][tTｔＴ][yYｙＹ])?")
 COUNT_COMPARISON = re.compile(
-    r"(?:(<>|[<>=]=?|!=|≠|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
+    r"(?:(<>|><|[<>=]=?|!=|≠|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
 )
 # Capture only numeric endpoints. Infinity requires a minus on the left and allows a plus on the right.
 BRACKETED_COUNT = re.compile(
@@ -177,7 +177,7 @@ def _term_intervals(term, key_count, mixed):
             return [(None, CountBound(threshold - 1, strict=True))]
         if operator in (">", "多于"):
             return [(CountBound(threshold + 1, strict=True), None)]
-        if operator in ("!=", "≠", "<>"):
+        if operator in ("!=", "≠", "<>", "><"):
             return [(None, CountBound(threshold - 1, strict=True)), (CountBound(threshold + 1, strict=True), None)]
         bound = CountBound(threshold)
         if operator in ("=", "=="):
