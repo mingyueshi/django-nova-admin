@@ -1148,6 +1148,12 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             ("≰7", ">7", set()),
             ("≱７", "<7", all_counts - {7}),
             ("≱２、3 到 4、≰5", "<2, 3-4, >5", {0, 1, 3, 4, 6, 7}),
+            ("≨０", "<0", set()),
+            ("≨１", "<1", {0}),
+            ("≩0", ">0", all_counts - {0}),
+            ("≨7", "<7", all_counts - {7}),
+            ("≩７", ">7", set()),
+            ("≨２、=3、[3,4]、≩5", "<2, 3-4, >5", {0, 1, 3, 4, 6, 7}),
             ("=０", "0", {0}),
             ("＝3", "3", {3}),
             ("=７", "7", {7}),
@@ -1243,7 +1249,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                     self.assertEqual(parse_qs(urlsplit(export).query)[field], [canonical])
                     self.assertCountEqual([row[0] for row in self.csv_rows(self.download(export))[1:]], expected)
 
-        for expression in ("！=１0", "<＞1０", ">＜１0", "≱１0、≰1０"):
+        for expression in ("！=１0", "<＞1０", ">＜１0", "≱１0、≰1０", "≨１0、≩1０"):
             with self.subTest(expression=expression):
                 url = self.combination(initial, entry, keys, "values_or_ranges", ranges=expression)
                 self.assertCountEqual([row[0] for row in self.csv_rows(self.download(url))[1:]], ["n9", "n11", "n12"])
@@ -1268,6 +1274,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             ([*keys, "untagged"], "≤0、至少 2 个", ["plain", "one"]),
             ([*keys, "untagged"], "≯０、≮2", ["plain", "one"]),
             ([*keys, "untagged"], "≱1、≰１", ["plain", "one"]),
+            ([*keys, "untagged"], "≨１、≩1", ["plain", "one"]),
             (keys, "至少 0 个", []),
             (keys, "至多 2 个", []),
             ([*keys, "untagged"], "少于1、多于1", ["plain", "one"]),
@@ -1368,6 +1375,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                        ["≦"], ["≧"], ["≦=1"], ["*,≧＞１"], ["≦０1"], ["≧３"], ["≦1-2"],
                        ["≮"], ["≯"], ["≮=1"], ["*,≯≮１"], ["≯０1"], ["≮３"], ["≯1-2"],
                        ["≰"], ["≱"], ["≰=1"], ["*,≱≰１"], ["≱０1"], ["≰３"], ["≱1-2"],
+                       ["≨"], ["≩"], ["≨=1"], ["*,≩≨１"], ["≨０1"], ["≩３"], ["≨1-2"],
                        ["＞＝０1"], ["＜３"], ["[０,＜２]"], ["＜=０1"], [">＝３"],
                        ["*,＜=＝１"], ["< ＝２"], ["＞="], ["＜>＝１"],
                        ["[,1]"], ["[,1)"], ["(1,]"], ["[1,]"], ["(,3]"], ["[3,)"], ["(,01)"],
@@ -1379,7 +1387,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                 ["(-Inf,2]"], ["[1,+INF)"], ["(-inf,+inf)"], ["(-infinity,2]"], ["[1,+Infinity)"],
                                 ["(1,∞)"], ["(1,inf)"], ["(1,infinity)"], ["(−Infinity,2]"], ["(－∞,＋Inf)"], ["(－ｉｎｆ,1]"],
                                 ["(－ｉnＦ,1]"], ["＜＝２"], ["＜=１"], [">＝2"], ["＝１"], ["＝=2"], ["!=1"], ["＜＞１"], ["><1"],
-                                ["＝＜２、*"], ["=＞２"], ["≦１"], ["≧２"], ["≮１"], ["≯２"], ["≰１"], ["≱２"]))
+                                ["＝＜２、*"], ["=＞２"], ["≦１"], ["≧２"], ["≮１"], ["≯２"], ["≰１"], ["≱２"],
+                                ["≨１"], ["≩２"]))
             for values in invalid:
                 with self.subTest(side=side, rule=rule, values=values):
                     url = entry + "&" + urlencode([*tags, mode, *((field, v) for v in values)])
@@ -1545,6 +1554,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                     ("少于２个、１", "(１,＋ｉnＦ),０"),
                     ("＜２、１", "＞1、０"),
                     ("≱２、１", "≰1、０"),
+                    ("≨２、１", "≩1、０"),
                 )
             ]
             summaries = {
@@ -1647,6 +1657,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                             "少于２个、１": "<2", "(１,＋ｉnＦ),０": "0, >1",
                                             "＜２、１": "<2", "＞1、０": "0, >1",
                                             "≱２、１": "<2", "≰1、０": "0, >1",
+                                            "≨２、１": "<2", "≩1、０": "0, >1",
                                             "＝<１": "<=1", "0、=＞２": "0, >=2", "=＝１": "1", "＝=0": "0",
                                             "≦１": "<=1", "0、≧２": "0, >=2", "≯１": "<=1", "0、≮２": "0, >=2",
                                             "＞＜２": "<2, >2", ">＜1": "<1, >1"}[submitted[field][0]]
