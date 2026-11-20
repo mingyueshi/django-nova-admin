@@ -87,6 +87,9 @@ try {
                 ['０、２到４、[６,＋ｉnＦ)', true], ['１、(１,４]、至少６个', true], ['少于０、６个及以上', true],
                 ['０1', false], ['0０-２', false], ['[０,0２)', false], ['>=０１', false], ['２到1', false],
                 ['*,多于７个', false], ['②', false], ['٣', false], ['２－2', false],
+                ['＜３', true], ['＞3', true], ['＜＝０、２到４、＞＝６', true], ['＜０、＞6', true],
+                ['＝１', false], ['＜＞１', false], ['*,＞＝＝1', false], ['＝＜２、*', false], ['＜ ＝２', false], ['＞＝', false],
+                ['＜=１', false], ['>＝2', false], ['＞＝０1', false], ['＜７', false], ['[０,＜２]', false],
                 ['*,7', false], ['2-1,*', false], ['**', false], ['1*', false], ['[*,2]', false], ['*,', false],
                 ['(,),7', false], ['(7,), (,)', false], ['(,),4-2', false], ['(,),', false], ['(,,)', false],
                 ['[,)', false], ['[,]', false], ['(,]', false], ['[,1)', false], ['[,1]', false], ['(1,]', false], ['[1,]', false],
@@ -100,14 +103,14 @@ try {
                 assert.equal(input.checkValidity(), valid, value);
             }
             for (const option of tags.options) option.selected = true;
-            input.value = '１0、[1１,１2)、至少1２个';
+            input.value = '１0、[1１,１2)、＞＝1２个';
             tags.dispatchEvent(new window.Event('change'));
             assert.ok(input.checkValidity());
             tags.options[11].selected = false;
             tags.dispatchEvent(new window.Event('change'));
             assert.equal(input.validationMessage, 'Invalid count or range');
             for (const option of tags.options) option.selected = option.index < 6;
-            input.value = '０、２到４、[６,＋ｉnＦ)';
+            input.value = '＜＝０、２到４、＞＝６';
             tags.options[5].selected = false;
             tags.dispatchEvent(new window.Event('change'));
             assert.equal(input.validationMessage, 'Invalid count or range');
