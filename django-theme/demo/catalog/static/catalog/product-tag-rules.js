@@ -13,7 +13,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
     const valid = ranges.disabled || !ranges.value || ranges.value.split(/[,，、]/).every((part) => {
       const term = part.trim();
       if (mixed) {
-        const limit = /^(?:(?:<=|>=|≤|≥|至多|至少)\s*(0|[1-9][0-9]*)(?:\s*个)?|(0|[1-9][0-9]*)\s*(?:个\s*)?(?:及以下|及以上))$/.exec(term);
+        const limit = /^(?:(?:<=?|>=?|≤|≥|至多|至少|少于|多于)\s*(0|[1-9][0-9]*)(?:\s*个)?|(0|[1-9][0-9]*)\s*(?:个\s*)?(?:及以下|及以上))$/.exec(term);
         if (limit) return Number(limit[1] ?? limit[2]) <= tagCount;
       }
       const pair = /^(0|[1-9][0-9]*)(?:\s*(?:-|到)\s*(0|[1-9][0-9]*))?$/.exec(term);
@@ -55,7 +55,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
     counts.setCustomValidity(usesCounts && outOfRange ? counts.dataset.rangeError : "");
     ranges.required = usesRanges;
     ranges.disabled = !usesRanges;
-    ranges.placeholder = mixedCountModes.includes(mode.value) ? "≤1, 3-4, ≥6" : "0-1, 3-4";
+    ranges.placeholder = mixedCountModes.includes(mode.value) ? "<2, 3-4, >6" : "0-1, 3-4";
     ranges.closest("label").hidden = !usesRanges;
     validateRanges();
   }

@@ -14,7 +14,7 @@ from .navigation import visible_admin_objects
 UNTAGGED = "untagged"
 MIXED_COUNT_MODES = ("values_or_ranges", "not_values_or_ranges")
 ONE_SIDED_COUNT = re.compile(
-    r"(?:(<=|>=|≤|≥|至多|至少)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
+    r"(?:(<=?|>=?|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
 )
 
 
@@ -33,26 +33,35 @@ def readable_tags(request, owner, db):
     return tags
 
 
+class CountBound(NamedTuple):
+    # Merge and count using the included integer. Keep the operator for editable links, even for <0 and >max.
+    included: int
+    strict: bool = False
+
+
 class TagRule(NamedTuple):
     keys: list[str]
     mode: str = ""
     minimum: int | None = None
     maximum: int | None = None
     counts: tuple[int, ...] = ()
-    ranges: tuple[tuple[int | None, int | None], ...] = ()
+    ranges: tuple[tuple[CountBound | None, CountBound | None], ...] = ()
 
     @property
     def ranges_text(self):
         terms = []
         for low, high in self.ranges:
             if high is None:
-                terms.append(f">={low or 0}")
+                if low and low.strict:
+                    terms.append(f">{low.included - 1}")
+                else:
+                    terms.append(f">={low.included if low else 0}")
             elif low is None:
-                terms.append(f"<={high}")
+                terms.append(f"<{high.included + 1}" if high.strict else f"<={high.included}")
             elif self.mode in MIXED_COUNT_MODES and low == high:
-                terms.append(str(low))
+                terms.append(str(low.included))
             else:
-                terms.append(f"{low}-{high}")
+                terms.append(f"{low.included}-{high.included}")
         return ", ".join(terms)
 
     @property
@@ -60,7 +69,7 @@ class TagRule(NamedTuple):
         if self.ranges:
             return tuple(
                 n for low, high in self.ranges
-                for n in range(low or 0, (len(self.keys) if high is None else high) + 1)
+                for n in range(low.included if low else 0, (high.included if high else len(self.keys)) + 1)
             )
         return self.counts
 
@@ -135,24 +144,31 @@ def _count_interval(term, key_count, mixed):
     if mixed and (limit := ONE_SIDED_COUNT.fullmatch(term)):
         operator = limit[1] or limit[4]
         threshold = _count_bound(limit[2] or limit[3], 0, key_count)
-        return (None, threshold) if operator in ("<=", "≤", "至多", "及以下") else (threshold, None)
+        if operator in ("<", "少于"):
+            return None, CountBound(threshold - 1, strict=True)
+        if operator in (">", "多于"):
+            return CountBound(threshold + 1, strict=True), None
+        bound = CountBound(threshold)
+        return (None, bound) if operator in ("<=", "≤", "至多", "及以下") else (bound, None)
     pair = re.fullmatch(r"([0-9]+)(?:\s*(?:-|到)\s*([0-9]+))?", term)
     if not pair or (pair[2] is None and not mixed):
         raise Http404
     low = _count_bound(pair[1], 0, key_count)
-    return low, _count_bound(pair[2], low, key_count) if pair[2] is not None else low
+    high = _count_bound(pair[2], low, key_count) if pair[2] is not None else low
+    return CountBound(low), CountBound(high)
 
 
 def _count_ranges(value, key_count, *, mixed):
     # Validate every term before merging, even when another term already covers all counts.
     intervals = [_count_interval(part.strip(), key_count, mixed) for part in re.split("[,，、]", value)]
     merged = []
-    for low, high in sorted(intervals, key=lambda pair: -1 if pair[0] is None else pair[0]):
+    # On equal starting counts, prefer the original strict threshold (>2 over >=3).
+    for low, high in sorted(intervals, key=lambda pair: (pair[0].included, not pair[0].strict) if pair[0] else (-1, False)):
         if merged:
             start, end = merged[-1]
             if end is None:
                 break
-            if (low or 0) <= end:
+            if low is None or low.included <= end.included:
                 merged[-1] = (start, None if high is None else max(end, high))
                 continue
         merged.append((low, high))
@@ -241,7 +257,7 @@ def _positive_tag_match(memberships, keys, count_filter, *, matches_one):
 def _tag_match(memberships, rule):
     maximum = rule.match_maximum
     counts = rule.match_counts
-    if counts:
+    if rule.ranges or counts:
         allowed = Q(matched__in=counts)
         if 0 in counts:
             # Rows with zero hits have no group. Remove only the disallowed positive counts.
