@@ -28,7 +28,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
           const high = Number(upper ?? tagCount);
           return low <= high && high <= tagCount;
         }
-        const comparison = /^(?:(?:[<>=]=?|!=|≠|≤|≥|至多|至少|少于|多于)\s*(0|[1-9][0-9]*)(?:\s*个)?|(0|[1-9][0-9]*)\s*(?:个\s*)?(?:及以下|及以上))$/.exec(term);
+        const comparison = /^(?:(?:<>|[<>=]=?|!=|≠|≤|≥|至多|至少|少于|多于)\s*(0|[1-9][0-9]*)(?:\s*个)?|(0|[1-9][0-9]*)\s*(?:个\s*)?(?:及以下|及以上))$/.exec(term);
         if (comparison) return Number(comparison[1] ?? comparison[2]) <= tagCount;
       }
       const pair = /^(0|[1-9][0-9]*)(?:\s*(?:-|到)\s*(0|[1-9][0-9]*))?$/.exec(term);
