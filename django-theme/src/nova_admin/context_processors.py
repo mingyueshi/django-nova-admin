@@ -3,7 +3,7 @@ from django.conf import settings
 from django.utils.translation import gettext as _
 from django.urls import NoReverseMatch, get_resolver, get_urlconf, reverse
 
-from .preferences import selected_mode, selected_palette
+from .preferences import selected_contrast, selected_mode, selected_palette
 from .branding import branding
 
 
@@ -77,6 +77,7 @@ def theme(request):
         "nova_admin_enabled": enabled,
         "nova_admin_active": enabled and mode != "native",
         "nova_admin_mode": mode,
+        "nova_admin_contrast": selected_contrast(request),
         "nova_admin_palette": selected_palette(request),
         "nova_admin_navigation": bool(getattr(settings, "NOVA_ADMIN_NAVIGATION", False)),
         "nova_admin_print": bool(getattr(settings, "NOVA_ADMIN_PRINT", False)),

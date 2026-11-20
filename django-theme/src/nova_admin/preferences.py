@@ -6,6 +6,8 @@ from django.utils.http import url_has_allowed_host_and_scheme
 
 SESSION_KEY = "nova_admin_mode"
 PALETTE_SESSION_KEY = "nova_admin_palette"
+CONTRAST_SESSION_KEY = "nova_admin_contrast"
+CONTRASTS = ("standard", "high")
 PALETTES = frozenset({"default", "teal", "indigo", "violet", "terracotta", "graphite", "midnight", "forest", "amber", "ocean", "slate", "plum", "coffee", "glacier", "rose", "olive", "ink", "cinnabar", "gilded", "emerald", "peacock", "sunset", "industrial", "lilac", "terminal", "parchment"})
 MODES = frozenset({"dark", "light", "auto", "native"})
 
@@ -26,6 +28,14 @@ def selected_palette(request):
         default = "default"
     palette = getattr(request, "session", {}).get(PALETTE_SESSION_KEY, default)
     return palette if isinstance(palette, str) and palette in PALETTES else default
+
+
+def selected_contrast(request):
+    default = getattr(settings, "NOVA_ADMIN_DEFAULT_CONTRAST", "standard")
+    if default not in CONTRASTS:
+        default = "standard"
+    value = getattr(request, "session", {}).get(CONTRAST_SESSION_KEY, default)
+    return value if value in CONTRASTS else default
 
 
 def safe_admin_return(request, candidate, admin_index):

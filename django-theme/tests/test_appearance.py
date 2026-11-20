@@ -51,7 +51,7 @@ class AppearanceDisclosureTests(TestCase):
         self.assertEqual(form['method'],'post')
         self.assertEqual(form['action'],reverse('nova_admin:preference'))
         self.assertIsNone(form.find_parent('form'))
-        self.assertEqual({field['name'] for field in form.select('[name]')},{'csrfmiddlewaretoken','next','mode','palette'})
+        self.assertEqual({field['name'] for field in form.select('[name]')},{'csrfmiddlewaretoken','next','mode','palette','contrast'})
         self.assertEqual(len(form.select('[name="csrfmiddlewaretoken"]')),1)
         self.assertEqual([button.get('type') for button in form.select('button')],['submit'])
 
@@ -141,3 +141,26 @@ class AppearanceDisclosureTests(TestCase):
         script=soup.select_one('script[src$="nova_admin/appearance.js"]')
         self.assertEqual(script['nonce'],'appearance-test-nonce')
         self.assertIn('defer',script.attrs)
+
+    def test_contrast_is_independent_and_invalid_posts_are_atomic(self):
+        url = reverse('nova_admin:preference')
+        self.client.post(url, {'mode': 'auto', 'palette': 'forest', 'contrast': 'high'})
+        self.assertEqual(self.client.post(url, {'mode': 'light', 'palette': 'teal', 'contrast': 'invalid'}).status_code, 400)
+        _, soup = self.page()
+        self.assertTrue({'nova-mode-auto', 'nova-palette-forest', 'nova-contrast-high'} <= set(soup.body['class']))
+        self.assertEqual(soup.select_one('#nova-admin-contrast [selected]')['value'], 'high')
+        self.client.post(url, {'mode': 'native'})
+        _, soup = self.page()
+        self.assertIsNone(soup.select_one('link[href$="/contrast.css"]'))
+        self.client.post(url, {'mode': 'dark'})
+        _, soup = self.page()
+        self.assertIsNotNone(soup.select_one('link[href$="/contrast.css"]'))
+        self.client.post(url, {'mode': 'dark', 'contrast': 'standard'})
+        _, soup = self.page()
+        self.assertNotIn('nova-contrast-high', soup.body['class'])
+
+    def test_default_contrast_falls_back_for_malformed_settings(self):
+        for value, expected in [('high', True), ({}, False)]:
+            with self.subTest(value=value), override_settings(NOVA_ADMIN_DEFAULT_CONTRAST=value):
+                _, soup = self.page()
+                self.assertEqual('nova-contrast-high' in soup.body['class'], expected)

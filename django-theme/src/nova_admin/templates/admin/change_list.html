@@ -19,7 +19,7 @@
       <script src="{% static 'nova_admin/action-selection.js' %}" defer {% nova_nonce %}
               data-scope="{{ selection.scope }}" data-max-fields="{{ selection.max_fields|default_if_none:''|unlocalize }}"
               data-manual="{% translate 'Selected on this page: {page}. Manually selected across pages: {total}.' context 'Nova Admin' %}"
-              data-all="{% blocktranslate with count=cl.result_count context 'Nova Admin' %}All {{ count }} matching records selected.{% endblocktranslate %}"
+              data-all="{% blocktranslate count count=cl.result_count context 'Nova Admin' %}{{ count }} matching record selected.{% plural %}All {{ count }} matching records selected.{% endblocktranslate %}"
               data-clear="{% translate 'Clear selection' context 'Nova Admin' %}"
               data-unavailable="{% translate 'This tab cannot remember selections across pages.' context 'Nova Admin' %}"
               data-limit="{% translate 'Too many selected records for one request. Reduce the selection before running the action.' context 'Nova Admin' %}"></script>

@@ -6,7 +6,7 @@ from django.utils.translation import pgettext
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
 
-from .preferences import MODES, PALETTES, PALETTE_SESSION_KEY, SESSION_KEY, safe_admin_return
+from .preferences import CONTRASTS, CONTRAST_SESSION_KEY, MODES, PALETTES, PALETTE_SESSION_KEY, SESSION_KEY, safe_admin_return
 
 
 def for_admin(admin_site):
@@ -19,12 +19,15 @@ def for_admin(admin_site):
         mode = request.POST.get("mode")
         if mode not in MODES:
             return HttpResponseBadRequest(pgettext("Nova Admin", "Unknown theme mode"))
-        # Validate the complete supplied pair before mutating either preference.
-        # Legacy mode-only callers retain their existing palette, including the
-        # configured default when no palette has been saved yet.
+        # Validate every supplied preference before changing session state.
         palette = request.POST.get("palette")
         if palette is not None and palette not in PALETTES:
             return HttpResponseBadRequest(pgettext("Nova Admin", "Unknown color palette"))
+        contrast = request.POST.get("contrast")
+        if contrast is not None and contrast not in CONTRASTS:
+            return HttpResponseBadRequest(pgettext("Nova Admin", "Unknown contrast setting"))
+        if contrast is not None:
+            request.session[CONTRAST_SESSION_KEY] = contrast
         request.session[SESSION_KEY] = mode
         if palette is not None:
             request.session[PALETTE_SESSION_KEY] = palette

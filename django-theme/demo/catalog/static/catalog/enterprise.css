@@ -70,3 +70,6 @@ body.nova-admin.nova-mode-dark {
     --nova-hover: var(--nova-palette-row-dark, #172d49);
   }
 }
+
+/* Keep mixed-script product identifiers readable within a bidirectional row. */
+body.nova-admin :is(.field-sku, #id_sku) { unicode-bidi: plaintext; }

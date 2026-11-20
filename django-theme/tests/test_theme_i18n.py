@@ -33,7 +33,8 @@ class NovaCatalogTests(SimpleTestCase):
             catalog = stdlib_gettext.GNUTranslations(stream)
         messages = {key: value for key, value in catalog._catalog.items() if key}
         self.assertGreaterEqual(len(messages), 12)
-        self.assertTrue(all(isinstance(key, str) and key.startswith("Nova Admin\x04") for key in messages))
+        ids = (key[0] if isinstance(key, tuple) else key for key in messages)
+        self.assertTrue(all(key.startswith("Nova Admin\x04") for key in ids))
         self.assertEqual(catalog.pgettext("Nova Admin", "Other apps"), "其他应用")
         self.assertEqual(catalog.pgettext("Nova Admin", "Navigation"), "导航菜单")
         self.assertEqual(catalog.pgettext("Nova Admin", "Download verification audio"), "下载验证码音频")
@@ -203,3 +204,42 @@ class NovaTranslationIntegrationTests(TestCase):
             self.assertNotContains(response, "nova-theme-switcher")
             self.assertNotContains(response, "nova-page-description")
             self.assertNotContains(response, "nova_admin/enhancements.js")
+
+
+class LocaleAcceptanceTests(SimpleTestCase):
+    def test_each_catalog_has_runtime_examples_for_every_plural_category(self):
+        import json
+        from datetime import date
+        from pathlib import Path
+        from django.utils.formats import date_format, number_format
+        from django.utils.translation import npgettext
+
+        tests = Path(__file__).parent
+        cases = json.loads((tests / "locales.json").read_text())
+        theme = resources.files("nova_admin").joinpath("locale")
+        for kind, root in (("theme", theme), ("test", tests / "locale")):
+            locales = {path.name for path in root.iterdir() if path.joinpath("LC_MESSAGES", "django.po").is_file()}
+            self.assertEqual({case["locale"] for case in cases if case["catalog"] == kind}, locales)
+        def source_ids(catalog):
+            return {key[0] if isinstance(key, tuple) else key for key in catalog._catalog if key}
+
+        with theme.joinpath("zh_Hans", "LC_MESSAGES", "django.mo").open("rb") as stream:
+            nova_messages = source_ids(stdlib_gettext.GNUTranslations(stream))
+        for case in cases:
+            lang = case["code"]
+            root = theme if case["catalog"] == "theme" else tests / "locale"
+            with self.subTest(locale=lang), override_settings(LOCALE_PATHS=[tests / "locale"]), override(lang):
+                self.assertEqual(translation.get_language_bidi(), case["dir"] == "rtl")
+                with root.joinpath(case["locale"], "LC_MESSAGES", "django.mo").open("rb") as stream:
+                    catalog = stdlib_gettext.GNUTranslations(stream)
+                if case["catalog"] == "theme":
+                    self.assertEqual(source_ids(catalog), nova_messages)
+                count = int(re.search(r"nplurals=(\d+)", catalog.info()["plural-forms"])[1])
+                self.assertEqual({catalog.plural(int(n)) for n in case["pluralExamples"]}, set(range(count)))
+                for value, expected in case["pluralExamples"].items():
+                    n = int(value)
+                    message = npgettext("Nova Admin", "%(count)s matching record selected.",
+                                        "All %(count)s matching records selected.", n)
+                    self.assertEqual(message % {"count": n}, expected)
+                self.assertEqual(date_format(date(2026, 11, 20), "DATE_FORMAT"), case["date"])
+                self.assertEqual(number_format(1234.5, decimal_pos=1, force_grouping=True), case["number"])

@@ -278,7 +278,7 @@ body.nova-admin.dashboard .module td { white-space: nowrap; }
    corners and let the card draw the final border. Form modules stay unclipped. */
 body.nova-admin.dashboard #content-main > .module:has(> table > caption) { overflow: clip; }
 body.nova-admin.dashboard #content-main > .module > table > tbody > tr:last-child > :is(th, td) { border-bottom: 0; }
-body.nova-admin #content-related { width: 260px; margin-right: -285px; }
+body.nova-admin #content-related { width: 260px; margin-inline-end: -285px; }
 body.nova-admin #content-related .module { border: 0; box-shadow: none; margin: 0; }
 body.nova-admin #content-related h3 { margin: 18px 16px 8px; color: var(--body-quiet-color); font-size: 12px; }
 body.nova-admin #content-related p { padding: 0 16px 10px; }
@@ -542,7 +542,7 @@ body.nova-admin :is(a,button,input,select,textarea,summary):focus-visible { outl
 /* Native dashboard uses a fixed 600px canvas and negative sidebar margin.
    Replace only that outer desktop arrangement, retaining the native modules. */
 body.nova-admin.dashboard #content { width: auto; margin-inline-end: 0; }
-body.nova-admin.dashboard #content-related { margin-right: 0; }
+body.nova-admin.dashboard #content-related { margin-inline-end: 0; }
 /* In 6.1 the list filter moved inside the form container; 5.2/6.0 keep it
    alongside. Match that structure, without rewriting either template. */
 body.nova-admin #changelist .changelist-form-container:has(> #changelist-filter) { gap: 24px; }

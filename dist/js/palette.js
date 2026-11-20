@@ -125,7 +125,7 @@ export function paletteOptions(value) {
     .join('');
 }
 // Keep open preview pages consistent without writing back or touching other keys.
-window.addEventListener('storage', (event) => {
+globalThis.window?.addEventListener('storage', (event) => {
   if (event.key !== 'nova-palette' && event.key !== null) return;
   try {
     if (event.storageArea && event.storageArea !== localStorage) return;

@@ -44,6 +44,11 @@
     <option value="terminal"{% if nova_admin_palette == 'terminal' %} selected{% endif %}>{% translate 'Terminal green' context 'Nova Admin' %}</option>
     <option value="parchment"{% if nova_admin_palette == 'parchment' %} selected{% endif %}>{% translate 'Parchment gold' context 'Nova Admin' %}</option>
   </select>
+  <label for="nova-admin-contrast">{% translate 'Contrast' context 'Nova Admin' %}</label>
+  <select id="nova-admin-contrast" name="contrast">
+    <option value="standard"{% if nova_admin_contrast != 'high' %} selected{% endif %}>{% translate 'Standard contrast' context 'Nova Admin' %}</option>
+    <option value="high"{% if nova_admin_contrast == 'high' %} selected{% endif %}>{% translate 'High contrast' context 'Nova Admin' %}</option>
+  </select>
   <button type="submit">{% translate 'Apply' context 'Nova Admin' %}</button>
 </form>
 {% if nova_admin_active %}

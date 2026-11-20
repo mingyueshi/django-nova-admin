@@ -1,0 +1,21 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}
+  <link rel="stylesheet" href="{% static 'nova_admin/markdown.css' %}">
+  <link rel="stylesheet" href="{% static 'nova_admin/captcha.css' %}">
+  <link rel="stylesheet" href="{% static 'nova_admin/captcha-dialog.css' %}">
+  <link rel="stylesheet" href="{% static 'nova_admin/slider.css' %}">
+{% endblock %}
+{% block content %}
+  {{ nova_admin_markdown_labels|json_script:"nova-md-labels" }}
+  <label for="notes">ملاحظات</label><textarea id="notes" data-nova-markdown>منتج SKU-123</textarea>
+  <script src="{% static 'nova_admin/markdown.js' %}" defer></script>
+  <form id="login-form">
+    <div data-nova-login-challenge="{{ kind }}">
+      {{ widget_html|safe }}
+    </div>
+    <button type="submit">الدخول</button>
+    {% include "nova_admin/captcha_dialog.html" %}
+  </form>
+  <script src="{% static 'nova_admin/captcha-dialog.js' %}" defer></script>
+{% endblock %}

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{% static 'nova_admin/theme.css' %}" {% nova_nonce %}>
     <link rel="stylesheet" href="{% static 'nova_admin/tokens.css' %}" {% nova_nonce %}>
     <link rel="stylesheet" href="{% static 'nova_admin/presets.css' %}" {% nova_nonce %}>
+    {% if nova_admin_contrast == "high" %}<link rel="stylesheet" href="{% static 'nova_admin/contrast.css' %}" {% nova_nonce %}>{% endif %}
     {% endblock %}
     {% if nova_admin_preference_url and has_permission and not is_popup %}
       <link rel="stylesheet" href="{% static 'nova_admin/appearance.css' %}" {% nova_nonce %}>
@@ -50,7 +51,7 @@
 
 {% block footer %}{{ block.super }}{% if nova_admin_active %}{% block nova_footer %}{% include "nova_admin/brand_footer.html" %}{% endblock %}{% endif %}{% endblock %}
 
-{% block bodyclass %}{{ block.super }}{% if nova_admin_active %} nova-admin nova-mode-{{ nova_admin_mode }} nova-palette-{{ nova_admin_palette|default:"default" }}{% endif %}{% endblock %}
+{% block bodyclass %}{{ block.super }}{% if nova_admin_active %} nova-admin nova-mode-{{ nova_admin_mode }} nova-palette-{{ nova_admin_palette|default:"default" }}{% if nova_admin_contrast == "high" %} nova-contrast-high{% endif %}{% endif %}{% endblock %}
 
 {% block usertools %}
   {% if nova_admin_active and nova_admin_navigation and has_permission and not is_popup %}<div class="nova-user-tools">{% endif %}

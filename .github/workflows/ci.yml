@@ -233,6 +233,38 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+  visual:
+    name: Chromium appearance and RTL
+    needs: plan
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12.15'
+      - name: Prepare browser harness and validate catalogs
+        run: |
+          python -m pip install --target output/visual/python --require-hashes --only-binary=:all: -r ci/visual/requirements.txt
+          export PYTHONPATH="$PWD/output/visual/python"
+          for po in django-theme/demo/locale/*/LC_MESSAGES/django.po django-theme/src/nova_admin/locale/*/LC_MESSAGES/django.po django-theme/tests/locale/*/LC_MESSAGES/django.po; do
+            python django-theme/demo/compile_catalog.py --check --po "$po"
+          done
+          npm ci --prefix ci/visual --ignore-scripts --no-audit --no-fund
+      - name: Compare screenshots and exercise the real AdminSite
+        env:
+          NOVA_VISUAL_SCOPE: ${{ needs.plan.outputs.scope }}
+        run: ci/visual/run.sh
+      - name: Preserve expected, actual and difference images
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nova-visual-diff-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/visual/results
+          retention-days: 7
+
   security:
     name: Axes and Slider security regressions
     needs: [plan, build]
@@ -286,7 +318,7 @@ jobs:
 
   verify:
     name: Nova CI gate
-    needs: [plan, build, python, node, security]
+    needs: [plan, build, python, node, security, visual]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -297,8 +329,9 @@ jobs:
           BUILD_RESULT: ${{ needs.build.result }}
           PYTHON_RESULT: ${{ needs.python.result }}
           NODE_RESULT: ${{ needs.node.result }}
+          VISUAL_RESULT: ${{ needs.visual.result }}
           SECURITY_RESULT: ${{ needs.security.result }}
-        run: test "$PLAN_RESULT/$BUILD_RESULT/$PYTHON_RESULT/$NODE_RESULT/$SECURITY_RESULT" = 'success/success/success/success/success'
+        run: test "$PLAN_RESULT/$BUILD_RESULT/$PYTHON_RESULT/$NODE_RESULT/$SECURITY_RESULT/$VISUAL_RESULT" = 'success/success/success/success/success/success'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false

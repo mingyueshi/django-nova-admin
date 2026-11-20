@@ -1,0 +1,27 @@
+msgid ""
+msgstr ""
+"Language: ar\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5);\n"
+
+msgctxt "Nova Admin"
+msgid "Appearance settings"
+msgstr "إعدادات تخصيص المظهر والألوان والتباين في لوحة الإدارة"
+
+msgctxt "Nova Admin"
+msgid "Search permitted navigation only. Use arrow keys to select, Enter to open, Escape to close."
+msgstr "ابحث في روابط التنقل المسموح بها. استخدم مفاتيح الأسهم للتحديد، ثم Enter للفتح وEscape للإغلاق."
+
+msgctxt "Nova Admin"
+msgid "Drag or use the arrow keys to resize. Double-click or press Home to restore auto width."
+msgstr "اسحب أو استخدم مفاتيح الأسهم لتغيير العرض. انقر مرتين أو اضغط Home لاستعادة العرض التلقائي."
+
+msgctxt "Nova Admin"
+msgid "%(count)s matching record selected."
+msgid_plural "All %(count)s matching records selected."
+msgstr[0] "لا عناصر محددة (%(count)s)"
+msgstr[1] "عنصر واحد محدد (%(count)s)"
+msgstr[2] "عنصران محددان (%(count)s)"
+msgstr[3] "%(count)s عناصر محددة"
+msgstr[4] "%(count)s عنصرًا محددًا"
+msgstr[5] "%(count)s عنصر محدد"

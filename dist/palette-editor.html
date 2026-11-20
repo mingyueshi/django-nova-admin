@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>配色编辑器 · Nova Admin</title><link rel="icon" href="./favicon.svg">
+  <link rel="stylesheet" href="./palette-editor.css">
+  <script type="module" src="./js/palette-editor.js"></script>
+</head>
+<body>
+<main class="studio">
+  <header><a href="./index.html#settings">← 外观设置</a><h1>配色编辑器</h1></header>
+  <div class="workspace">
+    <section class="controls" aria-label="编辑颜色">
+      <label for="preset">基础配色</label><select id="preset"></select>
+      <fieldset class="mode"><legend>编辑外观</legend><label><input type="radio" name="mode" value="light" checked> 浅色</label><label><input type="radio" name="mode" value="dark"> 深色</label></fieldset>
+      <div id="colors"></div><button id="reset" type="button">还原此配色</button>
+    </section>
+    <div class="output">
+      <section aria-labelledby="preview-title"><h2 id="preview-title">实时预览</h2>
+        <iframe id="preview" title="后台控件配色预览"></iframe>
+      </section>
+      <section><h2>对比度检查</h2><p id="summary" role="status"></p><table><thead><tr><th>颜色组合</th><th>对比度</th><th>AA</th><th>增强文字</th></tr></thead><tbody id="checks"></tbody></table></section>
+      <section><h2>宿主配置</h2><p id="export-help"></p><label for="settings-code">settings.py</label><textarea id="settings-code" readonly rows="1"></textarea>
+        <label><input type="checkbox" id="full-export"> 导出全部可编辑变量（含明暗两套）</label>
+        <div id="custom-export" hidden><label for="css-code">主题及项目样式之后加载的 CSS</label><textarea id="css-code" readonly rows="8" spellcheck="false"></textarea></div>
+        <button id="copy" type="button">复制配置</button><span id="copy-status" role="status"></span>
+      </section>
+    </div>
+  </div>
+</main>
+</body></html>

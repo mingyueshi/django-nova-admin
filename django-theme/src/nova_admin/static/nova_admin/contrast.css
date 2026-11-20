@@ -1,0 +1,91 @@
+/* Explicit contrast preference. Keep the UA's forced-colors substitutions. */
+body.nova-admin.nova-contrast-high {
+  --hc-paper: #fff;
+  --hc-ink: #111;
+  --hc-muted: #292929;
+  --hc-border: #575757;
+  --hc-link: #003285;
+  --hc-hover: #36146c;
+  --hc-selected: #dce9ff;
+  --hc-error: #79001c;
+  --hc-success: #004524;
+}
+body.nova-admin.nova-contrast-high.nova-mode-dark {
+  --hc-paper: #101010;
+  --hc-ink: #fff;
+  --hc-muted: #eee;
+  --hc-border: #bebebe;
+  --hc-link: #aee1ff;
+  --hc-hover: #ffdf89;
+  --hc-selected: #293347;
+  --hc-error: #ffbaca;
+  --hc-success: #b6ffd0;
+}
+@media (prefers-color-scheme: dark) {
+  body.nova-admin.nova-contrast-high.nova-mode-auto {
+    --hc-paper: #101010;
+    --hc-ink: #fff;
+    --hc-muted: #eee;
+    --hc-border: #bebebe;
+    --hc-link: #aee1ff;
+    --hc-hover: #ffdf89;
+    --hc-selected: #293347;
+    --hc-error: #ffbaca;
+    --hc-success: #b6ffd0;
+  }
+}
+body.nova-admin.nova-contrast-high:is(.nova-mode-light,.nova-mode-dark,.nova-mode-auto) {
+  --body-bg: var(--hc-paper);
+  --body-fg: var(--hc-ink);
+  --body-loud-color: var(--hc-ink);
+  --body-quiet-color: var(--hc-muted);
+  --body-medium-color: var(--hc-muted);
+  --nova-panel: var(--hc-paper);
+  --darkened-bg: var(--hc-paper);
+  --secondary: var(--hc-paper);
+  --header-bg: var(--hc-paper);
+  --header-color: var(--hc-ink);
+  --header-branding-color: var(--hc-ink);
+  --header-link-color: var(--hc-link);
+  --breadcrumbs-bg: var(--hc-paper);
+  --breadcrumbs-fg: var(--hc-muted);
+  --breadcrumbs-link-fg: var(--hc-link);
+  --hairline-color: var(--hc-border);
+  --border-color: var(--hc-border);
+  --link-fg: var(--hc-link);
+  --link-hover-color: var(--hc-hover);
+  --link-selected-fg: var(--hc-link);
+  --primary: var(--hc-link);
+  --primary-fg: var(--hc-paper);
+  --accent: var(--hc-link);
+  --selected-bg: var(--hc-selected);
+  --selected-row: var(--hc-selected);
+  --nova-hover: var(--hc-selected);
+  --nova-neutral-bg: var(--hc-selected);
+  --button-fg: var(--hc-paper);
+  --button-bg: var(--hc-link);
+  --button-hover-bg: var(--hc-hover);
+  --default-button-bg: var(--hc-link);
+  --default-button-hover-bg: var(--hc-hover);
+  --object-tools-fg: var(--hc-paper);
+  --object-tools-bg: var(--hc-link);
+  --object-tools-hover-bg: var(--hc-hover);
+  --close-button-bg: var(--hc-link);
+  --close-button-hover-bg: var(--hc-hover);
+  --error-fg: var(--hc-error);
+  --delete-button-bg: #780525;
+  --delete-button-hover-bg: #59001b;
+  --nova-success-fg: var(--hc-success);
+  --nova-success-bg: var(--hc-paper);
+  --message-success-bg: var(--hc-paper);
+  --message-error-bg: var(--hc-paper);
+  --message-warning-bg: var(--hc-paper);
+  --message-info-bg: var(--hc-paper);
+  --message-debug-bg: var(--hc-paper);
+  --nova-switch-track: var(--hc-border);
+  --nova-switch-knob: var(--hc-paper);
+}
+body.nova-admin.nova-contrast-high :focus-visible { outline: 3px solid var(--hc-link); outline-offset: 2px; }
+/* Django shares button text across primary and destructive actions.
+   The destructive background stays dark in both appearances. */
+body.nova-admin.nova-contrast-high .submit-row a.deletelink { color: #fff; }

@@ -590,8 +590,9 @@ msgid "Selected on this page: {page}. Manually selected across pages: {total}."
 msgstr "本页勾选 {page} 条，跨页手动勾选共 {total} 条。"
 
 msgctxt "Nova Admin"
-msgid "All %(count)s matching records selected."
-msgstr "已选择全部 %(count)s 条匹配记录。"
+msgid "%(count)s matching record selected."
+msgid_plural "All %(count)s matching records selected."
+msgstr[0] "已选择全部 %(count)s 条匹配记录。"
 
 msgctxt "Nova Admin"
 msgid "Clear selection"
@@ -604,3 +605,19 @@ msgstr "此标签页无法在翻页后保留勾选。"
 msgctxt "Nova Admin"
 msgid "Too many selected records for one request. Reduce the selection before running the action."
 msgstr "本次提交的记录过多，请减少勾选数量后再执行。"
+
+msgctxt "Nova Admin"
+msgid "Contrast"
+msgstr "对比度"
+
+msgctxt "Nova Admin"
+msgid "Standard contrast"
+msgstr "标准对比度"
+
+msgctxt "Nova Admin"
+msgid "High contrast"
+msgstr "高对比度"
+
+msgctxt "Nova Admin"
+msgid "Unknown contrast setting"
+msgstr "未知的对比度设置"
