@@ -512,6 +512,10 @@ msgid "Match specified counts or ranges (e.g. 0, 2-4, 6)"
 msgstr "命中指定值或闭区间（如 0、2 到 4、6）"
 
 msgctxt "Nova demo"
+msgid "Match none of the specified counts or ranges (e.g. 0, 2-4, 6)"
+msgstr "命中标签数不在指定值或闭区间中（如 0、2 到 4、6）"
+
+msgctxt "Nova demo"
 msgid "Included tag counts or ranges"
 msgstr "包含的标签命中数或区间"
 
@@ -541,3 +545,8 @@ msgstr "命中标签数不在任何指定区间（%(ranges)s）"
 msgctxt "Nova demo"
 msgid "Match these counts or ranges (%(ranges)s)"
 msgstr "命中指定值或闭区间（%(ranges)s）"
+
+#, python-format
+msgctxt "Nova demo"
+msgid "Match none of these counts or ranges (%(ranges)s)"
+msgstr "命中标签数不在指定值或闭区间中（%(ranges)s）"

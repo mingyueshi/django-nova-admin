@@ -5,10 +5,11 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
   const maximum = fields.namedItem(minimum.dataset.minimumFor + "_max");
   const counts = fields.namedItem(minimum.dataset.minimumFor + "_counts");
   const ranges = fields.namedItem(minimum.dataset.minimumFor + "_ranges");
+  const mixedCountModes = ["values_or_ranges", "not_values_or_ranges"];
 
   function validateRanges() {
     const tagCount = tags.selectedOptions.length;
-    const allowCounts = mode.value === "values_or_ranges";
+    const allowCounts = mixedCountModes.includes(mode.value);
     const valid = ranges.disabled || !ranges.value || ranges.value.split(/[,，、]/).every((part) => {
       const pair = /^(0|[1-9][0-9]*)(?:\s*(?:-|到)\s*(0|[1-9][0-9]*))?$/.exec(part.trim());
       if (!pair || (!allowCounts && pair[2] === undefined)) return false;
@@ -24,7 +25,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
     const usesMinimum = range || ["exact", "not_exact", "at_least"].includes(mode.value);
     const usesMaximum = range || mode.value === "at_most";
     const usesCounts = mode.value === "one_of" || mode.value === "not_one_of";
-    const usesRanges = ["any_range", "not_any_range", "values_or_ranges"].includes(mode.value);
+    const usesRanges = mixedCountModes.includes(mode.value) || ["any_range", "not_any_range"].includes(mode.value);
     tags.required = usesMinimum || usesMaximum || usesCounts || usesRanges;
     minimum.required = usesMinimum;
     minimum.disabled = !usesMinimum;

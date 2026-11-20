@@ -12,6 +12,7 @@ from .navigation import visible_admin_objects
 
 
 UNTAGGED = "untagged"
+MIXED_COUNT_MODES = ("values_or_ranges", "not_values_or_ranges")
 
 
 def readable_tags(request, owner, db):
@@ -40,7 +41,7 @@ class TagRule(NamedTuple):
     @property
     def ranges_text(self):
         return ", ".join(
-            str(low) if self.mode == "values_or_ranges" and low == high else f"{low}-{high}"
+            str(low) if self.mode in MIXED_COUNT_MODES and low == high else f"{low}-{high}"
             for low, high in self.ranges
         )
 
@@ -56,13 +57,15 @@ class TagRule(NamedTuple):
 
     @property
     def negated(self):
-        return self.mode in ("not_exact", "not_range", "not_one_of", "not_any_range")
+        return self.mode in ("not_exact", "not_range", "not_one_of", "not_any_range", "not_values_or_ranges")
 
     @property
     def count_label(self):
         if self.ranges:
             if self.mode == "values_or_ranges":
                 label = pgettext("Nova demo", "Match these counts or ranges (%(ranges)s)")
+            elif self.mode == "not_values_or_ranges":
+                label = pgettext("Nova demo", "Match none of these counts or ranges (%(ranges)s)")
             elif self.negated:
                 label = pgettext("Nova demo", "Match none of these ranges (%(ranges)s)")
             else:
@@ -142,16 +145,17 @@ def _tag_rule(query, parameter, *, exporting):
     upper = query.getlist(parameter + "_max")
     counts = query.getlist(parameter + "_counts")
     ranges = query.getlist(parameter + "_ranges")
-    valid_modes = ([], ["any"], ["all"], ["at_least"], ["at_most"], ["exact"], ["not_exact"],
-                   ["range"], ["not_range"], ["one_of"], ["not_one_of"], ["any_range"], ["not_any_range"], ["values_or_ranges"])
-    if modes not in valid_modes or len(lower) > 1 or len(upper) > 1 or len(ranges) > 1:
+    valid_modes = ("any", "all", "at_least", "at_most", "exact", "not_exact", "range", "not_range",
+                   "one_of", "not_one_of", "any_range", "not_any_range", *MIXED_COUNT_MODES)
+    if len(modes) > 1 or (modes and modes[0] not in valid_modes) or len(lower) > 1 or len(upper) > 1 or len(ranges) > 1:
         raise Http404
     mode = modes[0] if modes else ""
     is_range = mode in ("range", "not_range")
     uses_lower = is_range or mode in ("at_least", "exact", "not_exact")
     uses_upper = is_range or mode == "at_most"
     uses_counts = mode in ("one_of", "not_one_of")
-    uses_ranges = mode in ("any_range", "not_any_range", "values_or_ranges")
+    allow_counts_in_ranges = mode in MIXED_COUNT_MODES
+    uses_ranges = allow_counts_in_ranges or mode in ("any_range", "not_any_range")
     # Plain HTML can send inactive bounds. Export URLs must only carry active ones.
     if exporting or not mode:
         if ((upper and not uses_upper) or (lower and not uses_lower) or
@@ -160,7 +164,7 @@ def _tag_rule(query, parameter, *, exporting):
     if uses_ranges:
         if not keys or not ranges:
             raise Http404
-        intervals = _count_ranges(ranges[0], len(keys), allow_counts=mode == "values_or_ranges")
+        intervals = _count_ranges(ranges[0], len(keys), allow_counts=allow_counts_in_ranges)
         return TagRule(keys, mode, ranges=intervals)
     if uses_counts:
         if not keys or not counts:
