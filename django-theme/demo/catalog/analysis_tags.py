@@ -13,6 +13,7 @@ from .navigation import visible_admin_objects
 
 UNTAGGED = "untagged"
 MIXED_COUNT_MODES = ("values_or_ranges", "not_values_or_ranges")
+FULLWIDTH_DIGITS = str.maketrans("０１２３４５６７８９", "0123456789")
 # Each letter of "inf" or "infinity" accepts either width and case.
 INFINITY_NAME = re.compile(r"[iIｉＩ][nNｎＮ][fFｆＦ](?:[iIｉＩ][nNｎＮ][iIｉＩ][tTｔＴ][yYｙＹ])?")
 ONE_SIDED_COUNT = re.compile(
@@ -188,6 +189,7 @@ def _count_interval(term, key_count, mixed):
 
 
 def _count_ranges(value, key_count, *, mixed):
+    value = value.translate(FULLWIDTH_DIGITS)
     if mixed:
         # Normalize before splitting so the comma in [3,INF) stays inside the interval.
         value = INFINITY_NAME.sub("∞", value)

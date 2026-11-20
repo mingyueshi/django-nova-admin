@@ -6,7 +6,7 @@ const source = readFileSync(new URL('../demo/catalog/static/catalog/product-tag-
 const sides = ['chart_tag', 'chart_tag_exclude'];
 const mixedModes = ['values_or_ranges', 'not_values_or_ranges'];
 const fields = sides.map(name => `
-    <select multiple name="${name}">${[1, 2, 3, 4, 5, 6].map(n => `<option selected>${n}</option>`).join('')}</select>
+    <select multiple name="${name}">${Array.from({length: 12}, (_, i) => `<option ${i < 6 ? 'selected' : ''}>${i + 1}</option>`).join('')}</select>
     <select name="${name}_mode">${['any', 'any_range', ...mixedModes].map(mode => `<option>${mode}</option>`).join('')}</select>
     <label><input type="number" name="${name}_min" data-minimum-for="${name}"></label>
     <label><input type="number" name="${name}_max"></label>
@@ -77,13 +77,16 @@ try {
                 ['(－ｉｎｆ,1]', true], ['(−Ｉｎｆｉｎｉｔｙ,0)', true], ['[6,ＩＮＦ)', true], ['(6,+ｉＮｆＩｎＩｔＹ)', true],
                 ['(-ｉＮＦ,＋Ｉｎｆｉｎｉｔｙ)', true], ['（ －ＩＮＦ ，2］、[2,4),3,［5，＋Infinity）', true],
                 ['(ｉｎｆ,1]', false], ['*,(＋Ｉｎｆｉｎｉｔｙ,2]', false], ['[1,－ｉＮｆ),*', false], ['[－ＩＮＦ,1]', false],
-                ['[1,＋ＩＮＦ]', false], ['(－ｉｎｆ,7]', false], ['[7,ｉｎｆ)', false], ['(－ｉｎｆ,２]', false],
+                ['[1,＋ＩＮＦ]', false], ['(－ｉｎｆ,7]', false], ['[7,ｉｎｆ)', false], ['(－ｉｎｆ,２]', true],
                 ['(－ｉｎｆｉｎ,1]', false], ['(1,ＩＮＦＸ)', false],
                 ['(−ｉnＦ,0]', true], ['(-Iｎfｉnｉtｙ,0)', true], ['[6,ｉnＦ)', true], ['(6,+Iｎfｉnｉtｙ)', true],
                 ['(－ｉnＦ,＋Iｎfｉnｉtｙ)', true], ['（ －Iｎfｉnｉtｙ ，2］、[2,4),3,［5，＋ｉnＦ）', true],
                 ['(ｉnＦ,1]', false], ['*,(＋Iｎfｉnｉtｙ,1]', false], ['(1,−ｉnＦ),*', false], ['[－ｉnＦ,1]', false],
-                ['[1,＋ｉnＦ]', false], ['(−ｉnＦ,7]', false], ['[7,Iｎfｉnｉtｙ)', false], ['(−ｉnＦ,２]', false],
+                ['[1,＋ｉnＦ]', false], ['(−ｉnＦ,7]', false], ['[7,Iｎfｉnｉtｙ)', false], ['(−ｉnＦ,２]', true],
                 ['(1,Iｎfｉn)', false], ['(1,ıｎＦ)', false],
+                ['０、２到４、[６,＋ｉnＦ)', true], ['１、(１,４]、至少６个', true], ['少于０、６个及以上', true],
+                ['０1', false], ['0０-２', false], ['[０,0２)', false], ['>=０１', false], ['２到1', false],
+                ['*,多于７个', false], ['②', false], ['٣', false], ['２－2', false],
                 ['*,7', false], ['2-1,*', false], ['**', false], ['1*', false], ['[*,2]', false], ['*,', false],
                 ['(,),7', false], ['(7,), (,)', false], ['(,),4-2', false], ['(,),', false], ['(,,)', false],
                 ['[,)', false], ['[,]', false], ['(,]', false], ['[,1)', false], ['[,1]', false], ['(1,]', false], ['[1,]', false],
@@ -96,7 +99,15 @@ try {
                 input.dispatchEvent(new window.Event('input'));
                 assert.equal(input.checkValidity(), valid, value);
             }
-            input.value = '(－Iｎfｉnｉtｙ,2]、(1,4]、[6,＋ｉnＦ)';
+            for (const option of tags.options) option.selected = true;
+            input.value = '１0、[1１,１2)、至少1２个';
+            tags.dispatchEvent(new window.Event('change'));
+            assert.ok(input.checkValidity());
+            tags.options[11].selected = false;
+            tags.dispatchEvent(new window.Event('change'));
+            assert.equal(input.validationMessage, 'Invalid count or range');
+            for (const option of tags.options) option.selected = option.index < 6;
+            input.value = '０、２到４、[６,＋ｉnＦ)';
             tags.options[5].selected = false;
             tags.dispatchEvent(new window.Event('change'));
             assert.equal(input.validationMessage, 'Invalid count or range');
@@ -110,6 +121,9 @@ try {
         mode.value = 'any_range';
         mode.dispatchEvent(new window.Event('change'));
         assert.equal(input.validationMessage, 'Invalid range');
+        input.value = '０-1、３到４';
+        input.dispatchEvent(new window.Event('input'));
+        assert.ok(input.checkValidity());
         input.value = '*';
         input.dispatchEvent(new window.Event('input'));
         assert.equal(input.validationMessage, 'Invalid range');

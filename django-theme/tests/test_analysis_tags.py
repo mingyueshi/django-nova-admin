@@ -871,6 +871,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             (keys, "3 到 4、0-1，3-3", "0-1, 3-4", all_skus - {"n2"}),
             (keys, "1-2, 3-4, 2-3, 1-2", "1-4", {"n1", "n2", "n3", "n4"}),
             (keys, "0-0, 2-2", "0-0, 2-2", {"n0", "other", "n2"}),
+            (keys, "０-0、２到2", "0-0, 2-2", {"n0", "other", "n2"}),
             ([*keys, "untagged"], "0-0, 2-2", "0-0, 2-2", {"other", "n2"}),
             (["untagged"], "1-1", "1-1", {"n0"}),
             (keys, "0-4", "0-4", all_skus),
@@ -1107,6 +1108,11 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             ("(7,+Iｎfｉnｉtｙ)", ">7", set()),
             ("(－ｉnＦ,＋Iｎfｉnｉtｙ)", ">=0", all_counts),
             ("（ －Iｎfｉnｉtｙ ，2］、[2,4),3,［5，＋ｉnＦ）", "<4, >=5", {0, 1, 2, 3, 5, 6, 7}),
+            ("０、２到４、[６,＋ｉnＦ)", "0, 2-4, >=6", {0, 2, 3, 4, 6, 7}),
+            ("１、(１,４]、至少６个", "1, (1,4], >=6", {1, 2, 3, 4, 6, 7}),
+            ("少于０个、７个及以上", "<0, >=7", {7}),
+            ("多于７个", ">7", set()),
+            ("(－ｉｎｆ,２]", "<=2", {0, 1, 2}),
         ):
             repeated = [*keys, keys[0]]
             include = self.combination(initial, entry, repeated, "values_or_ranges", ranges=expression)
@@ -1153,6 +1159,27 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         self.assertEqual(saved, ">6")
         seven = self.combination(page, six, keys, "values_or_ranges", ranges=saved)
         self.assertEqual([row[0] for row in self.csv_rows(self.download(seven))[1:]], ["n7"])
+
+    def test_mixed_digits_within_a_count(self):
+        self.grant_export()
+        tags = [Tag.objects.create(name=f"t{i}", slug=f"t{i}") for i in range(12)]
+        for n in (9, 10, 11, 12):
+            self.item(f"n{n}", *tags[:n])
+        entry = self.entry()
+        initial = self.open_page(entry)
+        keys = [tag.pk for tag in tags] + [tags[0].pk]
+        for expression, canonical in (("１0、[1１,１2)、至少1２个", "10, [11,12), >=12"),
+                                      ("1０到１2", "10-12")):
+            include = self.combination(initial, entry, keys, "values_or_ranges", ranges=expression)
+            exclude = self.combination(initial, entry, [], "any", excluded=keys,
+                                       exclude_mode="values_or_ranges", exclude_ranges=expression)
+            for url, field, expected in ((include, "chart_tag_ranges", ["n10", "n11", "n12"]),
+                                         (exclude, "chart_tag_exclude_ranges", ["n9"])):
+                with self.subTest(field=field, expression=expression):
+                    page = self.open_page(url)
+                    export = urljoin(url, page.select_one("#product-details form")["action"])
+                    self.assertEqual(parse_qs(urlsplit(export).query)[field], [canonical])
+                    self.assertCountEqual([row[0] for row in self.csv_rows(self.download(export))[1:]], expected)
 
     def test_negated_mixed_rules_with_untagged_and_empty_results(self):
         self.grant_export()
@@ -1252,9 +1279,11 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                        ["[－inf,1]"], ["[1,＋inf]"], ["(－∞,3]"], ["[3,＋∞)"],
                        ["1－2"], ["[＋1,＋∞)"], ["(1,＋＋inf)"],
                        ["(ｉｎｆ,1]"], ["*,(＋Ｉｎｆｉｎｉｔｙ,2]"], ["[1,－ｉＮｆ),*"], ["[－ＩＮＦ,1]"], ["[1,＋ＩＮＦ]"],
-                       ["(－ｉｎｆ,3]"], ["[3,ｉｎｆ)"], ["(－ｉｎｆ,２]"], ["(－ｉｎｆｉｎ,1]"], ["(1,ＩＮＦＸ)"],
+                       ["(－ｉｎｆ,3]"], ["[3,ｉｎｆ)"], ["(－ｉｎｆｉｎ,1]"], ["(1,ＩＮＦＸ)"],
                        ["(ｉnＦ,1]"], ["*,(＋Iｎfｉnｉtｙ,1]"], ["(1,−ｉnＦ),*"], ["[－ｉnＦ,1]"], ["[1,＋ｉnＦ]"],
-                       ["(−ｉnＦ,3]"], ["[3,Iｎfｉnｉtｙ)"], ["(−ｉnＦ,２]"], ["(1,Iｎfｉn)"], ["(1,ıｎＦ)"],
+                       ["(−ｉnＦ,3]"], ["[3,Iｎfｉnｉtｙ)"], ["(1,Iｎfｉn)"], ["(1,ıｎＦ)"],
+                       ["０1"], ["0０-２"], ["[０,0２)"], ["至少０１个"], ["１-３"], ["２ 到 1"],
+                       ["*,多于３个"], ["少于1３个"], ["②"], ["٣"], ["２－2"],
                        ["[,1]"], ["[,1)"], ["(1,]"], ["[1,]"], ["(,3]"], ["[3,)"], ["(,01)"],
                        ["(,-1]"], ["[0,), (1,,)"], ["(,1][2,)"], ["(,0),,"],
                        ["([0,2))"], ["0(1,2]"], ["(0,1][1,2)"], ["(0,2),"], ["[00,1)"], ["(-1,2]"]]
@@ -1415,6 +1444,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                     ("(－Inf,2),1", "(1,＋InFiNiTy),0"),
                     ("(−ＩｎＦ,2),1", "(1,＋Ｉｎｆｉｎｉｔｙ),0"),
                     ("(−ｉnＦ,2),1", "(1,＋Iｎfｉnｉtｙ),0"),
+                    ("少于２个、１", "(１,＋ｉnＦ),０"),
                 )
             ]
             summaries = {
@@ -1509,7 +1539,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                             "(1,InFiNiTy),0": "0, >1", "(−InFiNiTy,2),1": "<2",
                                             "(－Inf,2),1": "<2", "(1,＋InFiNiTy),0": "0, >1",
                                             "(−ＩｎＦ,2),1": "<2", "(1,＋Ｉｎｆｉｎｉｔｙ),0": "0, >1",
-                                            "(−ｉnＦ,2),1": "<2", "(1,＋Iｎfｉnｉtｙ),0": "0, >1"}[submitted[field][0]]
+                                            "(−ｉnＦ,2),1": "<2", "(1,＋Iｎfｉnｉtｙ),0": "0, >1",
+                                            "少于２个、１": "<2", "(１,＋ｉnＦ),０": "0, >1"}[submitted[field][0]]
                                 self.assertEqual(query[field], [expected])
                                 self.assertNotIn(name + "_counts", query)
                                 for form in ("#product-chart-filters", "#product-tag-ranking"):
@@ -1623,8 +1654,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             infinity_urls.append(self.combination(branch, url, [self.sale.pk], "values_or_ranges", ranges=f"({lower},{upper})"))
             infinity_urls.append(self.combination(branch, url, [], "any", excluded=[self.sale.pk],
                                                   exclude_mode="values_or_ranges", exclude_ranges=f"(1,{upper})"))
-        infinity_urls.append(self.combination(branch, url, [self.sale.pk], "values_or_ranges", ranges="(−∞,1]",
-                                              excluded=[self.sale.pk], exclude_mode="values_or_ranges", exclude_ranges="(−inf,0)"))
+        infinity_urls.append(self.combination(branch, url, [self.sale.pk], "values_or_ranges", ranges="(−∞,１]",
+                                              excluded=[self.sale.pk], exclude_mode="values_or_ranges", exclude_ranges="(−inf,０)"))
         not_mixed_include = self.combination(branch, url, [self.sale.pk, self.popular.pk], "not_values_or_ranges", ranges="0,1-2")
         not_mixed_exclude = self.combination(branch, url, [], "any", excluded=[self.sale.pk, "untagged"],
                                              exclude_mode="not_values_or_ranges", exclude_ranges="0,1-2")

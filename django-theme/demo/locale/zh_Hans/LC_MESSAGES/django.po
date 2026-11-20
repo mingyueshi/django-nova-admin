@@ -524,12 +524,12 @@ msgid "Excluded tag counts or ranges"
 msgstr "排除的标签命中数或区间"
 
 msgctxt "Nova demo"
-msgid "Use ranges such as 0-1, 3-4, with endpoints between zero and the number of selected tags."
-msgstr "请按 0-1, 3-4 的格式填写区间，每个区间的下限和上限应依次位于 0 到已选标签数之间。"
+msgid "Enter ranges such as ０-1, 3-４. Use halfwidth or fullwidth digits without leading zeros. Endpoints must be ordered and lie between zero and the number of selected tags."
+msgstr "请填写形如 ０-1、3-４ 的区间。数字可混用全角和半角，不可有前导零。上下限须依次位于 0 到已选标签数之间。"
 
 msgctxt "Nova demo"
-msgid "Enter counts, intervals or comparisons. Round brackets exclude an endpoint and square brackets include it. Use ∞, inf or infinity with -, − or － on the left. On the right, + and ＋ are optional. Each letter in inf or infinity may be ASCII or fullwidth, uppercase or lowercase, as in (－ｉnＦ,3] or [3,Iｎfｉnｉtｙ). Use round brackets on unbounded sides, including blank or * endpoints. A standalone * matches every count. Numeric endpoints must be ordered and lie between zero and the number of selected tags."
-msgstr "可填写命中数、区间或单边比较。圆括号不含端点，方括号包含端点。无穷端点可写 ∞、inf 或 infinity，左端可用半角负号 -、数学负号 − 或全角负号 －。右端可用 + 或 ＋，也可省略加号。inf 和 infinity 中的每个字母都可用全角或半角，不区分大小写，例如 (－ｉnＦ,3] 或 [3,Iｎfｉnｉtｙ)。无界的一侧用圆括号，也可留空或填写 *。单独的 * 匹配任意命中数，包括零。数值端点须在 0 到已选标签数之间，下限不能大于上限。"
+msgid "Enter counts, intervals or comparisons. Round brackets exclude an endpoint and square brackets include it. Use ∞, inf or infinity with -, − or － on the left. On the right, + and ＋ are optional. Each letter in inf or infinity may be ASCII or fullwidth, uppercase or lowercase, as in (－ｉnＦ,3] or [3,Iｎfｉnｉtｙ). Use round brackets on unbounded sides, including blank or * endpoints. A standalone * matches every count. Counts may mix halfwidth and fullwidth digits without leading zeros. Numeric endpoints must be ordered and lie between zero and the number of selected tags."
+msgstr "可填写命中数、区间或单边比较。圆括号不含端点，方括号包含端点。无穷端点可写 ∞、inf 或 infinity，左端可用半角负号 -、数学负号 − 或全角负号 －。右端可用 + 或 ＋，也可省略加号。inf 和 infinity 中的每个字母都可用全角或半角，不区分大小写，例如 (－ｉnＦ,3] 或 [3,Iｎfｉnｉtｙ)。无界的一侧用圆括号，也可留空或填写 *。单独的 * 匹配任意命中数，包括零。命中数可混用全角和半角数字，不可有前导零。数值端点须在 0 到已选标签数之间，下限不能大于上限。"
 
 #, python-format
 msgctxt "Nova demo"

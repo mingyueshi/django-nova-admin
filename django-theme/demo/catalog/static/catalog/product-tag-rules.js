@@ -11,7 +11,8 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
   function validateRanges() {
     const tagCount = tags.selectedOptions.length;
     const mixed = mixedCountModes.includes(mode.value);
-    const value = mixed ? ranges.value.replace(infinityName, "∞") : ranges.value;
+    const normalized = ranges.value.replace(/[０-９]/g, digit => digit.normalize("NFKC"));
+    const value = mixed ? normalized.replace(infinityName, "∞") : normalized;
     // Keep the comma inside an interval, including when the upper endpoint is unbounded.
     const separators = /、|[,，](?!\s*(?:(?:[0-9]+|\*|[+＋]?∞)\s*)?(?:\)|\]|）|］))/;
     const valid = ranges.disabled || !value || value.split(separators).every((part) => {
@@ -69,7 +70,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
     counts.setCustomValidity(usesCounts && outOfRange ? counts.dataset.rangeError : "");
     ranges.required = usesRanges;
     ranges.disabled = !usesRanges;
-    ranges.placeholder = mixedCountModes.includes(mode.value) ? "(－ｉnＦ,1], 3, [5,Iｎfｉnｉtｙ)" : "0-1, 3-4";
+    ranges.placeholder = mixedCountModes.includes(mode.value) ? "０、２到４、[６,＋ｉnＦ)" : "0-1, 3-4";
     ranges.closest("label").hidden = !usesRanges;
     validateRanges();
   }
