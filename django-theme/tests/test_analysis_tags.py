@@ -1023,6 +1023,9 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             ("(,2),1-3,（，2］、3,［6，）", "<=3, >=6", {0, 1, 2, 3, 6, 7}),
             ("0,(2,4],(3,),[6,)", "0, >2", {0, 3, 4, 5, 6, 7}),
             ("(,4]，[4,)", ">=0", all_counts),
+            ("(,)", ">=0", all_counts),
+            ("0,(1,4],(,),[6,)", ">=0", all_counts),
+            ("（ ， ）、(,0), (7,), (,)", ">=0", all_counts),
         ):
             repeated = [*keys, keys[0]]
             include = self.combination(initial, entry, repeated, "values_or_ranges", ranges=expression)
@@ -1093,10 +1096,16 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             (keys, "(1,1)", ["plain", "one", "two", "other"]),
             ([*keys, "untagged"], "(,0], (1,)", ["plain", "one"]),
             (keys, "(,0), (2,)", ["plain", "one", "two", "other"]),
+            ([*keys, "untagged"], "0, (,)", []),
         ):
             with self.subTest(selected=selected, expression=expression):
                 url = self.combination(initial, entry, selected, "not_values_or_ranges", ranges=expression)
                 self.assertCountEqual([row[0] for row in self.csv_rows(self.download(url))[1:]], expected)
+
+        # Excluding the complement of all counts leaves the inclusion rule in effect.
+        url = self.combination(initial, entry, keys, "values_or_ranges", ranges="1",
+                               excluded=keys, exclude_mode="not_values_or_ranges", exclude_ranges="(,)")
+        self.assertEqual([row[0] for row in self.csv_rows(self.download(url))[1:]], ["one"])
 
         for include, exclude, restored in (
             ("values_or_ranges", "not_values_or_ranges", ["plain", "other", "two"]),
@@ -1129,12 +1138,13 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                        ["至少 0 个、至多 3 个"], ["0,3 及以上"], ["至多 -1 个"], [">=01"], ["1.5 及以下"],
                        ["至少"], ["至多 1 及以上"], [">=1-2"], ["少于"], ["< -1"], ["多于 01 个"],
                        ["≤2, 少于3"], ["0,>3"], ["多于1.5个"], ["<<1"], [">>2"], ["少于 1 及以上"],
-                       ["0,[0,3)"], ["(2,1]"], ["(1,2"], ["1,2)"], ["[0,1,2)"], ["(,)"], ["(,]"],
+                       ["0,[0,3)"], ["(2,1]"], ["(1,2"], ["1,2)"], ["[0,1,2)"], ["[,)"], ["[,]"], ["(,]"],
+                       ["(,),3"], ["(3,), (,)"], ["(,),2-1"], ["(,),"], ["(,,)"],
                        ["[,1]"], ["[,1)"], ["(1,]"], ["[1,]"], ["(,3]"], ["[3,)"], ["(,01)"],
                        ["(,-1]"], ["[0,), (1,,)"], ["(,1][2,)"], ["(,0),,"],
                        ["([0,2))"], ["0(1,2]"], ["(0,1][1,2)"], ["(0,2),"], ["[00,1)"], ["(-1,2]"]]
             if rule in ("any_range", "not_any_range"):
-                invalid.extend((["1"], ["至少 1 个"], ["1 及以下"], ["<1"], ["多于 1 个"], ["(1,2]"], ["(,1]"], ["(1,)"]))
+                invalid.extend((["1"], ["至少 1 个"], ["1 及以下"], ["<1"], ["多于 1 个"], ["(1,2]"], ["(,1]"], ["(1,)"], ["(,)"]))
             for values in invalid:
                 with self.subTest(side=side, rule=rule, values=values):
                     url = entry + "&" + urlencode([*tags, mode, *((field, v) for v in values)])
@@ -1293,6 +1303,16 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                 self.assertIsNone(self.open_page(target).select_one('#product-details form, [name="_save"]'))
                 self.assertEqual(self.download(target).status_code, 403)
             self.grant_export()
+            # A universal tag rule must still respect the signed window, hosting admin and direct category.
+            all_counts = self.combination(initial, direct, included, "values_or_ranges", ranges="1,(,),[1,2]")
+            page = self.open_page(all_counts)
+            self.assertEqual(dict(self.ranking(page)), {"促销": 2, "人气": 2, "未打标签": 1})
+            daily, status = [json.loads(n.string) for n in page.select('.product-analysis-charts [type="application/json"]')]
+            self.assertTrue(all((s["timezone"], s["as_of"]) == (self.zone, self.cutoff) for s in (daily, status)))
+            self.assertEqual([p["value"] for p in daily["points"]], [1, 3])
+            self.assertEqual([p["value"] for p in status["points"]], [4, 1, 0])
+            export = urljoin(all_counts, page.select_one("#product-details form")["action"])
+            self.assertCountEqual([row[0] for row in self.csv_rows(self.download(export))[1:]], ["plain", "sale", "both", "popular"])
             for target in (*summaries, bounded, equal_bounds):
                 with self.subTest(target=target):
                     page = self.open_page(target)
@@ -1443,6 +1463,9 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         unbounded_include = self.combination(branch, url, [self.sale.pk], "values_or_ranges", ranges="(1,)")
         unbounded_exclude = self.combination(branch, url, [], "any", excluded=[self.sale.pk],
                                              exclude_mode="values_or_ranges", exclude_ranges="(,0)")
+        any_count_include = self.combination(branch, url, [self.sale.pk], "values_or_ranges", ranges="0,(,)")
+        any_count_exclude = self.combination(branch, url, [], "any", excluded=[self.sale.pk],
+                                             exclude_mode="values_or_ranges", exclude_ranges="(,)")
         not_mixed_include = self.combination(branch, url, [self.sale.pk, self.popular.pk], "not_values_or_ranges", ranges="0,1-2")
         not_mixed_exclude = self.combination(branch, url, [], "any", excluded=[self.sale.pk, "untagged"],
                                              exclude_mode="not_values_or_ranges", exclude_ranges="0,1-2")
@@ -1460,7 +1483,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                   outside_include, outside_exclude, set_include, set_exclude, not_set_include, not_set_exclude,
                                   union_include, union_exclude, outside_union_include, outside_union_exclude,
                                   mixed_include, mixed_exclude, unbounded_include, unbounded_exclude,
-                                  not_mixed_include, not_mixed_exclude):
+                                  any_count_include, any_count_exclude, not_mixed_include, not_mixed_exclude):
                     self.assertEqual(self.client.get(selection).status_code, 404)
                     denied = self.download(selection)
                     self.assertEqual(denied.status_code, 404)
@@ -1513,6 +1536,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         self.assertEqual(self.download(mixed_exclude).status_code, 403)
         self.assertEqual(self.download(unbounded_include).status_code, 403)
         self.assertEqual(self.download(unbounded_exclude).status_code, 403)
+        self.assertEqual(self.download(any_count_include).status_code, 403)
+        self.assertEqual(self.download(any_count_exclude).status_code, 403)
         self.assertEqual(self.download(not_mixed_include).status_code, 403)
         self.assertEqual(self.download(not_mixed_exclude).status_code, 403)
 

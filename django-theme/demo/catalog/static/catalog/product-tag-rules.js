@@ -18,7 +18,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
         const interval = /^(\(|\[|（|［)\s*(?:(0|[1-9][0-9]*)\s*)?[,，]\s*(?:(0|[1-9][0-9]*)\s*)?(\)|\]|）|］)$/.exec(term);
         if (interval) {
           const [, left, lower, upper, right] = interval;
-          if (lower === undefined && (upper === undefined || !["(", "（"].includes(left))) return false;
+          if (lower === undefined && !["(", "（"].includes(left)) return false;
           if (upper === undefined && ![")", "）"].includes(right)) return false;
           const low = Number(lower ?? 0);
           const high = Number(upper ?? tagCount);

@@ -152,7 +152,7 @@ def _count_interval(term, key_count, mixed):
         left, lower, upper, right = interval.groups()
         open_left = left in ("(", "（")
         open_right = right in (")", "）")
-        if lower is None and (upper is None or not open_left):
+        if lower is None and not open_left:
             raise Http404
         if upper is None and not open_right:
             raise Http404
@@ -279,6 +279,12 @@ def _positive_tag_match(memberships, keys, count_filter, *, matches_one):
 
 
 def _tag_match(memberships, rule):
+    if rule.ranges:
+        low, high = rule.ranges[0]
+        if high is None and (low is None or low.included == 0):
+            # (,) and its saved form >=0 cover every count. Selected keys are already authorized.
+            no_products = Q(pk__in=[])
+            return no_products if rule.negated else ~no_products
     maximum = rule.match_maximum
     counts = rule.match_counts
     if rule.ranges or counts:
