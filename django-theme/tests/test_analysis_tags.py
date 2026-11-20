@@ -977,7 +977,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         export = urljoin(empty, page.select_one("#product-details form")["action"])
         self.assertEqual(self.csv_rows(self.download(export)), [["SKU", "商品名称", "更新时间 (America/New_York)"]])
 
-    def test_one_sided_mixed_ranges_share_results_and_keep_open_ends(self):
+    def test_mixed_ranges_share_results_and_keep_open_ends(self):
         self.grant_export()
         tags = [Tag.objects.create(name=f"t{i}", slug=f"tag-{i}") for i in range(1, 8)]
         for n in range(8):
@@ -999,6 +999,18 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             ("少于 7 个", "<7", all_counts - {7}),
             ("<0", "<0", set()),
             (">7", ">7", set()),
+            ("(2,5)", "(2,5)", {3, 4}),
+            ("[2,5)", "[2,5)", {2, 3, 4}),
+            ("(2,5]", "(2,5]", {3, 4, 5}),
+            ("0、(1,4]，[6,7)", "0, (1,4], [6,7)", {0, 2, 3, 4, 6}),
+            ("［0，2）、(1,4],3-5,3,至少 7 个", "[0,2), (1,5], >=7", {0, 1, 2, 3, 4, 5, 7}),
+            ("（0，3］、[2,5),2,>5", "(0,5), >5", {1, 2, 3, 4, 6, 7}),
+            ("(2,3)", "(2,3)", set()),
+            ("(4,4)", "(4,4)", set()),
+            ("[0,0)", "[0,0)", set()),
+            ("(7,7]", "(7,7]", set()),
+            ("[7,7]", "7", {7}),
+            ("[2,2), (3,3), 5", "5", {5}),
         ):
             repeated = [*keys, keys[0]]
             include = self.combination(initial, entry, repeated, "values_or_ranges", ranges=expression)
@@ -1064,6 +1076,9 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
             (keys, "至多 2 个", []),
             ([*keys, "untagged"], "少于1、多于1", ["plain", "one"]),
             (keys, "<0、>2", ["plain", "one", "two", "other"]),
+            ([*keys, "untagged"], "(0,2)", ["other", "two"]),
+            (keys, "[0,1)", ["one", "two"]),
+            (keys, "(1,1)", ["plain", "one", "two", "other"]),
         ):
             with self.subTest(selected=selected, expression=expression):
                 url = self.combination(initial, entry, selected, "not_values_or_ranges", ranges=expression)
@@ -1099,9 +1114,11 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                        ["0-1,3"], ["0、1 到 3"], ["0,-1"], ["1,01"], ["0,,2"], ["1.5,0-1"],
                        ["至少 0 个、至多 3 个"], ["0,3 及以上"], ["至多 -1 个"], [">=01"], ["1.5 及以下"],
                        ["至少"], ["至多 1 及以上"], [">=1-2"], ["少于"], ["< -1"], ["多于 01 个"],
-                       ["≤2, 少于3"], ["0,>3"], ["多于1.5个"], ["<<1"], [">>2"], ["少于 1 及以上"]]
+                       ["≤2, 少于3"], ["0,>3"], ["多于1.5个"], ["<<1"], [">>2"], ["少于 1 及以上"],
+                       ["0,[0,3)"], ["(2,1]"], ["(1,2"], ["1,2)"], ["[0,1,2)"], ["(,1]"], ["(1,)"],
+                       ["([0,2))"], ["0(1,2]"], ["(0,1][1,2)"], ["(0,2),"], ["[00,1)"], ["(-1,2]"]]
             if rule in ("any_range", "not_any_range"):
-                invalid.extend((["1"], ["至少 1 个"], ["1 及以下"], ["<1"], ["多于 1 个"]))
+                invalid.extend((["1"], ["至少 1 个"], ["1 及以下"], ["<1"], ["多于 1 个"], ["(1,2]"]))
             for values in invalid:
                 with self.subTest(side=side, rule=rule, values=values):
                     url = entry + "&" + urlencode([*tags, mode, *((field, v) for v in values)])
@@ -1237,10 +1254,10 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                                            excluded=excluded, exclude_mode="any_range", exclude_ranges="2-2, 0-0")
             outside_union = self.combination(initial, direct, excluded, "not_any_range", ranges="2-2, 0-0", counts=[1],
                                              excluded=included, exclude_mode="not_any_range", exclude_ranges="1-1, 0-1")
-            mixed = self.combination(initial, direct, included, "values_or_ranges", ranges="1, 少于 2 个", counts=[2], minimum=2,
-                                     excluded=excluded, exclude_mode="values_or_ranges", exclude_ranges="多于 1 个、0")
-            not_mixed = self.combination(initial, direct, excluded, "not_values_or_ranges", ranges="多于 1 个、0", counts=[1],
-                                         excluded=included, exclude_mode="not_values_or_ranges", exclude_ranges="1, 少于 2 个")
+            mixed = self.combination(initial, direct, included, "values_or_ranges", ranges="1, [0,2)", counts=[2], minimum=2,
+                                     excluded=excluded, exclude_mode="values_or_ranges", exclude_ranges="(1,2]、0")
+            not_mixed = self.combination(initial, direct, excluded, "not_values_or_ranges", ranges="(1,2]、0", counts=[1],
+                                         excluded=included, exclude_mode="not_values_or_ranges", exclude_ranges="1, [0,2)")
             summaries = {
                 at_most: ("最多命中 1 个", "最多命中 0 个", ("_max",)),
                 exact: ("恰好命中 1 个", "恰好命中 0 个", ("_min",)),
@@ -1250,8 +1267,8 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                 not_count_set: ("命中标签数不在指定值中（0, 2）", "命中标签数不在指定值中（0, 1）", ()),
                 range_union: ("命中标签数落在任一指定区间（0-1）", "命中标签数落在任一指定区间（0-0, 2-2）", ()),
                 outside_union: ("命中标签数不在任何指定区间（0-0, 2-2）", "命中标签数不在任何指定区间（0-1）", ()),
-                mixed: ("命中指定值或范围（<2）", "命中指定值或范围（0, >1）", ()),
-                not_mixed: ("命中标签数不在指定值或范围中（0, >1）", "命中标签数不在指定值或范围中（<2）", ()),
+                mixed: ("命中指定值或范围（[0,2)）", "命中指定值或范围（0, (1,2]）", ()),
+                not_mixed: ("命中标签数不在指定值或范围中（0, (1,2]）", "命中标签数不在指定值或范围中（[0,2)）", ()),
             }
             for target in summaries:
                 self.assertIsNone(self.open_page(target).select_one('#product-details form, [name="_save"]'))
@@ -1307,7 +1324,7 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
                             if mode in ("any_range", "not_any_range", "values_or_ranges", "not_values_or_ranges"):
                                 field = name + "_ranges"
                                 expected = {"1-1, 0-1": "0-1", "2-2, 0-0": "0-0, 2-2",
-                                            "1, 少于 2 个": "<2", "多于 1 个、0": "0, >1"}[submitted[field][0]]
+                                            "1, [0,2)": "[0,2)", "(1,2]、0": "0, (1,2]"}[submitted[field][0]]
                                 self.assertEqual(query[field], [expected])
                                 self.assertNotIn(name + "_counts", query)
                                 for form in ("#product-chart-filters", "#product-tag-ranking"):
@@ -1400,9 +1417,9 @@ class ProductTagRankingTests(ProductAnalysisTestCase):
         outside_union_include = self.combination(branch, url, [self.sale.pk, self.popular.pk], "not_any_range", ranges="0-0,2-2")
         outside_union_exclude = self.combination(branch, url, [], "any", excluded=[self.sale.pk, "untagged"],
                                                  exclude_mode="not_any_range", exclude_ranges="0-0,2-2")
-        mixed_include = self.combination(branch, url, [self.sale.pk, self.popular.pk], "values_or_ranges", ranges="多于 2 个")
+        mixed_include = self.combination(branch, url, [self.sale.pk, self.popular.pk], "values_or_ranges", ranges="(0,1)")
         mixed_exclude = self.combination(branch, url, [], "any", excluded=[self.sale.pk, "untagged"],
-                                         exclude_mode="values_or_ranges", exclude_ranges="少于 0 个")
+                                         exclude_mode="values_or_ranges", exclude_ranges="[2,2)")
         not_mixed_include = self.combination(branch, url, [self.sale.pk, self.popular.pk], "not_values_or_ranges", ranges="0,1-2")
         not_mixed_exclude = self.combination(branch, url, [], "any", excluded=[self.sale.pk, "untagged"],
                                              exclude_mode="not_values_or_ranges", exclude_ranges="0,1-2")

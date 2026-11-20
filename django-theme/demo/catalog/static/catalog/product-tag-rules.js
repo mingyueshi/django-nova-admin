@@ -10,9 +10,13 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
   function validateRanges() {
     const tagCount = tags.selectedOptions.length;
     const mixed = mixedCountModes.includes(mode.value);
-    const valid = ranges.disabled || !ranges.value || ranges.value.split(/[,，、]/).every((part) => {
+    // Keep the comma before a bracketed upper endpoint inside the same term.
+    const separators = /、|[,，](?!\s*[0-9]+\s*(?:\)|\]|）|］))/;
+    const valid = ranges.disabled || !ranges.value || ranges.value.split(separators).every((part) => {
       const term = part.trim();
       if (mixed) {
+        const interval = /^(?:\(|\[|（|［)\s*(0|[1-9][0-9]*)\s*[,，]\s*(0|[1-9][0-9]*)\s*(?:\)|\]|）|］)$/.exec(term);
+        if (interval) return Number(interval[1]) <= Number(interval[2]) && Number(interval[2]) <= tagCount;
         const limit = /^(?:(?:<=?|>=?|≤|≥|至多|至少|少于|多于)\s*(0|[1-9][0-9]*)(?:\s*个)?|(0|[1-9][0-9]*)\s*(?:个\s*)?(?:及以下|及以上))$/.exec(term);
         if (limit) return Number(limit[1] ?? limit[2]) <= tagCount;
       }
@@ -55,7 +59,7 @@ document.querySelectorAll("#product-tag-ranking input[data-minimum-for]").forEac
     counts.setCustomValidity(usesCounts && outOfRange ? counts.dataset.rangeError : "");
     ranges.required = usesRanges;
     ranges.disabled = !usesRanges;
-    ranges.placeholder = mixedCountModes.includes(mode.value) ? "<2, 3-4, >6" : "0-1, 3-4";
+    ranges.placeholder = mixedCountModes.includes(mode.value) ? "0, (1,4], >6" : "0-1, 3-4";
     ranges.closest("label").hidden = !usesRanges;
     validateRanges();
   }

@@ -16,6 +16,9 @@ MIXED_COUNT_MODES = ("values_or_ranges", "not_values_or_ranges")
 ONE_SIDED_COUNT = re.compile(
     r"(?:(<=?|>=?|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
 )
+BRACKETED_COUNT = re.compile(r"(\(|\[|（|［)\s*([0-9]+)\s*[,，]\s*([0-9]+)\s*(\)|\]|）|］)")
+# A comma immediately before an upper endpoint and a closing bracket belongs to the interval.
+COUNT_SEPARATOR = re.compile(r"、|[,，](?!\s*[0-9]+\s*(?:\)|\]|）|］))")
 
 
 def readable_tags(request, owner, db):
@@ -58,6 +61,10 @@ class TagRule(NamedTuple):
                     terms.append(f">={low.included if low else 0}")
             elif low is None:
                 terms.append(f"<{high.included + 1}" if high.strict else f"<={high.included}")
+            elif low.strict or high.strict:
+                left = f"({low.included - 1}" if low.strict else f"[{low.included}"
+                right = f"{high.included + 1})" if high.strict else f"{high.included}]"
+                terms.append(f"{left},{right}")
             elif self.mode in MIXED_COUNT_MODES and low == high:
                 terms.append(str(low.included))
             else:
@@ -141,6 +148,12 @@ def _count_bound(value, lowest, key_count):
 
 
 def _count_interval(term, key_count, mixed):
+    if mixed and (interval := BRACKETED_COUNT.fullmatch(term)):
+        low = _count_bound(interval[2], 0, key_count)
+        high = _count_bound(interval[3], low, key_count)
+        open_left = interval[1] in ("(", "（")
+        open_right = interval[4] in (")", "）")
+        return CountBound(low + open_left, open_left), CountBound(high - open_right, open_right)
     if mixed and (limit := ONE_SIDED_COUNT.fullmatch(term)):
         operator = limit[1] or limit[4]
         threshold = _count_bound(limit[2] or limit[3], 0, key_count)
@@ -160,10 +173,12 @@ def _count_interval(term, key_count, mixed):
 
 def _count_ranges(value, key_count, *, mixed):
     # Validate every term before merging, even when another term already covers all counts.
-    intervals = [_count_interval(part.strip(), key_count, mixed) for part in re.split("[,，、]", value)]
+    intervals = [_count_interval(part.strip(), key_count, mixed) for part in COUNT_SEPARATOR.split(value)]
     merged = []
     # On equal starting counts, prefer the original strict threshold (>2 over >=3).
     for low, high in sorted(intervals, key=lambda pair: (pair[0].included, not pair[0].strict) if pair[0] else (-1, False)):
+        if low and high and low.included > high.included:
+            continue
         if merged:
             start, end = merged[-1]
             if end is None:
@@ -172,7 +187,8 @@ def _count_ranges(value, key_count, *, mixed):
                 merged[-1] = (start, None if high is None else max(end, high))
                 continue
         merged.append((low, high))
-    return tuple(merged)
+    # Keep a valid expression on links and forms when every bounded interval contains zero integers.
+    return tuple(merged) or (min(intervals),)
 
 
 def _tag_rule(query, parameter, *, exporting):
