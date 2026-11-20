@@ -13,7 +13,7 @@ from .navigation import visible_admin_objects
 
 UNTAGGED = "untagged"
 MIXED_COUNT_MODES = ("values_or_ranges", "not_values_or_ranges")
-ASCII_INFINITY = re.compile(r"([+-])inf", re.ASCII | re.IGNORECASE)
+ASCII_INFINITY = re.compile(r"([+-])inf(?:inity)?", re.ASCII | re.IGNORECASE)
 ONE_SIDED_COUNT = re.compile(
     r"(?:(<=?|>=?|≤|≥|至多|至少|少于|多于)\s*([0-9]+)(?:\s*个)?|([0-9]+)\s*(?:个\s*)?(及以下|及以上))"
 )
