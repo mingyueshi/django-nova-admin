@@ -1251,7 +1251,17 @@ function listRouting(view, preserveEditor = false) {
   });
 }
 initScenarios({
-  ui: Object.freeze({ icon, esc, button, toast, openOverlay, renderView, person, confirmDialog }),
+  ui: Object.freeze({
+    icon,
+    esc,
+    button,
+    toast,
+    openOverlay,
+    renderView,
+    person,
+    pill,
+    confirmDialog,
+  }),
   getView: () => state.view,
   getUsers: (limit) => structuredClone(state.users.slice(0, limit)),
   getUser: (id) =>

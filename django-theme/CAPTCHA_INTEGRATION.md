@@ -403,7 +403,8 @@ generation attempts. Exceeding either limit returns an uncached **429** with
 Configure positive integer `NOVA_ADMIN_CAPTCHA_AUDIO_KEY_LIMIT`,
 `NOVA_ADMIN_CAPTCHA_AUDIO_IP_LIMIT`, and `NOVA_ADMIN_CAPTCHA_AUDIO_WINDOW` to tune
 these budgets. `NOVA_ADMIN_CAPTCHA_AUDIO_CACHE` selects the cache alias (default
-`default`). Multiple workers/instances must use a shared cache with atomic
+`default`). Selecting Django’s `DummyCache` returns **503** before generation.
+Multiple workers/instances must use a shared cache with atomic
 `add`/`incr`; LocMem applies the limits separately in each process. Only
 `REMOTE_ADDR` is used, so trusted proxy configuration remains the host's
 responsibility. These audio budgets do not replace login/image/refresh limits.

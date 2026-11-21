@@ -1,6 +1,9 @@
 """Actionable opt-in integration warnings; optional endpoints stay optional."""
 from django.conf import settings
 from django.core.checks import Tags, Warning, register
+from django.template import TemplateDoesNotExist, engines
+from django.template.backends.django import DjangoTemplates
+from django.template.loader import get_template
 from django.urls import NoReverseMatch, get_resolver, reverse
 
 from .navigation import ICON_NAMES, MAX_SHORTCUTS, resolve_provider
@@ -18,14 +21,29 @@ def _site_paths(resolver, site, prefix=""):
 def theme_context_check(app_configs, **kwargs):
     if not getattr(settings, "NOVA_ADMIN_ENABLED", True):
         return []
-    engines = [engine for engine in settings.TEMPLATES
-               if engine.get("BACKEND") == "django.template.backends.django.DjangoTemplates"]
-    if engines and all("nova_admin.context_processors.theme" in engine.get("OPTIONS", {}).get("context_processors", ())
-                       for engine in engines):
+    backends = [backend for backend in engines.all() if isinstance(backend, DjangoTemplates)]
+    missing = {backend.name for backend in backends
+               if "nova_admin.context_processors.theme" not in backend.engine.context_processors}
+    if backends and not missing:
         return []
+    if len(backends) > 1:
+        # Resolve the same top-level templates as the admin views. An unrelated
+        # frontend engine may appear first or last in TEMPLATES.
+        used = set()
+        for name in ("index", "app_index", "login", "change_list", "change_form",
+                     "object_history", "delete_confirmation", "delete_selected_confirmation"):
+            try:
+                used.add(get_template(f"admin/{name}.html").backend.name)
+            except TemplateDoesNotExist:
+                continue
+        if used:
+            missing &= used
+            if not missing:
+                return []
     return [Warning(
         "Nova Admin's theme context processor is missing.",
         hint="Add 'nova_admin.context_processors.theme' to the DjangoTemplates context_processors used by admin.",
+        obj=", ".join(sorted(missing)) or None,
         id="nova_admin.W001",
     )]
 

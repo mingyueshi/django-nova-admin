@@ -1,5 +1,11 @@
 const {createApp}=require('./dom-runtime.cjs');const assert=require('node:assert/strict');
-(async()=>{const {w,d,close}=await createApp();let n=0;const q=s=>d.querySelector(s),all=s=>[...d.querySelectorAll(s)],wait=()=>new Promise(r=>setTimeout(r,20));const check=(t,f)=>{f();console.log('PASS',t);n++};const route=async r=>{w.location.hash=r;await wait()};const change=(s,v)=>{q(s).value=v;q(s).dispatchEvent(new w.Event('change',{bubbles:true}))};const input=(s,v)=>{q(s).value=v;q(s).dispatchEvent(new w.Event('input',{bubbles:true}))};
+(async()=>{process.env.TZ = 'Asia/Shanghai';
+const {w,d,close}=await createApp({beforeLoad(w) {
+  const DateBase = w.Date;
+  w.Date = class extends DateBase {
+    constructor(...args) { super(...(args.length ? args : ['2026-12-31T16:01:00Z'])); }
+  };
+}});let n=0;const q=s=>d.querySelector(s),all=s=>[...d.querySelectorAll(s)],wait=()=>new Promise(r=>setTimeout(r,20));const check=(t,f)=>{f();console.log('PASS',t);n++};const route=async r=>{w.location.hash=r;await wait()};const change=(s,v)=>{q(s).value=v;q(s).dispatchEvent(new w.Event('change',{bubbles:true}))};const input=(s,v)=>{q(s).value=v;q(s).dispatchEvent(new w.Event('input',{bubbles:true}))};
 await route('users');check('Avatar list uses local semantic lazy images',()=>{const img=q('.person img');assert.ok(img.src.endsWith('avatars-sheet.webp'));assert.equal(img.loading||img.getAttribute('loading'),'lazy');assert.ok(img.getAttribute('width'));assert.match(img.alt,/合成/)});
 input('#user-search','沈言');check('Missing avatar keeps visible placeholder and no empty image src',()=>{assert.ok(q('[data-media-title="沈言"]').classList.contains('media-missing'));assert.equal(q('[data-media-title="沈言"] img'),null)});
 input('#user-search','许清和');const broken=q('[data-media-title="许清和"] img');broken.dispatchEvent(new w.Event('error'));check('Load error ends busy state and exposes accessible feedback',()=>{const b=broken.closest('.media-thumb');assert.equal(b.getAttribute('aria-busy'),'false');assert.match(b.getAttribute('aria-label'),/加载失败/)});broken.closest('button').click();check('Error image opens bounded preview',()=>{assert.ok(q('.media-preview'));assert.ok(q('[data-media-retry]'))});q('[data-media-retry]').click();check('Retry uses only known local asset',()=>{assert.ok(q('.media-preview img').src.endsWith('avatars-sheet.webp'));assert.ok(q('[data-media-retry]').disabled)});q('.media-preview img').dispatchEvent(new w.Event('load'));check('Successful load removes failure placeholder',()=>assert.ok(q('.media-full.media-loaded')));q('[aria-label="关闭图片预览"]').click();
@@ -12,6 +18,10 @@ q('[data-news-detail="224"]').click();q('.news-detail-cover').click();check('Pre
 const r2=q('.news-table .news-check');r2.checked=true;r2.dispatchEvent(new w.Event('change',{bubbles:true}));input('#news-search','不存在的新闻');check('Filtering clears hidden batch selection and has empty state',()=>{assert.equal(q('[data-news="publish"]'),null);assert.match(q('.empty-state').textContent,/没有符合/)});
 q('[data-news="reset"]').click();
 await route('news/add');
+check('Article date uses the local calendar day across the UTC year boundary', () => {
+  assert.equal(q('#article-date').value, '2027-01-01');
+});
+change('#article-date', '');
 check('Add article page shows group tabs above the form',()=>{assert.equal(q('h1').textContent,'添加文章');assert.equal(all('.group-tab').length,3);assert.equal(q('#news-panel-base').hidden,false);assert.equal(q('[data-news-tab="base"]').getAttribute('aria-selected'),'true')});
 q('[data-news-tab="content"]').click();
 check('Group tabs switch the panel below',()=>{assert.equal(q('[data-news-tab="content"]').getAttribute('aria-selected'),'true');assert.equal(q('#news-panel-content').hidden,false);assert.equal(q('#news-panel-base').hidden,true)});
@@ -26,4 +36,15 @@ check('Content group offers a markdown demo toolbar',()=>{q('[data-news-tab="con
 q('#news-article-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
 await wait();
 check('Saved article returns to list with filters cleared',()=>{assert.equal(q('h1').textContent,'新闻资讯');assert.match(q('.news-table').textContent,/分组标签演示文章/);assert.ok(JSON.parse(w.localStorage.getItem('nova-news')).some(r=>r.title==='分组标签演示文章'))});
+check('A blank publish date saves the same local day', () => {
+  const article = JSON.parse(w.localStorage.getItem('nova-news')).find(row => row.title === '分组标签演示文章');
+  assert.equal(article.date, '2027-01-01');
+});
+await route('audit');
+check('Audit list and details identify the persisted UTC timestamp', () => {
+  assert.match(q('.audit-table thead').textContent, /发生时间（UTC）/);
+  assert.match(q('.audit-table tbody tr').textContent, /2026-12-31 16:01:00/);
+  q('[data-audit-id]').click();
+  assert.match(q('.drawer dl').textContent, /记录时间（UTC）2026-12-31 16:01:00/);
+});
 console.log('TOTAL',n,'media and news tests passed');close()})().catch(e=>{console.error(e);process.exitCode=1});

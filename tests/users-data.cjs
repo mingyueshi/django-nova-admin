@@ -196,10 +196,11 @@ async function fallback(records, options) {
       const user = { ...literal, ...Object.fromEntries(['role', 'status', 'team', 'joined'].map(field => [field, '<b data-probe="' + field + '">' + field + '</b>'])) };
       const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
       const renderView = () => { d.querySelector('#view').innerHTML = module.namespace.renderComponentLab(); };
-      module.namespace.initScenarios({ ui: { icon: () => '', esc, person: u => '<strong>' + esc(u.name) + '</strong>', renderView, openOverlay: html => { d.querySelector('#drawer').innerHTML = html; } }, getUser: () => user, getUsers: () => [user] });
+      module.namespace.initScenarios({ ui: { icon: () => '', esc, pill: status => '<span>' + esc(status) + '</span>', person: u => '<strong>' + esc(u.name) + '</strong>', renderView, openOverlay: html => { d.querySelector('#drawer').innerHTML = html; } }, getUser: () => user, getUsers: () => [user] });
       renderView(); d.querySelector('[data-lab-tab="data"]').click();
       assert.equal(d.querySelector('.profile-showcase .pill').textContent, user.role);
       assert.equal(d.querySelector('#density-table td:nth-child(2)').textContent, user.role);
+      assert.equal(d.querySelector('#density-table td:nth-child(3)').textContent, user.status);
       d.querySelector('[data-detail]').click();
       for (const field of ['role', 'status', 'team', 'joined']) assert.ok(d.querySelector('#drawer').textContent.includes(user[field]));
       assert.equal(d.querySelectorAll('[data-probe]').length, 0);

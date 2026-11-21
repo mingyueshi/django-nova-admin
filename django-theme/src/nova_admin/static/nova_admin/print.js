@@ -69,6 +69,7 @@
     function prepare() {
         if (sheet || !document.body.classList.contains('nova-admin')) return;
         if (!media.matches) rememberScreen();
+        else if (observer.takeRecords().length) screenNodes = new WeakSet();
         opener = document.activeElement;
         sheet = document.createElement('article');
         sheet.className = 'nova-print-sheet';
@@ -110,21 +111,15 @@
     tool.hidden = false;
     button.hidden = false;
     rememberScreen();
-    let pendingFrame = null;
-    function scheduleScreen() {
-        // If print media arrives before the next frame, fail closed instead of
-        // using eligibility from before a visibility/structure change.
-        screenNodes = new WeakSet();
-        if (pendingFrame !== null || media.matches || sheet) return;
-        pendingFrame = window.requestAnimationFrame(() => {
-            pendingFrame = null;
-            rememberScreen();
-        });
-    }
-    const observer = new MutationObserver(scheduleScreen);
+    const observer = new MutationObserver(() => {
+        // MutationObserver batches changes within the task. Capture screen
+        // visibility before the next user action can switch to print media.
+        if (media.matches || sheet) screenNodes = new WeakSet();
+        else rememberScreen();
+    });
     observer.observe(list, {subtree: true, childList: true, attributes: true,
         attributeFilter: ['class', 'style', 'hidden', 'inert', 'aria-hidden', 'data-nova-no-print', 'data-nova-print-exclude', 'data-nova-column-hidden']});
-    window.addEventListener('resize', scheduleScreen);
+    window.addEventListener('resize', rememberScreen);
     window.addEventListener('beforeprint', prepare);
     window.addEventListener('afterprint', cleanup);
     media.addEventListener?.('change', () => { if (!media.matches) { cleanup(); rememberScreen(); } });

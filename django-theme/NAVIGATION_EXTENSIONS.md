@@ -163,7 +163,9 @@ enabled in demo settings.
 
 `python manage.py check` registers these nonfatal Nova warnings:
 
-- `nova_admin.W001`: the theme context processor is missing from DjangoTemplates
+- `nova_admin.W001`: the theme context processor is missing. With multiple
+  DjangoTemplates engines, the warning identifies the engine(s) selected for
+  the standard admin pages.
 - `nova_admin.W002`: an explicitly configured URL namespace mapping is malformed,
   or cannot resolve the existing site's index and its preference endpoint
 - `nova_admin.W003`: malformed favorites/common-model/icon/provider configuration

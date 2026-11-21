@@ -12,6 +12,7 @@ from django.conf import settings
 from django.contrib.admin.forms import AdminAuthenticationForm
 from django.core import signing
 from django.core.cache import caches
+from django.core.cache.backends.dummy import DummyCache
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import router
 from django.forms import MultiValueField
@@ -167,6 +168,8 @@ def _audio_rate_allowed(request, key):
         raise AudioGenerationError
     try:
         cache = caches[getattr(settings, "NOVA_ADMIN_CAPTCHA_AUDIO_CACHE", "default")]
+        if isinstance(cache, DummyCache):
+            raise AudioGenerationError
         peer = request.META.get("REMOTE_ADDR", "unknown")
         for scope, identity, limit in (("ip", peer, ip_limit), ("key", key, key_limit)):
             counter = "nova-captcha-audio:" + salted_hmac("nova_admin.audio." + scope, identity).hexdigest()

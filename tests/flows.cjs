@@ -30,6 +30,27 @@ cardEl.dispatchEvent(new w.Event('dragstart',{bubbles:true}));
 q('.kanban-column[data-flow-column="review"]').dispatchEvent(new w.Event('drop',{bubbles:true}));
 check('Drag and drop moves the card between columns',()=>{assert.match(q('.kanban-column[data-flow-column="review"] .count-badge').textContent,/2/);assert.ok(q('.kanban-column[data-flow-column="review"]').textContent.includes('会员积分规则文档'))});
 
+const drag = (element, type) => element.dispatchEvent(new w.Event(type, {bubbles:true, cancelable:true}));
+const reviewedCard = () => q('.kanban-column[data-flow-column="review"] .kanban-card[data-flow-card="2"]');
+drag(reviewedCard(), 'dragstart');
+drag(reviewedCard(), 'dragend');
+check('A later drop after cancellation leaves the card in place', () => {
+  const destination = q('.kanban-column[data-flow-column="done"]');
+  assert.equal(drag(destination, 'dragover'), true);
+  assert.equal(drag(destination, 'drop'), true);
+  assert.ok(reviewedCard());
+});
+drag(reviewedCard(), 'dragstart');
+await route('import');
+click('[data-flow="import-parse"]');
+check('Import mapping keeps its native drop handling after navigation during a drag', () => {
+  const select = q('.import-mapping select');
+  assert.equal(drag(select, 'dragover'), true);
+  assert.equal(drag(select, 'drop'), true);
+});
+await route('kanban');
+assert.ok(reviewedCard());
+
 await route('approvals');
 check('Approval list renders synthetic documents with status badges',()=>{assert.equal(q('h1').textContent,'审批工作流');assert.equal(all('.approval-table tbody tr').length,4);assert.ok(q('.approval-table .status-normal'))});
 click('[data-flow="approval-filter"][data-flow-filter="待审批"]');

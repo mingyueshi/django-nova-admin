@@ -4,3 +4,11 @@ export function searchShortcut(platform = navigator.userAgentData?.platform || n
     ? { label: '⌘ K', spoken: 'Command 加 K', keys: 'Meta+k' }
     : { label: 'Ctrl K', spoken: 'Control 加 K', keys: 'Control+k' };
 }
+
+export function localDateString(date = new Date()) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+}

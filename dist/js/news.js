@@ -1,3 +1,4 @@
+import { localDateString } from './presentation.js';
 import { createCollection } from './collection.js';
 import { pagination, submitPageJump } from './pagination.js';
 import { thumbnail, imageSpec } from './media.js';
@@ -260,7 +261,7 @@ const articleGroups = [
 ];
 function articleEditor() {
   articleTab = 'base';
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateString();
   const panels = [
     [
       'base',
@@ -315,7 +316,7 @@ function saveArticle() {
     category: document.getElementById('article-category').value,
     author: (document.getElementById('article-author').value || '').trim() || '演示管理员',
     status: document.getElementById('article-status').value,
-    date: document.getElementById('article-date').value || new Date().toISOString().slice(0, 10),
+    date: document.getElementById('article-date').value || localDateString(),
     views: 0,
     summary:
       (document.getElementById('article-summary').value || '').trim() || '本地演示新增的文章。',

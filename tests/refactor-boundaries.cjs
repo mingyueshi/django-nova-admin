@@ -307,7 +307,50 @@ async function testFilteredBulkPageClamp(spec) {
   });
 }
 
+async function testCatalogRecovery() {
+  const valid = {
+    id: Number.MAX_SAFE_INTEGER, title: '已保存的商品', sku: 'DEMO-VALID', category: '自定义分类',
+    supplier: '星云制造', tags: ['新品'], status: '草稿', description: '', price: 19, cost: 6,
+    variants: [{key: 1, name: '标准', sku: 'DEMO-STD', price: 19, stock: 3}],
+  };
+  const cases = [
+    ['missing id', [{...valid, id: undefined}], '便携无线键盘'],
+    ['missing price', [{...valid, price: undefined}], '便携无线键盘'],
+    ['missing stock', [{...valid, variants: [{...valid.variants[0], stock: undefined}]}], '便携无线键盘'],
+    ['duplicate id', [valid, valid], '便携无线键盘'],
+    ['duplicate variant key', [{...valid, variants: [...valid.variants, ...valid.variants]}], '便携无线键盘'],
+    ['maximum valid id', [valid], '已保存的商品'],
+    ['empty collection', [], '没有匹配的商品'],
+  ];
+  for (const [name, saved, expected] of cases) {
+    await session('Catalog storage: ' + name, async ({w, q, input, click, route}) => {
+      await route('catalog');
+      assert.ok(q('#catalog-results').textContent.includes(expected));
+      assert.doesNotMatch(q('#catalog-results').textContent, /NaN|undefined/);
+      assert.equal(w.localStorage.getItem('nova-catalog'), JSON.stringify(saved));
+      await route('catalog/add');
+      input('#product-title', '恢复后新增');
+      input('#product-sku', 'RECOVERED');
+      input('#product-price', '19');
+      input('#product-cost', '6');
+      input('[data-variant-field="name"]', '标准');
+      input('[data-variant-field="sku"]', 'RECOVERED-1');
+      input('[data-variant-field="price"]', '19');
+      input('[data-variant-field="stock"]', '3');
+      click('[data-save-mode="continue"]');
+      await wait();
+      const rows = JSON.parse(w.localStorage.getItem('nova-catalog'));
+      const record = rows.find((row) => row.sku === 'RECOVERED');
+      assert.ok(Number.isSafeInteger(record.id));
+      assert.equal(new Set(rows.map((row) => row.id)).size, rows.length);
+      assert.equal(w.location.hash, '#catalog/edit/' + record.id);
+      assert.equal(q('#product-title').value, '恢复后新增');
+    }, {storage: {'nova-catalog': JSON.stringify(saved)}});
+  }
+}
+
 async function main() {
+  await testCatalogRecovery();
   await session('List sort and search', async ({ w, q, all, click, input, route }) => {
     await route('users?page=2');
     click('[data-action="sort"]');
@@ -378,7 +421,7 @@ async function main() {
     },
   });
 
-  await session('Scenario member snapshots', async ({ w, q, all, click, input, route }) => {
+  await session('Scenario member snapshots', async ({ w, q, all, click, input, change, route }) => {
     await route('components');
     click('[data-lab-tab="data"]');
     check('Component data tab renders its profile and three member density rows', () => {
@@ -388,10 +431,12 @@ async function main() {
     });
     click('.profile-showcase + .mini-stats + .lab-form-actions [data-edit="1"]');
     input('#member-name', '资料卡更新成员');
+    change('#member-status', '已停用');
     q('#user-form').dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true }));
     check('Saving a member refreshes the component profile and density records', () => {
       assert.equal(q('.profile-showcase h3').textContent, '资料卡更新成员');
       assert.equal(q('#density-table tbody tr:first-child .person strong').textContent, '资料卡更新成员');
+      assert.equal(q('#density-table tbody tr:first-child .status-disabled').textContent, '已停用');
     });
 
     await route('users');

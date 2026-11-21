@@ -53,7 +53,37 @@ await test('input values checked state selection and form serialization survive'
 await test('media exit and pagehide remove pending sheets',()=>{const r=setup();r.snapshot();r.media.dispatchEvent(new r.w.Event('change'));assert.equal(r.sheet,null);r.snapshot();r.w.dispatchEvent(new r.w.Event('pagehide'));assert.equal(r.sheet,null);r.finish();});
 await test('hidden opacity clipped and zero-box subtrees are omitted',()=>{const r=setup();r.d.querySelector('tbody th').innerHTML='<span style="opacity:0">OPACITY_SECRET</span><span class="visually-hidden">CLIPPED_SECRET</span><span class="no-box">NO_BOX_SECRET</span><span>Visible<br>New line</span>';r.d.querySelector('br').getClientRects=()=>[];const s=r.snapshot();assert.match(s.textContent,/Visible\nNew line/);assert.doesNotMatch(s.textContent,/OPACITY_SECRET|CLIPPED_SECRET|NO_BOX_SECRET/);r.finish();});
 await test('DOM mutations update screen eligibility without stale text copies',async()=>{const r=setup();const el=r.d.querySelector('tbody tr:nth-child(2) th');el.textContent='New permitted label';await Promise.resolve();r.frame();r.media.matches=true;assert.match(r.snapshot().textContent,/New permitted label/);r.after();assert.equal(r.d.querySelector('.nova-print-sheet'),null);r.finish();});
-await test('attribute churn is ignored and visibility mutations batch into one frame',async()=>{const r=setup();const el=r.d.querySelector('tbody th');for(let i=0;i<50;i++)el.setAttribute('aria-selected',String(i));await Promise.resolve();assert.equal(r.frames.length,0);el.hidden=true;await Promise.resolve();el.classList.add('css-hidden');await Promise.resolve();assert.equal(r.frames.length,1);r.frame();r.media.matches=true;assert.doesNotMatch(r.snapshot().textContent,/PUBLIC-011/);r.finish();});
-await test('print before a pending visibility frame cannot reveal previously visible data',async()=>{const r=setup();const el=r.d.querySelector('tbody th');el.hidden=true;await Promise.resolve();r.media.matches=true;el.hidden=false;assert.doesNotMatch(r.snapshot().textContent,/PUBLIC-011/);r.finish();});
+await test('only relevant mutations cause a screen read and synchronous changes are batched', async () => {
+  const r = setup();
+  const cell = r.d.querySelector('tbody th');
+  const title = r.d.querySelector('h1');
+  const measure = title.getClientRects.bind(title);
+  let reads = 0;
+  title.getClientRects = () => { reads++; return measure(); };
+  for (let i = 0; i < 50; i++) cell.setAttribute('aria-selected', String(i));
+  await Promise.resolve();
+  assert.equal(reads, 0);
+  cell.hidden = true;
+  cell.classList.add('css-hidden');
+  await Promise.resolve();
+  assert.equal(reads, 1);
+  r.finish();
+});
+await test('immediate print after selecting a row retains rows and excludes screen-hidden values', async () => {
+  const r = setup();
+  const style = r.d.createElement('style');
+  style.textContent = '.selected + tr th {display:none}';
+  r.d.head.append(style);
+  r.d.querySelector('[name="_selected_action"]').click();
+  r.d.querySelector('tbody tr').classList.add('selected');
+  await Promise.resolve();
+  r.media.matches = true;
+  style.remove(); // Print CSS exposes a value hidden by a sibling selector on screen.
+  const sheet = r.snapshot();
+  assert.equal(sheet.querySelectorAll('tbody tr').length, 2);
+  assert.match(sheet.textContent, /PUBLIC-011/);
+  assert.doesNotMatch(sheet.textContent, /PUBLIC-012/);
+  r.finish();
+});
 await test('reinitializing never registers duplicate print listeners',()=>{const r=setup();r.w.eval(source);r.click();assert.equal(r.output.length,1);assert.equal(r.sheet,null);r.finish();});
 console.log(`${count} print DOM scenarios passed.`);

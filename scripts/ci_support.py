@@ -20,11 +20,11 @@ FRONTEND_SUMMARIES = {
     'dom': 'TOTAL 32 passed',
     'workflows': 'TOTAL 33 workflow tests passed',
     'controls': 'TOTAL 15 control tests passed',
-    'media': 'TOTAL 26 media and news tests passed',
+    'media': 'TOTAL 29 media and news tests passed',
     'recovery': 'TOTAL 36 recovery edge tests passed (Node/jsdom)',
     'users-data': 'TOTAL 62 user data checks passed (Node/jsdom)',
     'enterprise': 'TOTAL 13 enterprise preview tests passed',
-    'boundaries': 'TOTAL 68 refactor boundary checks passed (Node/jsdom)',
+    'boundaries': 'TOTAL 75 refactor boundary checks passed (Node/jsdom)',
     'bulk-publish': 'TOTAL 7 catalog bulk publish checks passed (Node/jsdom)',
     'login': 'TOTAL 48 passed, 0 failed (Node/jsdom static login demo)',
     'presentation': 'TOTAL 52 presentation checks passed',
@@ -37,12 +37,12 @@ FRONTEND_SUMMARIES = {
     'analysis-lab': 'TOTAL 63 analysis lab checks passed',
     'shared-css': 'TOTAL 4 shared login CSS checks passed',
     'navigation': 'TOTAL 25 preview navigation scenarios passed',
-    'flows': 'TOTAL 75 flow demo checks passed',
+    'flows': 'TOTAL 77 flow demo checks passed',
 }
 FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_SUMMARIES.items()}
 FRONTEND_TOTAL = sum(FRONTEND_COUNTS.values())
 NAVIGATION_TOTAL = 123
-ENHANCEMENT_TOTAL = 41
+ENHANCEMENT_TOTAL = 44
 COMMAND_PALETTE_TOTAL = 25
 PRINT_TOTAL = 26
 MESSAGE_TOTAL = 26
@@ -55,7 +55,7 @@ CAPTCHA_DIALOG_TOTAL = 16
 THEME_JS_TOTAL = NAVIGATION_TOTAL + COMMAND_PALETTE_TOTAL + APPEARANCE_TOTAL + ENHANCEMENT_TOTAL + PRINT_TOTAL + MESSAGE_TOTAL + MARKDOWN_TOTAL + DAILY_CHART_TOTAL + CATEGORY_CHART_TOTAL + CAPTCHA_TOTAL + CAPTCHA_DIALOG_TOTAL
 
 def read(path):
-    return json.loads(Path(path).read_text())
+    return json.loads(Path(path).read_text(encoding='utf-8'))
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -100,7 +100,7 @@ def check_node_summaries(logs):
             f'# pass {CAPTCHA_DIALOG_TOTAL}', '# fail 0', '# cancelled 0', '# skipped 0', '# todo 0',
         ]),
     ]:
-        content = (logs / (name + '.log')).read_text()
+        content = (logs / (name + '.log')).read_text(encoding='utf-8')
         if re.findall(pattern, content, re.M) != summaries or re.search(r'^(?:FAIL|FAILED|not ok)\b', content, re.M):
             raise ValueError('Missing, duplicate, or failed Node test evidence: ' + name)
     return {'kind': 'node-suite-contract', 'status': 'passed', 'frontend': FRONTEND_TOTAL,
@@ -161,7 +161,7 @@ def sidebars(wheelhouse, output):
         filter_dest.write_bytes(filters)
         rows.append({'django': version, 'wheel_sha256': digest(wheel), 'file': dest.name, 'sha256': digest(dest),
                      'filters_file': filter_dest.name, 'filters_sha256': digest(filter_dest)})
-    (output / 'provenance.json').write_text(json.dumps(rows, indent=2) + '\n')
+    (output / 'provenance.json').write_text(json.dumps(rows, indent=2) + '\n', encoding='utf-8')
     return rows
 
 def ranged_wheel(output, sdist=None):
@@ -189,7 +189,7 @@ def ranged_wheel(output, sdist=None):
     if len(wheels) != 1:
         raise ValueError('Expected one ranged-response wheel')
     result = {'source': origin, 'source_sha256': config['sha256'], 'wheel': wheels[0].name, 'wheel_sha256': digest(wheels[0])}
-    (output / 'provenance.json').write_text(json.dumps(result, indent=2) + '\n')
+    (output / 'provenance.json').write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
     return result
 
 
@@ -221,7 +221,7 @@ def slider_wheel(output, sdist=None):
         if len(names) != 1 or BytesParser().parsebytes(archive.read(names[0]))['Version'] != version:
             raise ValueError('Slider wheel version mismatch')
     result = {**config, 'wheel': wheels[0].name, 'wheel_sha256': digest(wheels[0])}
-    (output / 'slider-provenance.json').write_text(json.dumps(result, indent=2) + '\n')
+    (output / 'slider-provenance.json').write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
     return result
 
 
@@ -260,7 +260,7 @@ def collect_python(run_root, output, commit, cell, captcha):
                 target = result['id'].replace('/', '_') + '-' + name + '.log'
                 (output / target).write_bytes(Path(step['log']).read_bytes())
         compact['results'].append(entry)
-    (output / 'report.json').write_text(json.dumps(compact, indent=2) + '\n')
+    (output / 'report.json').write_text(json.dumps(compact, indent=2) + '\n', encoding='utf-8')
     return compact
 
 def collect_node(logs, output, commit, node, npm):
@@ -284,7 +284,7 @@ def collect_node(logs, output, commit, node, npm):
         (output / name).write_bytes((logs / name).read_bytes())
     result = {'kind': 'node', 'commit': commit, 'node': node, 'npm': npm, 'status': 'passed', 'frontend': FRONTEND_TOTAL, 'frontend_suites': dict(FRONTEND_COUNTS), 'theme_js': THEME_JS_TOTAL,
               'package_lock_sha256': digest(ROOT / 'package-lock.json')}
-    (output / 'report.json').write_text(json.dumps(result, indent=2) + '\n')
+    (output / 'report.json').write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
     return result
 
 def verify_reports(reports, scope, commit, wheel_sha):

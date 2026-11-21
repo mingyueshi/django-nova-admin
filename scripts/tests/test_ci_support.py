@@ -3,6 +3,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -73,7 +74,7 @@ class MatrixTests(unittest.TestCase):
                     row['results'].append({'id':f'{cell}/{profile}/{mode}','status':'passed','python':item['python'],'django':item['django'],'profile':profile,'mode':mode,'steps':{name:{'status':'passed','exit_code':0,'tests_run':22 if profile=='captcha' else 270,'unittest_summary':'OK'} for name in ['venv','install','pipcheck','provenance','check','migrations','tests']}})
             directory=root/('python-'+cell.replace('/','-'));directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         for item in plan['node']['include']:
-            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':321,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
+            row={'kind':'node','commit':COMMIT,'node':item['node'],'npm':item['npm'],'status':'passed','frontend':support.FRONTEND_TOTAL,'frontend_suites':dict(support.FRONTEND_COUNTS),'theme_js':324,'package_lock_sha256':support.digest(ROOT/'package-lock.json')}
             directory=root/('node-'+item['node']);directory.mkdir();path=directory/'report.json';path.write_text(json.dumps(row));paths.append(path)
         return paths
 
@@ -164,7 +165,7 @@ class FrontendContractTests(unittest.TestCase):
         names = support.frontend_contract()
         self.assertEqual(len(names), 21)
         self.assertEqual(names[-7:], ['icons', 'analytics', 'chart-libraries', 'analysis-lab', 'shared-css', 'navigation', 'flows'])
-        self.assertEqual(support.FRONTEND_TOTAL, 1569)
+        self.assertEqual(support.FRONTEND_TOTAL, 1581)
 
     def altered_package(self, mutation):
         with tempfile.TemporaryDirectory() as tmp:
@@ -199,11 +200,11 @@ class NodeEvidenceTests(unittest.TestCase):
     FRONTEND_LOG = """TOTAL 32 passed
 TOTAL 33 workflow tests passed
 TOTAL 15 control tests passed
-TOTAL 26 media and news tests passed
+TOTAL 29 media and news tests passed
 TOTAL 36 recovery edge tests passed (Node/jsdom)
 TOTAL 62 user data checks passed (Node/jsdom)
 TOTAL 13 enterprise preview tests passed
-TOTAL 68 refactor boundary checks passed (Node/jsdom)
+TOTAL 75 refactor boundary checks passed (Node/jsdom)
 TOTAL 7 catalog bulk publish checks passed (Node/jsdom)
 TOTAL 48 passed, 0 failed (Node/jsdom static login demo)
 TOTAL 52 presentation checks passed
@@ -216,12 +217,12 @@ TOTAL 78 chart library checks passed
 TOTAL 63 analysis lab checks passed
 TOTAL 4 shared login CSS checks passed
 TOTAL 25 preview navigation scenarios passed
-TOTAL 75 flow demo checks passed
+TOTAL 77 flow demo checks passed
 """
     GROUP_LOGS = {
         'frontend': FRONTEND_LOG,
         'navigation': '123 navigation DOM scenarios passed (3 Django script versions).\n25 command palette DOM scenarios passed.\n24 appearance DOM scenarios passed (3 Django script versions).\n',
-        'enhancements': 'TOTAL 41 changelist enhancement tests passed\n26 print DOM scenarios passed.\n26 message DOM scenarios passed.\n15 markdown DOM scenarios passed.\n5 daily chart DOM scenarios passed.\n4 category chart DOM scenarios passed.\n',
+        'enhancements': 'TOTAL 44 changelist enhancement tests passed\n26 print DOM scenarios passed.\n26 message DOM scenarios passed.\n15 markdown DOM scenarios passed.\n5 daily chart DOM scenarios passed.\n4 category chart DOM scenarios passed.\n',
         'captcha': 'TOTAL 16 CAPTCHA enhancement tests passed\n',
         'captcha-dialog': 'TAP version 13\n1..16\n# tests 16\n# pass 16\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n',
     }
@@ -242,20 +243,38 @@ TOTAL 75 flow demo checks passed
             (logs / (name + '.json')).write_text(json.dumps(content))
         return logs
 
+    def test_collect_reads_utf8_logs_and_json_and_writes_utf8_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            logs = self.logs(root)
+            frontend = logs / 'frontend.log'
+            frontend.write_text('商品流程通过\n' + self.FRONTEND_LOG, encoding='utf-8')
+            runtime = logs / 'runtime.json'
+            runtime.write_text(json.dumps({**support.read(runtime), 'label': '前端验证'},
+                                          ensure_ascii=False), encoding='utf-8')
+            # Treat implicit locale encodings as errors, even on UTF-8 CI hosts.
+            subprocess.run([
+                sys.executable, '-X', 'warn_default_encoding', '-W', 'error::EncodingWarning',
+                str(ROOT / 'scripts/ci_support.py'), 'collect-node', '--logs', str(logs),
+                '--output', str(root / 'out'), '--commit', COMMIT, '--node', '24.21.0', '--npm', '11.19.0',
+            ], check=True, stdout=subprocess.DEVNULL)
+            report = json.loads((root / 'out' / 'report.json').read_text(encoding='utf-8'))
+            self.assertEqual(report['status'], 'passed')
+
     def collect(self, root):
         return support.collect_node(root / 'logs', root / 'output', COMMIT, '24.21.0', '11.19.0')
 
-    def test_current_log_fixture_records_all_1569_checks_in_twenty_one_suites(self):
+    def test_current_log_fixture_records_all_1581_checks_in_twenty_one_suites(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.logs(root)
             result = self.collect(root)
-            self.assertEqual(result['frontend'], 1569)
-            self.assertEqual(result['theme_js'], 321)
+            self.assertEqual(result['frontend'], 1581)
+            self.assertEqual(result['theme_js'], 324)
             self.assertEqual(len(result['frontend_suites']), 21)
             self.assertEqual(result['frontend_suites']['users-data'], 62)
             self.assertEqual(result['frontend_suites']['palettes'], 248)
-            self.assertEqual(sum(result['frontend_suites'].values()), 1569)
+            self.assertEqual(sum(result['frontend_suites'].values()), 1581)
             self.assertEqual(json.loads((root / 'output/report.json').read_text()), result)
 
     def test_every_frontend_suite_requires_exactly_one_success_summary(self):
@@ -293,7 +312,7 @@ TOTAL 75 flow demo checks passed
             self.assertFalse((root / 'output').exists())
 
     def test_same_total_cannot_hide_an_absent_suite(self):
-        # Omit the 248 palette checks but add those 248 to pagination: still 1569.
+        # Omit the 248 palette checks but add those 248 to pagination: still 1581.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             logs = self.logs(root)
@@ -438,7 +457,7 @@ TOTAL 75 flow demo checks passed
                 (logs / name).unlink()
             result = support.check_node_summaries(logs)
             self.assertEqual(result['kind'], 'node-suite-contract')
-            self.assertEqual(result['frontend'], 1569)
+            self.assertEqual(result['frontend'], 1581)
             self.assertIn('no install, runtime, step', result['boundary'])
             self.assertNotIn('commit', result)
             self.assertNotIn('node', result)
@@ -448,7 +467,7 @@ TOTAL 75 flow demo checks passed
                 support.verify_reports(root, 'quick', COMMIT, WHEEL_SHA)
 
     def test_gate_rejects_stale_or_incomplete_frontend_counts(self):
-        changes = [lambda x: x.update(frontend=1335), lambda x: x['frontend_suites'].pop('users-data'), lambda x: x.update(frontend=1322), lambda x: x['frontend_suites'].update(presentation=39), lambda x: x.update(theme_js=230), lambda x: x.update(frontend=1298), lambda x: x.update(theme_js=97), lambda x: x.update(theme_js=121), lambda x: x.update(frontend=540), lambda x: x.update(frontend=590),
+        changes = [lambda x: x.update(frontend=1335), lambda x: x['frontend_suites'].pop('users-data'), lambda x: x.update(frontend=1322), lambda x: x['frontend_suites'].update(presentation=39), lambda x: x.update(theme_js=321), lambda x: x.update(theme_js=230), lambda x: x.update(frontend=1298), lambda x: x.update(theme_js=97), lambda x: x.update(theme_js=121), lambda x: x.update(frontend=540), lambda x: x.update(frontend=590),
                    lambda x: x.update(frontend=606), lambda x: x.update(frontend=622), lambda x: x.update(frontend=1270),
                    lambda x: x.pop('frontend_suites'),
                    lambda x: x['frontend_suites'].pop('palettes'),

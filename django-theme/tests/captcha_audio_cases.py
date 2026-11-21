@@ -64,6 +64,18 @@ class CaptchaAudioTests(TransactionTestCase):
                 self.assertEqual(captcha_audio(self.request, self.row.hashkey).status_code, 503)
                 generate.assert_not_called()
 
+    @override_settings(
+        CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'},
+                'audio': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}},
+        NOVA_ADMIN_CAPTCHA_AUDIO_CACHE='audio',
+    )
+    def test_dummy_audio_cache_returns_503_before_generation(self):
+        with patch('nova_admin.captcha._generate_audio') as generate:
+            response = captcha_audio(self.request, self.row.hashkey)
+        self.assertEqual(response.status_code, 503)
+        self.assert_no_cache(response)
+        generate.assert_not_called()
+
     def assert_no_cache(self, response):
         self.assertIn("no-store", response["Cache-Control"])
         self.assertIn("max-age=0", response["Cache-Control"])

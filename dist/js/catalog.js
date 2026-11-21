@@ -171,14 +171,54 @@ const collection = createCollection({
 const list = collection.state;
 const esc = (x) => ui.esc(x),
   ico = (x) => ui.icon(x);
+function uniqueKeys(rows, field) {
+  return new Set(rows.map((row) => row[field])).size === rows.length;
+}
+const positiveId = (value) => Number.isSafeInteger(value) && value > 0;
+const amount = (value) => Number.isFinite(value) && value >= 0;
+function validProduct(product) {
+  return (
+    product &&
+    positiveId(product.id) &&
+    ['title', 'sku', 'category', 'supplier', 'description'].every(
+      (key) => typeof product[key] === 'string',
+    ) &&
+    ['草稿', '已发布', '归档'].includes(product.status) &&
+    (product.featured === undefined || typeof product.featured === 'boolean') &&
+    amount(product.price) &&
+    amount(product.cost) &&
+    Array.isArray(product.tags) &&
+    product.tags.every((tag) => typeof tag === 'string') &&
+    Array.isArray(product.variants) &&
+    product.variants.every(
+      (variant) =>
+        variant &&
+        positiveId(variant.key) &&
+        typeof variant.name === 'string' &&
+        typeof variant.sku === 'string' &&
+        amount(variant.price) &&
+        Number.isSafeInteger(variant.stock) &&
+        variant.stock >= 0 &&
+        (variant.deleted === undefined || typeof variant.deleted === 'boolean'),
+    ) &&
+    uniqueKeys(product.variants, 'key')
+  );
+}
+function nextId(rows, field) {
+  const max = rows.reduce((largest, row) => Math.max(largest, row[field]), 0);
+  if (max < Number.MAX_SAFE_INTEGER) return max + 1;
+  const ids = new Set(rows.map((row) => row[field]));
+  let id = 1;
+  while (ids.has(id)) id++;
+  return id;
+}
 // saveRecords is synchronous: false preserves records, selection and drafts.
 export function initCatalog(dependencies) {
   ({ ui, routing, saveRecords, recordAudit } = dependencies);
   try {
-    let saved = JSON.parse(localStorage.getItem('nova-catalog'));
+    const saved = JSON.parse(localStorage.getItem('nova-catalog'));
     records =
-      Array.isArray(saved) &&
-      saved.every((x) => typeof x.title === 'string' && Array.isArray(x.variants))
+      Array.isArray(saved) && saved.every(validProduct) && uniqueKeys(saved, 'id')
         ? saved
         : structuredClone(seed);
   } catch {
@@ -315,7 +355,7 @@ function newDraft() {
     status: '草稿',
     description: '',
     featured: false,
-    variants: [{ key: Date.now(), name: '', sku: '', stock: 0, price: '', deleted: false }],
+    variants: [{ key: 1, name: '', sku: '', stock: 0, price: '', deleted: false }],
   };
 }
 function editor(route) {
@@ -521,7 +561,7 @@ function click(e) {
   if (action === 'add-variant' && mode === '管理员') {
     capture();
     draft.variants.push({
-      key: Date.now(),
+      key: nextId(draft.variants, 'key'),
       name: '',
       sku: '',
       price: draft.price,
@@ -661,7 +701,7 @@ function submit(e) {
   const created = !draft.id;
   const saved = {
     ...structuredClone(draft),
-    id: draft.id || Math.max(...records.map((r) => r.id)) + 1,
+    id: draft.id || nextId(records, 'id'),
     price: Number(draft.price),
     cost: Number(draft.cost),
     variants: draft.variants

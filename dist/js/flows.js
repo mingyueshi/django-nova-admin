@@ -1,3 +1,4 @@
+import { localDateString } from './presentation.js';
 // Business-flow demos: import wizard, status board, approval flow, category tree.
 // All data is synthetic and lives in memory; a reload restores the initial state.
 let ui, recordAudit, getView;
@@ -11,6 +12,9 @@ export function initFlows(dependencies) {
   document.addEventListener('input', flowsInput);
   document.addEventListener('change', flowsInput);
   document.addEventListener('dragstart', flowsDragStart);
+  document.addEventListener('dragend', () => {
+    draggedCard = null;
+  });
   document.addEventListener('dragover', flowsDragOver);
   document.addEventListener('drop', flowsDrop);
 }
@@ -171,7 +175,7 @@ let kanbanCards = [
   { id: 5, title: '开学季活动素材', tag: '运营', owner: '周予安', col: 'todo' },
   { id: 6, title: '数据看板配色适配', tag: '研发', owner: '许清和', col: 'done' },
 ];
-let kanbanDragId = null;
+let draggedCard = null;
 
 export function renderKanban() {
   return (
@@ -192,8 +196,9 @@ export function renderKanban() {
 }
 function moveCard(id, column) {
   const card = kanbanCards.find((c) => c.id === id);
-  if (!card || card.col === column) return;
-  const label = KANBAN_COLUMNS.find(([key]) => key === column)[1];
+  const destination = KANBAN_COLUMNS.find(([key]) => key === column);
+  if (!card || !destination || card.col === column) return;
+  const [, label] = destination;
   card.col = column;
   recordAudit('看板流转', `${card.title} → ${label}`);
 }
@@ -508,8 +513,7 @@ export function renderCalendar() {
   );
   const byDay = {};
   for (const e of events) (byDay[Number(e.date.slice(-2))] ??= []).push(e);
-  const todayKey = new Date();
-  const today = `${todayKey.getFullYear()}-${String(todayKey.getMonth() + 1).padStart(2, '0')}-${String(todayKey.getDate()).padStart(2, '0')}`;
+  const today = localDateString();
   const selectedKey =
     calendarSelected ||
     `${year}-${String(month + 1).padStart(2, '0')}-${String(Math.min(new Date().getDate(), days)).padStart(2, '0')}`;
@@ -1326,29 +1330,34 @@ export function flowsClick(event) {
   return false;
 }
 
+function dropColumn(event) {
+  if (!draggedCard?.isConnected) return null;
+  const column = event.target.closest?.('.kanban-column[data-flow-column]');
+  return column && column.closest('[data-flow-board]') === draggedCard.closest('[data-flow-board]')
+    ? column
+    : null;
+}
+
 export function flowsDragOver(event) {
-  const column = event.target.closest?.('[data-flow-column]');
-  if (column && kanbanDragId !== null) {
-    event.preventDefault();
-  }
+  if (dropColumn(event)) event.preventDefault();
 }
 
 export function flowsDrop(event) {
-  const column = event.target.closest?.('[data-flow-column]');
-  if (!column || kanbanDragId === null) return false;
+  const column = dropColumn(event);
+  const card = draggedCard;
+  draggedCard = null;
+  if (!column) return false;
   event.preventDefault();
-  moveCard(kanbanDragId, column.dataset.flowColumn);
-  kanbanDragId = null;
+  moveCard(Number(card.dataset.flowCard), column.dataset.flowColumn);
   rerender();
   return true;
 }
 
 export function flowsDragStart(event) {
-  const card = event.target.closest?.('[data-flow-card]');
-  if (!card) return false;
-  kanbanDragId = Number(card.dataset.flowCard);
+  draggedCard = event.target.closest?.('[data-flow-board] .kanban-card[draggable="true"]') || null;
+  if (!draggedCard) return false;
   if (event.dataTransfer) {
-    event.dataTransfer.setData('text/plain', String(kanbanDragId));
+    event.dataTransfer.setData('text/plain', draggedCard.dataset.flowCard);
     event.dataTransfer.effectAllowed = 'move';
   }
   return true;
@@ -1373,7 +1382,7 @@ export function resetFlows() {
     initial);
   inlineBaseline = structuredClone(inlineRows);
   treeExpanded = new Set([1, 2, 3, 33]);
-  kanbanDragId = null;
+  draggedCard = null;
   approvalFilter = noticeFilter = '全部';
   calendarCursor = calendarSelected = columnState = null;
   bilingualLanguage = 'zh';

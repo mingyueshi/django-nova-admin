@@ -11,13 +11,24 @@ from tests.test_theme_context import MissingRouteUrls, NestedUrls, NoThemeUrls
 
 
 class ThemeChecksTests(SimpleTestCase):
-    def test_each_django_engine_requires_the_processor(self):
+    def test_only_engines_rendering_admin_views_require_the_processor(self):
         templates = deepcopy(settings.TEMPLATES)
-        other = deepcopy(templates[0])
-        other['NAME'] = 'other'
-        other['OPTIONS']['context_processors'].remove('nova_admin.context_processors.theme')
-        with override_settings(TEMPLATES=[*templates, other]):
-            self.assertEqual([message.id for message in theme_context_check(None)], ['nova_admin.W001'])
+        frontend = {'NAME': 'frontend', 'BACKEND': templates[0]['BACKEND'],
+                    'OPTIONS': {'loaders': [('django.template.loaders.locmem.Loader', {'home.html': 'Home'})]}}
+        for config in ([frontend, *templates], [*templates, frontend]):
+            with self.subTest(config=config), override_settings(TEMPLATES=config):
+                self.assertEqual(theme_context_check(None), [])
+
+        admin_missing = deepcopy(templates[0])
+        admin_missing['OPTIONS']['context_processors'].remove('nova_admin.context_processors.theme')
+        with override_settings(TEMPLATES=[frontend, admin_missing]):
+            warning, = theme_context_check(None)
+            self.assertEqual(warning.obj, admin_missing.get('NAME', 'django'))
+
+        frontend['OPTIONS']['loaders'] = [('django.template.loaders.locmem.Loader', {'admin/login.html': 'Login'})]
+        with override_settings(TEMPLATES=[frontend, *templates]):
+            warning, = theme_context_check(None)
+            self.assertEqual((warning.id, warning.obj), ('nova_admin.W001', 'frontend'))
 
     def test_default_project_is_clean_and_checks_are_registered(self):
         self.assertEqual(theme_context_check(None), [])
