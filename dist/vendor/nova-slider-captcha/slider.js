@@ -4,7 +4,7 @@
   const dictionaries = {
     "zh-CN": {
       widget_label: "安全验证",
-      background_alt: "带有一处拼图缺口的山水图案",
+      background_alt: "带有拼图缺口的背景图",
       piece_alt: "可移动拼图块",
       track: "向右拖动滑块",
       slider_label: "移动拼图块",
@@ -43,7 +43,7 @@
     },
     en: {
       widget_label: "Security verification",
-      background_alt: "Landscape with a missing puzzle piece",
+      background_alt: "Background image with a puzzle-shaped cutout",
       piece_alt: "Movable puzzle piece",
       track: "Drag the slider to the right",
       slider_label: "Move the puzzle piece",
@@ -98,6 +98,9 @@
   const bounded = (value, max) =>
     typeof value === "number" && Number.isFinite(value)
       ? Math.min(max, Math.max(0, Math.ceil(value))) : 0;
+  // The wire format uses whole seconds; setTimeout accepts signed 32-bit milliseconds.
+  const validLifetime = seconds =>
+    Number.isInteger(seconds) && seconds > 0 && seconds * 1000 <= 2_147_483_647;
   const localError = (key, values = {}) => Object.assign(new Error(key), { key, values });
   function loadImage(image, source, signal) {
     return new Promise((resolve, reject) => {
@@ -137,23 +140,6 @@
     }
     return { key: data.code, values: {} };
   };
-  async function init(endpoint) {
-    if (!inits.has(endpoint))
-      inits.set(endpoint, fetch(endpoint + "init", {
-        credentials: "same-origin", cache: "no-store",
-      }).then(async (r) => {
-        let data;
-        try { data = await r.json(); } catch (_) { throw localError("init_failed"); }
-        if (!r.ok) {
-          const message = errorText(data, "init_failed");
-          throw localError(message.key, message.values);
-        }
-        if (typeof data?.csrfToken !== "string" || !data.csrfToken)
-          throw localError("init_failed");
-        return data.csrfToken;
-      }).catch((e) => { inits.delete(endpoint); throw e; }));
-    return inits.get(endpoint);
-  }
   class NovaSlider extends HTMLElement {
     static get observedAttributes() { return ["locale", "aria-describedby", "aria-invalid"]; }
     get locale() { return normalizeLocale(this.getAttribute("locale")); }
@@ -261,6 +247,7 @@
       });
       on(this.range, "pointerdown", (e) => {
         if (this.state !== "ready") { e.preventDefault(); return; }
+        if (e.button !== 0 || !e.isPrimary) return;
         if (this.activePointerId !== null || !Number.isInteger(e.pointerId)) return;
         this.activePointerId = e.pointerId;
         try { this.range.setPointerCapture?.(e.pointerId); } catch (_) { /* Pointer may already be inactive. */ }
@@ -268,7 +255,8 @@
       on(this.range, "pointerup", (e) => {
         if (this.activePointerId !== null && e.pointerId === this.activePointerId) {
           this.resetPointer();
-          this.verify();
+          // With chorded mouse buttons the last release can be a different button.
+          if (e.button === 0 && e.isPrimary) this.verify();
         }
       });
       const cancelPointer = (e) => {
@@ -331,8 +319,27 @@
       this.querySelector(".nsc-fill").style.width = `calc(${(this.x / this.maxX) * 100}% + var(--nsc-handle-size) * ${1 - this.x / this.maxX})`;
       this.range.setAttribute("aria-valuetext", this.getText("value", { percent: Math.round((this.x / this.maxX) * 100) }));
     }
+    async getCsrfToken() {
+      const endpoint = this.endpoint;
+      if (!this.live || !endpoint) throw localError("init_failed");
+      if (!inits.has(endpoint))
+        inits.set(endpoint, fetch(endpoint + "init", {
+          credentials: "same-origin", cache: "no-store",
+        }).then(async (r) => {
+          let data;
+          try { data = await r.json(); } catch (_) { throw localError("init_failed"); }
+          if (!r.ok) {
+            const message = errorText(data, "init_failed");
+            throw localError(message.key, message.values);
+          }
+          if (typeof data?.csrfToken !== "string" || !data.csrfToken)
+            throw localError("init_failed");
+          return data.csrfToken;
+        }).catch((e) => { inits.delete(endpoint); throw e; }));
+      return inits.get(endpoint);
+    }
     async post(action, body, signal) {
-      const csrfToken = await init(this.endpoint);
+      const csrfToken = await this.getCsrfToken();
       const r = await fetch(this.endpoint + action, {
         method: "POST", credentials: "same-origin",
         headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
@@ -363,6 +370,8 @@
           const message = errorText(data, "generation_failed");
           throw localError(message.key, message.values);
         }
+        if (!validLifetime(data.expiresIn)) throw localError("generation_failed");
+        const expiresAt = started + data.expiresIn * 1000;
         // Geometry is public protocol data, but must be valid before arithmetic
         // or enabling input. Dimensions are bounded independently of CSS pixels.
         const dimension = (v) => Number.isInteger(v) && v > 0 && v <= 8192;
@@ -397,7 +406,7 @@
           this.field.value = "";
           this.emit("captcha-reset");
           this.setState("expired", "expired");
-        }, Math.max(0, data.expiresIn * 1000 - (Date.now() - started)));
+        }, Math.max(0, expiresAt - Date.now()));
       } catch (e) {
         if (seq !== this.seq || e.name === "AbortError") return;
         this.request.abort(); // Also clean up a sibling image still loading.
@@ -411,9 +420,13 @@
       try {
         const data = await this.post("verify", { challengeId: this.challenge.challengeId, x: this.x }, this.request.signal);
         if (seq !== this.seq) return;
-        if (data?.ok) {
+        const incorrect = data?.code === "incorrect" && !data.ok;
+        const attempts = data?.attemptsRemaining;
+        if (data?.ok === true && typeof data.token === "string" && data.token.trim()
+            && validLifetime(data.expiresIn)) {
           clearTimeout(this.timer);
-          const remaining = Math.max(0, data.expiresIn * 1000 - (Date.now() - started));
+          const expiresAt = started + data.expiresIn * 1000;
+          const remaining = Math.max(0, expiresAt - Date.now());
           if (!remaining) {
             this.field.value = "";
             this.emit("captcha-reset");
@@ -430,15 +443,16 @@
             this.field.value = "";
             this.emit("captcha-reset");
             this.setState("expired", "token_expired");
-          }, Math.max(0, data.expiresIn * 1000 - (Date.now() - started)));
-        } else if (data?.code === "incorrect" && data.attemptsRemaining > 0) {
+          }, Math.max(0, expiresAt - Date.now()));
+        } else if (incorrect && Number.isSafeInteger(attempts) && attempts > 0
+            && (!Number.isSafeInteger(this.challenge.maxAttempts) || attempts <= this.challenge.maxAttempts)) {
           this.move(0);
-          this.setState("ready", "incorrect", { remaining: data.attemptsRemaining });
+          this.setState("ready", "incorrect", { remaining: attempts });
         } else {
           clearTimeout(this.timer);
           this.field.value = "";
           const message = errorText(data, "verification_failed");
-          this.setState("error", data?.code === "incorrect" ? "attempts_exhausted" : message.key, message.values);
+          this.setState("error", incorrect && attempts === 0 ? "attempts_exhausted" : message.key, message.values);
         }
       } catch (e) {
         if (seq !== this.seq || e.name === "AbortError") return;

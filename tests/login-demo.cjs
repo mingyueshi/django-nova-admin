@@ -728,7 +728,7 @@ test('vendored slider bytes match the declared MIT source manifest', () => {
   const base = path.join(project, 'dist/vendor/nova-slider-captcha');
   const manifest = JSON.parse(fs.readFileSync(path.join(base, 'manifest.json')));
   assert.equal(manifest.version, '0.3.0');
-  assert.equal(manifest.commit, '691d36f1d2319d0c83c382d40ce29390a5e2b324');
+  assert.equal(manifest.commit, '730d8cc6134e8cefda539bd0b825677b6040d9a2');
   assert.equal(manifest.license, 'MIT');
   for (const [name, digest] of Object.entries(manifest.files))
     assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(base, name))).digest('hex'), digest);
