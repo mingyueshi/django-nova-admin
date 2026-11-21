@@ -594,6 +594,36 @@ class SdistTests(unittest.TestCase):
             files = self.fixture(root)
             self.assertEqual(artifacts.sdist_check(self.write(root, files), root)['source_files'], 7)
 
+    def test_test_locale_catalogs_are_source_bound(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = self.fixture(root)
+            catalogs = {'tests/locale/ar/LC_MESSAGES/django.po': b'PO source',
+                        'tests/locale/ar/LC_MESSAGES/django.mo': b'MO binary'}
+            for name, content in catalogs.items():
+                path = root / 'django-theme' / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(content)
+            files.update(catalogs)
+            self.assertEqual(artifacts.sdist_check(self.write(root, files), root)['source_files'], 9)
+
+            for name in catalogs:
+                for change in ('missing', 'changed'):
+                    with self.subTest(name=name, change=change):
+                        members = files.copy()
+                        if change == 'missing':
+                            del members[name]
+                        else:
+                            members[name] = b'changed'
+                        with self.assertRaisesRegex(ValueError, 'source/documentation'):
+                            artifacts.sdist_check(self.write(root, members), root)
+
+            outside = 'tests/django.po'
+            (root / 'django-theme' / outside).write_bytes(b'outside locale')
+            files[outside] = b'outside locale'
+            with self.assertRaisesRegex(ValueError, 'generated sdist content'):
+                artifacts.sdist_check(self.write(root, files), root)
+
     def json_fixture(self, root):
         files = self.fixture(root)
         name = 'tests/fixtures/brand-names.json'
