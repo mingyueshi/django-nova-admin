@@ -92,6 +92,24 @@ test('Reset restores original count', 'users', async ({ q, click, addUser, go })
   addUser(); await go('settings'); click('[data-action="reset-demo"]'); click('[data-action="confirm-reset-demo"]'); await go('users');
   assert.match(q('.table-footer').textContent, /共 24 位/);
 });
+test('Reset restores overview and role selections without a reload', 'overview', async ({ q, click, change, go }) => {
+  change('#period', '90');
+  click('[data-chart="活跃用户"]');
+  assert.equal(q('#period').value, '90');
+  assert.equal(q('[data-chart][aria-pressed="true"]').dataset.chart, '活跃用户');
+  await go('roles');
+  click('[data-role="只读成员"]');
+  assert.equal(q('[data-role][aria-pressed="true"]').dataset.role, '只读成员');
+
+  await go('settings');
+  click('[data-action="reset-demo"]');
+  click('[data-action="confirm-reset-demo"]');
+  await go('overview');
+  assert.equal(q('#period').value, '30');
+  assert.equal(q('[data-chart][aria-pressed="true"]').dataset.chart, '新增用户');
+  await go('roles');
+  assert.equal(q('[data-role][aria-pressed="true"]').dataset.role, '编辑');
+});
 test('Component form category', 'components', ({ q }) => assert.ok(q('#lab-content-form')));
 test('Extended form required validation', 'components', ({ q, submit }) => {
   submit('#lab-content-form'); assert.match(q('#lab-title-error').textContent, /至少/);

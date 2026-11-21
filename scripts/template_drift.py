@@ -24,7 +24,7 @@ EXTENDS = re.compile(r'{%\s*extends\s+[\'"]([^\'"]+)[\'"]\s*%}')
 
 
 def digest(text):
-    return hashlib.sha256(text.encode()).hexdigest()
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
 
 def read_templates(django_root):
@@ -87,32 +87,38 @@ def main(argv=None):
     if args.output.exists():
         parser.error('Report directory already exists; choose a new path')
     current = read_templates(args.django_root)
-    manifest = json.loads(args.baseline.read_text()) if args.baseline.exists() else {'schema': 1, 'license': 'Django BSD-3-Clause; django-theme/src/nova_admin/LICENSE-DJANGO.txt', 'releases': {}}
+    if args.baseline.exists():
+        manifest = json.loads(args.baseline.read_text(encoding='utf-8'))
+    else:
+        manifest = {'schema': 1, 'license': 'Django BSD-3-Clause; django-theme/src/nova_admin/LICENSE-DJANGO.txt', 'releases': {}}
     if manifest.get('schema') != 1 or not isinstance(manifest.get('releases'), dict):
         parser.error('Invalid reviewed baseline manifest')
     if args.record_reviewed:
         if not re.fullmatch(r'\d+\.\d+\.\d+', label):
             parser.error('Only exact stable releases may be recorded as reviewed')
         manifest['releases'][label] = current
-        args.baseline.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
+        args.baseline.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     reference = label if label in manifest['releases'] else args.reference
     if reference not in manifest['releases']:
         parser.error('No reviewed baseline for reference ' + reference)
     rows = []
     for name, paths in WATCHED.items():
         for path in paths if isinstance(paths, list) else [paths]:
-            row = compare(current, manifest['releases'][reference], {name: (ROOT / path).read_text()})[0]
+            override = (ROOT / path).read_text(encoding='utf-8')
+            row = compare(current, manifest['releases'][reference], {name: override})[0]
             row['override'] = path
             rows.append(row)
     status = 'review-required' if any(row['status'] != 'reviewed' for row in rows) else 'reviewed'
     report = {'schema': 1, 'source': label, 'reference': reference, 'status': status, 'templates': rows,
               'boundary': 'Text and inherited-block drift warning only; not future Django compatibility certification.'}
     args.output.mkdir(parents=True)
-    (args.output / 'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
+    (args.output / 'report.json').write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     for row in rows:
         stem = row['override'].replace('/', '__')
-        (args.output / (stem + '.upstream.diff')).write_text(row.get('upstream_diff', 'Missing upstream template\n'))
-        (args.output / (stem + '.override.diff')).write_text(row.get('override_diff', ''))
+        (args.output / (stem + '.upstream.diff')).write_text(
+            row.get('upstream_diff', 'Missing upstream template\n'), encoding='utf-8')
+        (args.output / (stem + '.override.diff')).write_text(row.get('override_diff', ''), encoding='utf-8')
     print(json.dumps({key: report[key] for key in ('source', 'reference', 'status')}))
     return int(status != 'reviewed')
 

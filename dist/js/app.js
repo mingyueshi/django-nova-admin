@@ -192,14 +192,13 @@ function showStorageWarning() {
       );
 }
 
+const defaultViewSelections = { period: 30, chart: '新增用户', selectedRole: '编辑' };
 const state = {
   view: routeView(initialRoute),
   route: initialRoute,
   users: read('nova-users', structuredClone(initialUsers)),
   permissions: read('nova-permissions', structuredClone(initialPermissions)),
-  period: 30,
-  chart: '新增用户',
-  selectedRole: '编辑',
+  ...defaultViewSelections,
   native: false,
   mobile: false,
   settings: read('nova-settings', {
@@ -240,7 +239,7 @@ let lastFocus = null,
   pendingRole = null,
   pendingNavigation = null,
   mainFormDirty = false;
-const navOpened = readNavigationPreferences();
+let navOpened = readNavigationPreferences();
 let navPersistenceFailed = false;
 const restoreNavigationMenu = () => {
   if (navPersistenceFailed) return;
@@ -930,6 +929,9 @@ const actions = {
         'nova-audit',
         'nova-news',
         'nova-view-columns',
+        'nova-theme',
+        'nova-palette',
+        navigationPreferenceKey(),
       ])
         localStorage.removeItem(key);
     } catch {
@@ -938,6 +940,7 @@ const actions = {
       toast('无法清除本地存储，尚未重置', 'error');
       return;
     }
+    storageFailed = false;
     resetCatalog();
     resetNews();
     resetFlows();
@@ -953,11 +956,11 @@ const actions = {
       animations: true,
       compact: false,
     };
-    ['nova-users', 'nova-permissions', 'nova-settings'].forEach((k) => {
-      try {
-        localStorage.removeItem(k);
-      } catch {}
-    });
+    Object.assign(state, defaultViewSelections);
+    applyAppearance('light');
+    applyPalette('default');
+    navOpened = readNavigationPreferences();
+    navPersistenceFailed = false;
     userCollection.resetFilters({ resetPageSize: true });
     state.route = state.view;
     history.replaceState(null, '', '#' + state.route);

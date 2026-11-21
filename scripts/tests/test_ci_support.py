@@ -164,7 +164,7 @@ class FrontendContractTests(unittest.TestCase):
         names = support.frontend_contract()
         self.assertEqual(len(names), 21)
         self.assertEqual(names[-7:], ['icons', 'analytics', 'chart-libraries', 'analysis-lab', 'shared-css', 'navigation', 'flows'])
-        self.assertEqual(support.FRONTEND_TOTAL, 1566)
+        self.assertEqual(support.FRONTEND_TOTAL, 1569)
 
     def altered_package(self, mutation):
         with tempfile.TemporaryDirectory() as tmp:
@@ -196,7 +196,7 @@ class FrontendContractTests(unittest.TestCase):
 
 class NodeEvidenceTests(unittest.TestCase):
     # Copied summaries from the current successful npm/frontend and theme JS logs.
-    FRONTEND_LOG = """TOTAL 31 passed
+    FRONTEND_LOG = """TOTAL 32 passed
 TOTAL 33 workflow tests passed
 TOTAL 15 control tests passed
 TOTAL 26 media and news tests passed
@@ -212,10 +212,10 @@ TOTAL 5 extensions guide tests passed
 TOTAL 248 palette checks passed
 TOTAL 361 icon checks passed
 TOTAL 64 analytics checks passed
-TOTAL 77 chart library checks passed
+TOTAL 78 chart library checks passed
 TOTAL 63 analysis lab checks passed
 TOTAL 4 shared login CSS checks passed
-TOTAL 24 preview navigation scenarios passed
+TOTAL 25 preview navigation scenarios passed
 TOTAL 75 flow demo checks passed
 """
     GROUP_LOGS = {
@@ -245,17 +245,17 @@ TOTAL 75 flow demo checks passed
     def collect(self, root):
         return support.collect_node(root / 'logs', root / 'output', COMMIT, '24.21.0', '11.19.0')
 
-    def test_current_log_fixture_records_all_1566_checks_in_twenty_one_suites(self):
+    def test_current_log_fixture_records_all_1569_checks_in_twenty_one_suites(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.logs(root)
             result = self.collect(root)
-            self.assertEqual(result['frontend'], 1566)
+            self.assertEqual(result['frontend'], 1569)
             self.assertEqual(result['theme_js'], 321)
             self.assertEqual(len(result['frontend_suites']), 21)
             self.assertEqual(result['frontend_suites']['users-data'], 62)
             self.assertEqual(result['frontend_suites']['palettes'], 248)
-            self.assertEqual(sum(result['frontend_suites'].values()), 1566)
+            self.assertEqual(sum(result['frontend_suites'].values()), 1569)
             self.assertEqual(json.loads((root / 'output/report.json').read_text()), result)
 
     def test_every_frontend_suite_requires_exactly_one_success_summary(self):
@@ -293,7 +293,7 @@ TOTAL 75 flow demo checks passed
             self.assertFalse((root / 'output').exists())
 
     def test_same_total_cannot_hide_an_absent_suite(self):
-        # Omit the 248 palette checks but add those 248 to pagination: still 1566.
+        # Omit the 248 palette checks but add those 248 to pagination: still 1569.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             logs = self.logs(root)
@@ -379,7 +379,7 @@ TOTAL 75 flow demo checks passed
                             self.collect(root)
 
     def test_pre_navigation_merge_summaries_are_rejected(self):
-        for group, old in [('frontend', self.FRONTEND_LOG.replace('TOTAL 24 preview navigation scenarios passed\n', '')),
+        for group, old in [('frontend', self.FRONTEND_LOG.replace('TOTAL 25 preview navigation scenarios passed\n', '')),
                            ('navigation', self.GROUP_LOGS['navigation'].replace('123 navigation', '78 navigation'))]:
             with self.subTest(group=group), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
@@ -438,7 +438,7 @@ TOTAL 75 flow demo checks passed
                 (logs / name).unlink()
             result = support.check_node_summaries(logs)
             self.assertEqual(result['kind'], 'node-suite-contract')
-            self.assertEqual(result['frontend'], 1566)
+            self.assertEqual(result['frontend'], 1569)
             self.assertIn('no install, runtime, step', result['boundary'])
             self.assertNotIn('commit', result)
             self.assertNotIn('node', result)

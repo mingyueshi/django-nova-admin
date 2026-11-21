@@ -16,7 +16,22 @@ let count=0;const check=(name,fn)=>{fn();count++;console.log('PASS',name);};cons
  check('dual-axis configs keep incompatible units on separate scales',()=>{const e=createChartExample('mixed');assert.equal(buildEChartsOption(e,t).yAxis.length,2);const c=buildChartJsConfig(e,t);assert.equal(c.data.datasets[1].yAxisID,'y1');assert.ok(c.options.scales.y1);assert.equal(buildUPlotOptions(createChartExample('ops-throughput'),t).series[2].scale,'right');});
  check('ops windows are ordered, bounded and advance by one minute on replay',()=>{for(const hours of [1,6,24]){const a=createChartExample('ops-latency',{hours}),b=createChartExample('ops-latency',{hours,tick:1});assert.equal(a.rows.length,hours===1?60:hours===6?180:288);assert.ok(a.timestamps.every((n,i)=>!i||n>a.timestamps[i-1]));assert.equal(b.timestamps.at(-1)-a.timestamps.at(-1),60);assert.ok(a.series[1].values.every((n,i)=>n>=a.series[0].values[i]));}});
  check('empty examples preserve schema and CSV still has metadata and headers',()=>{for(const scene of chartScenes){const e=createChartExample(scene.id,{sample:'empty'});assert.equal(e.rows.length,0);assert.ok(e.columns.length);assert.equal(chartExampleCsv(e).split('\r\n').length,4);}});
- check('zero examples contain no fabricated nonzero table values',()=>{for(const scene of chartScenes){const e=createChartExample(scene.id,{sample:'zero'});assert.ok(e.rows.every(row=>row.slice(1).every(v=>typeof v!=='number'||v===0)));}});
+ check('zero samples have zero measured values', () => {
+   for (const scene of chartScenes.filter(scene => scene.id !== 'goal')) {
+     const example = createChartExample(scene.id, {sample: 'zero'});
+     assert.ok(example.rows.every(row => row.slice(1).every(value => typeof value !== 'number' || value === 0)), scene.id);
+   }
+ });
+ check('zero payment goals retain the filtered reference target in the table and CSV', () => {
+   for (const [days, channel, target] of [[30, 'all', 1500000], [7, 'search', 87500]]) {
+     const goal = createChartExample('goal', {sample: 'zero', days, channel});
+     assert.equal(goal.actual, 0);
+     assert.equal(goal.target, target);
+     assert.equal(buildEChartsOption(goal, t).series[0].detail.formatter, '0%');
+     assert.deepEqual(goal.rows, [['已完成', 0], ['参考目标', target]]);
+     assert.deepEqual(chartExampleCsv(goal).split('\r\n').slice(-2), ['"已完成","0"', `"参考目标","${target}"`]);
+   }
+ });
  const app=await createApp({url:'https://example.test/#charts'}),{w,d}=app,q=s=>d.querySelector(s),all=s=>[...d.querySelectorAll(s)];const errors=[];w.addEventListener('error',e=>errors.push(e.message));
  const fake={echarts:{created:0,disposed:0,set:0},chartjs:{created:0,disposed:0},uplot:{created:0,disposed:0,data:0}};
  let lastE,lastU;

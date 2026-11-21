@@ -88,6 +88,36 @@ async function test(name, run) {
     assert.equal(open(same, 'business'), true);
     allClosed(await setup({ url: 'https://example.test/b/#users', storage: store }));
   });
+  await test('demo reset restores appearance and clears navigation for the current installation', async setup => {
+    const url = 'https://example.test/demo/index.html#settings';
+    const otherKey = 'nova.preview.navigation.v2./other/';
+    const otherMenu = JSON.stringify({ version: 2, nodes: { business: true } });
+    const app = await setup({ url, storage: { [otherKey]: otherMenu } });
+    app.d.querySelector('[data-action="theme"]').click();
+    app.d.querySelector('[data-palette-card="teal"]').click();
+    click(app, 'business');
+    click(app, 'organization');
+    const storage = app.w.localStorage;
+    const menuKey = 'nova.preview.navigation.v2./demo/';
+    assert.equal(storage.getItem('nova-theme'), 'dark');
+    assert.equal(storage.getItem('nova-palette'), 'teal');
+    assert.deepEqual(JSON.parse(storage.getItem(menuKey)).nodes, { business: true, organization: true });
+
+    app.d.querySelector('[data-action="reset-demo"]').click();
+    app.d.querySelector('[data-action="confirm-reset-demo"]').click();
+    for (const name of ['nova-theme', 'nova-palette', menuKey]) assert.equal(storage.getItem(name), null, name);
+    assert.equal(storage.getItem(otherKey), otherMenu);
+    const reload = await setup({ url, storage: snapshot(app) });
+    for (const page of [app, reload]) {
+      allClosed(page);
+      assert.equal(page.d.documentElement.dataset.theme, 'light');
+      assert.equal(page.d.querySelector('#appearance-mode').value, 'light');
+      assert.equal(page.d.documentElement.dataset.palette, 'default');
+      assert.equal(page.d.querySelector('#palette-mode').value, 'default');
+    }
+    click(app, 'developer');
+    assert.deepEqual(JSON.parse(storage.getItem(menuKey)).nodes, { developer: true });
+  });
   await test('storage getter/read/write failures retain usable in-page choices', async setup => {
     for (const mode of ['getter', 'read', 'write']) {
       const app = await setup({ beforeLoad(w) {

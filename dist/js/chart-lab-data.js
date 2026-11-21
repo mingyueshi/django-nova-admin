@@ -66,7 +66,8 @@ export const chartScenes = [
 const sum = (values) => values.reduce((a, b) => a + b, 0);
 const round = (value, digits = 2) => Number(value.toFixed(digits));
 const zeroExample = (example) => {
-  if (example.sample !== 'zero') return example;
+  // The goal already uses zero-sample revenue and a filter-based reference target.
+  if (example.sample !== 'zero' || example.id === 'goal') return example;
   for (const series of example.series || []) series.values = series.values.map(() => 0);
   if (example.boxes) example.boxes = example.boxes.map((box) => box.map(() => 0));
   example.rows = example.rows.map((row) =>

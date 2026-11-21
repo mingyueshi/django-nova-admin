@@ -17,7 +17,7 @@ VERSION = re.compile(r'\d+\.\d+\.\d+\Z')
 # Exact success summaries emitted by the npm test suites, in package.json order.
 # Keep suite identity/counts, so an omitted suite cannot be hidden by another's total.
 FRONTEND_SUMMARIES = {
-    'dom': 'TOTAL 31 passed',
+    'dom': 'TOTAL 32 passed',
     'workflows': 'TOTAL 33 workflow tests passed',
     'controls': 'TOTAL 15 control tests passed',
     'media': 'TOTAL 26 media and news tests passed',
@@ -33,10 +33,10 @@ FRONTEND_SUMMARIES = {
     'palettes': 'TOTAL 248 palette checks passed',
     'icons': 'TOTAL 361 icon checks passed',
     'analytics': 'TOTAL 64 analytics checks passed',
-    'chart-libraries': 'TOTAL 77 chart library checks passed',
+    'chart-libraries': 'TOTAL 78 chart library checks passed',
     'analysis-lab': 'TOTAL 63 analysis lab checks passed',
     'shared-css': 'TOTAL 4 shared login CSS checks passed',
-    'navigation': 'TOTAL 24 preview navigation scenarios passed',
+    'navigation': 'TOTAL 25 preview navigation scenarios passed',
     'flows': 'TOTAL 75 flow demo checks passed',
 }
 FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_SUMMARIES.items()}

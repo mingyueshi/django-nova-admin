@@ -1,5 +1,9 @@
 import importlib.util
+import json
 from pathlib import Path
+import subprocess
+import sys
+import tempfile
 import unittest
 
 SPEC = importlib.util.spec_from_file_location('template_drift', Path(__file__).parents[1] / 'template_drift.py')
@@ -45,6 +49,40 @@ class TemplateDriftTests(unittest.TestCase):
 
     def test_hash_tracks_unicode_exactly(self):
         self.assertNotEqual(drift.digest('列表：'), drift.digest('列表:'))
+
+    def test_cli_reads_and_writes_utf8_for_baselines_reports_and_diffs(self):
+        release = '6.1.1'
+        templates = json.loads(drift.BASELINE.read_text(encoding='utf-8'))['releases'][release]
+        name = 'admin/base_site.html'
+        templates[name] += '<!-- 已审查 -->\n'
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            upstream = root / 'contrib/admin/templates'
+            for template, source in templates.items():
+                path = upstream / template
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(source, encoding='utf-8')
+
+            baseline = root / 'baseline.json'
+            cmd = [sys.executable, '-X', 'warn_default_encoding', '-W', 'error::EncodingWarning',
+                   drift.__file__, '--django-root', root, '--label', release, '--baseline', baseline]
+            recorded = subprocess.run(cmd + ['--record-reviewed', '--output', root / 'recorded'], capture_output=True)
+            self.assertEqual(recorded.returncode, 0, recorded.stderr)
+            self.assertEqual(json.loads(baseline.read_text(encoding='utf-8'))['releases'][release], templates)
+
+            (upstream / name).write_text(templates[name] + '<!-- 更新 -->\n', encoding='utf-8')
+            output = root / 'checked'
+            checked = subprocess.run(cmd + ['--output', output], capture_output=True)
+            self.assertEqual(checked.returncode, 1, checked.stderr)
+            report = json.loads((output / 'report.json').read_text(encoding='utf-8'))
+            self.assertEqual(report['status'], 'review-required')
+            override = 'django-theme/demo/templates/admin/base_site.html'
+            row = next(row for row in report['templates'] if row['override'] == override)
+            self.assertEqual(row['override_sha256'], drift.digest((drift.ROOT / override).read_text(encoding='utf-8')))
+            for kind in ('upstream', 'override'):
+                diff = (output / (override.replace('/', '__') + '.' + kind + '.diff')).read_text(encoding='utf-8')
+                self.assertIn('<!-- 更新 -->', diff)
+                self.assertEqual(diff, row[kind + '_diff'])
 
 
 if __name__ == '__main__':
