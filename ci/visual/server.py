@@ -37,7 +37,7 @@ def main():
     profiles.update({"standard-auto": ("teal", "standard", "auto", "en", "standard"),
                      "rtl": ("teal", "standard", "light", "ar", "standard")})
 
-    for case in json.loads((ROOT / "django-theme/tests/locales.json").read_text()):
+    for case in json.loads((ROOT / "django-theme/tests/locales.json").read_text(encoding="utf-8")):
         profiles["locale-" + case["code"]] = ("teal", "standard", "light", case["code"], "standard")
 
     def start(request, profile, page):
@@ -58,7 +58,7 @@ def main():
     def components(request, kind):
         if kind not in ("image", "slider"):
             raise Http404
-        template = engines["django"].from_string((Path(__file__).parent / "components.html").read_text())
+        template = engines["django"].from_string((Path(__file__).parent / "components.html").read_text(encoding="utf-8"))
         widget = {"name": "verification", "alternative": {"url": "#help", "label": "خيارات إضافية"},
                   "subwidgets": [{"template_name": "django/forms/widgets/text.html",
                                   "type": "text", "name": "answer", "attrs": {"aria-label": "الرمز"}}]}

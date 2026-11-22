@@ -2,6 +2,31 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { palettes } from '../../dist/js/palette.js';
 
+test('palette editor retains edits made while the preview is loading', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  let release;
+  const pending = new Promise(resolve => { release = resolve; });
+  await page.route('**/palette-preview.html', async route => {
+    await pending;
+    await route.continue();
+  });
+  await page.goto('/editor/palette-editor.html', { waitUntil: 'domcontentloaded' });
+  const hex = page.getByRole('textbox', { name: '正文 HEX', exact: true });
+  try {
+    await page.locator('#full-export').check();
+    await hex.fill('#123456');
+    await expect(page.locator('#checks tr')).toHaveCount(0);
+  } finally {
+    release();
+  }
+  await expect(page.locator('#checks tr')).toHaveCount(10);
+  await expect(hex).toHaveValue('#123456');
+  await expect(page.frameLocator('#preview').locator('h1')).toHaveCSS('color', 'rgb(18, 52, 86)');
+  await expect(page.locator('#css-code')).toHaveValue(/--body-fg: #123456;/);
+  expect(errors).toEqual([]);
+});
+
 test('palette editor validates every preset and exports working scoped overrides', async ({
   page,
 }) => {
@@ -323,8 +348,9 @@ test('RTL Markdown editing and optional verification dialogs at mobile width', a
     await page.goto('/components/' + kind + '/');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     const notes = page.locator('#notes');
+    await expect(notes).toHaveAccessibleName('ملاحظات');
     await notes.focus();
-    await notes.press('Control+a');
+    await notes.press('ControlOrMeta+a');
     await page.locator('.nova-md-bold').click();
     await expect(notes).toHaveValue('**منتج SKU-123**');
     const submit = page.locator('#login-form [type=submit]');

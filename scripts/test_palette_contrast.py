@@ -204,12 +204,12 @@ def color(properties, name, stack=()):
 
 def audit():
     nova = ROOT / 'django-theme/src/nova_admin/static/nova_admin'
-    palette_css = (nova / 'presets.css').read_text()
-    static_palette_css = (ROOT / 'dist/presets.css').read_text()
+    palette_css = (nova / 'presets.css').read_text(encoding='utf-8')
+    static_palette_css = (ROOT / 'dist/presets.css').read_text(encoding='utf-8')
     stylesheets = {
-        'django': [(nova / filename).read_text() for filename in ('theme.css', 'tokens.css')] + [palette_css],
-        'preview': [(ROOT / 'dist/styles.css').read_text(), static_palette_css],
-        'login': [(ROOT / 'dist/login-preview.css').read_text(), static_palette_css],
+        'django': [(nova / filename).read_text(encoding='utf-8') for filename in ('theme.css', 'tokens.css')] + [palette_css],
+        'preview': [(ROOT / 'dist/styles.css').read_text(encoding='utf-8'), static_palette_css],
+        'login': [(ROOT / 'dist/login-preview.css').read_text(encoding='utf-8'), static_palette_css],
     }
     roles = []
     for key in PALETTES:

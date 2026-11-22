@@ -68,6 +68,7 @@ const initialAudit = [
     detail: '模拟请求超时。真实项目应由服务端记录原始异常与操作者。',
   },
 ];
+const auditFields = ['id', 'type', 'resource', 'actor', 'time', 'status', 'detail'];
 let audit,
   auditFilter = '全部结果';
 function helpers() {
@@ -76,7 +77,14 @@ function helpers() {
 export function initScenarios({ ui, getUser, getUsers, getView, navigate, markClean }) {
   api = Object.freeze({ ...ui, getUser, getUsers, getView, navigate, markClean });
   try {
-    audit = JSON.parse(localStorage.getItem('nova-audit')) || structuredClone(initialAudit);
+    const saved = JSON.parse(localStorage.getItem('nova-audit'));
+    audit = Array.isArray(saved)
+      ? saved
+          .filter(
+            (entry) => entry && auditFields.every((field) => typeof entry[field] === 'string'),
+          )
+          .slice(0, 60)
+      : structuredClone(initialAudit);
   } catch {
     audit = structuredClone(initialAudit);
   }
@@ -264,9 +272,9 @@ function tokens() {
   );
 }
 export function renderAudit() {
-  const { icon, button } = helpers();
-  let rows = audit.filter((a) => auditFilter === '全部结果' || a.status === auditFilter);
-  return `<div class="notice">${icon('history')}当前为本地操作轨迹，含初始示例。真实审计日志必须由 Django 在服务端可靠记录。</div><section class="panel"><div class="user-toolbar"><div><h2>最近操作</h2><p class="lab-copy">本次演示中的新增、编辑、批量操作会追加到这里</p></div><span class="spacer"></span><select id="audit-filter" aria-label="按操作结果筛选">${['全部结果', '成功', '已拦截', '失败'].map((s) => `<option ${s === auditFilter ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div class="table-scroll"><table class="audit-table"><thead><tr><th>操作</th><th>关联资源</th><th>操作者</th><th>结果</th><th>发生时间（UTC）</th><th>详情</th></tr></thead><tbody>${rows.map((a) => `<tr><td><strong>${a.type}</strong><small class="audit-id">${a.id}</small></td><td>${api.esc(a.resource)}</td><td>${a.actor}</td><td><span class="pill ${a.status === '成功' ? 'status-normal' : a.status === '失败' ? 'status-error' : 'status-pending'}">${a.status}</span></td><td class="muted">${a.time}</td><td><button class="icon-button" data-audit-id="${a.id}" aria-label="查看 ${a.id}">${icon('chevron')}</button></td></tr>`).join('')}</tbody></table></div><div class="table-footer"><span>共 ${rows.length} 条记录 · 最多保留最近 60 条本地操作</span><span>全部为演示数据</span></div></section>`;
+  const { esc, icon } = helpers();
+  const rows = audit.filter((a) => auditFilter === '全部结果' || a.status === auditFilter);
+  return `<div class="notice">${icon('history')}当前为本地操作轨迹，含初始示例。真实审计日志必须由 Django 在服务端可靠记录。</div><section class="panel"><div class="user-toolbar"><div><h2>最近操作</h2><p class="lab-copy">本次演示中的新增、编辑、批量操作会追加到这里</p></div><span class="spacer"></span><select id="audit-filter" aria-label="按操作结果筛选">${['全部结果', '成功', '已拦截', '失败'].map((s) => `<option ${s === auditFilter ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div class="table-scroll"><table class="audit-table"><thead><tr><th>操作</th><th>关联资源</th><th>操作者</th><th>结果</th><th>发生时间（UTC）</th><th>详情</th></tr></thead><tbody>${rows.map((a) => `<tr><td><strong>${esc(a.type)}</strong><small class="audit-id">${esc(a.id)}</small></td><td>${esc(a.resource)}</td><td>${esc(a.actor)}</td><td><span class="pill ${a.status === '成功' ? 'status-normal' : a.status === '失败' ? 'status-error' : 'status-pending'}">${esc(a.status)}</span></td><td class="muted">${esc(a.time)}</td><td><button class="icon-button" data-audit-id="${esc(a.id)}" aria-label="查看 ${esc(a.id)}">${icon('chevron')}</button></td></tr>`).join('')}</tbody></table></div><div class="table-footer"><span>共 ${rows.length} 条记录 · 最多保留最近 60 条本地操作</span><span>全部为演示数据</span></div></section>`;
 }
 function detailDrawer(id) {
   const { getUser, esc, icon, openOverlay, person } = helpers();
@@ -277,10 +285,11 @@ function detailDrawer(id) {
   );
 }
 function auditDrawer(id) {
-  let a = audit.find((a) => a.id === id);
+  const { esc, icon, openOverlay } = helpers();
+  const a = audit.find((a) => a.id === id);
   if (!a) return;
-  api.openOverlay(
-    `<section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title"><div class="drawer-header"><div><h2 id="drawer-title">操作详情</h2></div><button class="icon-button" data-action="close" aria-label="关闭操作详情">${api.icon('close')}</button></div><div class="drawer-content"><span class="pill ${a.status === '成功' ? 'status-normal' : 'status-pending'}">${a.status}</span><dl class="detail-list"><div><dt>事件编号</dt><dd>${a.id}</dd></div><div><dt>操作类型</dt><dd>${a.type}</dd></div><div><dt>关联资源</dt><dd>${api.esc(a.resource)}</dd></div><div><dt>操作者</dt><dd>${a.actor}</dd></div><div><dt>记录时间（UTC）</dt><dd>${a.time}</dd></div></dl><h3 style="margin-top:25px">事件说明</h3><p class="lab-copy">${api.esc(a.detail)}</p><div class="notice" style="margin-top:25px">${api.icon('circle')}这是浏览器端演示记录，不能作为真实安全审计证据。</div></div><div class="drawer-footer"><button class="btn primary" data-action="close">完成</button></div></section>`,
+  openOverlay(
+    `<section class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title"><div class="drawer-header"><div><h2 id="drawer-title">操作详情</h2></div><button class="icon-button" data-action="close" aria-label="关闭操作详情">${icon('close')}</button></div><div class="drawer-content"><span class="pill ${a.status === '成功' ? 'status-normal' : 'status-pending'}">${esc(a.status)}</span><dl class="detail-list"><div><dt>事件编号</dt><dd>${esc(a.id)}</dd></div><div><dt>操作类型</dt><dd>${esc(a.type)}</dd></div><div><dt>关联资源</dt><dd>${esc(a.resource)}</dd></div><div><dt>操作者</dt><dd>${esc(a.actor)}</dd></div><div><dt>记录时间（UTC）</dt><dd>${esc(a.time)}</dd></div></dl><h3 style="margin-top:25px">事件说明</h3><p class="lab-copy">${esc(a.detail)}</p><div class="notice" style="margin-top:25px">${icon('circle')}这是浏览器端演示记录，不能作为真实安全审计证据。</div></div><div class="drawer-footer"><button class="btn primary" data-action="close">完成</button></div></section>`,
   );
 }
 function onClick(e) {

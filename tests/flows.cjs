@@ -138,6 +138,28 @@ await checkA('Retry restarts the task as running from zero',async()=>{await wait
 
 
 
+const nativeRandom = w.Math.random;
+try {
+  w.Math.random = () => 0.99;
+  click('[data-flow="task-start"][data-flow-id="3"]');
+  fireTicks(6);
+  const row = () => all('.task-row')[2];
+  assert.equal(row().querySelector('.task-percent').textContent, '90%');
+  click('[data-flow="task-fail"][data-flow-id="3"]');
+  fireTicks(2);
+  check('Late simulated failure is recorded once and offers retry before completion', () => {
+    assert.equal(row().querySelector('.pill').textContent, '失败');
+    assert.equal(row().querySelector('[data-flow="task-start"]').textContent, '重试');
+    assert.ok(Number(row().querySelector('.task-progress').getAttribute('aria-valuenow')) < 100);
+    const events = JSON.parse(w.localStorage.getItem('nova-audit')).filter(event =>
+      event.type === '后台任务' && event.resource.startsWith('生成月度经营报表'));
+    assert.equal(events.length, 1);
+    assert.match(events[0].resource, /失败/);
+  });
+} finally {
+  w.Math.random = nativeRandom;
+}
+
 const badgeBefore=Number(q('.notice-badge').textContent);
 click('[data-action="notifications"]');
 check('Notification center groups notices by type with live badge',()=>{assert.ok(q('.notice-drawer'));assert.ok(all('.notice-group').length>=2);assert.equal(q('.notice-badge').textContent,String(badgeBefore));assert.match(q('.notice-drawer .drawer-header p').textContent,new RegExp(`未读 ${badgeBefore} 条`))});

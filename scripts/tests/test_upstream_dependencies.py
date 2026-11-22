@@ -66,24 +66,28 @@ class UpstreamDependencyTests(unittest.TestCase):
     def test_cli_checks_origin_without_importing_django(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            source = root / 'source'
+            source = root / '上游源码'
             (source / 'django').mkdir(parents=True)
             # A metadata/source-origin check must not execute this module.
             (source / 'django/__init__.py').write_text('raise AssertionError("do not import")\n')
             (source / 'pyproject.toml').write_text('[project]\nname="Django"\nrequires-python=">=3.12"\ndependencies=[]\n')
             env = {**os.environ, 'PYTHONPATH': str(source), 'PYTHONDONTWRITEBYTECODE': '1'}
+            cmd = [sys.executable, '-X', 'warn_default_encoding', '-W', 'error::EncodingWarning',
+                   str(SCRIPT), '--source-root', str(source)]
             output = root / 'good.json'
-            result = subprocess.run([sys.executable, str(SCRIPT), '--source-root', str(source), '--output', str(output)], env=env, capture_output=True, text=True, timeout=15)
+            result = subprocess.run(cmd + ['--output', str(output)], env=env, capture_output=True, timeout=15)
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertTrue(json.loads(output.read_text())['source_origin_matches'])
+            report = json.loads(output.read_text(encoding='utf-8'))
+            self.assertTrue(report['source_origin_matches'])
+            self.assertEqual(report['source_root'], str(source.resolve()))
             other = root / 'other'
             (other / 'django').mkdir(parents=True)
             (other / 'django/__init__.py').write_text('raise AssertionError("do not import")\n')
             env['PYTHONPATH'] = str(other)
             output = root / 'wrong.json'
-            result = subprocess.run([sys.executable, str(SCRIPT), '--source-root', str(source), '--output', str(output)], env=env, capture_output=True, text=True, timeout=15)
+            result = subprocess.run(cmd + ['--output', str(output)], env=env, capture_output=True, timeout=15)
             self.assertEqual(result.returncode, 1, result.stderr)
-            self.assertFalse(json.loads(output.read_text())['source_origin_matches'])
+            self.assertFalse(json.loads(output.read_text(encoding='utf-8'))['source_origin_matches'])
 
 
 if __name__ == '__main__':

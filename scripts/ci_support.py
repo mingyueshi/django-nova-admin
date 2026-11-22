@@ -21,7 +21,7 @@ FRONTEND_SUMMARIES = {
     'workflows': 'TOTAL 33 workflow tests passed',
     'controls': 'TOTAL 15 control tests passed',
     'media': 'TOTAL 29 media and news tests passed',
-    'recovery': 'TOTAL 36 recovery edge tests passed (Node/jsdom)',
+    'recovery': 'TOTAL 42 recovery edge tests passed (Node/jsdom)',
     'users-data': 'TOTAL 62 user data checks passed (Node/jsdom)',
     'enterprise': 'TOTAL 13 enterprise preview tests passed',
     'boundaries': 'TOTAL 75 refactor boundary checks passed (Node/jsdom)',
@@ -37,7 +37,7 @@ FRONTEND_SUMMARIES = {
     'analysis-lab': 'TOTAL 63 analysis lab checks passed',
     'shared-css': 'TOTAL 4 shared login CSS checks passed',
     'navigation': 'TOTAL 25 preview navigation scenarios passed',
-    'flows': 'TOTAL 77 flow demo checks passed',
+    'flows': 'TOTAL 78 flow demo checks passed',
 }
 FRONTEND_COUNTS = {name: int(summary.split()[1]) for name, summary in FRONTEND_SUMMARIES.items()}
 FRONTEND_TOTAL = sum(FRONTEND_COUNTS.values())

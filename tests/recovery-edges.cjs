@@ -4,7 +4,7 @@ const {createApp}=require('./dom-runtime.cjs');
 const assert=require('node:assert/strict');
 let passed=0;
 const wait=(ms=20)=>new Promise(resolve=>setTimeout(resolve,ms));
-async function session(run){const app=await createApp(),{w,d}=app,errors=[];w.addEventListener('error',event=>errors.push(event.error));const q=selector=>d.querySelector(selector),all=selector=>[...d.querySelectorAll(selector)];const route=async path=>{w.location.hash=path;await wait();};const input=(selector,value)=>{const field=q(selector);field.value=value;field.dispatchEvent(new w.Event('input',{bubbles:true}));};const change=(selector,value)=>{const field=q(selector);if(typeof value==='boolean')field.checked=value;else field.value=value;field.dispatchEvent(new w.Event('change',{bubbles:true}));};const submit=(mode='continue',form=q('#catalog-form'))=>form.dispatchEvent(new w.SubmitEvent('submit',{bubbles:true,cancelable:true,submitter:q(`[data-save-mode="${mode}"]`)}));const check=(name,fn)=>{fn();console.log('PASS',name);passed++;};try{await run({w,d,q,all,route,input,change,submit,check});assert.deepEqual(errors,[],'No uncaught workflow exception');}finally{app.close();}}
+async function session(run,options={}){const app=await createApp(options),{w,d}=app,errors=[];w.addEventListener('error',event=>errors.push(event.error));const q=selector=>d.querySelector(selector),all=selector=>[...d.querySelectorAll(selector)];const route=async path=>{w.location.hash=path;await wait();};const input=(selector,value)=>{const field=q(selector);field.value=value;field.dispatchEvent(new w.Event('input',{bubbles:true}));};const change=(selector,value)=>{const field=q(selector);if(typeof value==='boolean')field.checked=value;else field.value=value;field.dispatchEvent(new w.Event('change',{bubbles:true}));};const submit=(mode='continue',form=q('#catalog-form'))=>form.dispatchEvent(new w.SubmitEvent('submit',{bubbles:true,cancelable:true,submitter:q(`[data-save-mode="${mode}"]`)}));const check=(name,fn)=>{fn();console.log('PASS',name);passed++;};try{await run({w,d,q,all,route,input,change,submit,check});assert.deepEqual(errors,[],'No uncaught workflow exception');}finally{app.close();}}
 (async()=>{
  await session(async({w,q,all,route,input,change,check,d})=>{
   for(const [name,search] of [['catalog','catalog-search'],['users','user-search'],['news','news-search']]){
@@ -60,5 +60,49 @@ async function session(run){const app=await createApp(),{w,d}=app,errors=[];w.ad
   await route('news');q('[data-news-detail="205"]').click();const original=q('.news-detail-cover');original.querySelector('img').dispatchEvent(new w.Event('error'));original.focus();original.click();q('[data-media-retry]').click();q('.media-preview img').dispatchEvent(new w.Event('load'));q('[aria-label="关闭图片预览"]').click();
   check('Nested image recovery refreshes the restored parent drawer thumbnail',()=>{assert.equal(q('.news-detail-cover'),original);assert.equal(original.querySelector('img').dataset.simulateFailure,'false');assert.equal(original.getAttribute('aria-busy'),'true');});original.querySelector('img').dispatchEvent(new w.Event('load'));check('Restored parent image reaches loaded state after its own load event',()=>{assert.equal(original.dataset.mediaState,'ready');assert.ok(original.classList.contains('media-loaded'));});
  });
+ for (const raw of ['{}', '5', '"x"']) {
+  await session(async ({w, q, route, input, check}) => {
+    await route('audit');
+    assert.ok(q('[data-audit-id="LOG-1042"]'));
+    assert.equal(w.localStorage.getItem('nova-audit'), raw);
+    await route('news/add');
+    input('#article-title', '审计恢复验证');
+    q('#news-article-form').dispatchEvent(new w.Event('submit', {bubbles:true, cancelable:true}));
+    await wait();
+    check('Saving news completes with non-array audit storage ' + raw, () => {
+      assert.ok(q('.news-table'));
+      assert.equal(JSON.parse(w.localStorage.getItem('nova-news')).filter(a => a.title === '审计恢复验证').length, 1);
+      const audit = JSON.parse(w.localStorage.getItem('nova-audit'));
+      assert.equal(audit[0].type, '新增文章');
+      assert.ok(audit.some(a => a.id === 'LOG-1042'));
+    });
+  }, {storage:{'nova-audit':raw}});
+ }
+ const fields = ['id', 'type', 'actor', 'resource', 'status', 'time', 'detail'];
+ const record = Object.fromEntries(fields.map(key => [key, key + ' "稿件" &amp; < 2']));
+ const invalidRows = fields.map(key => ({...record, [key]:null}));
+ await session(async ({q, all, route, check}) => {
+   await route('audit');
+   const button = q('button[data-audit-id]');
+   check('Audit list keeps valid rows and renders stored text and button labels literally', () => {
+     assert.equal(all('.audit-table tbody tr').length, 1);
+     const cells = all('.audit-table tbody td');
+     assert.equal(q('.audit-id').textContent, record.id);
+     assert.equal(cells[0].querySelector('strong').textContent, record.type);
+     assert.deepEqual(cells.slice(1, 5).map(cell => cell.textContent), [record.resource, record.actor, record.status, record.time]);
+     assert.equal(button.dataset.auditId, record.id);
+     assert.equal(button.getAttribute('aria-label'), '查看 ' + record.id);
+   });
+   button.click();
+   check('Audit drawer opens the selected ID and displays every field literally', () => {
+     assert.deepEqual(all('.drawer dd').map(cell => cell.textContent), [record.id, record.type, record.resource, record.actor, record.time]);
+     assert.equal(q('.drawer-content > .pill').textContent, record.status);
+     assert.equal(q('.drawer .lab-copy').textContent, record.detail);
+   });
+ }, {storage:{'nova-audit': JSON.stringify([null, ...invalidRows, record])}});
+ await session(async ({all, route, check}) => {
+   await route('audit');
+   check('A saved empty audit stays empty', () => assert.equal(all('.audit-table tbody tr').length, 0));
+ }, {storage:{'nova-audit':'[]'}});
  console.log('TOTAL',passed,'recovery edge tests passed (Node/jsdom)');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -20,7 +20,7 @@ export default defineConfig({
     toHaveScreenshot: { animations: 'disabled', caret: 'hide', threshold: 0.02, maxDiffPixels: 0 },
   },
   webServer: {
-    command: 'python3 server.py',
+    command: 'python3 -X warn_default_encoding -W error::EncodingWarning:__main__ server.py',
     url: 'http://127.0.0.1:4189/ready/',
     stderr: process.env.NOVA_VISUAL_DEBUG ? 'pipe' : 'ignore',
   },

@@ -31,6 +31,7 @@ const frame = byId('preview');
 const preset = byId('preset');
 const edits = new Map();
 const controls = new Map();
+let previewBody = null;
 let mode = 'light';
 const presetColors = {};
 
@@ -75,9 +76,9 @@ function cssCode() {
 }
 
 function render() {
-  const body = frame.contentDocument.body;
+  if (!previewBody) return;
   const colors = { ...presetColors[mode], ...Object.fromEntries(edited(mode)) };
-  for (const [, key] of roles) body.style.setProperty(key, colors[key]);
+  for (const [, key] of roles) previewBody.style.setProperty(key, colors[key]);
   let failed = 0;
   const checks = byId('checks');
   checks.replaceChildren();
@@ -115,8 +116,8 @@ function render() {
 }
 
 function refresh() {
-  const body = frame.contentDocument.body;
-  if (!body?.classList.contains('preview')) return;
+  const body = previewBody;
+  if (!body) return;
   body.removeAttribute('style');
   const classes = (scheme) =>
     'preview nova-admin nova-mode-' + scheme + ' nova-palette-' + preset.value;
@@ -200,5 +201,8 @@ byId('copy').addEventListener('click', async () => {
     byId('copy-status').textContent = ' 已选中，可手动复制';
   }
 });
-frame.addEventListener('load', refresh);
+frame.addEventListener('load', () => {
+  previewBody = frame.contentDocument?.querySelector('body.preview');
+  refresh();
+});
 frame.src = './palette-preview.html';

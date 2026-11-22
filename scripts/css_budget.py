@@ -26,7 +26,7 @@ def measurements(root):
             name = match.group(1).decode('utf-8')
             if '/' in name or '\\' in name or not name.endswith('.map') or name.startswith('.'):
                 raise ValueError('Source map must be a neighboring ordinary file')
-            source_map = json.loads((path.parent / name).read_text())
+            source_map = json.loads((path.parent / name).read_text(encoding='utf-8'))
             if source_map.get('version') != 3 or not source_map.get('sources') or not source_map.get('sourcesContent') or not source_map.get('mappings'):
                 raise ValueError('Source map must retain original sources and mappings')
         results[path.relative_to(root).as_posix()] = {
@@ -60,8 +60,8 @@ def main(argv=None):
         data = {'schema': 1, 'policy': 'Hand-written, unminified CSS; no compiler or CSS dependency. Gzip is measurement only. Reviewed 10% size headroom; third-party and generated duplicate CSS excluded.', 'files': {}}
         for name, info in current.items():
             data['files'][name] = {**info, 'limits': {metric: (info[metric] * 110 + 99) // 100 for metric in ('bytes', 'gzip_bytes')}}
-        args.baseline.write_text(json.dumps(data, indent=2) + '\n')
-    baseline = json.loads(args.baseline.read_text())
+        args.baseline.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')
+    baseline = json.loads(args.baseline.read_text(encoding='utf-8'))
     if baseline.get('schema') != 1:
         parser.error('Unsupported CSS budget schema')
     errors = validate(current, baseline)

@@ -84,7 +84,7 @@ def main(argv=None):
     report.update(schema=1, executable=sys.executable,
                   boundary='Declared base requirements and source origin only; not source regressions or support certification.')
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
+    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(json.dumps(report))
     return int(report['status'] != 'satisfied')
 

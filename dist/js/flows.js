@@ -709,7 +709,7 @@ function taskTick() {
   let changed = false;
   for (const task of tasks) {
     if (task.status !== 'running') continue;
-    task.percent = Math.min(100, task.percent + 6 + Math.round(Math.random() * 9));
+    task.percent = Math.min(task.failAt ?? 100, task.percent + 6 + Math.round(Math.random() * 9));
     changed = true;
     if (task.failAt && task.percent >= task.failAt) {
       task.status = 'failed';
@@ -1322,7 +1322,7 @@ export function flowsClick(event) {
     } else if (action === 'task-pause') {
       task.status = 'paused';
     } else {
-      task.failAt = task.percent + 12;
+      task.failAt = Math.min(task.percent + 12, 99);
     }
     rerender();
     return true;
