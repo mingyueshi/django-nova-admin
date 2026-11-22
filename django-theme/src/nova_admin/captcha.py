@@ -17,7 +17,7 @@ from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import router
 from django.forms import MultiValueField
 from django.http import HttpResponse, JsonResponse
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare, salted_hmac
 from django.utils.translation import pgettext_lazy
@@ -91,7 +91,12 @@ class NovaCaptchaTextInput(CaptchaTextInput):
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
         context["widget"]["subwidgets"][0]["value"] = _sign_key(self._key)
-        context["nova_captcha_refresh_url"] = reverse(self.refresh_url_name)
+        try:
+            context["nova_captcha_refresh_url"] = reverse(self.refresh_url_name)
+        except NoReverseMatch as exc:
+            raise ImproperlyConfigured(
+                f"Add nova_admin.captcha.captcha_refresh to your URLconf with name={self.refresh_url_name!r}."
+            ) from exc
         context["nova_captcha_help"] = getattr(
             settings, "NOVA_ADMIN_CAPTCHA_HELP_TEXT",
             pgettext_lazy("Nova Admin", "If you cannot use this challenge, contact your administrator for an alternative sign-in method."),

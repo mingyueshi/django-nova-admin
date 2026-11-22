@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
 const { JSDOM } = require('jsdom');
 const { createApp } = require('./dom-runtime.cjs');
+process.env.TZ = 'Asia/Shanghai';
 let passed = 0, failed = 0;
 const base = { id: 901, name: 'Review User', email: 'review@example.test', role: '编辑', status: '正常', team: '研发中心', joined: '2026-10-26' };
 const literal = { ...base, name: '<b>名</b>&"\'', email: '<i>m</i>&@ex.test' };
@@ -159,14 +160,17 @@ async function fallback(records, options) {
     });
     await session(null, 'components', ({ q, click }) => { click('[data-lab-tab="data"]'); assert.equal(q('.profile-showcase h3').textContent, literal.name); assert.equal(q('.profile-showcase p').textContent, literal.email); }, { raw: saved });
   });
-  await test('Creation trims text, saves supported fields and restores after refresh', async () => {
+  await test('Creation saves the local calendar date, trims text and restores after refresh', async () => {
     let saved;
-    await session([], 'users', ({ w, click, input, change, submit }) => {
+    await session([{ ...base, joined: '2027-01-01' }], 'users', ({ w, click, input, change, submit }) => {
+      w.Date = class extends w.Date {
+        constructor(...args) { super(...(args.length ? args : ['2026-12-31T16:30:00Z'])); }
+      };
       click('[data-action="add"]'); input('#member-name', '  A<&  '); input('#member-email', '  new@example.test  ');
       change('#member-team', '客户服务'); change('#member-role', '管理员'); change('#member-status', '已停用'); submit();
       saved = w.localStorage.getItem('nova-users'); const result = JSON.parse(saved)[0];
       assert.equal(result.name, 'A<&'); assert.equal(result.email, 'new@example.test'); assert.equal(result.team, '客户服务');
-      assert.match(result.joined, /^\d{4}-\d{2}-\d{2}$/); assert.ok(Number.isSafeInteger(result.id));
+      assert.equal(result.joined, '2027-01-01'); assert.ok(Number.isSafeInteger(result.id));
     });
     await session(null, 'users', ({ q }) => assert.equal(q('.users-full-table .person strong').textContent, 'A<&'), { raw: saved });
   });

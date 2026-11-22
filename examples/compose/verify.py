@@ -9,6 +9,9 @@ import sys
 import tempfile
 
 
+TEST_TIMEOUT_SECONDS = 120
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--captcha", action="store_true")
@@ -25,10 +28,13 @@ def main():
             "NOVA_EXAMPLE_CAPTCHA": "1" if args.captcha else "0",
             "PYTHONPATH": os.pathsep.join(filter(None, (str(root), str(root / "django-theme" / "src"), str(root / "django-theme" / "demo"), env.get("PYTHONPATH")))),
         })
-        subprocess.run([
-            sys.executable, str(root / "django-theme" / "demo" / "manage.py"),
-            "test", "examples.compose.test_django", "--settings=examples.compose.test_settings", "--noinput", "-v", "2",
-        ], check=True, env=env, cwd=root)
+        try:
+            subprocess.run([
+                sys.executable, str(root / "django-theme" / "demo" / "manage.py"),
+                "test", "examples.compose.test_django", "--settings=examples.compose.test_settings", "--noinput", "-v", "2",
+            ], check=True, env=env, cwd=root, timeout=TEST_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
+            raise SystemExit(f"Compose Django verification timed out after {TEST_TIMEOUT_SECONDS} seconds.") from None
     print("Passed example Django/SQLite checks. Docker image, Compose runtime and PostgreSQL remain untested by this script.")
 
 

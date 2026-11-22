@@ -135,11 +135,19 @@ class CaptchaLoginTests(TestCase):
     def login_data(self, token, answer, username="captcha-staff", **extra):
         return {"username": username, "password": "synthetic-test-only", "captcha_0": token, "captcha_1": answer, **extra}
 
+    @override_settings(ROOT_URLCONF="nova_admin.captcha_urls")
+    def test_missing_nova_refresh_route_explains_how_to_configure_it(self):
+        with self.assertRaises(ImproperlyConfigured) as error:
+            CaptchaAdminAuthenticationForm()["captcha"].as_widget()
+        self.assertIn("nova_admin.captcha.captcha_refresh", str(error.exception))
+        self.assertIn("nova-captcha-refresh", str(error.exception))
+
     def test_real_image_and_accessible_form_without_exposing_answer(self):
         with patch.object(captcha_settings, "CAPTCHA_CHALLENGE_FUNCT", lambda: ("QZXJKV", "qzxjkv")):
             response, soup, token, row = self.read_form()
         self.assertEqual(soup.select_one('label[for="id_captcha_1"]').get_text(strip=True), "Verification code:")
         self.assertEqual(soup.select_one('[name="captcha_1"]').get("autocomplete"), "off")
+        self.assertEqual(soup.select_one('[data-nova-captcha]')["data-refresh-url"], reverse("nova-captcha-refresh"))
         self.assertIn("id_captcha_helptext", soup.select_one('[name="captcha_1"]').get("aria-describedby", ""))
         self.assertNotIn(row.response, token.lower())
         self.assertNotIn(row.response, str(soup.select_one('[data-nova-captcha]')).lower())

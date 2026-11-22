@@ -10,7 +10,7 @@ import {
 import { brandName, brandInitial, defaultBrandName } from './branding.js';
 import { createCollection } from './collection.js';
 import { pagination, submitPageJump } from './pagination.js';
-import { searchShortcut } from './presentation.js';
+import { localDateString, searchShortcut } from './presentation.js';
 import { initMedia, thumbnail, imageSpec, restoreMedia } from './media.js';
 import { initNews, newsRouteLabel, renderNews, resetNews, syncNewsSelection } from './news.js';
 import {
@@ -1116,7 +1116,7 @@ document.addEventListener('submit', (e) => {
         role: f.get('role'),
         status: f.get('status'),
         team: f.get('team'),
-        joined: current?.joined ?? new Date().toISOString().slice(0, 10),
+        joined: current?.joined ?? localDateString(),
       },
       errors = userFieldErrors(data);
     if (state.users.some((u) => u.id !== id && u.email.toLowerCase() === data.email.toLowerCase()))
