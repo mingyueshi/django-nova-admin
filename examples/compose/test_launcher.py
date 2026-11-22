@@ -82,7 +82,9 @@ class LauncherTests(unittest.TestCase):
             self.assertIn("--wait", up.args[0])
             self.assertEqual(up.kwargs["env"]["NOVA_EXAMPLE_CAPTCHA"], "1")
             self.assertEqual(up.kwargs["env"]["NOVA_LOCAL_PORT"], "8123")
-            demo.main(["down"])
+            with patch.object(Path, "read_text", autospec=True, side_effect=Path.read_text) as read_text:
+                demo.main(["down"])
+                read_text.assert_any_call(self.root / ".local" / "options.json", encoding="utf-8")
             down = run.call_args
             self.assertEqual(down.args[0][-1], "down")
             self.assertNotIn("--volumes", down.args[0])

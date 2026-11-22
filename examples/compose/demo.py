@@ -76,7 +76,7 @@ def main(argv=None):
     state_file = local / "options.json"
     if state_file.is_symlink():
         raise ValueError("The options file must not be a symlink.")
-    state = json.loads(state_file.read_text()) if state_file.exists() else {"captcha": False, "port": 8000}
+    state = json.loads(state_file.read_text(encoding="utf-8")) if state_file.exists() else {"captcha": False, "port": 8000}
     if (not isinstance(state, dict) or set(state) != {"captcha", "port"} or
             not isinstance(state["captcha"], bool) or type(state["port"]) is not int or not 1024 <= state["port"] <= 65535):
         raise ValueError("Invalid local options file.")

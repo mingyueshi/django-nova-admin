@@ -202,9 +202,10 @@ class ProductRecycleBinTests(TestCase):
         self.assertIn("sku", error.exception.message_dict)
 
     def test_other_product_workflows_exclude_recycled_products_until_restore(self):
-        day = timezone.localdate().isoformat()
+        reviewed_at = timezone.now()
+        day = timezone.localdate(reviewed_at).isoformat()
         ProductPublicationRequest.objects.create(product=self.product, submitted_by=self.deleter,
-            reviewed_by=self.deleter, reviewed_at=timezone.now(), result="approved")
+            reviewed_by=self.deleter, reviewed_at=reviewed_at, result="approved")
         self.product.delete()
         self.client.force_login(self.restorer)
         def counts():

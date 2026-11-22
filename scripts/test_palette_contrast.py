@@ -84,21 +84,35 @@ def matching_end(value, start, opening, closing):
     raise ValueError(f'Unclosed {opening} in authored CSS')
 
 
+def match_selector_list(value, element, *, forgiving=False):
+    parts = list(split_selectors(value))
+    if not forgiving and '' in parts:
+        return None
+    matches = [selector_match(part, element) for part in parts]
+    if forgiving:
+        return [match for match in matches if match is not None]
+    return None if None in matches else matches
+
+
 def selector_match(selector, element):
-    """Return match and specificity for a supported single root/body compound."""
+    """Return match and specificity for a root/body compound, or None if invalid."""
     remaining = selector.strip()
+    if not remaining:
+        return None
     specificity = 0
     matched = True
     while remaining:
         function = re.match(r':(where|is|not)\(', remaining)
         if function:
             end = matching_end(remaining, function.end() - 1, '(', ')')
-            choices = [selector_match(part, element) for part in
-                       split_selectors(remaining[function.end():end])]
+            choices = match_selector_list(remaining[function.end():end], element,
+                                          forgiving=function[1] in ('is', 'where'))
+            if choices is None:
+                return None
             has_match = any(match for match, _ in choices)
             matched &= not has_match if function[1] == 'not' else has_match
             if function[1] != 'where':
-                specificity += max(score for _, score in choices)
+                specificity += max((score for _, score in choices), default=0)
             remaining = remaining[end + 1:]
             continue
         token = re.match(r':root|\.[\w-]+|\[[\w-]+(?:=["\']?[\w-]+["\']?)?\]|[\w-]+', remaining)
@@ -173,7 +187,9 @@ def effective_properties(stylesheets, palette, mode, surface, dark_os=False):
                    attributes={'data-theme': mode, 'data-palette': palette})
     properties, priority = {}, {}
     for order, (selector_list, values) in enumerate(rules('\n'.join(stylesheets), dark_os)):
-        selectors = [selector_match(selector, element) for selector in split_selectors(selector_list)]
+        selectors = match_selector_list(selector_list, element)
+        if selectors is None:
+            continue
         scores = [specificity for matched, specificity in selectors if matched]
         if not scores:
             continue

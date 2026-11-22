@@ -42,6 +42,25 @@ class PaletteTokenResolverTests(unittest.TestCase):
         actual = effective_properties([css], 'graphite', 'dark', 'django')
         self.assertEqual(color(actual, '--surface'), '#202020')
 
+    def test_empty_selector_invalidates_the_entire_style_rule(self):
+        for selector in ('.unused,', ':root,', ', :root', ':root, , body', ':not(.unused,), :root'):
+            with self.subTest(selector=selector):
+                css = selector + ' { --invalid: #ffffff; } :root, body { --valid: #123456; }'
+                for surface in ('django', 'preview'):
+                    self.assertEqual(effective_properties([css], 'teal', 'light', surface),
+                                     {'--valid': '#123456'})
+
+    def test_is_and_where_ignore_empty_alternatives(self):
+        for function in ('is', 'where'):
+            with self.subTest(function=function):
+                css = f'''
+                    :{function}(.unused,) {{ --unmatched: #ffffff; }}
+                    :{function}(,) {{ --empty: #ffffff; }}
+                    :{function}(:not(.unused,), :root,) {{ --valid: #123456; }}
+                '''
+                self.assertEqual(effective_properties([css], 'teal', 'light', 'preview'),
+                                 {'--valid': '#123456'})
+
     def test_auto_media_overrides_only_dark_os(self):
         css = '''
             body.nova-admin.nova-mode-auto, body.nova-admin.nova-mode-light { --surface: #ffffff; }
