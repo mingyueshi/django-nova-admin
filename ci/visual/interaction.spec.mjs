@@ -227,6 +227,56 @@ test('RTL long labels, keyboard dialog, sticky columns, resize, scrolling and Dj
   await expect(page).toHaveURL(/[?&]o=/);
 });
 
+for (const { profile, viewport } of [
+  { profile: 'default-compact-dark', viewport: { width: 1280, height: 800 } },
+  { profile: 'rtl', viewport: { width: 320, height: 740 } },
+]) {
+  test.describe(profile, () => {
+    test.use({ viewport });
+    test('sidebar add links stay centered with host styles', async ({ page }) => {
+      const mobile = profile === 'rtl';
+      await page.goto('/case/' + profile + '/list/');
+      if (mobile) await page.locator('#nova-mobile-nav-toggle').click();
+      const section = page.locator('[data-nova-nav-section="business"]');
+      if ((await section.getAttribute('open')) === null)
+        await section.locator(':scope > summary').click();
+      const app = section.locator('[data-nova-nav-app="catalog"]');
+      if ((await app.getAttribute('open')) === null) await app.locator(':scope > summary').click();
+
+      await page.addStyleTag({
+        content: 'th, td { vertical-align: top; line-height: 1.75; } td a { padding: 2px 6px; }',
+      });
+      const row = app.locator('[data-nova-nav-model="product"]');
+      const label = row.locator('.nova-nav-model-label');
+      const add = row.locator('.nova-nav-add');
+      if (mobile) {
+        await label.evaluate((element) => {
+          element.textContent = 'اسمطويلSKU'.repeat(10);
+        });
+      }
+
+      await expect(add).toBeVisible();
+      const labelBox = await label.boundingBox();
+      const addBox = await add.boundingBox();
+      const center = ({ y, height }) => y + height / 2;
+      expect(Math.abs(center(labelBox) - center(addBox)), profile).toBeLessThanOrEqual(1);
+      const otherAddBox = await app.locator('[data-nova-nav-model="tag"] .nova-nav-add').boundingBox();
+      expect(addBox.x, profile).toBeCloseTo(otherAddBox.x, 0);
+      if (mobile) {
+        expect(labelBox.height).toBeGreaterThan(30);
+        expect(addBox.x + addBox.width).toBeLessThanOrEqual(labelBox.x);
+        expect(addBox.width).toBeGreaterThanOrEqual(44);
+        expect(addBox.height).toBeGreaterThanOrEqual(44);
+      } else {
+        expect(labelBox.x + labelBox.width).toBeLessThanOrEqual(addBox.x);
+        await expect(add).toHaveAccessibleName(/.+/);
+        await add.press('Enter');
+        await expect(page).toHaveURL(/\/admin\/catalog\/product\/add\/$/);
+      }
+    });
+  });
+}
+
 test('mobile RTL navigation, long labels, messages, and login forms fit the viewport', async ({
   page,
 }) => {

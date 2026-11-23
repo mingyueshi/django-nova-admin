@@ -302,14 +302,15 @@ body.nova-admin .nova-nav-group[open] > summary::before { transform: rotate(90de
 body.nova-admin .nova-nav-group > summary:hover { color: var(--body-fg); background: var(--nova-hover); }
 body.nova-admin .nova-nav-count { margin-inline-start: auto; font-size: 10px; font-weight: 400; }
 body.nova-admin .nova-nav-group table { border-collapse: separate; border-spacing: 0 3px; }
+/* Django and host styles can top-align table cells. Keep both parts of a model
+   row centered even when the label wraps or an action is taller than the text. */
 body.nova-admin #nav-sidebar .nova-nav-group th,
-body.nova-admin #nav-sidebar .nova-nav-group td { border: 0; padding: 0; font-size: 13px; }
+body.nova-admin #nav-sidebar .nova-nav-group td { border: 0; padding: 0; font-size: 13px; vertical-align: middle; }
 body.nova-admin #nav-sidebar .nova-nav-group th { padding-inline-start: 26px; border-radius: var(--nova-small-radius, 6px) 0 0 var(--nova-small-radius, 6px); font-weight: 400; }
-body.nova-admin #nav-sidebar .nova-nav-group td { padding-inline-end: 8px; border-radius: 0 var(--nova-small-radius, 6px) var(--nova-small-radius, 6px) 0; }
+body.nova-admin #nav-sidebar .nova-nav-group td { width: 1%; padding-inline-end: 8px; border-radius: 0 var(--nova-small-radius, 6px) var(--nova-small-radius, 6px) 0; text-align: end; white-space: nowrap; }
 body.nova-admin .nova-nav-group th a,
 body.nova-admin .nova-nav-group th span { display: block; padding: 9px 0; color: var(--body-fg); }
 body.nova-admin .nova-nav-group .current-model th a { color: var(--link-selected-fg); font-weight: 650; }
-body.nova-admin .nova-nav-add { display: inline-grid; place-items: center; width: 23px; height: 23px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 16px; color: var(--body-quiet-color); }
 body.nova-admin .nova-nav-empty { padding: 12px; color: var(--body-quiet-color); }
 /* One permission-filtered menu serves both layouts. Without JS the mobile menu
    stays visible; the disclosure button is enabled only after its handler exists. */
@@ -1038,17 +1039,35 @@ body.nova-admin .nova-nav-shortcut-list a:hover { background: var(--nova-hover);
 body.nova-admin .nova-nav-icon { display: inline-block; width: 16px; height: 16px; flex: 0 0 16px; vertical-align: -.2em; }
 body.nova-admin .nova-nav-model-label { display: inline; overflow-wrap: anywhere; }
 body.nova-admin .nova-nav-badge { display: inline-block; min-width: 1.4em; margin-inline-start: 6px; padding: 0 5px; border-radius: 999px; background: var(--darkened-bg); color: var(--body-quiet-color); font: 500 10px/1.8 var(--nova-font); text-align: center; font-variant-numeric: tabular-nums; }
-body.nova-admin .nova-nav-favorite { display: inline-grid; place-items: center; box-sizing: border-box; width: 28px; min-width: 28px; min-height: 28px; padding: 0; border: 1px solid transparent; border-radius: var(--nova-small-radius, 6px); color: var(--body-quiet-color); background: transparent; cursor: pointer; font: inherit; }
-body.nova-admin .nova-nav-favorite:hover { background: var(--nova-hover); border-color: var(--border-color); }
-body.nova-admin .nova-nav-favorite[aria-pressed=true] { color: var(--link-fg); background: var(--selected-bg); }
+body.nova-admin #nav-sidebar .nova-nav-group :is(.nova-nav-add, .nova-nav-favorite) {
+  display: inline-grid;
+  place-items: center;
+  vertical-align: middle;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--nova-small-radius, 6px);
+  background: transparent;
+  color: var(--body-quiet-color);
+  font: 400 16px/1 var(--nova-font);
+  text-decoration: none;
+  cursor: pointer;
+}
+body.nova-admin #nav-sidebar .nova-nav-group .nova-nav-add { border-color: var(--border-color); }
+body.nova-admin #nav-sidebar .nova-nav-group :is(.nova-nav-add, .nova-nav-favorite):hover { background: var(--nova-hover); border-color: var(--border-color); color: var(--body-fg); }
+body.nova-admin #nav-sidebar .nova-nav-group .nova-nav-favorite[aria-pressed=true] { color: var(--link-fg); background: var(--selected-bg); }
+body.nova-admin #nav-sidebar .nova-nav-group .nova-nav-favorite[hidden] { display: none; }
 @media (pointer: coarse), (max-width: 767px) {
-  body.nova-admin .nova-nav-favorite { width: 44px; min-width: 44px; min-height: 44px; }
+  body.nova-admin #nav-sidebar .nova-nav-group :is(.nova-nav-add, .nova-nav-favorite) { width: 44px; height: 44px; }
   body.nova-admin .nova-nav-shortcut-list a { min-height: 44px; box-sizing: border-box; }
 }
 body.nova-admin .nova-nav-group th a { display: flex; align-items: center; gap: 6px; }
 body.nova-admin .nova-nav-badge { margin-inline-start: auto; }
-body.nova-admin .nova-nav-group td:has(.nova-nav-favorite) { white-space: nowrap; }
-body.nova-admin .nova-nav-favorite[hidden],
 body.nova-admin .nova-nav-shortcuts[hidden] { display: none; }
 /* Cancel legacy table-span spacing inside the richer model link only. */
 body.nova-admin .nova-nav-group th .nova-nav-model-label { display: inline; padding: 0; color: inherit; }
